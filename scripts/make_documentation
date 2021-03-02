@@ -1,0 +1,4 @@
+#!/bin/bash
+
+
+pdoc --html --force --output-dir documentation-output src

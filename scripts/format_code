@@ -1,0 +1,3 @@
+#!/bin/bash
+
+yapf --recursive --in-place src/

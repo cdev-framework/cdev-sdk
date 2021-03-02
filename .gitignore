@@ -127,3 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+##### CDEV SPECIFIC
+
+# personal
+# contain scripts related to a personal env
+
+personal/*
