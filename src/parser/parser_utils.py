@@ -1,6 +1,9 @@
 import symtable
 import os
 
+
+
+
 def get_global_function_symbols(src, file_loc):
     if not os.path.isfile(file_loc):
         return False
@@ -30,13 +33,11 @@ def get_global_module_symbols(src, file_loc):
 
 
     symbol_table = symtable.symtable(src, file_loc, 'exec')
-    print(type(symbol_table))
+
+
     symbols = symbol_table.get_symbols()
 
     for sym in symbols:
-        print(f"{sym.get_name()}: {sym.is_imported()}; {sym.is_namespace()}")
+        print(f"{sym.get_name()}: {sym.is_imported()}; {sym.is_namespace()}; {sym.is_global()}")
 
-
-
-
-
+    print(symbol_table.get_namespaces())

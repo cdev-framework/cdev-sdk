@@ -1,3 +1,9 @@
+import os
+
+h = os.path.join(".")
+
+glob = 1
+
 def f():
     return 4
 
