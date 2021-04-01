@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2" />
-<title>src API documentation</title>
+<title>src.parser API documentation</title>
 <meta name="description" content="" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
@@ -19,18 +19,31 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Namespace <code>src</code></h1>
+<h1 class="title">Module <code>src.parser</code></h1>
 </header>
 <section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">## This module contains the code to parse functions out of python files. This will be used to parse the function handlers into individual files 
+## to help deploy them as individual primitives. This module will hold no state and instead simply parse what is available in a file. It will be
+## dependant on other modules to monitor the state of files to determine when an update has occured. This module only provides information about 
+## what lines correspond to a function and does not handle the actual writing of intermediate files. </code></pre>
+</details>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
-<dt><code class="name"><a title="src.main" href="main.html">src.main</a></code></dt>
+<dt><code class="name"><a title="src.parser.cdev_parser" href="cdev_parser.html">src.parser.cdev_parser</a></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
-<dt><code class="name"><a title="src.parser" href="parser/index.html">src.parser</a></code></dt>
+<dt><code class="name"><a title="src.parser.parser_objects" href="parser_objects.html">src.parser.parser_objects</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="src.parser.parser_utils" href="parser_utils.html">src.parser.parser_utils</a></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -49,10 +62,16 @@
 <ul></ul>
 </div>
 <ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="src" href="../index.html">src</a></code></li>
+</ul>
+</li>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
-<li><code><a title="src.main" href="main.html">src.main</a></code></li>
-<li><code><a title="src.parser" href="parser/index.html">src.parser</a></code></li>
+<li><code><a title="src.parser.cdev_parser" href="cdev_parser.html">src.parser.cdev_parser</a></code></li>
+<li><code><a title="src.parser.parser_objects" href="parser_objects.html">src.parser.parser_objects</a></code></li>
+<li><code><a title="src.parser.parser_utils" href="parser_utils.html">src.parser.parser_utils</a></code></li>
 </ul>
 </li>
 </ul>

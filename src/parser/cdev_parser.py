@@ -1,7 +1,7 @@
 import os
 
-import parser.parser_objects
-import parser.parser_utils as p_utils
+import src.parser.parser_objects
+import src.parser.parser_utils as p_utils
 
 ## This file has the highest level functions for use by other modules. Only this file will expose functionality to other modules.
 
@@ -16,7 +16,7 @@ def parse_functions_from_file(file_loc, include_functions=[]):
     with open(file_loc, 'r') as fh:
         file_source_code = fh.read()
 
-    file_globals = p_utils.get_global_module_symbols(file_source_code, file_loc)
+    file_globals = p_utils.get_global_information(file_source_code, file_loc)
 
     return "Y"
 

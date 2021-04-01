@@ -1,5 +1,7 @@
 import os
 
+global x
+
 h = os.path.join(".")
 
 glob = 1

@@ -4,4 +4,3 @@
 ## what lines correspond to a function and does not handle the actual writing of intermediate files. 
 
 
-__all__ = ["cdev_parser"]
