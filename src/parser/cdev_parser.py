@@ -10,7 +10,7 @@ from src.parser.cdev_parser_exceptions import *
 def parse_functions_from_file(file_loc, include_functions=[]):
 
     try:
-        file_information = p_utils.get_file_information(file_loc)
+        file_information = p_utils.get_file_information(file_loc, include_functions)
     except CouldNotParseFileError as e:
         print(e)
 

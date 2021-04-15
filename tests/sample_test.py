@@ -6,8 +6,7 @@ for i in range(4):
     print(i)
     os.path.join("")
 
-h = os.path.join(".")
-
+h = os.path.join("."); 
 x = os.environ.get("lkwem")
 
 x = "Hello"

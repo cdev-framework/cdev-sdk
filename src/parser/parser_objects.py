@@ -5,20 +5,25 @@ import symtable
 
 class parsed_function():
     """
-        This class represents the information for a parsed function, and it can be used to create an intermediate file with just
-        that function.
+        This class represents the information for a parsed function. It mostly is used to house a function that can keep track of the line numbers.
     """
-
-    # file_informatino object
-    original_file = ""
-
     # A list of (int,int) that represents lines that need to be parsed out of the file for this function
     needed_line_numbers = []
 
-    # The set of symbol_information objects that are imports from outside the original function
-    imported_symbols = set()
+    # str: name of function
+    name = ""
+
+    def __init__(self, name):
+        self.name = name
 
 
+    def add_line_numbers(self, line_no):
+        self.needed_line_numbers.append(line_no)
+
+    def get_line_numbers(self):
+        return self.needed_line_numbers
+    
+        
 class global_statement():
     """
         This class represents the extra information for the global statements of a file. A global statement are the first children in the 
@@ -60,6 +65,8 @@ class global_statement():
 
         self.symbol_table = tmp_symbol_table   
 
+        print(f"{self.line_no}; {self.symbol_table.get_symbols()}")
+
         # if the symbol table is a function then it will appear as a single symbol that is a namespace 
         if len(tmp_symbol_table.get_symbols()) == 1:
             single_symbol = tmp_symbol_table.get_symbols()[0]
@@ -69,13 +76,15 @@ class global_statement():
                     self.is_function = True
 
                     self.src_file_info.add_global_function(single_symbol.get_name(), self)
-
                 
     def get_symbol_table(self):
         return self.symbol_table
 
     def get_is_function(self):
         return self.function
+
+    def get_line_no(self):
+        return self.line_no
 
 
 
@@ -136,7 +145,7 @@ class file_information():
         return "".join(self.src_code)
 
     def get_lines_of_source_code(self, start_line, end_line):
-        return "".join(self.src_code[(start_line-1):(end_line-1)])
+        return "".join(self.src_code[(start_line-1):(end_line)])
 
     def get_symbol_table(self):
         return self.symbol_table
