@@ -40,25 +40,36 @@ class global_statement():
     # boolean that states if this global statement is namespace
     is_namespace = False
 
-    def __init__(self, file_info_obj):
+    # ast node for this global statement
+    node = None
+
+    def __init__(self, file_info_obj, node, line_no):
         self.src_file_info = file_info_obj
 
-    def set_start_line(self, lineno):
-        self.line_no = [lineno]
+        self.line_no = line_no
 
-    def set_last_line(self, lineno):
-        if self.line_no:
-            self.line_no = [self.line_no[0], lineno]
+        self.create_symbol_table()
+
+        self.node = node
+
 
     def create_symbol_table(self):
         tmp_src_code = self.src_file_info.get_lines_of_source_code(self.line_no[0], self.line_no[1])
 
         tmp_symbol_table = symtable.symtable(tmp_src_code, self.src_file_info.file_location, 'exec')
 
-        if len(tmp_symbol_table.get_symbols()) == 1:
-            if tmp_symbol_table.get_symbols()[0].is_namespace():
-                
+        self.symbol_table = tmp_symbol_table   
 
+        # if the symbol table is a function then it will appear as a single symbol that is a namespace 
+        if len(tmp_symbol_table.get_symbols()) == 1:
+            single_symbol = tmp_symbol_table.get_symbols()[0]
+            if single_symbol.is_namespace():
+                if isinstance(single_symbol.get_namespaces()[0], symtable.Function):
+                    print(single_symbol.get_namespaces()[0])
+                    self.symbol_table = single_symbol.get_namespaces()[0]
+
+               
+                
     def get_symbol_table(self):
         return self.symbol_table
 
