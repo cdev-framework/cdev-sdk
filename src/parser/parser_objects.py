@@ -15,9 +15,14 @@ class parsed_function():
 
     def __init__(self, name):
         self.name = name
+        self.needed_line_numbers = []
+
+    def __eq__(self):
+        return self.name == self.name
 
 
     def add_line_numbers(self, line_no):
+        print(f"{self.name}->>> {self.needed_line_numbers}")
         self.needed_line_numbers.append(line_no)
 
     def get_line_numbers(self):
@@ -48,6 +53,9 @@ class global_statement():
     # ast node for this global statement
     node = None
 
+    # hash
+    hashed = 0
+
     def __init__(self, file_info_obj, node, line_no):
         self.src_file_info = file_info_obj
 
@@ -57,6 +65,18 @@ class global_statement():
 
         self.node = node
 
+        for i in range(self.line_no[0], self.line_no[1]):
+            self.hashed = self.hashed + i
+
+    def __hash__(self):
+        return self.hashed
+
+    def __eq__(self, other):
+        return self.hashed == other.hashed
+
+    def __repr__(self):
+        return f"<statement at {self.line_no[0]} thru {self.line_no[1]}>"
+
 
     def create_symbol_table(self):
         tmp_src_code = self.src_file_info.get_lines_of_source_code(self.line_no[0], self.line_no[1])
@@ -65,7 +85,6 @@ class global_statement():
 
         self.symbol_table = tmp_symbol_table   
 
-        print(f"{self.line_no}; {self.symbol_table.get_symbols()}")
 
         # if the symbol table is a function then it will appear as a single symbol that is a namespace 
         if len(tmp_symbol_table.get_symbols()) == 1:
@@ -120,6 +139,8 @@ class file_information():
     # dict<str, global_statement>: function name to its global statement
     global_functions = {}
 
+    parsed_functions = []
+
     # init method or constructor   
     def __init__(self, location):  
         if not os.path.isfile(location):
@@ -164,3 +185,6 @@ class file_information():
         
     def add_global_function(self, name, global_obj):
         self.global_functions[name] = global_obj
+
+    def add_parsed_functions(self, func):
+        self.parsed_functions.append(func)
