@@ -37,8 +37,8 @@ class global_statement():
     # symbol table 
     symbol_table = ""
 
-    # boolean that states if this global statement is namespace
-    is_namespace = False
+    # boolean that states if this global statement is a function
+    is_function = False
 
     # ast node for this global statement
     node = None
@@ -65,16 +65,17 @@ class global_statement():
             single_symbol = tmp_symbol_table.get_symbols()[0]
             if single_symbol.is_namespace():
                 if isinstance(single_symbol.get_namespaces()[0], symtable.Function):
-                    print(single_symbol.get_namespaces()[0])
                     self.symbol_table = single_symbol.get_namespaces()[0]
+                    self.is_function = True
 
-               
+                    self.src_file_info.add_global_function(single_symbol.get_name(), self)
+
                 
     def get_symbol_table(self):
         return self.symbol_table
 
-    def get_is_namespace(self):
-        return self.is_namespace
+    def get_is_function(self):
+        return self.function
 
 
 
@@ -107,8 +108,8 @@ class file_information():
     # dict<statement, list(str)>: fuction from statement to symbols
     statement_to_symbol = {}
 
-    # set(str): set of first class function names
-    function_names = set()
+    # dict<str, global_statement>: function name to its global statement
+    global_functions = {}
 
     # init method or constructor   
     def __init__(self, location):  
@@ -152,3 +153,5 @@ class file_information():
     def get_file_length(self):
         return len(self.src_code)
         
+    def add_global_function(self, name, global_obj):
+        self.global_functions[name] = global_obj

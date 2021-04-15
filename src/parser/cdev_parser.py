@@ -9,14 +9,8 @@ from src.parser.cdev_parser_exceptions import *
 
 def parse_functions_from_file(file_loc, include_functions=[]):
 
-    if not os.path.isfile(file_loc):
-        raise FileNotFoundError(
-            f"cdev_parser: could not find file at -> {file_loc}")
-
-    file_obj = file_information(file_loc)
-
     try:
-        file_globals = p_utils.get_global_information(file_obj)
+        file_information = p_utils.get_file_information(file_loc)
     except CouldNotParseFileError as e:
         print(e)
 

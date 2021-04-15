@@ -81,9 +81,12 @@ def _get_functions_in_symboltable(table):
     return rv_functions
 
 
-def get_global_information(file_info_obj):
-    if not isinstance(file_info_obj, file_information):
-        raise Error
+def get_file_information(file_path):
+    if not os.path.isfile(file_path):
+        raise FileNotFoundError(
+            f"cdev_parser: could not find file at -> {file_path}")
+
+    file_info_obj = file_information(file_path)
 
     symbol_table = file_info_obj.get_symbol_table()
 
@@ -103,7 +106,6 @@ def get_global_information(file_info_obj):
         file_info_obj.symbol_to_statement[item] = []
 
     
-
     # Need to get the line range of each global statement, but this requires looping over all the global nodes in the ast
     # in the top level of the file. To support earlier versions of python <3.7 we must use the starting line of 
     # the next statement as the last line of previous node. We are going to store this info in a tmp dict then
@@ -137,14 +139,17 @@ def get_global_information(file_info_obj):
         file_info_obj.add_global_statement(glob_obj)
         file_info_obj.statement_to_symbol[glob_obj] = []
 
+
+            
+
+    # Build a two-way binding of a symbol to statement and a statement to a symbol.
+    # This information is needed to get all dependencies of symbols, which is needed
+    # to reconstruct just the nessecary lines
     for i in file_info_obj.get_global_statements():
         syms = i.get_symbol_table().get_symbols()
-        print(i)
         for sym in syms:
             if not sym.get_name() in file_info_obj.symbol_to_statement:
                 continue
-
-            print(f"    {sym.get_name()}; {sym.is_assigned()}; {sym.is_namespace()}")
 
             # Add all the symbols in the statement to the list of this global statement
             if i in file_info_obj.statement_to_symbol:
@@ -156,7 +161,6 @@ def get_global_information(file_info_obj):
             tmp.append(i)
             file_info_obj.symbol_to_statement[sym.get_name()] = tmp
 
+    print(file_info_obj.global_functions)
 
-    #print(file_info_obj.statement_to_symbol)
-    #print("----------------------")
-    #print(file_info_obj.symbol_to_statement)
+    return file_info_obj
