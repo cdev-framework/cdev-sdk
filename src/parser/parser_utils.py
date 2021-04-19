@@ -3,6 +3,8 @@ import os
 from src.parser.parser_objects import *
 from src.parser.cdev_parser_exceptions import *
 
+import ast
+
 def _get_global_variables_in_symboltable(table):
     # TODO Change error that is raised
     if not isinstance(table, symtable.SymbolTable):
@@ -81,6 +83,51 @@ def _get_functions_in_symboltable(table):
     return rv_functions
 
 
+def _generate_global_statement(file_info_obj, info):
+    # This function is used to determine the type of global statement the node is and create the corresponding global statement obj
+    ast_node = info[0]
+    start_line = info[1]
+    last_line = info[2]
+
+    tmp_src_code = file_info_obj.get_lines_of_source_code(start_line, last_line)
+    
+    tmp_symbol_table = symtable.symtable(tmp_src_code, file_info_obj.file_location, 'exec')
+    
+    symbol_table = tmp_symbol_table   
+
+    # If the symbol table is a function then it will appear as a single symbol that is a namespace 
+    if len(tmp_symbol_table.get_symbols()) == 1:
+        single_symbol = tmp_symbol_table.get_symbols()[0]
+        if single_symbol.is_namespace():
+            if isinstance(single_symbol.get_namespaces()[0], symtable.Function):
+                print(f"{single_symbol.get_name()} is function")
+                name = single_symbol.get_name()
+                fs = FunctionStatement( ast_node, [start_line, last_line], single_symbol.get_namespaces()[0], name)
+                file_info_obj.add_global_function(name, fs)
+                return
+
+
+    ts = {s.get_name() for s in tmp_symbol_table.get_symbols()}
+    #print(ts)
+    #print(f"{info}; {len( file_info_obj.imported_symbols.intersection(ts))}")
+
+    used_imported_symbols = file_info_obj.imported_symbols.intersection(ts)
+    if len(used_imported_symbols ) > 0:
+        # This statement uses an imported symbol so we need to check it to see if it is the import statement
+        for n in ast.walk(ast_node):
+            if isinstance(n, ast.Import):
+                print(f"IMPORT: {n}")
+                #print(f"FIELDS { [(cn.name, cn.asname)  for cn in n.names] }")
+                for imprt in n.names:
+                    print(f"FIELDS: {imprt.name}; {imprt.asname}")
+            
+            if isinstance(n, ast.ImportFrom):
+                print(f"IMPORT FROM: {n}")
+
+    global_statement_obj = GlobalStatement(ast_node, [start_line,last_line], symbol_table)
+    file_info_obj.add_global_statement(global_statement_obj) 
+
+
 def get_file_information(file_path, include_functions=[]):
     if not os.path.isfile(file_path):
         raise FileNotFoundError(
@@ -97,6 +144,7 @@ def get_file_information(file_path, include_functions=[]):
         local_variables = _get_local_variables_in_symboltable(symbol_table)
 
         imported_symbols = _get_imported_variables_in_symboltable(symbol_table)
+        print(imported_symbols)
     
         global_symbols = _get_global_variables_in_symboltable(symbol_table)
     except FileNotFoundError as e:
@@ -104,6 +152,8 @@ def get_file_information(file_path, include_functions=[]):
 
     for item in functions.union(local_variables).union(imported_symbols).union(global_symbols):
         file_info_obj.symbol_to_statement[item] = set()
+
+    file_info_obj.set_imported_symbols(imported_symbols)
 
     
     # Need to get the line range of each global statement, but this requires looping over all the global nodes in the ast
@@ -132,18 +182,13 @@ def get_file_information(file_path, include_functions=[]):
     prev_vals.append(file_info_obj.get_file_length()+1)
     _tmp_global_information[previous_node]
 
-    #print(_tmp_global_information)
 
     # Now that the information has been collected for the global statements, we can create the actual objs and add
     # them to the file_info_obj 
     for k in _tmp_global_information:
-        glob_obj = global_statement(file_info_obj, _tmp_global_information.get(k)[0], _tmp_global_information.get(k)[1:3])
-        file_info_obj.add_global_statement(glob_obj)
-        file_info_obj.statement_to_symbol[glob_obj] = set()
-
+        _generate_global_statement(file_info_obj, _tmp_global_information.get(k))
 
     EXCLUDED_SYMBOLS = set(["os", "print"])
-    #print(file_info_obj.statement_to_symbol)
 
     # Build a two-way binding of a symbol to statement and a statement to a symbol.
     # This information is needed to get all dependencies of symbols, which is needed
@@ -165,23 +210,18 @@ def get_file_information(file_path, include_functions=[]):
 
             # Since this global statement is a top level function... the code that effects this symbol within it will only execute if the 
             # function itself is called. Therefor, other functions can use this symbol without depending on that actual function it is in. 
-            if i.is_function:
+            if i.get_type() == GlobalStatementType.FUNCTION:
                 continue
 
             tmp = file_info_obj.symbol_to_statement.get(sym.get_name())
             tmp.add(i)
             file_info_obj.symbol_to_statement[sym.get_name()] = tmp
 
-        if i.is_function:
+        if i.get_type() == GlobalStatementType.FUNCTION:
             tmp = file_info_obj.symbol_to_statement.get(i.get_function_name())
             tmp.add(i)
             file_info_obj.symbol_to_statement[i.get_function_name()] = tmp
 
-    #print(file_info_obj.statement_to_symbol)
-    #print("--------")
-    #for s in file_info_obj.symbol_to_statement:
-    #    print(f"-----{s}")
-    #    print(f"----->>>>>{file_info_obj.symbol_to_statement.get(s)}")
 
     # If a list of functions was not included then parse all top level functions
     if not include_functions:
@@ -210,6 +250,9 @@ def get_file_information(file_path, include_functions=[]):
         keep_looping = True
         remaining_symbols = set()
 
+        # Some symbols won't be included in the mapping because they are excluded, but they need to be kept track of to look at imports
+        all_used_symbols = set([g.get_name() for g in func_glob_obj.get_symbols()])
+
         while keep_looping:
             # If there are no more symbols than break the loop
             if not next_symbols:
@@ -220,29 +263,25 @@ def get_file_information(file_path, include_functions=[]):
             remaining_symbols = next_symbols
             next_symbols = set()
 
-            #print(f"{function_name} already include objects: {already_included_global_obj}")
-            #print(f"{function_name} already include symbols: {already_included_symbols}")
             for sym in remaining_symbols:
                 if sym in already_included_symbols:
                     # If we have already added this symbol than we have all of its dependencies
                     continue
-
-                #print(f"-----{sym}")
 
                 # Add all dependant global statements to this symbol needs to the need lines for the function
                 for glob_obj in file_info_obj.symbol_to_statement.get(sym):
                     
                     if glob_obj in already_included_global_obj:
                         #IF this global statement has already been added continue
-                        #print(f"----------{glob_obj} CONTINUE")
-                        #print(f"{function_name} already include objects: {already_included_global_obj}")
                         continue
-
-                    #print(f"----------{glob_obj}")
 
                     # Add the lines numbers and place it in the already included set
                     p_function.add_line_numbers(glob_obj.get_line_no())
                     already_included_global_obj.add(glob_obj)
+
+
+                    # include this statements 
+                    all_used_symbols = all_used_symbols.union(set(g.get_name() for g in glob_obj.get_symbols()))
 
                     # Get the set of symbols that this statement depends on
                     set_symbols = file_info_obj.statement_to_symbol.get(glob_obj)
@@ -252,6 +291,8 @@ def get_file_information(file_path, include_functions=[]):
                     #print(f"------------------{actual_new_needed_symbols}")
                     # Add the actually needed new symbols to the set of symbols to be looped over next
                     next_symbols = next_symbols.union(actual_new_needed_symbols)
+
+        print(f"{function_name}: {all_used_symbols}")
 
         #finally add the parsed function object to the file info
         file_info_obj.add_parsed_functions(p_function)

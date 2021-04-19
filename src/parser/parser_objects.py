@@ -2,6 +2,7 @@ import ast
 import os
 import symtable
 import math
+from enum import Enum
 
 from sortedcontainers import SortedList
 
@@ -29,9 +30,17 @@ class parsed_function():
 
     def get_line_numbers(self):
         return self.needed_line_numbers
+
+
+class GlobalStatementType(Enum):
+    STANDARD = 1
+    FUNCTION = 2
+    IMPORT = 3
+    CLASS = 4
+
     
         
-class global_statement():
+class GlobalStatement():
     """
         This class represents the extra information for the global statements of a file. A global statement are the first children in the 
         ast for a file. 
@@ -49,24 +58,20 @@ class global_statement():
     # symbol table 
     symbol_table = ""
 
-    # boolean that states if this global statement is a function
-    is_function = False
-
     # ast node for this global statement
     node = None
 
     # hash
     hashed = 0
 
-    # function name is a func
-    func_name = ""
+    # The type of statement
+    statement_type = GlobalStatementType.STANDARD
 
-    def __init__(self, file_info_obj, node, line_no):
-        self.src_file_info = file_info_obj
 
+    def __init__(self, node, line_no, symbol_table):
         self.line_no = line_no
 
-        self.create_symbol_table()
+        self.set_symbol_table(symbol_table)
 
         self.node = node
 
@@ -85,25 +90,8 @@ class global_statement():
     def __repr__(self):
         return f"<statement at {self.line_no[0]} thru {self.line_no[1]}>"
 
-
-    def create_symbol_table(self):
-        tmp_src_code = self.src_file_info.get_lines_of_source_code(self.line_no[0], self.line_no[1])
-
-        tmp_symbol_table = symtable.symtable(tmp_src_code, self.src_file_info.file_location, 'exec')
-
-        self.symbol_table = tmp_symbol_table   
-
-
-        # if the symbol table is a function then it will appear as a single symbol that is a namespace 
-        if len(tmp_symbol_table.get_symbols()) == 1:
-            single_symbol = tmp_symbol_table.get_symbols()[0]
-            if single_symbol.is_namespace():
-                if isinstance(single_symbol.get_namespaces()[0], symtable.Function):
-                    self.symbol_table = single_symbol.get_namespaces()[0]
-                    self.is_function = True
-                    self.func_name = single_symbol.get_name()
-
-                    self.src_file_info.add_global_function(single_symbol.get_name(), self)
+    def set_symbol_table(self, symbol_table):
+        self.symbol_table = symbol_table  
                 
     def get_symbol_table(self):
         return self.symbol_table
@@ -111,14 +99,50 @@ class global_statement():
     def get_symbols(self):
         return self.symbol_table.get_symbols()
         
+    def get_line_no(self):
+        return self.line_no
+
+    def get_type(self):
+        return self.statement_type
+
+    
+class ImportStatement(GlobalStatement):
+    # The original package that the package is from
+    # ex: import pandas as pd... original_package = 'pandas'
+    orginal_package = ""
+
+    # The actual symbol the package is import as
+    # ex: import pandas as pd... as_symbol = 'pd'
+    as_symbol = ""
+
+    # Is local file or pkg 
+    is_local = False
+
+    def __init__(self, node, line_no):
+        super().__init__(node, line_no)
+
+
+    def get_type(self):
+        return GlobalStatementType.IMPORT
+
+
+class FunctionStatement(GlobalStatement):
+    
+    # function name is a func
+    func_name = ""
+
+    def __init__(self, node, line_no, symbol_table, name):
+        super().__init__(node, line_no, symbol_table)
+        self.func_name = name
+    
+
+    def get_type(self):
+        return GlobalStatementType.FUNCTION
+
+
     def get_function_name(self):
         return self.func_name
 
-    def get_is_function(self):
-        return self.function
-
-    def get_line_no(self):
-        return self.line_no
 
 
 
@@ -156,6 +180,8 @@ class file_information():
 
     parsed_functions = []
 
+    imported_symbols = set()
+
     # init method or constructor   
     def __init__(self, location):  
         if not os.path.isfile(location):
@@ -190,7 +216,9 @@ class file_information():
         return self.ast
 
     def add_global_statement(self, global_statement):
+        print(global_statement)
         self.top_level_statements.append(global_statement)
+        self.statement_to_symbol[global_statement] = set()
 
     def get_global_statements(self):
         return self.top_level_statements
@@ -200,6 +228,10 @@ class file_information():
         
     def add_global_function(self, name, global_obj):
         self.global_functions[name] = global_obj
+        self.add_global_statement(global_obj)
 
     def add_parsed_functions(self, func):
         self.parsed_functions.append(func)
+
+    def set_imported_symbols(self, symbols):
+        self.imported_symbols = symbols
