@@ -106,10 +106,7 @@ def _generate_global_statement(file_info_obj, info):
                 file_info_obj.add_global_function(name, fs)
                 return
 
-
     ts = {s.get_name() for s in tmp_symbol_table.get_symbols()}
-    #print(ts)
-    #print(f"{info}; {len( file_info_obj.imported_symbols.intersection(ts))}")
 
     used_imported_symbols = file_info_obj.imported_symbols.intersection(ts)
     if len(used_imported_symbols ) > 0:
@@ -120,7 +117,15 @@ def _generate_global_statement(file_info_obj, info):
                 #print(f"FIELDS { [(cn.name, cn.asname)  for cn in n.names] }")
                 for imprt in n.names:
                     print(f"FIELDS: {imprt.name}; {imprt.asname}")
-            
+                    if not imprt.asname:
+                        asname = imprt.name
+                    else:
+                        asname = imprt.asname
+
+                    imp_statement = ImportStatement(ast_node, [start_line, last_line], symbol_table , asname, imprt.name)
+                    file_info_obj.add_global_import(imp_statement)
+                    continue
+
             if isinstance(n, ast.ImportFrom):
                 print(f"IMPORT FROM: {n}")
 
@@ -188,7 +193,7 @@ def get_file_information(file_path, include_functions=[]):
     for k in _tmp_global_information:
         _generate_global_statement(file_info_obj, _tmp_global_information.get(k))
 
-    EXCLUDED_SYMBOLS = set(["os", "print"])
+    EXCLUDED_SYMBOLS = set(["os", "print", "sss"])
 
     # Build a two-way binding of a symbol to statement and a statement to a symbol.
     # This information is needed to get all dependencies of symbols, which is needed
@@ -293,6 +298,11 @@ def get_file_information(file_path, include_functions=[]):
                     next_symbols = next_symbols.union(actual_new_needed_symbols)
 
         print(f"{function_name}: {all_used_symbols}")
+        for s in all_used_symbols:
+            print(file_info_obj.imported_symbol_to_global_statement)
+            if s in file_info_obj.imported_symbol_to_global_statement:
+                print(f"ADDING {s} import statement to {function_name}")
+                p_function.add_line_numbers(file_info_obj.imported_symbol_to_global_statement.get(s).get_line_no())
 
         #finally add the parsed function object to the file info
         file_info_obj.add_parsed_functions(p_function)

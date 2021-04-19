@@ -118,8 +118,10 @@ class ImportStatement(GlobalStatement):
     # Is local file or pkg 
     is_local = False
 
-    def __init__(self, node, line_no):
-        super().__init__(node, line_no)
+    def __init__(self, node, line_no, symbol_table, asname, pkgname):
+        super().__init__(node, line_no, symbol_table)
+        self.as_symbol = asname
+        self.orginal_package = pkgname
 
 
     def get_type(self):
@@ -180,7 +182,11 @@ class file_information():
 
     parsed_functions = []
 
+    # Set of the symbol names 
     imported_symbols = set()
+
+    # dict<str, global_statement>: imported symbol name to global statement
+    imported_symbol_to_global_statement = {}
 
     # init method or constructor   
     def __init__(self, location):  
@@ -189,6 +195,7 @@ class file_information():
                 f"parser_utils: could not find file at -> {location}")
 
         self.file_location = location  
+        self.imported_symbol_to_global_statement = {}
 
         with open(location, 'r') as fh:
             self.src_code = fh.readlines()
@@ -228,6 +235,10 @@ class file_information():
         
     def add_global_function(self, name, global_obj):
         self.global_functions[name] = global_obj
+        self.add_global_statement(global_obj)
+
+    def add_global_import(self, global_obj):
+        self.imported_symbol_to_global_statement[global_obj.as_symbol] = global_obj
         self.add_global_statement(global_obj)
 
     def add_parsed_functions(self, func):

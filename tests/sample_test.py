@@ -29,6 +29,7 @@ def test_function():
     print(y)
     t = "Hi"
     assert f() == 4
+    print(sss)
 
 
 def b():
