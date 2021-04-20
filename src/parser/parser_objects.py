@@ -1,13 +1,16 @@
 import ast
 import os
 import symtable
+import math
+
+from sortedcontainers import SortedList
 
 
 class parsed_function():
     """
         This class represents the information for a parsed function. It mostly is used to house a function that can keep track of the line numbers.
     """
-    # A list of (int,int) that represents lines that need to be parsed out of the file for this function
+    # A sorted list of (int,int) that represents lines that need to be parsed out of the file for this function
     needed_line_numbers = []
 
     # str: name of function
@@ -16,9 +19,12 @@ class parsed_function():
     def __init__(self, name):
         self.name = name
 
+        self.needed_line_numbers = SortedList()
+
 
     def add_line_numbers(self, line_no):
-        self.needed_line_numbers.append(line_no)
+        # Use a sorted list
+        self.needed_line_numbers.add(line_no)
 
     def get_line_numbers(self):
         return self.needed_line_numbers

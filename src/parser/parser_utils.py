@@ -163,9 +163,10 @@ def get_file_information(file_path, include_functions=[]):
             tmp.append(i)
             file_info_obj.symbol_to_statement[sym.get_name()] = tmp
 
-    
+    # If a list of functions was not included then parse all top level functions
     if not include_functions:
         include_functions = file_info_obj.global_functions.keys()
+
 
     for function_name in include_functions:
         pf = parsed_function(function_name)
