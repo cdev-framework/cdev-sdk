@@ -3,7 +3,9 @@ import sys as sss
 global x
 
 
-for i in range(4):
+
+#include <hello>
+for i in range(4): 
     print(i)
     os.path.join("")
 
@@ -25,7 +27,7 @@ def f():
 
 
 
-def test_function():
+def t_function():
     print(y)
     t = "Hi"
     assert f() == 4

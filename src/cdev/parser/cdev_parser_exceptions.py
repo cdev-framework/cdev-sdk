@@ -1,5 +1,5 @@
 class Error(Exception):
-    pass 
+    pass
 
 
 class CouldNotParseFileError(Error):
