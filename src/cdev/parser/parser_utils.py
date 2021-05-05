@@ -118,7 +118,6 @@ def _generate_global_statement(file_info_obj, info):
         if single_symbol.is_namespace():
             if isinstance(single_symbol.get_namespaces()[0],
                           symtable.Function):
-                print(f"{single_symbol.get_name()} is function")
                 name = single_symbol.get_name()
                 fs = FunctionStatement(ast_node, [start_line, last_line],
                                        single_symbol.get_namespaces()[0], name)
@@ -139,7 +138,7 @@ def _generate_global_statement(file_info_obj, info):
                 #print(f"IMPORT: {n}")
                 #print(f"FIELDS { [(cn.name, cn.asname)  for cn in n.names] }")
                 for imprt in n.names:
-                    print(f"FIELDS: {imprt.name}; {imprt.asname}")
+                    #print(f"FIELDS: {imprt.name}; {imprt.asname}")
                     if not imprt.asname:
                         asname = imprt.name
                     else:
@@ -165,7 +164,7 @@ def _generate_global_statement(file_info_obj, info):
 
 
 
-def get_file_information(file_path, include_functions=[]):
+def get_file_information(file_path, include_functions=[], function_manual_includes={}, global_manual_includes=[]):
     if not os.path.isfile(file_path):
         raise FileNotFoundError(
             f"cdev_parser: could not find file at -> {file_path}")
@@ -181,7 +180,6 @@ def get_file_information(file_path, include_functions=[]):
         local_variables = _get_local_variables_in_symboltable(symbol_table)
 
         imported_symbols = _get_imported_variables_in_symboltable(symbol_table)
-        print(imported_symbols)
 
         global_symbols = _get_global_variables_in_symboltable(symbol_table)
     except FileNotFoundError as e:
@@ -264,31 +262,62 @@ def get_file_information(file_path, include_functions=[]):
     if not include_functions:
         include_functions = file_info_obj.global_functions.keys()
 
+    #manual includes is a dictionary from function name to global statement
+    print(function_manual_includes)
+    print(global_manual_includes)
     for function_name in include_functions:
         # Create new parsed function obj
         p_function = parsed_function(function_name)
 
-        # Get the Global obj associated with the current function
-        func_glob_obj = file_info_obj.global_functions.get(function_name)
-
-        # Add the functions lines to the parsed function
-        p_function.add_line_numbers(func_glob_obj.get_line_no())
-
-        # Start with a set that already includes the global statement for itself
-        already_included_global_obj = set([func_glob_obj])
-
         # Start with a set that already includes the symbol for itself
         already_included_symbols = set([function_name])
 
-        # next symbols is the set of symbols that need their dependant global statements
-        next_symbols = file_info_obj.statement_to_symbol.get(func_glob_obj)
+        # All functions will need to start by including the actual function body
+        # Some functions will also need to include the manually added statements
+        needed_global_objects = set([file_info_obj.global_functions.get(function_name)])
+
+        # if the function has any manual statement includes
+        # function_manual_includes is the dict from function name to the name of the manual include
+        if function_name in function_manual_includes:
+            for include in function_manual_includes.get(function_name):
+                if not include in file_info_obj.include_overrides_glob:
+                    # TODO throw warning
+                    print(f"WARNING ---> {function_name} Manually include {include} not in file info obj")
+                    continue
+
+                needed_global_objects.add(file_info_obj.include_overrides_glob.get(include))
+        
+        # global_manual_includes is a list of the names of manual includes that need to be added to every function
+        for include in global_manual_includes:
+            if not include in file_info_obj.include_overrides_glob:
+                # TODO throw warning
+                print(f"WARNING ---> Global include ({include}) not in file info obj")
+                continue
+
+            needed_global_objects.add(file_info_obj.include_overrides_glob.get(include))
+
+                
+
+        next_symbols = set()
+        already_included_global_obj = set()
+
+        for global_object in needed_global_objects:
+            # Add the functions lines to the parsed function
+            p_function.add_line_numbers(global_object.get_line_no())
+
+            # Start with a set that already includes the global statement for itself
+            already_included_global_obj.add(global_object)
+
+            # next symbols is the set of symbols that need their dependant global statements
+            next_symbols = next_symbols.union(file_info_obj.statement_to_symbol.get(global_object))
+
+            # Some symbols won't be included in the mapping because they are excluded, but they need to be kept track of to look at imports
+            all_used_symbols = set(
+                [g.get_name() for g in global_object.get_symbols()])
 
         keep_looping = True
         remaining_symbols = set()
 
-        # Some symbols won't be included in the mapping because they are excluded, but they need to be kept track of to look at imports
-        all_used_symbols = set(
-            [g.get_name() for g in func_glob_obj.get_symbols()])
 
         while keep_looping:
             # If there are no more symbols than break the loop
@@ -334,10 +363,9 @@ def get_file_information(file_path, include_functions=[]):
                     next_symbols = next_symbols.union(
                         actual_new_needed_symbols)
 
-        print(f"{function_name}: {all_used_symbols}")
+        #print(f"{function_name}: {all_used_symbols}")
         for s in all_used_symbols:
             if s in file_info_obj.imported_symbol_to_global_statement:
-                print(f"ADDING {s} import statement to {function_name}")
                 p_function.add_line_numbers(
                     file_info_obj.imported_symbol_to_global_statement.get(
                         s).get_line_no())
@@ -346,6 +374,6 @@ def get_file_information(file_path, include_functions=[]):
         file_info_obj.add_parsed_functions(p_function)
 
     for f in file_info_obj.parsed_functions:
-        print(f"{f.needed_line_numbers}")
+        print(f"{f.name} {f.needed_line_numbers}")
 
     return file_info_obj

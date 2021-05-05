@@ -8,6 +8,7 @@ global x
 for i in range(4): 
     print(i)
     os.path.join("")
+    print(sss)
 
 h = os.path.join("."); 
 x = os.environ.get("lkwem")
@@ -35,4 +36,4 @@ def t_function():
 
 
 def b():
-    print(test_function())
+    print(t_function())

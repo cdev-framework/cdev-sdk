@@ -213,7 +213,7 @@ class file_information():
                 if toktype == tokenize.COMMENT:
                     self._evaluate_comment(line, start)
 
-        print(self.include_overrides_lineno)
+        #print(self.include_overrides_lineno)
 
 
         try:
@@ -228,7 +228,7 @@ class file_information():
             print(e)
 
     def _evaluate_comment(self, line, start):
-        print(f"COMMENT {start} {line}")
+        #print(f"COMMENT {start} {line}")
 
         match_obj = re.match(INCLUDE_REGEX, line)
 
@@ -252,7 +252,6 @@ class file_information():
         return self.ast
 
     def add_global_statement(self, global_statement):
-        print(global_statement)
         self.top_level_statements.append(global_statement)
         self.statement_to_symbol[global_statement] = set()
 
