@@ -1,8 +1,8 @@
-import os as o
+import os 
 from sys import path as p
 
 
 def somehandler(event, context):
-    print(o.path.join("."))
+    print(os.path.join("."))
     print(p)
     return True
