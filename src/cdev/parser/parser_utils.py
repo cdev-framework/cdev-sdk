@@ -3,22 +3,21 @@ import os
 import tokenize 
 
 from src.cdev.parser.parser_objects import *
-from src.cdev.parser.cdev_parser_exceptions import *
+from src.cdev.parser.cdev_parser_exceptions import InvalidParamError, CouldNotParseFileError, CdevFileNotFoundError, InvalidDataError
 
 EXCLUDED_SYMBOLS = set(["os", "print", "sss"])
 
 
 def _get_global_variables_in_symboltable(table):
-    # TODO Change error that is raised
     if not isinstance(table, symtable.SymbolTable):
-        raise FileNotFoundError("tmp")
+        raise InvalidParamError(f"Invalid Param in _get_functions_in_symboltable: Expected symtable.SymbolTable got {type(table)}")
 
     symbols = table.get_symbols()
 
     rv_variables = set()
 
     for sym in symbols:
-        # Check all symbols to see if they are not a namespace. If not then they are a normal symbols for this symboltable.
+        # Check all symbols to see if they are not a namespace. Check if the symbol is a global.
         if not sym.is_namespace():
             if sym.is_global():
                 rv_variables.add(sym.get_name())
@@ -29,7 +28,7 @@ def _get_global_variables_in_symboltable(table):
 def _get_imported_variables_in_symboltable(table):
     # TODO Change error that is raised
     if not isinstance(table, symtable.SymbolTable):
-        raise FileNotFoundError("tmp")
+        raise InvalidParamError(f"Invalid Param in _get_functions_in_symboltable: Expected symtable.SymbolTable got {type(table)}")
 
     symbols = table.get_symbols()
 
@@ -45,9 +44,8 @@ def _get_imported_variables_in_symboltable(table):
 
 
 def _get_local_variables_in_symboltable(table):
-    # TODO Change error that is raised
     if not isinstance(table, symtable.SymbolTable):
-        raise FileNotFoundError("tmp")
+        raise InvalidParamError(f"Invalid Param in _get_functions_in_symboltable: Expected symtable.SymbolTable got {type(table)}")
 
     symbols = table.get_symbols()
 
@@ -56,9 +54,6 @@ def _get_local_variables_in_symboltable(table):
     for sym in symbols:
         # Check all symbols to see if they are not a namespace. If not then they are a normal gloabl variable for this symboltable.
         if not sym.is_namespace():
-            #print(
-            #    f"{sym.get_name()}: {sym.is_imported()}; {sym.is_free()}; {sym.is_global()}; {sym.is_local()}"
-            #)
             if not sym.is_imported() and not sym.is_free(
             ) and not sym.is_global():
                 rv_variables.add(sym.get_name())
@@ -67,9 +62,8 @@ def _get_local_variables_in_symboltable(table):
 
 
 def _get_functions_in_symboltable(table):
-    # TODO Change error that is raised
     if not isinstance(table, symtable.SymbolTable):
-        raise FileNotFoundError("tmp")
+        raise InvalidParamError(f"Invalid Param in _get_functions_in_symboltable: Expected symtable.SymbolTable got {type(table)}")
 
     symbols = table.get_symbols()
 
@@ -87,11 +81,11 @@ def _get_functions_in_symboltable(table):
     return rv_functions
 
 
-def _generate_global_statement(file_info_obj, info):
+def _generate_global_statement(file_info_obj, node, line_info):
     # This function is used to determine the type of global statement the node is and create the corresponding global statement obj
-    ast_node = info[0]
-    start_line = info[1]
-    last_line = info[2]
+    ast_node = node
+    start_line = line_info[0]
+    last_line = line_info[1]
 
     manual_include = False
     manual_include_sym = ""
@@ -163,18 +157,79 @@ def _generate_global_statement(file_info_obj, info):
         file_info_obj.include_overrides_glob[manual_include_sym] = global_statement_obj
 
 
+def _validate_param_function_manual_includes(param):
+    # Validate that the function manual includes param is:
+    # - dict<str,[str]>
+
+    if not isinstance(param, dict):
+        raise InvalidParamError(
+            f"cdev_parser.get_file_information: function_manual_includes value not dict")
+
+    for key in param:
+        if not isinstance(param.get(key), list):
+            raise InvalidParamError(
+                f"cdev_parser.get_file_information: function_manual_includes param: key '{key}' has non-list value")    
+
+        for val in param.get(key):
+            if not isinstance(val, str):
+                raise InvalidParamError(
+                f"cdev_parser.get_file_information: function_manual_includes param: value '{val}' in '{key}' is a non string ({type(val)})")
+
+
+def _validate_param_global_manual_includes(param):
+    # Validate that the function manual includes param is:
+    # - list[str]
+
+    if not isinstance(param, list):
+        raise InvalidParamError(
+            f"cdev_parser.get_file_information: global_manual_includes value not list")
+
+    for val in param:
+        if not isinstance(val, str):
+            raise InvalidParamError(
+            f"cdev_parser.get_file_information: global_manual_includes param: value '{val}' in param is a non string ({type(val)})")
+
+
+def _validate_param_include_functions(param):
+    # Validate that the function manual includes param is:
+    # - list[str]
+
+    if not isinstance(param, list):
+        raise InvalidParamError(
+            f"cdev_parser.get_file_information: include_functions value not list")
+
+    for val in param:
+        if not isinstance(val, str):
+            raise InvalidParamError(
+            f"cdev_parser.get_file_information: include_functions param: value '{val}' in param is a non string ({type(val)})")
+
 
 def get_file_information(file_path, include_functions=[], function_manual_includes={}, global_manual_includes=[]):
     if not os.path.isfile(file_path):
-        raise FileNotFoundError(
-            f"cdev_parser: could not find file at -> {file_path}")
+        raise CouldNotParseFileError(CdevFileNotFoundError(
+            f"cdev_parser: could not find file at -> {file_path}"))
+
+    try:
+        _validate_param_include_functions(include_functions)
+        _validate_param_function_manual_includes(function_manual_includes)
+        _validate_param_global_manual_includes(global_manual_includes)
+    except InvalidParamError as e:
+        raise CouldNotParseFileError(e)
+        return
 
     file_info_obj = file_information(file_path)
 
     symbol_table = file_info_obj.get_symbol_table()
 
+    # Need to get some basic information about the global namespace in the file. This includes:
+    # - all defined functions (_get_functions_in_symboltable)
+    # - variables defined in the global namespace (_get_local_variables_in_symboltable)
+    # - imported symbols (_get_imported_variables_in_symboltable)
+    # - global variables (_get_global_variables_in_symboltable)
+
     try:
         functions = _get_functions_in_symboltable(symbol_table)
+
         file_info_obj.function_names = functions
 
         local_variables = _get_local_variables_in_symboltable(symbol_table)
@@ -182,8 +237,9 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
         imported_symbols = _get_imported_variables_in_symboltable(symbol_table)
 
         global_symbols = _get_global_variables_in_symboltable(symbol_table)
-    except FileNotFoundError as e:
-        print(e)
+    except InvalidParamError as e:
+        raise CouldNotParseFileError(e)
+        return
 
     for item in functions.union(local_variables).union(imported_symbols).union(
             global_symbols):
@@ -192,7 +248,7 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
     file_info_obj.set_imported_symbols(imported_symbols)
 
     # Need to get the line range of each global statement, but this requires looping over all the global nodes in the ast
-    # in the top level of the file. To support earlier versions of python <3.7 we must use the starting line of
+    # in the top level of the file. To support earlier versions of python (<3.7) we must use the starting line of
     # the next statement as the last line of previous node. We are going to store this info in a tmp dict then
     # once we have all the information create the objects
 
@@ -208,7 +264,7 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
             prev_vals.append(node.lineno - 1)
             _tmp_global_information[previous_node]
 
-        _tmp_global_information[node] = [node, node.lineno]
+        _tmp_global_information[node] = [node.lineno]
 
         previous_node = node
 
@@ -221,9 +277,7 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
     # them to the file_info_obj
     for k in _tmp_global_information:
         _generate_global_statement(file_info_obj,
-                                   _tmp_global_information.get(k))
-
-    print(f"-->> {file_info_obj.include_overrides_glob}")
+                                   k, _tmp_global_information.get(k))
 
 
     # Build a two-way binding of a symbol to statement and a statement to a symbol.
@@ -235,17 +289,19 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
             if not sym.get_name() in file_info_obj.symbol_to_statement:
                 continue
 
+            # Some symbols do no create a dependency so they should not be added
             if sym.get_name() in EXCLUDED_SYMBOLS:
                 continue
 
-            # Add all the symbols in the statement to the list of this global statement
+            # Add all the symbols in the statement to the list for this global statement. This means when this global object
+            # is used we need to include all of these symbols
             if i in file_info_obj.statement_to_symbol:
                 tmp = file_info_obj.statement_to_symbol.get(i)
                 tmp.add(sym.get_name())
                 file_info_obj.statement_to_symbol[i] = tmp
 
             # Since this global statement is a top level function... the code that effects this symbol within it will only execute if the
-            # function itself is called. Therefor, other functions can use this symbol without depending on that actual function it is in.
+            # function itself is called. Therefor, other functions can use this symbol without depending on this function.
             if i.get_type() == GlobalStatementType.FUNCTION:
                 continue
 
@@ -253,16 +309,20 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
             tmp.add(i)
             file_info_obj.symbol_to_statement[sym.get_name()] = tmp
 
+        # if this global object is a function then we need to add the global object to its own symbol name dependency list. That way
+        # if another global statement calls this function we include this global statement (which is the definition of the function) 
         if i.get_type() == GlobalStatementType.FUNCTION:
             tmp = file_info_obj.symbol_to_statement.get(i.get_function_name())
             tmp.add(i)
             file_info_obj.symbol_to_statement[i.get_function_name()] = tmp
 
+
+
     # If a list of functions was not included then parse all top level functions
     if not include_functions:
         include_functions = file_info_obj.global_functions.keys()
 
-    #manual includes is a dictionary from function name to global statement
+    # manual includes is a dictionary from function name to global statement
     print(function_manual_includes)
     print(global_manual_includes)
     for function_name in include_functions:
@@ -281,8 +341,7 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
         if function_name in function_manual_includes:
             for include in function_manual_includes.get(function_name):
                 if not include in file_info_obj.include_overrides_glob:
-                    # TODO throw warning
-                    print(f"WARNING ---> {function_name} Manually include {include} not in file info obj")
+                    raise InvalidDataError(f"""function_manual_includes param data issue: Trying to manually include '{include}' for function '{function_name} but '{include}' is not present in file""")
                     continue
 
                 needed_global_objects.add(file_info_obj.include_overrides_glob.get(include))
@@ -290,14 +349,12 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
         # global_manual_includes is a list of the names of manual includes that need to be added to every function
         for include in global_manual_includes:
             if not include in file_info_obj.include_overrides_glob:
-                # TODO throw warning
-                print(f"WARNING ---> Global include ({include}) not in file info obj")
+                raise InvalidDataError(f"""function_manual_includes param data issue: Trying to manually include '{include}' as a global manual include but '{include}' is not present in file""")
                 continue
 
             needed_global_objects.add(file_info_obj.include_overrides_glob.get(include))
 
-                
-
+        
         next_symbols = set()
         already_included_global_obj = set()
 
@@ -358,12 +415,11 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
                         already_included_symbols)
                     actual_new_needed_symbols = new_needed_symbols.difference(
                         remaining_symbols)
-                    #print(f"------------------{actual_new_needed_symbols}")
+
                     # Add the actually needed new symbols to the set of symbols to be looped over next
                     next_symbols = next_symbols.union(
                         actual_new_needed_symbols)
 
-        #print(f"{function_name}: {all_used_symbols}")
         for s in all_used_symbols:
             if s in file_info_obj.imported_symbol_to_global_statement:
                 p_function.add_line_numbers(

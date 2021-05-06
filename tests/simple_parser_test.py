@@ -48,6 +48,7 @@ def test_global_symbols_basic():
     except Exception as e:
         assert False
 
+
 def test_import_symbols_basic():
     test_file_name = "import_vars.py"
     fp = os.path.join(SIMPLE_PATH, test_file_name)
