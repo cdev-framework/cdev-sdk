@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2" />
-<title>src API documentation</title>
+<title>src.parser.parser_objects API documentation</title>
 <meta name="description" content="" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
@@ -19,24 +19,74 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Namespace <code>src</code></h1>
+<h1 class="title">Module <code>src.parser.parser_objects</code></h1>
 </header>
 <section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class parsed_function():
+    &#34;&#34;&#34;
+        This class represents the information for a parsed function, and it can be used to create an intermediate file with just
+        that function.
+    &#34;&#34;&#34;
+
+    original_file_location = &#34;&#34;
+    
+    need_line_numbers = set()
+
+    import_statements = set()</code></pre>
+</details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt><code class="name"><a title="src.cdev" href="cdev/index.html">src.cdev</a></code></dt>
+<dt id="src.parser.parser_objects.parsed_function"><code class="flex name class">
+<span>class <span class="ident">parsed_function</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>This class represents the information for a parsed function, and it can be used to create an intermediate file with just
+that function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class parsed_function():
+    &#34;&#34;&#34;
+        This class represents the information for a parsed function, and it can be used to create an intermediate file with just
+        that function.
+    &#34;&#34;&#34;
+
+    original_file_location = &#34;&#34;
+    
+    need_line_numbers = set()
+
+    import_statements = set()</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="src.parser.parser_objects.parsed_function.import_statements"><code class="name">var <span class="ident">import_statements</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="src.parser.parser_objects.parsed_function.need_line_numbers"><code class="name">var <span class="ident">need_line_numbers</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="src.parser.parser_objects.parsed_function.original_file_location"><code class="name">var <span class="ident">original_file_location</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
 </dl>
-</section>
-<section>
-</section>
-<section>
-</section>
-<section>
+</dd>
+</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -45,9 +95,21 @@
 <ul></ul>
 </div>
 <ul id="index">
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<li><h3>Super-module</h3>
 <ul>
-<li><code><a title="src.cdev" href="cdev/index.html">src.cdev</a></code></li>
+<li><code><a title="src.parser" href="index.html">src.parser</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="src.parser.parser_objects.parsed_function" href="#src.parser.parser_objects.parsed_function">parsed_function</a></code></h4>
+<ul class="">
+<li><code><a title="src.parser.parser_objects.parsed_function.import_statements" href="#src.parser.parser_objects.parsed_function.import_statements">import_statements</a></code></li>
+<li><code><a title="src.parser.parser_objects.parsed_function.need_line_numbers" href="#src.parser.parser_objects.parsed_function.need_line_numbers">need_line_numbers</a></code></li>
+<li><code><a title="src.parser.parser_objects.parsed_function.original_file_location" href="#src.parser.parser_objects.parsed_function.original_file_location">original_file_location</a></code></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
