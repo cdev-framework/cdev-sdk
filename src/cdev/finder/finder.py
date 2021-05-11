@@ -1,24 +1,10 @@
-import importlib
 import inspect
-import os
-import sys
 
 
 ANNOTATION_LABEL = "lambda_function"
 
 
-def find_file(base_path, pf):
-    path = os.path.join(base_path, pf + ".py")
-    if sys.modules.get(pf) and inspect.getfile(sys.modules.get(pf)) == path:
-        print(f"already loaded {pf}")
-
-
-    mod = importlib.import_module(pf)
-    print("hello>>>>")
-    functions = find_serverless_functions_in_module(mod, path)
-
-
-def find_serverless_functions_in_module(python_module, path):
+def find_serverless_function_information_in_module(python_module):
     listOfFunctions = inspect.getmembers(python_module, inspect.isfunction)
     print(listOfFunctions)
 
@@ -36,13 +22,12 @@ def find_serverless_functions_in_module(python_module, path):
         return
 
 
-    serverless_functions = set()
+    serverless_function_information = []
+
+
     for _name, func in listOfFunctions:
         if func.__qualname__.startswith(ANNOTATION_LABEL+"."):
-            info = func()
-            name = info.get("name")
-            middleware = info.get("middleware")
-            print("MY FIRENDS")
-            print(info)
-
-    return serverless_functions
+            serverless_function_information.append(func())
+            
+    #print(serverless_function_information)
+    return serverless_function_information

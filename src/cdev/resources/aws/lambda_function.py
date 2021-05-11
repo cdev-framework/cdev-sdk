@@ -23,10 +23,8 @@ def stripDecarators(code):
 
 
 def lambda_function(*args, **kwargs):
-    print("WHHy")
     if args:
         name = args[0]
-        print(name)
 
     events = kwargs.get("events")
 
@@ -35,12 +33,18 @@ def lambda_function(*args, **kwargs):
     env_vars = kwargs.get("middleware")
 
     def wrap_create_function(func):
-        print("EEFWEFW")
+
         def create_function(*args, **kwargs):
-            print("DWOPEIFWE")
+            
+            if inspect.isfunction(func):
+                for item in inspect.getmembers(func):
+                    if item[0] == "__name__":
+                        function_name=item[1]
+            
             rv = {
-                "name": name,
-                "events": "yyyy",
+                "lambda_name": name,
+                "handler_name": function_name,
+                "events": events,
                 "middleware": middleware
             }
 
