@@ -106,9 +106,16 @@ def _generate_global_statement(file_info_obj, node, line_info):
 
     symbol_table = tmp_symbol_table
 
-    print(tmp_symbol_table.get_symbols())
     # If the symbol table is a function then it will appear as a single symbol that is a namespace
-    if len(tmp_symbol_table.get_symbols()) == 1:
+    # But when using an annotation it will have more than 1 symbol 
+    need_to_check_function = (False or len(tmp_symbol_table.get_symbols()) == 1)
+
+    for sym in tmp_symbol_table.get_symbols():
+        if sym.is_namespace():
+            if isinstance(sym.get_namespaces()[0], symtable.Function):
+                need_to_check_function = True
+
+    if need_to_check_function:
         single_symbol = tmp_symbol_table.get_symbols()[0]
         if single_symbol.is_namespace():
             if isinstance(single_symbol.get_namespaces()[0],
