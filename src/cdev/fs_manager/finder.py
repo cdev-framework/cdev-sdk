@@ -30,15 +30,18 @@ def find_serverless_function_information_from_file(fp):
     mod = importlib.import_module(mod_name)
 
     serverless_function_information = find_serverless_function_information_in_module(mod)
-    print(serverless_function_information)
 
     include_functions = [x.get("handler_name") for x in serverless_function_information]
-    print(include_functions)
 
-    print(fp)
-    rv = cparser.parse_functions_from_file(fp, include_functions=include_functions)
+    parsed_function_info = cparser.parse_functions_from_file(fp, include_functions=include_functions)
 
-    print(rv)
+    print(parsed_function_info)
+
+    # return a dict<str, [(lineno)]>  that represents the parsed function and their 
+    rv = {}
+
+    for f in parsed_function_info.parsed_functions:
+        print(f"{f.name} {f.needed_line_numbers} {f.imported_packages}")
 
 
 def find_serverless_function_information_in_module(python_module):
