@@ -1,4 +1,4 @@
-from . import finder, resources, parser
+from . import fs_manager, resources, parser
 
 
-__all__ = ["finder", "resources", "parser"]
+__all__ = ["fs_manager", "resources", "parser"]

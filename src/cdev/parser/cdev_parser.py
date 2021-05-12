@@ -1,8 +1,8 @@
 import os
 
-from src.cdev.parser.parser_objects import *
-import src.cdev.parser.parser_utils as p_utils
-from src.cdev.parser.cdev_parser_exceptions import *
+from cdev.parser.parser_objects import *
+import cdev.parser.parser_utils as p_utils
+from cdev.parser.cdev_parser_exceptions import *
 
 ## This file has the highest level functions for use by other modules. Only this file will expose functionality to other modules.
 
