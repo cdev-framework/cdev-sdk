@@ -1,6 +1,6 @@
 import os
 
-import src.cdev.parser.cdev_parser as cp
+import cdev.parser.cdev_parser as cp
 
 EXAMPLE_PATH = os.path.join(".", "tests", "example_files")
 

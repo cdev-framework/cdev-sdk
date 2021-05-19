@@ -2,8 +2,8 @@ import ast
 import os
 import tokenize 
 
-from src.cdev.parser.parser_objects import *
-from src.cdev.parser.cdev_parser_exceptions import InvalidParamError, CouldNotParseFileError, CdevFileNotFoundError, InvalidDataError
+from cdev.parser.parser_objects import *
+from cdev.parser.cdev_parser_exceptions import InvalidParamError, CouldNotParseFileError, CdevFileNotFoundError, InvalidDataError
 
 EXCLUDED_SYMBOLS = set(["os", "print", "sss"])
 
@@ -107,7 +107,15 @@ def _generate_global_statement(file_info_obj, node, line_info):
     symbol_table = tmp_symbol_table
 
     # If the symbol table is a function then it will appear as a single symbol that is a namespace
-    if len(tmp_symbol_table.get_symbols()) == 1:
+    # But when using an annotation it will have more than 1 symbol 
+    need_to_check_function = len(tmp_symbol_table.get_symbols()) == 1
+
+    for sym in tmp_symbol_table.get_symbols():
+        if sym.is_namespace():
+            if isinstance(sym.get_namespaces()[0], symtable.Function):
+                need_to_check_function = True
+
+    if need_to_check_function:
         single_symbol = tmp_symbol_table.get_symbols()[0]
         if single_symbol.is_namespace():
             if isinstance(single_symbol.get_namespaces()[0],
@@ -323,8 +331,9 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
         include_functions = file_info_obj.global_functions.keys()
 
     # manual includes is a dictionary from function name to global statement
-    print(function_manual_includes)
-    print(global_manual_includes)
+    #print(function_manual_includes)
+    #print(global_manual_includes)
+    #print(f"Global functions {file_info_obj.global_functions}")
     for function_name in include_functions:
         # Create new parsed function obj
         p_function = parsed_function(function_name)
@@ -358,6 +367,7 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
         next_symbols = set()
         already_included_global_obj = set()
 
+        #print(f"{function_name} -> {needed_global_objects}")
         for global_object in needed_global_objects:
             # Add the functions lines to the parsed function
             p_function.add_line_numbers(global_object.get_line_no())
@@ -420,16 +430,16 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
                     next_symbols = next_symbols.union(
                         actual_new_needed_symbols)
 
-        for s in all_used_symbols:
-            if s in file_info_obj.imported_symbol_to_global_statement:
-                p_function.add_line_numbers(
-                    file_info_obj.imported_symbol_to_global_statement.get(
-                        s).get_line_no())
+        for symbol in all_used_symbols:
+            if symbol in file_info_obj.imported_symbol_to_global_statement:
+                p_function.add_import(
+                    file_info_obj.imported_symbol_to_global_statement.get(symbol)
+                )
 
         #finally add the parsed function object to the file info
         file_info_obj.add_parsed_functions(p_function)
 
-    for f in file_info_obj.parsed_functions:
-        print(f"{f.name} {f.needed_line_numbers}")
+    #for f in file_info_obj.parsed_functions:
+    #    print(f"{f.name} {f.needed_line_numbers}")
 
     return file_info_obj
