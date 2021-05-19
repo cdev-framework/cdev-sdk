@@ -13,7 +13,6 @@ def _get_module_name_from_path(fp):
     return fp.split("/")[-1][:-3]
 
 
-
 def find_serverless_function_information_from_file(fp):
     # Input: filepath
     if not os.path.isfile(fp):
