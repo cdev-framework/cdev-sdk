@@ -2,8 +2,8 @@ import ast
 import os
 import tokenize 
 
-from cdev.parser.parser_objects import *
-from cdev.parser.cdev_parser_exceptions import InvalidParamError, CouldNotParseFileError, CdevFileNotFoundError, InvalidDataError
+from cdev.cparser.parser_objects import *
+from cdev.cparser.cdev_parser_exceptions import InvalidParamError, CouldNotParseFileError, CdevFileNotFoundError, InvalidDataError
 
 EXCLUDED_SYMBOLS = set(["os", "print", "sss"])
 

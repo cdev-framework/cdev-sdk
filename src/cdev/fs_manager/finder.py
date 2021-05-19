@@ -3,7 +3,7 @@ import importlib
 import os
 import sys
 
-import cdev.parser.cdev_parser as cparser
+from cdev.cparser import cdev_parser as cparser
 
 
 ANNOTATION_LABEL = "lambda_function"
