@@ -15,8 +15,7 @@ args = parser.parse_args()
 
 if args.command == "plan":
     print("YOU CALLED PLAN")
-    rv = fs.find_serverless_function_information_from_file(os.path.join(".", "main.py"))
-    print(rv)
-    file_writer.write_intermediate_files(os.path.join(".", "main.py"), rv)
+    fs.parse_folder(os.path.join(".", "src"))
+    
 elif args.command == "form":
     print("YOU CALLED FORM")

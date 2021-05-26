@@ -442,7 +442,4 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
         #finally add the parsed function object to the file info
         file_info_obj.add_parsed_functions(p_function)
 
-    #for f in file_info_obj.parsed_functions:
-    #    print(f"{f.name} {f.needed_line_numbers}")
-
     return file_info_obj

@@ -161,7 +161,7 @@ class FunctionStatement(GlobalStatement):
         old_lineno = self.line_no
         self.line_no = [old_lineno[0]+1, old_lineno[1]]
         self.has_decremented = True
-        print(f"OLD {old_lineno}; NEW {self.line_no}")
+
 
 
 class file_information():
