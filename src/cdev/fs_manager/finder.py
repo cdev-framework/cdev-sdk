@@ -32,7 +32,7 @@ def find_serverless_function_information_from_file(fp):
 
     include_functions = [x.get("handler_name") for x in serverless_function_information]
 
-    parsed_function_info = cparser.parse_functions_from_file(fp, include_functions=include_functions)
+    parsed_function_info = cparser.parse_functions_from_file(fp, include_functions=include_functions, remove_top_annotation=True)
 
     print(parsed_function_info)
 

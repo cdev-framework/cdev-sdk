@@ -212,7 +212,7 @@ def _validate_param_include_functions(param):
             f"cdev_parser.get_file_information: include_functions param: value '{val}' in param is a non string ({type(val)})")
 
 
-def get_file_information(file_path, include_functions=[], function_manual_includes={}, global_manual_includes=[]):
+def get_file_information(file_path, include_functions=[], function_manual_includes={}, global_manual_includes=[], remove_top_annotation=False):
     if not os.path.isfile(file_path):
         raise CouldNotParseFileError(CdevFileNotFoundError(
             f"cdev_parser: could not find file at -> {file_path}"))
@@ -325,15 +325,12 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
             file_info_obj.symbol_to_statement[i.get_function_name()] = tmp
 
 
-
     # If a list of functions was not included then parse all top level functions
     if not include_functions:
         include_functions = file_info_obj.global_functions.keys()
 
+
     # manual includes is a dictionary from function name to global statement
-    #print(function_manual_includes)
-    #print(global_manual_includes)
-    #print(f"Global functions {file_info_obj.global_functions}")
     for function_name in include_functions:
         # Create new parsed function obj
         p_function = parsed_function(function_name)
@@ -344,6 +341,12 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
         # All functions will need to start by including the actual function body
         # Some functions will also need to include the manually added statements
         needed_global_objects = set([file_info_obj.global_functions.get(function_name)])
+
+        if remove_top_annotation:
+            # IF we need to remove the annotation marking this function as a handler then we 
+            # need to remove the first line for the function
+            for item in needed_global_objects:
+                item.decrement_line_number()
 
         # if the function has any manual statement includes
         # function_manual_includes is the dict from function name to the name of the manual include

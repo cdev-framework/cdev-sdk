@@ -7,11 +7,11 @@ from cdev.cparser.cdev_parser_exceptions import *
 ## This file has the highest level functions for use by other modules. Only this file will expose functionality to other modules.
 
 
-def parse_functions_from_file(file_loc, include_functions=[], function_manual_includes={}, global_manual_includes=[]):
+def parse_functions_from_file(file_loc, include_functions=[], function_manual_includes={}, global_manual_includes=[], remove_top_annotation=False):
 
     try:
         file_information = p_utils.get_file_information(
-            file_loc, include_functions, function_manual_includes, global_manual_includes)
+            file_loc, include_functions, function_manual_includes, global_manual_includes, remove_top_annotation)
     except InvalidDataError as e:
         file_information = None
         print(f"{type(e)} -> {e.message}")

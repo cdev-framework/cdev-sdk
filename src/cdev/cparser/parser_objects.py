@@ -140,15 +140,28 @@ class FunctionStatement(GlobalStatement):
     # function name is a func
     func_name = ""
 
+    has_decremented = False
+
     def __init__(self, node, line_no, symbol_table, name):
         super().__init__(node, line_no, symbol_table)
         self.func_name = name
+        self.has_decremented = False
 
     def get_type(self):
         return GlobalStatementType.FUNCTION
 
     def get_function_name(self):
         return self.func_name
+
+    def decrement_line_number(self):
+        if self.has_decremented:
+            return
+        
+        
+        old_lineno = self.line_no
+        self.line_no = [old_lineno[0]+1, old_lineno[1]]
+        self.has_decremented = True
+        print(f"OLD {old_lineno}; NEW {self.line_no}")
 
 
 class file_information():
