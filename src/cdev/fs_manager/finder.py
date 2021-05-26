@@ -41,6 +41,9 @@ def find_serverless_function_information_from_file(fp):
 
     for f in parsed_function_info.parsed_functions:
         print(f"{f.name} {f.needed_line_numbers} {f.imported_packages}")
+        rv[f.name] = f.needed_line_numbers
+
+    return rv
 
 
 def find_serverless_function_information_in_module(python_module):

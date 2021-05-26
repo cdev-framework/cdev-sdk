@@ -1,4 +1,4 @@
-from . import fs_manager, resources, cparser, cli
+from . import fs_manager, resources, cparser, cli, settings
 
 
-__all__ = ["fs_manager", "resources", "cparser", "cli"]
+__all__ = ["fs_manager", "resources", "cparser", "cli", "settings"]
