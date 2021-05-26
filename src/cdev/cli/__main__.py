@@ -13,7 +13,7 @@ args = parser.parse_args()
 
 if args.command == "plan":
     print("YOU CALLED PLAN")
-    rv = fs.find_serverless_function_information_from_file(os.path.join("."))
+    rv = fs.find_serverless_function_information_from_file(os.path.join(".", "main.py"))
     print(rv)
 elif args.command == "form":
     print("YOU CALLED FORM")
