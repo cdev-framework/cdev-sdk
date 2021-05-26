@@ -1,3 +1,3 @@
-from . import finder
+from . import finder, project_initializer
 
-__all__ = ["finder"]
+__all__ = ["finder", "project_initializer"]
