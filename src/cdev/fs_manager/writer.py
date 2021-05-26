@@ -35,7 +35,7 @@ def write_intermediate_files(original_path, file_info):
         actual_lines = []
 
         for i in line_nos:
-            if i < len(file_list):
+            if i <= len(file_list):
                 actual_lines.append(file_list[i-1])
 
         _write_intermediate_function(final_file_dir, info, actual_lines)
