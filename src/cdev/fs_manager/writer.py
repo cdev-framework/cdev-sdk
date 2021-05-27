@@ -7,7 +7,6 @@ BASE_FILES_PATH = cdev_settings.get("CDEV_INTERMEDIATE_FILES_LOCATION")
 
 
 
-
 def write_intermediate_files(original_path, file_info):
     # Function takes an original file path and a file_info obj that describes what lines need to be parsed 
     # from the original file
@@ -24,9 +23,9 @@ def write_intermediate_files(original_path, file_info):
     split_path[-1] = split_path[-1].split(".")[0] + "_py"
     split_path.remove(".")
     split_path.remove("..")
-    print(split_path)
+
     final_file_dir = _create_path(BASE_FILES_PATH, split_path)
-    print(final_file_dir)
+
     for info in file_info:
         line_nos = _compress_lines(file_info.get(info))
 

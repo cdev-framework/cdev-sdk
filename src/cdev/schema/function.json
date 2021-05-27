@@ -1,0 +1,77 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "serverless_function",
+    "type": "object",
+    "title": "representation of serverless function",
+    "description": "defines properties of a serverless function needed to represent a parsed serverless function across interfaces.",
+    "default": {},
+    "examples": [
+        {
+            "original_path": "",
+            "parsed_path": "",
+            "runtime": "",
+            "hash": "",
+            "handler_name": ""
+        }
+    ],
+    "required": [
+        "original_path",
+        "parsed_path",
+        "runtime",
+        "hash",
+        "handler_name"
+    ],
+    "properties": {
+        "original_path": {
+            "$id": "#/properties/original_path",
+            "type": "string",
+            "title": "The original_path schema",
+            "description": "Path the original file that has this function in it. Relative path from top of project folder structure",
+            "default": "",
+            "examples": [
+                ""
+            ]
+        },
+        "parsed_path": {
+            "$id": "#/properties/parsed_path",
+            "type": "string",
+            "title": "The parsed_path schema",
+            "description": "Path to the parsed file that has only the need logic for that specific handler",
+            "default": "",
+            "examples": [
+                ""
+            ]
+        },
+        "runtime": {
+            "$id": "#/properties/runtime",
+            "type": "string",
+            "title": "The runtime schema",
+            "description": "runtime that this function runs in",
+            "default": "",
+            "examples": [
+                ""
+            ]
+        },
+        "hash": {
+            "$id": "#/properties/hash",
+            "type": "string",
+            "title": "The hash schema",
+            "description": "hash of the source code from the parsed file that can be used to check for changes",
+            "default": "",
+            "examples": [
+                ""
+            ]
+        },
+        "handler_name": {
+            "$id": "#/properties/handler_name",
+            "type": "string",
+            "title": "The handler_name schema",
+            "description": "Name of the handler function",
+            "default": "",
+            "examples": [
+                ""
+            ]
+        }
+    },
+    "additionalProperties": true
+}

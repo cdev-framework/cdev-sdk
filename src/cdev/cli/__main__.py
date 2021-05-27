@@ -2,10 +2,8 @@
 import argparse
 import os
 
-import cdev.fs_manager.finder as fs
-import cdev.fs_manager.project_initializer as initalizer
-import cdev.fs_manager.writer as file_writer
 
+import cdev.frontend.commands as commands
 
 parser = argparse.ArgumentParser(description='cdev cli')
 
@@ -16,10 +14,9 @@ parser.add_argument('command', metavar="<command>", type=str, choices=CDEV_COMMA
 args = parser.parse_args()
 
 if args.command == "plan":
-    print("YOU CALLED PLAN")
-    fs.parse_folder(os.path.join(".", "src"))
-    
+    commands.plan()    
 elif args.command == "form":
     print("YOU CALLED FORM")
 elif args.command == "init":
-    initalizer.initialize_project(os.getcwd())
+    commands.init()
+

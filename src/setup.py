@@ -9,6 +9,7 @@ setuptools.setup(
     install_requires=[
         'setuptools',
         "sortedcontainers==2.3.0",
+        "jsonschema"
     ],
     python_requires='>=3.5'
 )

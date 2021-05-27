@@ -79,16 +79,22 @@ def parse_folder(folder_path):
 
     python_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f)) and f[-3:]==".py"]
 
-    print(python_files)
+    original_path = os.getcwd()
     os.chdir(folder_path)
+
+    # [(fullpath, information)]
+    rv = []
 
     for pf in python_files:
         fullfilepath = os.path.join("..",folder_path, pf)
         localpath = os.path.join(".", pf)
-        print(localpath)
-        rv = find_serverless_function_information_from_file(localpath)
+        file_info = find_serverless_function_information_from_file(localpath)
         
-        print(rv)
+        rv.append((fullfilepath, file_info))
         
-        print(localpath)
-        write_intermediate_files(fullfilepath, rv)
+        #print(localpath)
+        #write_intermediate_files(fullfilepath, rv)
+
+    os.chdir(original_path)
+    print(rv)
+    return rv

@@ -4,6 +4,11 @@ SETTINGS = {
     
 }
 
-SETTINGS["CDEV_INTERMEDIATE_FOLDER_LOCATION"] = os.path.join(os.getcwd() , ".cdev", "intermediate")
+SETTINGS["BASE_PATH"] = os.getcwd()
+SETTINGS["INTERNAL_FOLDER_NAME"] = ".cdev"
+
+SETTINGS["CDEV_INTERMEDIATE_FOLDER_LOCATION"] = os.path.join(SETTINGS.get("INTERNAL_FOLDER_NAME"), "intermediate")
 SETTINGS["CDEV_INTERMEDIATE_FILES_LOCATION"] = os.path.join(SETTINGS.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), "functions")
 
+SETTINGS["STATE_FOLDER"] = os.path.join(SETTINGS.get("INTERNAL_FOLDER_NAME"), "state")
+SETTINGS["LOCAL_STATE_LOCATION"] = os.path.join(SETTINGS.get("STATE_FOLDER"), "localstate.json")
