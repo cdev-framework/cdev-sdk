@@ -1,9 +1,11 @@
 attrs==20.3.0
+cdev==0.0
 colorama==0.4.4
 commonmark==0.9.1
 dataclasses==0.8
 importlib-metadata==3.4.0
 iniconfig==1.1.1
+jsonschema==3.2.0
 Mako==1.1.4
 Markdown==3.3.3
 MarkupSafe==1.1.1
@@ -13,8 +15,10 @@ pluggy==0.13.1
 py==1.10.0
 Pygments==2.8.0
 pyparsing==2.4.7
+pyrsistent==0.17.3
 pytest==6.2.2
 rich==9.11.0
+six==1.16.0
 sortedcontainers==2.3.0
 toml==0.10.2
 typing-extensions==3.7.4.3
