@@ -1,10 +1,13 @@
+import hashlib
 import inspect
 import importlib
 import os
 import sys
 
 from cdev.cparser import cdev_parser as cparser
-from cdev.fs_manager.writer import write_intermediate_files
+
+from . import utils as fs_utils
+
 
 
 ANNOTATION_LABEL = "lambda_function"
@@ -36,11 +39,14 @@ def find_serverless_function_information_from_file(fp):
 
     parsed_function_info = cparser.parse_functions_from_file(fp, include_functions=include_functions, remove_top_annotation=True)
 
-    # return a dict<str, [(lineno)]>  that represents the parsed function and their 
-    rv = {}
+    # return a [{function_name, needed_lines},...]  that represents the parsed function and their 
+    rv = []
 
     for f in parsed_function_info.parsed_functions:
-        rv[f.name] = f.needed_line_numbers
+        rv.append({
+            "function_name": f.name,
+            "needed_lines": f.needed_line_numbers
+        })
 
     return rv
 
@@ -82,7 +88,7 @@ def parse_folder(folder_path):
     original_path = os.getcwd()
     os.chdir(folder_path)
 
-    # [(fullpath, information)]
+    # [{"filename", "function_information"}]
     rv = []
 
     for pf in python_files:
@@ -90,11 +96,27 @@ def parse_folder(folder_path):
         localpath = os.path.join(".", pf)
         file_info = find_serverless_function_information_from_file(localpath)
         
-        rv.append((fullfilepath, file_info))
-        
-        #print(localpath)
-        #write_intermediate_files(fullfilepath, rv)
 
+        file_list = fs_utils.get_file_as_list(fullfilepath)
+
+        final_function_info = []
+
+        for info in file_info:
+            # Join the needed lined into a string and get the md5 hash 
+            file_as_string = ''.join(fs_utils.get_lines_from_file_list(file_list, info.get('needed_lines')))
+
+            encoded_file_as_string = file_as_string.encode()
+            file_hash = hashlib.md5(encoded_file_as_string).hexdigest()
+
+            info['hash'] = file_hash
+    
+            #print(f'{fullfilepath} -> {file_as_string}; {file_hash}')
+            final_function_info.append(info)
+
+        from_root_path = os.path.join(folder_path, pf)
+        rv.append({"filename": from_root_path, "function_information": final_function_info})
+
+        
     os.chdir(original_path)
-    print(rv)
+
     return rv
