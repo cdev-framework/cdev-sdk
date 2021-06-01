@@ -67,10 +67,31 @@ def update_local_state(project_info):
                     try:
                         previous_local_state.get("functions").remove(f)
                         diffs.append(function_info)
+                        
                     except Exception as e:
                         print(e)
 
         print(f"DIFFS -> {diffs}")
+        print(previous_local_state)
+
+        for d in diffs:
+            parsed_path = cdev_writer.write_intermediate_file(file_name, d)
+
+            tmp_obj = {
+                "original_path": file_name,
+                "runtime": "python3.8",
+                "parsed_path": parsed_path,
+                "hash": d.get("hash"),
+                "handler_name": d.get("function_name")
+            }
+
+
+            previous_local_state.get("functions").append(tmp_obj)
+
+        with open(FULL_LOCAL_STATE_PATH, 'w') as fp:
+            json.dump(previous_local_state, fp, indent=4)
+
+        
 
         
         
