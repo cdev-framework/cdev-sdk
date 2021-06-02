@@ -99,7 +99,6 @@ def _get_diffs_in_local_state(project_info, previous_local_state):
             hashed = function_info.get("hash")
 
             if hashed in previous_local_state.get("hash_to_function"):
-                print(f"SAME -> {function_info}")
                 previous_local_state.get("hash_to_function").pop(hashed)
                 continue
 
@@ -113,7 +112,10 @@ def _get_diffs_in_local_state(project_info, previous_local_state):
         
     
 def _write_local_state(state):
-    state.pop('hash_to_function')
+    try:
+        state.pop('hash_to_function')
+    except Exception as e:
+        print(f"ERROR -> {e}")
 
     with open(FULL_LOCAL_STATE_PATH, 'w') as fp:
         json.dump(state, fp, indent=4)
