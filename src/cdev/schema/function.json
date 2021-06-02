@@ -11,7 +11,7 @@
             "parsed_path": "",
             "runtime": "",
             "hash": "",
-            "handler_name": ""
+            "function_name": ""
         }
     ],
     "required": [
@@ -19,7 +19,7 @@
         "parsed_path",
         "runtime",
         "hash",
-        "handler_name"
+        "function_name"
     ],
     "properties": {
         "original_path": {
@@ -62,11 +62,21 @@
                 ""
             ]
         },
-        "handler_name": {
-            "$id": "#/properties/handler_name",
+        "function_name": {
+            "$id": "#/properties/function_name",
             "type": "string",
-            "title": "The handler_name schema",
+            "title": "The function_name schema",
             "description": "Name of the handler function",
+            "default": "",
+            "examples": [
+                ""
+            ]
+        },
+        "timestamp": {
+            "$id": "#/properties/timestamp",
+            "type": "string",
+            "title": "unix timestamp",
+            "description": "The timestamp of when this was created",
             "default": "",
             "examples": [
                 ""

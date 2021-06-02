@@ -7,9 +7,10 @@ setuptools.setup(
     description='CLI for cdev',
     packages=['cdev'],
     install_requires=[
-        'setuptools',
+        "setuptools",
         "sortedcontainers==2.3.0",
-        "jsonschema"
+        "jsonschema",
+        "rich"
     ],
     python_requires='>=3.5'
 )

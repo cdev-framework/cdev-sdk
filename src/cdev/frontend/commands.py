@@ -10,9 +10,7 @@ def plan():
     print("PLAN")
     folder_information = fs.parse_folder(os.path.join(".", "src"))
 
-    local_state_manager.update_local_state(folder_information)
-
-    return
+    return local_state_manager.update_local_state(folder_information)
 
 def init():
     print("INIT")

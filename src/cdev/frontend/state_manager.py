@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 from jsonschema import validate
 
@@ -15,19 +16,39 @@ LOCAL_STATE_LOCATION = cdev_settings.get("LOCAL_STATE_LOCATION")
 FULL_LOCAL_STATE_PATH = os.path.join(BASE_PATH, LOCAL_STATE_LOCATION)
 
 def update_local_state(project_info):
-    print(project_info)
+    # Returns a dictionary with the actions taken to update the local state
+    # RV: {
+    #   "appends": [], these are the completely new resources
+    #   "deletes": [], these are the resources that are removed
+    #   "updates": [], these are the resources that were updated 
+    # }
+
     previous_local_state = _load_local_state()
-    print("---------------------------------")
-    print(previous_local_state)
-    print("---------------------------------")
 
     if not previous_local_state:
-        _write_full_local_state(project_info)
-        return None
+        # IF there was no previous local state then write the entire state as appends
+        rv = _write_full_local_state(project_info)
 
+        return rv
+
+    # get the pure diffs in the current project and previous local state
     diffs = _get_diffs_in_local_state(project_info, previous_local_state)
 
-    print(f"DIFFS -> {diffs}")
+    seen_paths = {}
+    updates = []
+    additions = []
+
+    # We want to construct updates based on the idea if there is an addition and deletion to the same 
+    # parsed path meaning that parsed path was updated.
+
+    for deleted_function in diffs.get('deletes'):
+        try:
+            seen_paths[deleted_function.get('parsed_path')] = deleted_function
+            os.remove(deleted_function.get('parsed_path'))
+            previous_local_state.get('functions').remove(deleted_function)
+        except Exception as e:
+            # TODO THROW BETTER ERROR
+            print(f"BAD DELETE ITEM {e}")
 
     for d in diffs.get("appends"):
         parsed_path = cdev_writer.write_intermediate_file(d.get("original_path"), d)
@@ -37,26 +58,33 @@ def update_local_state(project_info):
             "runtime": "python3.8",
             "parsed_path": parsed_path,
             "hash": d.get("hash"),
-            "handler_name": d.get("function_name")
+            "function_name": d.get("function_name"),
+            "timestamp": str(time.time())
         }
-
 
         previous_local_state.get("functions").append(tmp_obj)
 
-    for deleted_function in diffs.get('deletes'):
-        try:
-            previous_local_state.get('functions').remove(deleted_function)
-            print(f"REMOVED {deleted_function}")
-        except Exception as e:
-            print(f"DELETING BAD ITEM {e}")
+        if parsed_path in seen_paths:
+            updates.append(tmp_obj)
+            diffs.get('deletes').remove(seen_paths.get(parsed_path))
+        else:
+            additions.append(tmp_obj)
+
+        
+
+    diffs['updates'] = updates
+    diffs['appends'] = additions
 
     _write_local_state(previous_local_state)
+
+    return diffs
 
 
 def _write_full_local_state(project_info):
     # NO previous local state so write current state and don't worry about diffs
     print('DO ALL CURRENT STATE')
     final_function_info = []
+
     for file_info in project_info:
         file_name = file_info.get("filename")
 
@@ -69,7 +97,8 @@ def _write_full_local_state(project_info):
                 "runtime": "python3.8",
                 "parsed_path": parsed_path,
                 "hash": function_info.get("hash"),
-                "handler_name": function_info.get("function_name")
+                "function_name": function_info.get("function_name"),
+                "timestamp": str(time.time())
             }
 
             final_function_info.append(tmp_obj)
@@ -81,11 +110,16 @@ def _write_full_local_state(project_info):
 
     _write_local_state(final_state)
 
-    return None
+    return {'appends': final_function_info}
 
 
 def _get_diffs_in_local_state(project_info, previous_local_state):
-    # Need to create both the appends and deletes for the new local state 
+    # This only returns all changes as either deletes or appends
+
+    # For example, changing the src code of a handler results in a delete and append because
+    # the old version is deleted and a new version created. It helps to have this primitive view
+    # because it can be used to construct more advanced states like updates. Any advanced change 
+    # to state can be constructed from these primitives
 
     diffs = {
         'appends': [],
@@ -105,8 +139,8 @@ def _get_diffs_in_local_state(project_info, previous_local_state):
             function_info["original_path"] = file_name
             diffs.get('appends').append(function_info)
 
-        for remaining in previous_local_state.get("hash_to_function"):
-            diffs.get('deletes').append(previous_local_state.get('hash_to_function').get(remaining))
+    for remaining in previous_local_state.get("hash_to_function"):
+        diffs.get('deletes').append(previous_local_state.get('hash_to_function').get(remaining))
    
     return diffs
         

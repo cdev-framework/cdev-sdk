@@ -37,7 +37,7 @@ def write_intermediate_file(original_path, function_info):
     actual_lines = fs_utils.get_lines_from_file_list(file_list, function_info.get("needed_lines"))
     _write_intermediate_function(final_file_dir, function_info.get("function_name"), actual_lines)
 
-    return final_file_dir
+    return os.path.join(final_file_dir,function_info.get("function_name")+".py")
 
 def _write_intermediate_function(fp, filename, lines):
     # Function takes a filepath (fp), filename, and lines then writes the lines to the file

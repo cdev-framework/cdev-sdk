@@ -2,8 +2,9 @@
 import argparse
 import os
 
-
 import cdev.frontend.commands as commands
+
+from . import output
 
 parser = argparse.ArgumentParser(description='cdev cli')
 
@@ -14,7 +15,7 @@ parser.add_argument('command', metavar="<command>", type=str, choices=CDEV_COMMA
 args = parser.parse_args()
 
 if args.command == "plan":
-    commands.plan()    
+    output.print_local_diffs(commands.plan())
 elif args.command == "form":
     print("YOU CALLED FORM")
 elif args.command == "init":
