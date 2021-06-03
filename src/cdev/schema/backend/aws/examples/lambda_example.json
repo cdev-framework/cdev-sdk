@@ -1,0 +1,16 @@
+{
+    "resource": {
+        "local_hash": "1",
+        "remote_hash": "2",
+        "name": "MyHandler",
+        "state": "CREATED",
+        "history": [
+            {
+                "state": "CREATING",
+                "timestamp": "123"
+            }
+        ],
+        "tags": {}
+    },
+    "runtime": "python3.6"
+}

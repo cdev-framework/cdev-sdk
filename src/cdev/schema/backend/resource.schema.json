@@ -1,0 +1,130 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "resource.json",
+    "type": "object",
+    "title": "The root schema",
+    "description": "The root schema comprises the entire JSON document.",
+    "default": {},
+    "examples": [
+        {
+            "local_hash": "",
+            "remote_hash": "",
+            "name": "",
+            "state": "",
+            "history": [
+                {
+                    "state": ""
+                }
+            ],
+            "tags": {}
+        }
+    ],
+    "required": [
+        "local_hash",
+        "remote_hash",
+        "name",
+        "state",
+        "history",
+        "tags"
+    ],
+    "properties": {
+        "local_hash": {
+            "$id": "#/properties/local_hash",
+            "type": "string",
+            "title": "The local_hash schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+                ""
+            ]
+        },
+        "remote_hash": {
+            "$id": "#/properties/remote_hash",
+            "type": "string",
+            "title": "The remote_hash schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+                ""
+            ]
+        },
+        "name": {
+            "$id": "#/properties/name",
+            "type": "string",
+            "title": "The name schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+                ""
+            ]
+        },
+        "state": {
+            "$id": "#/properties/state",
+            "type": "string",
+            "title": "The state schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+                ""
+            ],
+            "enum": ["CREATED", "CREATING", "UPDATING", "DELETED", "DELETING"]
+        },
+        "history": {
+            "$id": "#/properties/history",
+            "type": "array",
+            "title": "The history schema",
+            "description": "Keeps a history of the changes in state of the resource",
+            "default": [],
+            "examples": [
+                [
+                    {
+                        "state": "",
+                        "timestamp": ""
+                    }
+                ]
+            ],
+            "additionalItems": false,
+            "items": {
+                "$id": "#/properties/history/items",
+                "anyOf": [
+                    {
+                        "$id": "#/properties/history/items/anyOf/state_timestamp",
+                        "type": "object",
+                        "title": "The first anyOf schema",
+                        "description": "An explanation about the purpose of this instance.",
+                        "required": [
+                            "state",
+                            "timestamp"
+                        ],
+                        "properties": {
+                            "state": {
+                                "$id": "#/properties/history/items/anyOf/0/properties/state",
+                                "ref": "#/properties/state",
+                                "title": "state"
+                            },
+                            "timestamp": {
+                                "$id": "#/properties/history/items/anyOf/0/properties/timestamp",
+                                "type": "string",
+                                "title": "state timestamp",
+                                "description": "An UNIX timestamp of when this state happened"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "tags": {
+            "$id": "#/properties/tags",
+            "type": "object",
+            "title": "tags schema",
+            "description": "Metadata tags for this resources",
+            "default": {},
+            "examples": [
+                {}
+            ],
+            "required": [],
+            "additionalProperties": false
+        }
+    },
+    "additionalProperties": true
+}

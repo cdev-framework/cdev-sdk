@@ -1,0 +1,51 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "lamda_function.json",
+    "type": "object",
+    "title": "aws lambda function",
+    "description": "The root schema comprises the entire JSON document.",
+    "reference_name": "BACKEND_LAMBDA",
+    "default": {},
+    "examples": [
+        {
+            "local_hash": "",
+            "remote_hash": "",
+            "name": "",
+            "state": "",
+            "history": [
+                {
+                    "state": ""
+                }
+            ],
+            "tags": {}
+        }
+    ],
+    "required": [
+        "resource",
+        "runtime"
+    ],
+    "properties": {
+        "resource": {
+            "$id": "#/properties/local_hash",
+            "$ref": "../resource.schema.json",
+            "type": "object",
+            "title": "Generic resource properties",
+            "description": "Contains information for the generic resource information",
+            "default": {},
+            "examples": [
+                {}
+            ]
+        },
+        "runtime": {
+            "$id": "#/properties/runtime",
+            "type": "string",
+            "title": "function runtime",
+            "description": "runtime that the function runs on",
+            "default": "",
+            "examples": [
+                ""
+            ],
+            "enum": ["python3.6", "python3.7", "python3.8"]
+        }
+    }
+}

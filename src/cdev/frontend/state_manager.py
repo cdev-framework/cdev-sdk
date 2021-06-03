@@ -2,8 +2,6 @@ import json
 import os
 import time
 
-from jsonschema import validate
-
 from cdev.settings import SETTINGS as cdev_settings
 from cdev.schema import utils as schema_utils
 from cdev.fs_manager import writer as cdev_writer
@@ -168,8 +166,7 @@ def _load_local_state():
     rv['hash_to_function'] = {}
 
     for function_state in rv.get("functions"):
-        function_schema = schema_utils.get_schema("FUNCTION")
-        validate(function_state, function_schema)
+        schema_utils.validate(schema_utils.SCHEMA.FRONTEND_FUNCTION, function_state)
 
         rv['hash_to_function'][function_state.get("hash")] = function_state
 

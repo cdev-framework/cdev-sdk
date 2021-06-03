@@ -1,20 +1,57 @@
 import json
+from jsonschema import Draft7Validator, RefResolver
 import os
 
+class SCHEMA:
+    BACKEND_LAMBDA = "BACKEND_LAMBDA"
+    FRONTEND_FUNCTION = "FRONTEND_FUNCTION"
 
-ALL_SCHEMA = {
-    "FUNCTION": os.path.join(os.path.dirname( __file__ ),"function.json"),
-}
 
-def get_schema(schema_name):
-    # TODO throw errors
-    if not schema_name in ALL_SCHEMA:
-        return None
+REFERENCE_NAMES = set([
+    "BACKEND_LAMBDA",
+    "FRONTEND_FUNCTION"
+])
 
-    if not os.path.isfile(ALL_SCHEMA.get(schema_name)):
-        return None
 
-    with open(ALL_SCHEMA.get(schema_name)) as fh:
-        rv = json.load(fh)
+_VALIDATORS = {}
 
-    return rv
+BACKEND_PATH = os.path.join(os.path.dirname(__file__), "backend")
+FRONTEND_PATH = os.path.join(os.path.dirname(__file__), "frontend")
+
+ALL_PATHS = [BACKEND_PATH, FRONTEND_PATH]
+
+
+def _init():
+    for path in ALL_PATHS:
+        _load_validators(path)
+
+
+def _load_validators(path):
+    child_dirs = [f for f in os.listdir(path) if os.path.isdir(os.path.join(path, f))]
+
+    for d in child_dirs:
+        base_files = [f for f in os.listdir(os.path.join(path,d)) if os.path.isfile(os.path.join(path, d, f))]
+
+        for file_name in base_files:
+            broken_name = file_name.split(".")
+            
+            # TODO do error handling
+            if broken_name[-1] != "json" and broken_name[-2] != "schema":
+                continue
+
+            with open(os.path.join(path, d, file_name)) as fh:
+                schema_obj = json.load(fh)
+
+            resolver = RefResolver("file://" + os.path.join(path, d, file_name), schema_obj)
+
+            validator = Draft7Validator(schema_obj, resolver=resolver)
+
+            _VALIDATORS[schema_obj['reference_name']] = validator
+
+
+def validate(schema_name, object):
+    if schema_name in _VALIDATORS:
+        _VALIDATORS.get(schema_name).validate(object)
+
+
+_init()

@@ -1,9 +1,10 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "serverless_function",
+    "$id": "frontend_function.json",
     "type": "object",
     "title": "representation of serverless function",
     "description": "defines properties of a serverless function needed to represent a parsed serverless function across interfaces.",
+    "reference_name": "FRONTEND_FUNCTION",
     "default": {},
     "examples": [
         {
