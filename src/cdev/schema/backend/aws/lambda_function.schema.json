@@ -1,51 +1,52 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "lamda_function.json",
+    "$id": "lamda_function.schema.json",
     "type": "object",
-    "title": "aws lambda function",
-    "description": "The root schema comprises the entire JSON document.",
     "reference_name": "BACKEND_LAMBDA",
-    "default": {},
-    "examples": [
-        {
-            "local_hash": "",
-            "remote_hash": "",
-            "name": "",
-            "state": "",
-            "history": [
-                {
-                    "state": ""
-                }
-            ],
-            "tags": {}
-        }
-    ],
     "required": [
         "resource",
-        "runtime"
+        "Runtime", 
+        "History"
     ],
     "properties": {
         "resource": {
-            "$id": "#/properties/local_hash",
+            "$id": "#/properties/resource",
             "$ref": "../resource.schema.json",
-            "type": "object",
-            "title": "Generic resource properties",
-            "description": "Contains information for the generic resource information",
-            "default": {},
-            "examples": [
-                {}
-            ]
+            "type": "object"
         },
-        "runtime": {
-            "$id": "#/properties/runtime",
+        "Runtime": {
+            "$id": "#/properties/Runtime",
             "type": "string",
-            "title": "function runtime",
-            "description": "runtime that the function runs on",
-            "default": "",
-            "examples": [
-                ""
-            ],
             "enum": ["python3.6", "python3.7", "python3.8"]
+        },
+        "FunctionName": {
+            "type": "string"
+        },
+        "Role":{
+            "type": "string"
+        },
+        "Handler":{
+            "type": "string"
+        },
+        "Code":{
+            "type": "object",
+            "properties": {
+                "S3Bucket": {"type": "string"},
+                "S3Key": {"type": "string"}
+            }
+        },
+        "History": {
+            "type": "array",
+            "items": {
+                "anyOf": [
+                    {"$ref": "./lambda_create_function.schema.json"},
+                    {"$ref": "./lambda_create_eventsource.schema.json"},
+                    {"$ref": "./lambda_update_function_code.schema.json"},
+                    {"$ref": "./lambda_update_function_configuration.schema.json"},
+                    {"$ref": "./lambda_update_eventsource.schema.json"}
+                ]
+                
+            }
         }
     }
 }

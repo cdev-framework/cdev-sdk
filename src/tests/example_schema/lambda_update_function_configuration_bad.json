@@ -1,0 +1,99 @@
+{
+    "tests": [       
+        {
+            "info": {
+                "timestamp": "1",
+                "status": "UPDATING"
+            }, 
+            "FunctionName": "func1",
+            "UpdateValues":[
+                {
+                    "name": "Role2",
+                    "value": "arn:1"
+                }, 
+                {
+                    "name": "Handler",
+                    "value": "myfunction"
+                },
+                {
+                    "name": "Description",
+                    "value": "New information"
+                }
+            ],
+            "_comment": "Basic string params"
+        },
+        {
+            "info": {
+                "timestamp": "1",
+                "status": "UPDATING"
+            }, 
+            "FunctionName": "func1",
+            "UpdateValues":[
+                {
+                    "name": "Timeout",
+                    "value": 1025
+                }
+            ],
+            "_comment": "Timeout param"
+        },
+        {
+            "info": {
+                "timestamp": "1",
+                "status": "UPDATING"
+            }, 
+            "FunctionName": "func1",
+            "UpdateValues":[
+                {
+                    "name": "MemorySize",
+                    "value": -1
+                }
+            ],
+            "_comment": "Timeout param"
+        },
+        {
+            "info": {
+                "timestamp": "1",
+                "status": "UPDATING"
+            }, 
+            "FunctionName": "func1",
+            "UpdateValues":[
+                {
+                    "name": "Environment",
+                    "value": "str"
+                }
+            ],
+            "_comment": "Environment Variables"
+        },
+        {
+            "info": {
+                "timestamp": "1",
+                "status": "UPDATING"
+            }, 
+            "FunctionName": "func1",
+            "UpdateValues":[
+                {
+                    "name": "Runtime",
+                    "value": "node3.6"
+                }
+            ],
+            "_comment": "Runtime param"
+        },
+        {
+            "info": {
+                "timestamp": "1",
+                "status": "UPDATING"
+            }, 
+            "FunctionName": "func1",
+            "UpdateValues":[
+                {
+                    "name": "Layers",
+                    "value": [
+                        1
+                    ]
+                }
+            ],
+            "_comment": "Layers param"
+        }
+
+    ]
+}

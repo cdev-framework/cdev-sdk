@@ -1,0 +1,21 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "lambda_create_eventsource.schema.json",
+    "type": "object",
+    "reference_name": "BACKEND_LAMBDA_CREATE_EVENTSOURCE",
+    "required": [
+    ],
+    "properties": {
+        "info": {"ref": "../resource.schema.json#/definitions/HistoryElement"},
+        "EventSourceArn": {
+            "type": "string"
+        },
+        "FunctionName": {
+            "type": "string"
+        },
+        "Enabled": {
+            "type": "boolean"
+        }
+    },
+    "additionalProperties": false
+}

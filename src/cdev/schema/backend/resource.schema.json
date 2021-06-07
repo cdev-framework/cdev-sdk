@@ -1,132 +1,49 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "resource.json",
+    "$id": "resource.schema.json",
     "type": "object",
-    "title": "The root schema",
-    "description": "The root schema comprises the entire JSON document.",
     "reference_name": "BACKEND_RESOURCE",
-    "default": {},
-    "examples": [
-        {
-            "local_hash": "1",
-            "remote_hash": "2",
-            "name": "example_resource",
-            "state": "CREATED",
-            "history": [
-                {
-                    "state": "CREATED",
-                    "timestamp": "123"
-                }
-            ],
-            "tags": {
-                "project": "example"
-            }
-        }
-    ],
     "required": [
         "local_hash",
         "remote_hash",
         "name",
         "state",
-        "history",
         "tags"
     ],
+    "definitions": {
+        "State": {
+            "enum": ["CREATED", "CREATING", "UPDATING", "UPDATED", "DELETED", "DELETING"]
+        },
+        "HistoryElement": {
+            "type": "object",
+            "required": ["state", "timestamp"],
+            "properties": {
+                "state": {"$ref": "#/definitions/State"},
+                "timestamp": {"type": "string"}
+            },
+            "additionalProperties": true
+        }
+    },
     "properties": {
         "local_hash": {
             "$id": "#/properties/local_hash",
-            "type": "string",
-            "title": "The local_hash schema",
-            "description": "An explanation about the purpose of this instance.",
-            "default": "",
-            "examples": [
-                ""
-            ]
+            "type": "string"
         },
         "remote_hash": {
             "$id": "#/properties/remote_hash",
-            "type": "string",
-            "title": "The remote_hash schema",
-            "description": "An explanation about the purpose of this instance.",
-            "default": "",
-            "examples": [
-                ""
-            ]
+            "type": "string"
         },
         "name": {
             "$id": "#/properties/name",
-            "type": "string",
-            "title": "The name schema",
-            "description": "An explanation about the purpose of this instance.",
-            "default": "",
-            "examples": [
-                ""
-            ]
+            "type": "string"
         },
         "state": {
             "$id": "#/properties/state",
-            "type": "string",
-            "title": "The state schema",
-            "description": "An explanation about the purpose of this instance.",
-            "default": "",
-            "examples": [
-                ""
-            ],
-            "enum": ["CREATED", "CREATING", "UPDATING", "DELETED", "DELETING"]
-        },
-        "history": {
-            "$id": "#/properties/history",
-            "type": "array",
-            "title": "The history schema",
-            "description": "Keeps a history of the changes in state of the resource",
-            "default": [],
-            "examples": [
-                [
-                    {
-                        "state": "",
-                        "timestamp": ""
-                    }
-                ]
-            ],
-            "additionalItems": false,
-            "items": {
-                "$id": "#/properties/history/items",
-                "anyOf": [
-                    {
-                        "$id": "#/properties/history/items/anyOf/state_timestamp",
-                        "type": "object",
-                        "title": "The first anyOf schema",
-                        "description": "An explanation about the purpose of this instance.",
-                        "required": [
-                            "state",
-                            "timestamp"
-                        ],
-                        "properties": {
-                            "state": {
-                                "$id": "#/properties/history/items/anyOf/0/properties/state",
-                                "ref": "#/properties/state",
-                                "title": "state"
-                            },
-                            "timestamp": {
-                                "$id": "#/properties/history/items/anyOf/0/properties/timestamp",
-                                "type": "string",
-                                "title": "state timestamp",
-                                "description": "An UNIX timestamp of when this state happened"
-                            }
-                        }
-                    }
-                ]
-            }
+            "$ref": "#/definitions/State"
         },
         "tags": {
             "$id": "#/properties/tags",
             "type": "object",
-            "title": "tags schema",
-            "description": "Metadata tags for this resources",
-            "default": {},
-            "examples": [
-                {}
-            ],
-            "required": [],
             "additionalProperties": true
         }
     },

@@ -21,7 +21,9 @@ TESTS = [
     ("resource_good.json", schema_utils.SCHEMA.BACKEND_RESOURCE, True),
     ("resource_bad.json", schema_utils.SCHEMA.BACKEND_RESOURCE, False),
     ("lambda_good.json", schema_utils.SCHEMA.BACKEND_LAMBDA, True),
-    ("lambda_bad.json", schema_utils.SCHEMA.BACKEND_LAMBDA, False)
+    ("lambda_bad.json", schema_utils.SCHEMA.BACKEND_LAMBDA, False),
+    ("lambda_update_function_configuration_good.json", schema_utils.SCHEMA.BACKEND_LAMBDA_UPDATE_FUNCTION_CONFIGURATION, True),
+    ("lambda_update_function_configuration_bad.json", schema_utils.SCHEMA.BACKEND_LAMBDA_UPDATE_FUNCTION_CONFIGURATION, False)
 ]
 
 
@@ -69,5 +71,4 @@ def test_schema():
             if not should_pass:
                 print(f'FAILED AT -> {test}; {test_case}')
                 assert False
-
 

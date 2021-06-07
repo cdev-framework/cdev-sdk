@@ -5,12 +5,6 @@
             "remote_hash": "2",
             "name": "example_resource",
             "state": "a",
-            "history": [
-                {
-                    "state": "CREATED",
-                    "timestamp": "123"
-                }
-            ],
             "tags": {
                 "project": "example"
             },
@@ -20,11 +14,10 @@
             "local_hash": "1",
             "remote_hash": "2",
             "name": "example_resource",
-            "state": "CREATED",
             "tags": {
                 "project": "example"
             },
-            "_comment": "'history' is missing"
+            "_comment": "'state' is missing"
         }
     ]
 }

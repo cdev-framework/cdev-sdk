@@ -72,11 +72,3 @@ def _create_path(startingpath, fullpath):
         intermediate_path = os.path.join(intermediate_path, p)
 
     return intermediate_path
-
-
-
-
-
-
-
-    

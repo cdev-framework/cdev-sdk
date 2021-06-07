@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "lambda_create_function.schema.json",
+    "type": "object",
+    "reference_name": "BACKEND_LAMBDA_CREATE_FUNCTION",
+    "required": [
+    ],
+    "properties": {
+        "info": {"ref": "../resource.schema.json#/definitions/HistoryElement"},
+        "Runtime": {
+            "type": "string",
+            "enum": ["python3.6", "python3.7", "python3.8"]
+        },
+        "FunctionName": {
+            "type": "string"
+        },
+        "Role":{
+            "type": "string"
+        },
+        "Handler":{
+            "type": "string"
+        },
+        "Code":{
+            "type": "object",
+            "properties": {
+                "S3Bucket": {"type": "string"},
+                "S3Key": {"type": "string"}
+            }
+        }
+    },
+    
+    "additionalProperties": false
+}
