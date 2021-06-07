@@ -1,0 +1,20 @@
+{
+    "tests": [
+        {
+            "local_hash": "1",
+            "remote_hash": "2",
+            "name": "example_resource",
+            "state": "CREATED",
+            "history": [
+                {
+                    "state": "CREATED",
+                    "timestamp": "123"
+                }
+            ],
+            "tags": {
+                "project": "example"
+            },
+            "_comment": "valid resource json"
+        }
+    ]
+}

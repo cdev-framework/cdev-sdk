@@ -5,7 +5,7 @@ sys.path.append(os.path.join("."))
 
 import src.cdev.cparser.cdev_parser as cp
 
-EXAMPLE_PATH = os.path.join(".", "tests", "example_files")
+EXAMPLE_PATH = os.path.join(".", "tests", "example_python_files")
 
 ADVANCED_PATH = os.path.join(EXAMPLE_PATH, "advanced")
 

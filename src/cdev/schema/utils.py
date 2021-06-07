@@ -4,7 +4,9 @@ import os
 
 class SCHEMA:
     BACKEND_LAMBDA = "BACKEND_LAMBDA"
+    BACKEND_RESOURCE = "BACKEND_RESOURCE"
     FRONTEND_FUNCTION = "FRONTEND_FUNCTION"
+
 
 
 REFERENCE_NAMES = set([
@@ -28,6 +30,9 @@ def _init():
 
 def _load_validators(path):
     child_dirs = [f for f in os.listdir(path) if os.path.isdir(os.path.join(path, f))]
+
+    # Also load schema in the parent dir (these are the reused schema)
+    child_dirs.append(path)
 
     for d in child_dirs:
         base_files = [f for f in os.listdir(os.path.join(path,d)) if os.path.isfile(os.path.join(path, d, f))]

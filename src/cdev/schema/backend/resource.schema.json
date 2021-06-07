@@ -4,19 +4,23 @@
     "type": "object",
     "title": "The root schema",
     "description": "The root schema comprises the entire JSON document.",
+    "reference_name": "BACKEND_RESOURCE",
     "default": {},
     "examples": [
         {
-            "local_hash": "",
-            "remote_hash": "",
-            "name": "",
-            "state": "",
+            "local_hash": "1",
+            "remote_hash": "2",
+            "name": "example_resource",
+            "state": "CREATED",
             "history": [
                 {
-                    "state": ""
+                    "state": "CREATED",
+                    "timestamp": "123"
                 }
             ],
-            "tags": {}
+            "tags": {
+                "project": "example"
+            }
         }
     ],
     "required": [
@@ -123,7 +127,7 @@
                 {}
             ],
             "required": [],
-            "additionalProperties": false
+            "additionalProperties": true
         }
     },
     "additionalProperties": true
