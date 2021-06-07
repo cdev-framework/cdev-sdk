@@ -20,8 +20,8 @@ TESTS = [
     #   - bool: if the validation should pass 
     ("resource_good.json", schema_utils.SCHEMA.BACKEND_RESOURCE, True),
     ("resource_bad.json", schema_utils.SCHEMA.BACKEND_RESOURCE, False),
-    ('lambda_good.json', schema_utils.SCHEMA.BACKEND_LAMBDA, True),
-    ('lambda_bad.json', schema_utils.SCHEMA.BACKEND_LAMBDA, False)
+    ("lambda_good.json", schema_utils.SCHEMA.BACKEND_LAMBDA, True),
+    ("lambda_bad.json", schema_utils.SCHEMA.BACKEND_LAMBDA, False)
 ]
 
 
@@ -33,6 +33,7 @@ def _load_json_from_path(fp):
         rv = json.load(fh)
 
     return rv
+
 
 def test_schema():
     for test in TESTS:
