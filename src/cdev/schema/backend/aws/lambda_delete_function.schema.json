@@ -1,0 +1,20 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "lambda_delete_function.schema.json",
+    "type": "object",
+    "reference_name": "BACKEND_LAMBDA_DELETE_FUNCTION",
+    "required": [
+        "info",
+        "FunctionName"
+    ],
+    "properties": {  
+        "info": {
+            "ref": "../resource.schema.json#/definitions/HistoryElement"
+        },
+        "FunctionName": {
+            "type": "string"
+        }
+    },
+    
+    "additionalProperties": true
+}

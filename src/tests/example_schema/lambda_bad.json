@@ -6,18 +6,48 @@
                 "remote_hash": "2",
                 "name": "example_resource",
                 "state": "CREATED",
-                "history": [
-                    {
-                        "state": "CREATED",
-                        "timestamp": "123"
-                    }
-                ],
                 "tags": {
                     "project": "example"
                 }
             },
-            "runtime": "randomlanguage1.2",
-            "_comment": "'runtime' is not a correct value"
+            "Code": {
+                "S3Bucket": "Myartifacts",
+                "S3Key": "Mydeploymentartifact"
+            },
+            "FunctionName": "myfunction",
+            "CurrentConfiguration": [
+                {
+                    "name": "Role",
+                    "value": "arn:1"
+                }, 
+                {
+                    "name": "Handler",
+                    "value": "myfunction"
+                },
+                {
+                    "name": "Description",
+                    "value": "New information"
+                },
+                {
+                    "name": "Runtime",
+                    "value": "node1.2"
+                }
+            ],
+            "History": [
+                {
+                    "info": {
+                        "state": "CREATED",
+                        "timestamp": "1"
+                    }
+                }, 
+                {
+                    "info": {
+                        "state": "CREATED",
+                        "timestamp": "1"
+                    }
+                }
+            ],
+            "_comment": "valid lambda json"
         }
     ]
 }

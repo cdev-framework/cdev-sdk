@@ -5,7 +5,7 @@
     "reference_name": "BACKEND_LAMBDA_UPDATE_EVENTSOURCE",
     "required": [
         "UUID",
-        "FunctionArn",
+        "FunctionName",
         "Enabled"
     ],
     "properties": {
@@ -13,7 +13,7 @@
         "UUID": {
             "type": "string"
         },
-        "FunctionArn": {
+        "FunctionName": {
             "type": "string"
         },
         "Enabled": {

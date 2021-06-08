@@ -5,7 +5,7 @@
                 "timestamp": "1",
                 "status": "UPDATING"
             }, 
-            "FunctionArn": "func1",
+            "FunctionName": "func1",
             "UpdateValues":[
                 {
                     "name": "Role",
@@ -27,7 +27,7 @@
                 "timestamp": "1",
                 "status": "UPDATING"
             }, 
-            "FunctionArn": "func1",
+            "FunctionName": "func1",
             "UpdateValues":[
                 {
                     "name": "Timeout",
@@ -41,7 +41,7 @@
                 "timestamp": "1",
                 "status": "UPDATING"
             }, 
-            "FunctionArn": "func1",
+            "FunctionName": "func1",
             "UpdateValues":[
                 {
                     "name": "MemorySize",
@@ -55,7 +55,7 @@
                 "timestamp": "1",
                 "status": "UPDATING"
             }, 
-            "FunctionArn": "func1",
+            "FunctionName": "func1",
             "UpdateValues":[
                 {
                     "name": "Environment",
@@ -72,7 +72,7 @@
                 "timestamp": "1",
                 "status": "UPDATING"
             }, 
-            "FunctionArn": "func1",
+            "FunctionName": "func1",
             "UpdateValues":[
                 {
                     "name": "Runtime",
@@ -86,7 +86,7 @@
                 "timestamp": "1",
                 "status": "UPDATING"
             }, 
-            "FunctionArn": "func1",
+            "FunctionName": "func1",
             "UpdateValues":[
                 {
                     "name": "Layers",

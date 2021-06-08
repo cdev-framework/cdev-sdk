@@ -5,14 +5,14 @@
     "reference_name": "BACKEND_LAMBDA_UPDATE_FUNCTION_CONFIGURATION",
     "required": [
         "info",
-        "FunctionArn",
+        "FunctionName",
         "UpdateValues"
     ],
     "definitions": {
     },
     "properties": {
         "info": {"ref": "../resource.schema.json#/definitions/HistoryElement"},
-        "FunctionArn": {
+        "FunctionName": {
             "type": "string"
         },
         "RevisionId": {

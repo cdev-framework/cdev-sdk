@@ -7,7 +7,7 @@
             },
             "S3Bucket": "Myartifacts",
             "S3Key": "Mydeploymentartifact",
-            "FunctionArn": "myfunction",
+            "FunctionName": "myfunction",
 
             "_comment": "valid update code json"
         }

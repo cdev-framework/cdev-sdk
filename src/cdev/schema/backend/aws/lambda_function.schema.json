@@ -40,7 +40,8 @@
                     {"$ref": "./lambda_create_eventsource.schema.json"},
                     {"$ref": "./lambda_update_function_code.schema.json"},
                     {"$ref": "./lambda_update_function_configuration.schema.json"},
-                    {"$ref": "./lambda_update_eventsource.schema.json"}
+                    {"$ref": "./lambda_update_eventsource.schema.json"},
+                    {"$ref": "./lambda_delete_function.schema.json"}
                 ]
                 
             }

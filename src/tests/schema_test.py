@@ -26,7 +26,8 @@ TESTS = [
     ("lambda_update_function_configuration_bad.json", schema_utils.SCHEMA.BACKEND_LAMBDA_UPDATE_FUNCTION_CONFIGURATION, False),
     ("lambda_configuration_good.json", schema_utils.SCHEMA.BACKEND_LAMBDA_CONFIGURATION, True),
     ("lambda_create_function_good.json", schema_utils.SCHEMA.BACKEND_LAMBDA_CREATE_FUNCTION, True),
-    ("lambda_update_function_code_good.json", schema_utils.SCHEMA.BACKEND_LAMBDA_UPDATE_FUNCTION_CODE, True)
+    ("lambda_update_function_code_good.json", schema_utils.SCHEMA.BACKEND_LAMBDA_UPDATE_FUNCTION_CODE, True),
+    ("lambda_delete_function_good.json", schema_utils.SCHEMA.BACKEND_LAMBDA_DELETE_FUNCTION, True)
 ]
 
 
