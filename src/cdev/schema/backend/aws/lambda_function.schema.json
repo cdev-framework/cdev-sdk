@@ -5,27 +5,21 @@
     "reference_name": "BACKEND_LAMBDA",
     "required": [
         "resource",
-        "Runtime", 
+        "FunctionName",
+        "Code",
+        "CurrentConfiguration",
         "History"
     ],
+    "definitions": {
+        "Runtimes": {
+            "enum": ["python3.6", "python3.7", "python3.8"]
+        }
+    },
     "properties": {
         "resource": {
-            "$id": "#/properties/resource",
-            "$ref": "../resource.schema.json",
-            "type": "object"
-        },
-        "Runtime": {
-            "$id": "#/properties/Runtime",
-            "type": "string",
-            "enum": ["python3.6", "python3.7", "python3.8"]
+            "$ref": "../resource.schema.json"
         },
         "FunctionName": {
-            "type": "string"
-        },
-        "Role":{
-            "type": "string"
-        },
-        "Handler":{
             "type": "string"
         },
         "Code":{
@@ -34,6 +28,9 @@
                 "S3Bucket": {"type": "string"},
                 "S3Key": {"type": "string"}
             }
+        },
+        "CurrentConfiguration": {
+            "$ref": "./lambda_configuration.schema.json"
         },
         "History": {
             "type": "array",

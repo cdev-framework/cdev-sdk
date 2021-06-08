@@ -1,0 +1,31 @@
+{
+    "tests": [       
+        {
+            
+            "info": {
+                "state": "CREATING",
+                "timestamp": "1"
+            }, 
+            "Code": {
+                "S3Bucket": "Myartifacts",
+                "S3Key": "Mydeploymentartifact"
+            },
+            "FunctionName": "myfunction",
+            "Configuration": [
+                {
+                    "name": "Role",
+                    "value": "arn:1"
+                }, 
+                {
+                    "name": "Handler",
+                    "value": "myfunction"
+                },
+                {
+                    "name": "Description",
+                    "value": "New information"
+                }
+            ],
+            "_comment": "valid lambda json"
+        }
+    ]
+}

@@ -4,20 +4,16 @@
     "type": "object",
     "reference_name": "BACKEND_LAMBDA_CREATE_FUNCTION",
     "required": [
+        "info",
+        "FunctionName",
+        "Code",
+        "Configuration"
     ],
     "properties": {
-        "info": {"ref": "../resource.schema.json#/definitions/HistoryElement"},
-        "Runtime": {
-            "type": "string",
-            "enum": ["python3.6", "python3.7", "python3.8"]
+        "info": {
+            "ref": "../resource.schema.json#/definitions/HistoryElement"
         },
         "FunctionName": {
-            "type": "string"
-        },
-        "Role":{
-            "type": "string"
-        },
-        "Handler":{
             "type": "string"
         },
         "Code":{
@@ -26,8 +22,11 @@
                 "S3Bucket": {"type": "string"},
                 "S3Key": {"type": "string"}
             }
+        },
+        "Configuration": {
+            "$ref": "./lambda_configuration.schema.json"
         }
     },
     
-    "additionalProperties": false
+    "additionalProperties": true
 }

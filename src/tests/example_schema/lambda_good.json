@@ -10,7 +10,25 @@
                     "project": "example"
                 }
             },
-            "Runtime": "python3.7",
+            "Code": {
+                "S3Bucket": "Myartifacts",
+                "S3Key": "Mydeploymentartifact"
+            },
+            "FunctionName": "myfunction",
+            "CurrentConfiguration": [
+                {
+                    "name": "Role",
+                    "value": "arn:1"
+                }, 
+                {
+                    "name": "Handler",
+                    "value": "myfunction"
+                },
+                {
+                    "name": "Description",
+                    "value": "New information"
+                }
+            ],
             "History": [
                 {
                     "info": {

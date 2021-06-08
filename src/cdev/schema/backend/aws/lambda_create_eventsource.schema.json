@@ -10,7 +10,7 @@
         "EventSourceArn": {
             "type": "string"
         },
-        "FunctionName": {
+        "FunctionArn": {
             "type": "string"
         },
         "Enabled": {

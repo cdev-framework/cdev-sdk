@@ -4,10 +4,14 @@
     "type": "object",
     "reference_name": "BACKEND_LAMBDA_UPDATE_FUNCTION_CODE",
     "required": [
+        "FunctionArn",
+        "S3Bucket",
+        "S3Key",
+        "info"
     ],
     "properties": {
         "info": {"ref": "../resource.schema.json#/definitions/HistoryElement"},
-        "FunctionName": {
+        "FunctionArn": {
             "type": "string"
         },
         "S3Bucket": {
@@ -17,5 +21,5 @@
             "type": "string"
         }
     },
-    "additionalProperties": false
+    "additionalProperties": true
 }

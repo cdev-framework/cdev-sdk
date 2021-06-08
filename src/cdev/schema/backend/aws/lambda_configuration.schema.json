@@ -1,0 +1,69 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "lambda_configuration.schema.json",
+    "type": "array",
+    "reference_name": "BACKEND_LAMBDA_CONFIGURATION",
+    "definitions": {
+    },
+    "items": {
+        "anyOf": [
+        {
+            "type": "object",
+            "properties": {
+                "name": {"enum": ["Role", "Handler", "Description"]},
+                "value": {"type": "string"}
+            }
+        },
+        {
+            "type": "object",
+            "properties": {
+                "name": {"const": "Timeout"},
+                "value": {
+                    "type": "integer", 
+                    "minimum": 1, 
+                    "maximum": 300
+                }
+            }
+        },   
+        {
+            "type": "object",
+            "properties": {
+                "name": {"const": "MemorySize"},
+                "value": {
+                    "type": "integer", 
+                    "minimum": 1, 
+                    "maximum": 1024
+                }
+            }
+        },
+        {
+            "type": "object",
+            "properties": {
+                "name": {"const": "Environment"},
+                "value": {
+                    "type": "object"
+                }
+            }
+        },
+        {
+            "type": "object",
+            "properties": {
+                "name": {"const": "Runtime"},
+                "value": {"$ref": "./lambda_function.schema.json#/definitions/Runtimes"}
+            }
+        },
+        {
+            "type": "object",
+            "properties": {
+                "name": {"const": "Layers"},
+                "value": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+        ]
+    }
+}

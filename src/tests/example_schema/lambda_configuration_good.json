@@ -1,0 +1,53 @@
+{
+    "tests": [       
+        [
+            {
+                "name": "Role",
+                "value": "arn:1"
+            }, 
+            {
+                "name": "Handler",
+                "value": "myfunction"
+            },
+            {
+                "name": "Description",
+                "value": "New information"
+            }
+        ],
+        [
+            {
+                "name": "Timeout",
+                "value": 1
+            }
+        ],
+        [
+            {
+                "name": "MemorySize",
+                "value": 2
+            }
+        ],
+        [
+            {
+                "name": "Environment",
+                "value": {
+                    "key1": "val",
+                    "key2": "val"
+                }
+            }
+        ],
+        [
+            {
+                "name": "Runtime",
+                "value": "python3.6"
+            }
+        ],
+        [
+            {
+                "name": "Layers",
+                "value": [
+                    "arn:layer:1"
+                ]
+            }
+        ]
+    ]
+}

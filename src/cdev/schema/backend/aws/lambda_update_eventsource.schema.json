@@ -4,13 +4,16 @@
     "type": "object",
     "reference_name": "BACKEND_LAMBDA_UPDATE_EVENTSOURCE",
     "required": [
+        "UUID",
+        "FunctionArn",
+        "Enabled"
     ],
     "properties": {
         "info": {"ref": "../resource.schema.json#/definitions/HistoryElement"},
         "UUID": {
             "type": "string"
         },
-        "FunctionName": {
+        "FunctionArn": {
             "type": "string"
         },
         "Enabled": {
