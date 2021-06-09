@@ -70,7 +70,7 @@ def update_lambda_function_code(update_code_event):
 
 
 def update_lambda_function_configuration(update_configuration_event):
-    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda.html#Lambda.Client.create_function
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda.html#Lambda.Client.update_function_configuration
 
     # REQUIRED PARAMS
     # ["FunctionName"]
@@ -99,6 +99,26 @@ def update_lambda_function_configuration(update_configuration_event):
 
 
 def delete_lambda_function(delete_event):
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda.html#Lambda.Client.delete_function
+
+    # REQUIRED PARAMS
+    # ["FunctionName"]
+    try:
+        schema_utils.validate(schema_utils.SCHEMA.BACKEND_LAMBDA_DELETE_FUNCTION, delete_event)
+    except Exception as e:
+        print(e)
+        return
+
+    args ={}
+    args["FunctionName"] = delete_event.get("FunctionName")
+
+    try:
+        response = client.delete_function(**args)
+        print(json.dumps(response))
+    except botocore.exceptions.ClientError as e:
+        print(e.response)
+        return False
+
     return
 
 
