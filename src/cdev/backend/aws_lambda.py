@@ -43,10 +43,57 @@ def create_lambda_function(create_event):
 
 
 def update_lambda_function_code(update_code_event):
-    return
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda.html#Lambda.Client.update_function_code
+
+    # REQUIRED PARAMS
+    # ["FunctionName", "Code"]
+    try:
+        schema_utils.validate(schema_utils.SCHEMA.BACKEND_LAMBDA_UPDATE_FUNCTION_CODE, update_code_event)
+    except Exception as e:
+        print(e)
+        return
+
+    args = {}
+    args["S3Bucket"] = update_code_event.get("S3Bucket")
+    args["S3Key"] = update_code_event.get("S3Key")
+    args["FunctionName"] = update_code_event.get("FunctionName")
+
+    try:
+        response = client.update_function_code(**args)
+        print(json.dumps(response))
+    except botocore.exceptions.ClientError as e:
+        print(e.response)
+        return False
+
+
+    return True
 
 
 def update_lambda_function_configuration(update_configuration_event):
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda.html#Lambda.Client.create_function
+
+    # REQUIRED PARAMS
+    # ["FunctionName"]
+    try:
+        schema_utils.validate(schema_utils.SCHEMA.BACKEND_LAMBDA_UPDATE_FUNCTION_CONFIGURATION, update_configuration_event)
+    except Exception as e:
+        print(e)
+        return
+
+    try:
+        args = _build_configuration_arg(update_configuration_event.get("Configuration"))
+    except Exception as e:
+        print(e)
+        return False
+
+
+    try:
+        response = client.update_function_configuration(**args)
+        print(json.dumps(response))
+    except botocore.exceptions.ClientError as e:
+        print(e.response)
+        return False
+
     return
 
 
