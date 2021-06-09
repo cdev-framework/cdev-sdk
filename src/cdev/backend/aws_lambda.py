@@ -81,10 +81,11 @@ def update_lambda_function_configuration(update_configuration_event):
         return
 
     try:
-        args = _build_configuration_arg(update_configuration_event.get("Configuration"))
+        args = _build_configuration_arg(update_configuration_event.get("UpdateValues"))
     except Exception as e:
         print(e)
         return False
+    args["FunctionName"] = update_configuration_event.get("FunctionName")
 
 
     try:
