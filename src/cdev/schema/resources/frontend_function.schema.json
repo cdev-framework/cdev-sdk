@@ -1,0 +1,45 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "frontend_function.json",
+    "type": "object",
+    "reference_name": "FRONTEND_FUNCTION",
+    "required": [
+        "original_path",
+        "parsed_path",
+        "hash",
+        "timestamp",
+        "local_function_name",
+        "configuration"
+    ],
+    "properties": {
+        "original_path": {
+            "$id": "#/properties/original_path",
+            "type": "string"
+        },
+        "parsed_path": {
+            "$id": "#/properties/parsed_path",
+            "type": "string"
+        },
+        "hash": {
+            "$id": "#/properties/hash",
+            "type": "string"
+        },
+        "timestamp": {
+            "$id": "#/properties/timestamp",
+            "type": "string"
+        },
+        "local_function_name": {
+            "$id": "#/properties/local_function_name",
+            "type": "string"
+        },
+        "configuration": {
+            "anyOf": [
+                {
+                    "$ref": "./aws/lambda_configuration.schema.json"
+                }
+            ]
+        }
+
+    },
+    "additionalProperties": true
+}

@@ -21,10 +21,10 @@ class SCHEMA:
 
 _VALIDATORS = {}
 
-BACKEND_PATH = os.path.join(os.path.dirname(__file__), "backend")
-FRONTEND_PATH = os.path.join(os.path.dirname(__file__), "frontend")
 
-ALL_PATHS = [BACKEND_PATH, FRONTEND_PATH]
+RESOURCES =  os.path.join(os.path.dirname(__file__), "resources")
+
+ALL_PATHS = [RESOURCES]
 
 
 def _init():

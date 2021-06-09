@@ -10,7 +10,8 @@ setuptools.setup(
         "setuptools",
         "sortedcontainers==2.3.0",
         "jsonschema",
-        "rich"
+        "rich",
+        "boto3"
     ],
     python_requires='>=3.5'
 )

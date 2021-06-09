@@ -53,11 +53,16 @@ def update_local_state(project_info):
 
         tmp_obj = {
             "original_path": d.get("original_path"),
-            "runtime": "python3.8",
             "parsed_path": parsed_path,
             "hash": d.get("hash"),
-            "function_name": d.get("function_name"),
-            "timestamp": str(time.time())
+            "local_function_name": d.get("function_name"),
+            "timestamp": str(time.time()),
+            "configuration": [
+                {
+                    "name": "Runtime",
+                    "value": "python3.7"
+                }
+            ]
         }
 
         previous_local_state.get("functions").append(tmp_obj)
@@ -92,11 +97,16 @@ def _write_full_local_state(project_info):
 
             tmp_obj = {
                 "original_path": file_name,
-                "runtime": "python3.8",
                 "parsed_path": parsed_path,
                 "hash": function_info.get("hash"),
-                "function_name": function_info.get("function_name"),
-                "timestamp": str(time.time())
+                "local_function_name": function_info.get("function_name"),
+                "timestamp": str(time.time()),
+                "configuration": [
+                    {
+                        "name": "Runtime",
+                        "value": "python3.7"
+                    }
+                ]
             }
 
             final_function_info.append(tmp_obj)
