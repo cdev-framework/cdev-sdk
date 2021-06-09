@@ -23,6 +23,10 @@
                 {
                     "name": "Description",
                     "value": "New information"
+                },
+                {
+                    "name": "Runtime",
+                    "value": "python3.6"
                 }
             ],
             "_comment": "valid lambda json"

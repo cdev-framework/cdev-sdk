@@ -21,11 +21,9 @@ class SCHEMA:
 
 _VALIDATORS = {}
 
-
 RESOURCES =  os.path.join(os.path.dirname(__file__), "resources")
 
 ALL_PATHS = [RESOURCES]
-
 
 def _init():
     for path in ALL_PATHS:
@@ -36,7 +34,7 @@ def _load_validators(path):
     child_dirs = [f for f in os.listdir(path) if os.path.isdir(os.path.join(path, f))]
 
     # Also load schema in the parent dir (these are the reused schema)
-    child_dirs.append(path)
+    child_dirs.append(".")
 
     for d in child_dirs:
         base_files = [f for f in os.listdir(os.path.join(path,d)) if os.path.isfile(os.path.join(path, d, f))]
