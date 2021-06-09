@@ -29,9 +29,12 @@
         [
             {
                 "name": "Environment",
-                "value": {
-                    "key1": "val",
-                    "key2": "val"
+                "value": 
+                { 
+                    "Variables": {
+                        "key1": "val",
+                        "key2": "val"
+                    }
                 }
             }
         ],

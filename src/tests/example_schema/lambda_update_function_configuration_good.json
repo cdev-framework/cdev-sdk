@@ -60,8 +60,10 @@
                 {
                     "name": "Environment",
                     "value": {
-                        "key1": "val",
-                        "key2": "val"
+                        "Variables":{
+                            "key1": "val",
+                            "key2": "val"
+                        }
                     }
                 }
             ],

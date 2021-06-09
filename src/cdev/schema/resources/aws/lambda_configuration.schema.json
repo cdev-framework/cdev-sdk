@@ -41,7 +41,14 @@
             "properties": {
                 "name": {"const": "Environment"},
                 "value": {
-                    "type": "object"
+                    "type": "object",
+                    "required": ["Variables"],
+                    "properties": {
+                        "Variables": {
+                            "type": "object"
+                        }
+                    },
+                    "additionalProperties": false
                 }
             }
         },
