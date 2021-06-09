@@ -1,10 +1,6 @@
 {
     "tests": [       
         {
-            "info": {
-                "timestamp": "1",
-                "status": "UPDATING"
-            }, 
             "FunctionName": "func1",
             "UpdateValues":[
                 {
@@ -23,10 +19,6 @@
             "_comment": "Basic string params"
         },
         {
-            "info": {
-                "timestamp": "1",
-                "status": "UPDATING"
-            }, 
             "FunctionName": "func1",
             "UpdateValues":[
                 {
@@ -37,10 +29,6 @@
             "_comment": "Timeout param"
         },
         {
-            "info": {
-                "timestamp": "1",
-                "status": "UPDATING"
-            }, 
             "FunctionName": "func1",
             "UpdateValues":[
                 {
@@ -51,10 +39,6 @@
             "_comment": "Timeout param"
         },
         {
-            "info": {
-                "timestamp": "1",
-                "status": "UPDATING"
-            }, 
             "FunctionName": "func1",
             "UpdateValues":[
                 {
@@ -70,10 +54,6 @@
             "_comment": "Environment Variables"
         },
         {
-            "info": {
-                "timestamp": "1",
-                "status": "UPDATING"
-            }, 
             "FunctionName": "func1",
             "UpdateValues":[
                 {
@@ -84,10 +64,6 @@
             "_comment": "Runtime param"
         },
         {
-            "info": {
-                "timestamp": "1",
-                "status": "UPDATING"
-            }, 
             "FunctionName": "func1",
             "UpdateValues":[
                 {

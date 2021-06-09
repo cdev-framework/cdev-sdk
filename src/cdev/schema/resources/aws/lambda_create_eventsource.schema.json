@@ -6,7 +6,6 @@
     "required": [
     ],
     "properties": {
-        "info": {"ref": "../resource.schema.json#/definitions/HistoryElement"},
         "EventSourceArn": {
             "type": "string"
         },

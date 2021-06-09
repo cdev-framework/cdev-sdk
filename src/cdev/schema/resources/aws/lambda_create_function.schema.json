@@ -4,15 +4,11 @@
     "type": "object",
     "reference_name": "BACKEND_LAMBDA_CREATE_FUNCTION",
     "required": [
-        "info",
         "FunctionName",
         "Code",
         "Configuration"
     ],
     "properties": {
-        "info": {
-            "ref": "../resource.schema.json#/definitions/HistoryElement"
-        },
         "FunctionName": {
             "type": "string"
         },

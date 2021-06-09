@@ -1,11 +1,6 @@
 {
     "tests": [       
         {
-            
-            "info": {
-                "state": "CREATING",
-                "timestamp": "1"
-            }, 
             "Code": {
                 "S3Bucket": "Myartifacts",
                 "S3Key": "Mydeploymentartifact"

@@ -1,10 +1,6 @@
 {
     "tests": [       
         {   
-            "info": {
-                "state": "CREATING",
-                "timestamp": "1"
-            }, 
             "FunctionName": "myfunction",
             "_comment": "valid delete lambda json"
         }

@@ -4,13 +4,9 @@
     "type": "object",
     "reference_name": "BACKEND_LAMBDA_DELETE_FUNCTION",
     "required": [
-        "info",
         "FunctionName"
     ],
     "properties": {  
-        "info": {
-            "ref": "../resource.schema.json#/definitions/HistoryElement"
-        },
         "FunctionName": {
             "type": "string"
         }

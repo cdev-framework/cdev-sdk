@@ -6,11 +6,9 @@
     "required": [
         "FunctionName",
         "S3Bucket",
-        "S3Key",
-        "info"
+        "S3Key"
     ],
     "properties": {
-        "info": {"ref": "../resource.schema.json#/definitions/HistoryElement"},
         "FunctionName": {
             "type": "string"
         },

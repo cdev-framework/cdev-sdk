@@ -4,14 +4,12 @@
     "type": "object",
     "reference_name": "BACKEND_LAMBDA_UPDATE_FUNCTION_CONFIGURATION",
     "required": [
-        "info",
         "FunctionName",
         "UpdateValues"
     ],
     "definitions": {
     },
     "properties": {
-        "info": {"ref": "../resource.schema.json#/definitions/HistoryElement"},
         "FunctionName": {
             "type": "string"
         },

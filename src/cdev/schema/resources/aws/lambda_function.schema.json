@@ -35,15 +35,25 @@
         "History": {
             "type": "array",
             "items": {
-                "anyOf": [
-                    {"$ref": "./lambda_create_function.schema.json"},
-                    {"$ref": "./lambda_create_eventsource.schema.json"},
-                    {"$ref": "./lambda_update_function_code.schema.json"},
-                    {"$ref": "./lambda_update_function_configuration.schema.json"},
-                    {"$ref": "./lambda_update_eventsource.schema.json"},
-                    {"$ref": "./lambda_delete_function.schema.json"}
-                ]
-                
+                "type": "object",
+                "required": [
+                    "info",
+                    "action"
+                ],
+                "properties": {
+                    "info": {"ref": "../resource.schema.json#/definitions/HistoryElement"},
+                    "action": {
+                        "anyOf": [
+                            {"$ref": "./lambda_create_function.schema.json"},
+                            {"$ref": "./lambda_create_eventsource.schema.json"},
+                            {"$ref": "./lambda_update_function_code.schema.json"},
+                            {"$ref": "./lambda_update_function_configuration.schema.json"},
+                            {"$ref": "./lambda_update_eventsource.schema.json"},
+                            {"$ref": "./lambda_delete_function.schema.json"}
+                        ]
+                    }
+                }
+
             }
         }
     }

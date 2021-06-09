@@ -34,13 +34,15 @@
                     "info": {
                         "state": "CREATED",
                         "timestamp": "1"
-                    }
+                    },
+                    "action": {}
                 }, 
                 {
                     "info": {
                         "state": "CREATED",
                         "timestamp": "1"
-                    }
+                    },
+                    "action": {}
                 }
             ],
             "_comment": "valid lambda json"
