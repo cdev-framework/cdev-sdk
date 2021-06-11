@@ -1,13 +1,11 @@
-import boto3
 import botocore
 import json
 
 from cdev.schema import utils as schema_utils
 
-client = boto3.client(
-    "lambda",    
-    aws_access_key_id="",
-    aws_secret_access_key="",)
+from . import aws_client
+
+client = aws_client.get_boto_client("lambda")
 
 # TODO throw errors
 
