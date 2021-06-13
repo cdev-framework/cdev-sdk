@@ -47,7 +47,7 @@ class GlobalStatementType(Enum):
     STANDARD = 1
     FUNCTION = 2
     IMPORT = 3
-    CLASS = 4
+    CLASS_DEF = 4
 
 
 class GlobalStatement():
@@ -161,6 +161,19 @@ class FunctionStatement(GlobalStatement):
         old_lineno = self.line_no
         self.line_no = [old_lineno[0]+1, old_lineno[1]]
         self.has_decremented = True
+
+class ClassDefinitionStatement(GlobalStatement):
+
+    def __init__(self, node, line_no, symbol_table, name):
+        super().__init__(node, line_no, symbol_table)
+        self.class_name = name
+
+    def get_type(self):
+        return GlobalStatementType.CLASS_DEF
+
+    def get_class_name(self):
+        return self.class_name
+    
 
 
 
@@ -288,6 +301,10 @@ class file_information():
     def add_global_import(self, global_obj):
         self.imported_symbol_to_global_statement[
             global_obj.as_symbol] = global_obj
+        self.add_global_statement(global_obj)
+
+    def add_class_definition(self, name, global_obj):
+        self.global_functions[name] = global_obj
         self.add_global_statement(global_obj)
 
     def add_parsed_functions(self, func):

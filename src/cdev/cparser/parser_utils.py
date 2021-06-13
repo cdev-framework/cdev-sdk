@@ -81,6 +81,26 @@ def _get_functions_in_symboltable(table):
     return rv_functions
 
 
+def _get_global_class_definitions_in_symboltable(table):
+    if not isinstance(table, symtable.SymbolTable):
+        raise InvalidParamError(f"Invalid Param in _get_functions_in_symboltable: Expected symtable.SymbolTable got {type(table)}")
+
+    symbols = table.get_symbols()
+
+    rv_class_defs = set()
+
+    for sym in symbols:
+        # Check all symbols to see if they are a namespace (only functions and classes are namespaces)
+        if sym.is_namespace():
+            for ns in sym.get_namespaces():
+                # A symbol can have multiple bindings so we need to see if any of them are functions
+                if isinstance(ns, symtable.Class):
+                    rv_class_defs.add(sym.get_name())
+                    continue
+
+    return rv_class_defs
+
+
 def _generate_global_statement(file_info_obj, node, line_info):
     # This function is used to determine the type of global statement the node is and create the corresponding global statement obj
     ast_node = node
@@ -110,10 +130,15 @@ def _generate_global_statement(file_info_obj, node, line_info):
     # But when using an annotation it will have more than 1 symbol 
     need_to_check_function = len(tmp_symbol_table.get_symbols()) == 1
 
+    need_to_check_class_def = False
+
     for sym in tmp_symbol_table.get_symbols():
         if sym.is_namespace():
             if isinstance(sym.get_namespaces()[0], symtable.Function):
                 need_to_check_function = True
+            elif isinstance(sym.get_namespaces()[0], symtable.Class):
+                need_to_check_class_def = True
+        
 
     if need_to_check_function:
         single_symbol = tmp_symbol_table.get_symbols()[0]
@@ -129,6 +154,14 @@ def _generate_global_statement(file_info_obj, node, line_info):
                     file_info_obj.include_overrides_glob[manual_include_sym] = fs
 
                 return
+
+    if need_to_check_class_def:
+
+        class_def_table = symbol_table.get_children()[0]
+
+        class_def = ClassDefinitionStatement(ast_node, [start_line, last_line], class_def_table , class_def_table.get_name())
+        file_info_obj.add_class_definition(class_def_table.get_name(), class_def)
+        return 
 
     ts = {s.get_name() for s in tmp_symbol_table.get_symbols()}
 
@@ -159,6 +192,9 @@ def _generate_global_statement(file_info_obj, node, line_info):
 
     global_statement_obj = GlobalStatement(ast_node, [start_line, last_line],
                                            symbol_table)
+
+
+    
     file_info_obj.add_global_statement(global_statement_obj)
 
     if manual_include:
@@ -245,12 +281,14 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
         imported_symbols = _get_imported_variables_in_symboltable(symbol_table)
 
         global_symbols = _get_global_variables_in_symboltable(symbol_table)
+
+        class_definitions = _get_global_class_definitions_in_symboltable(symbol_table)
     except InvalidParamError as e:
         raise CouldNotParseFileError(e)
         return
 
     for item in functions.union(local_variables).union(imported_symbols).union(
-            global_symbols):
+            global_symbols).union(class_definitions):
         file_info_obj.symbol_to_statement[item] = set()
 
     file_info_obj.set_imported_symbols(imported_symbols)
@@ -317,12 +355,18 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
             tmp.add(i)
             file_info_obj.symbol_to_statement[sym.get_name()] = tmp
 
+
         # if this global object is a function then we need to add the global object to its own symbol name dependency list. That way
         # if another global statement calls this function we include this global statement (which is the definition of the function) 
         if i.get_type() == GlobalStatementType.FUNCTION:
             tmp = file_info_obj.symbol_to_statement.get(i.get_function_name())
             tmp.add(i)
             file_info_obj.symbol_to_statement[i.get_function_name()] = tmp
+
+        if i.get_type() == GlobalStatementType.CLASS_DEF:
+            tmp = file_info_obj.symbol_to_statement.get(i.get_class_name())
+            tmp.add(i)
+            file_info_obj.symbol_to_statement[i.get_class_name()] = tmp
 
 
     # If a list of functions was not included then parse all top level functions
