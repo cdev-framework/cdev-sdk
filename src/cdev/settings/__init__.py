@@ -13,5 +13,5 @@ SETTINGS["CDEV_INTERMEDIATE_FILES_LOCATION"] = os.path.join(SETTINGS.get("CDEV_I
 SETTINGS["STATE_FOLDER"] = os.path.join(SETTINGS.get("INTERNAL_FOLDER_NAME"), "state")
 SETTINGS["LOCAL_STATE_LOCATION"] = os.path.join(SETTINGS.get("STATE_FOLDER"), "localstate.json")
 
-
-#SETTINGS["CREDENTIALS"] = ""
+SETTINGS["CDEV_PROJECT_FILE"] = os.path.join(SETTINGS.get("BASE_PATH"), "cdev_project.py")
+SETTINGS["COMPONENT_FILE_NAME"] = "cdev_component.py"

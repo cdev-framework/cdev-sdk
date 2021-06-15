@@ -35,6 +35,9 @@ def find_serverless_function_information_from_file(fp):
 
     serverless_function_information = find_serverless_function_information_in_module(mod)
 
+    if not serverless_function_information:
+        return
+
     include_functions = [x.get("handler_name") for x in serverless_function_information]
 
     parsed_function_info = cparser.parse_functions_from_file(fp, include_functions=include_functions, remove_top_annotation=True)
@@ -94,12 +97,16 @@ def parse_folder(folder_path):
     for pf in python_files:
         fullfilepath = os.path.join("..",folder_path, pf)
         localpath = os.path.join(".", pf)
+        print(localpath)
         file_info = find_serverless_function_information_from_file(localpath)
         
 
         file_list = fs_utils.get_file_as_list(fullfilepath)
 
         final_function_info = []
+
+        if not file_info:
+            continue
 
         for info in file_info:
             # Join the needed lined into a string and get the md5 hash 

@@ -162,6 +162,7 @@ class FunctionStatement(GlobalStatement):
         self.line_no = [old_lineno[0]+1, old_lineno[1]]
         self.has_decremented = True
 
+
 class ClassDefinitionStatement(GlobalStatement):
 
     def __init__(self, node, line_no, symbol_table, name):

@@ -12,6 +12,9 @@ INTERMEDIATE_FUNCTIONS_FOLDER_NAME = cdev_settings.get("CDEV_INTERMEDIATE_FILES_
 STATE_FOLDER_LOCATION = cdev_settings.get("STATE_FOLDER") 
 LOCAL_STATE_LOCATION = cdev_settings.get("LOCAL_STATE_LOCATION")
 
+CDEV_PROJECT_FILE = cdev_settings.get("CDEV_PROJECT_FILE")
+
+
 
 
 def _get_needed_folder_structure(basepath):
@@ -27,7 +30,7 @@ def _get_needed_folder_structure(basepath):
 
 
 def _get_need_files():
-    return [LOCAL_STATE_LOCATION]
+    return [LOCAL_STATE_LOCATION, CDEV_PROJECT_FILE]
 
 
 def initialize_project(folder_path):
