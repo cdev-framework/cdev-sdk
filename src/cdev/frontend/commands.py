@@ -12,8 +12,8 @@ def plan():
     #folder_information = fs.parse_folder(os.path.join(".", "src"))
     #return local_state_manager.update_local_state(folder_information)
 
-    executer.execute_cdev_project()
-    return None
+    rv = executer.execute_cdev_project()
+    return rv
 
 def init():
     print("INIT")

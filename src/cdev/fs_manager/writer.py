@@ -8,9 +8,11 @@ BASE_FILES_PATH = cdev_settings.get("CDEV_INTERMEDIATE_FILES_LOCATION")
 
 
 
-def write_intermediate_file(original_path, function_info):
+def write_intermediate_file(original_path, function_info, prefix=None):
     # Function takes an original file path and a file_info obj that describes what lines need to be parsed 
     # from the original file
+
+    # Prefix is a variable that will be added to the path after the BASE PATH but before the split path
 
     # original_path: path to file
     # function_info: [{"function_name", "needed_lines"}]
@@ -28,6 +30,9 @@ def write_intermediate_file(original_path, function_info):
         split_path.remove("..")
     except Exception as e:
         pass
+
+    if prefix:
+        split_path.insert(0, prefix)
 
     final_file_dir = _create_path(BASE_FILES_PATH, split_path)
 
@@ -60,6 +65,12 @@ def _write_intermediate_function(fp, filename, lines):
 def _create_path(startingpath, fullpath):
     # This functions takes a starting path and list of child dir and makes them all
     # Returns the final path
+
+    # ex: _create_path(""./basedir", ["sub1", "sub2"])
+    # creates: 
+    #   - ./basedir/sub1/
+    #   - ./basedir/sub1/sub2
+
     if not os.path.isdir(startingpath):
         return None
 

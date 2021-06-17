@@ -97,7 +97,6 @@ def parse_folder(folder_path):
     for pf in python_files:
         fullfilepath = os.path.join("..",folder_path, pf)
         localpath = os.path.join(".", pf)
-        print(localpath)
         file_info = find_serverless_function_information_from_file(localpath)
         
 

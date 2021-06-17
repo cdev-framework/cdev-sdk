@@ -16,7 +16,7 @@ class Cdev_Project():
 
     def __new__(cls, name):
         if cls._instance is None:
-            print(f'Creating the Cdev Proejct object -> {name}')
+            #print(f'Creating the Cdev Proejct object -> {name}')
             cls._instance = super(Cdev_Project, cls).__new__(cls)
             # Put any initialization here.
         else:
@@ -57,23 +57,29 @@ class Cdev_Project():
 
 
 class Cdev_Component():
-    def __init__(self) -> None:
+    def __init__(self, name) -> None:
+        self.name = name
         pass
 
     def render(self):
         pass
+
+    def get_name(self):
+        return self.name
 
 
 class Cdev_FileSystem_Component(Cdev_Component):
     COMPONENT_FILE_NAME = cdev_settings.get("COMPONENT_FILE_NAME")
 
-    def __init__(self, fp):
-        super().__init__()
+    def __init__(self, fp, name):
+        super().__init__(name)
         self.fp = fp
 
     def render(self):
-        print(f"REDERING -> {self.fp}")
+        #print(f"REDERING -> {self.fp}")
         return finder.parse_folder(self.fp)
+
+    
 
 
 
@@ -81,19 +87,34 @@ def execute_cdev_project():
     CDEV_PROJECT_FILE = _get_cdev_project_file()
     BASEDIR = os.path.dirname(CDEV_PROJECT_FILE)
 
-    print(BASEDIR)
     # This creates the singleton Cdev_Project object 
     _import_project_file(CDEV_PROJECT_FILE)
 
     ALL_COMPONENTS = Cdev_Project.instance().get_components()
+    actions = {
+        "appends": [],
+        "deletes": [],
+        "updates": []
+    }
 
     for component in ALL_COMPONENTS:
+        
         if isinstance(component, Cdev_FileSystem_Component):
             rv = component.render()
-            print(rv)
-            local_state_manager.update_local_state(rv)
+            new_diffs = local_state_manager.update_component_state(rv, component.get_name())
+
+            for action_type in new_diffs:
+                actions[action_type].extend(new_diffs.get(action_type))
+
         else:
             print("NOT FILE TYPE")
+        print(f"actions -> {actions}")
+
+    print(actions)
+
+    return actions
+        
+
         
 
 
