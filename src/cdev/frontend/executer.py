@@ -108,9 +108,9 @@ def execute_cdev_project():
 
         else:
             print("NOT FILE TYPE")
-        print(f"actions -> {actions}")
+        #print(f"actions -> {actions}")
 
-    print(actions)
+    #print(actions)
 
     return actions
         

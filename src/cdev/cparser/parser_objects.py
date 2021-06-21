@@ -15,18 +15,18 @@ class parsed_function():
     """
         This class represents the information for a parsed function. It mostly is used to house a function that can keep track of the line numbers.
     """
-    # A sorted list of (int,int) that represents lines that need to be parsed out of the file for this function
-    needed_line_numbers = []
-
-    # str: name of function
-    name = ""
-
-    imported_packages = set()
 
     def __init__(self, name):
         self.name = name
         self.needed_line_numbers = SortedList()
+
+        # set of imported packages
         self.imported_packages = set()
+
+        # some packages come with the lambda runtime so they do not need to be packaged into a layer so we need to make a new set with 
+        # just packages we need to actually package into layers
+        # EX: 'os' does not need to be packaged into a layer
+        self.needed_imports = set()
 
     def __eq__(self):
         return self.name == self.name
