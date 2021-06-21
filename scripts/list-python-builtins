@@ -1,0 +1,10 @@
+#!/bin/bash
+
+python_version=('3.6' '3.7' '3.8')
+
+for i in ${python_version[@]}; 
+  do html_page=$(curl https://docs.python.org/$i/library/);
+
+
+  echo $html_page | pup ".toctree-l2" | pup ".pre" | grep -v "span" | sed "s/ //g" | awk -F "." '{print $1}' | sort | uniq > ./src/cdev/fs_manager/standard_library_names/python_$i
+done;

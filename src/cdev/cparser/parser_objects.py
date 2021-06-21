@@ -183,59 +183,52 @@ class file_information():
         This class represents a file that needs to have functions parsed out of it. 
     """
 
-    # Path to the file
-    file_location = ""
-
-    # Source code
-    src_code = []
-
-    # list[global_statements]
-    top_level_statements = []
-
-    # symbol table for the file
-    symbol_table = ""
-
-    # abstract syntax tree for the file
-    ast = ""
-
-    # dict<str, list(statement)>: dictionary from string name of symbol to global statement
-    symbol_to_statement = {}
-
-    # dict<statement, list(str)>: fuction from statement to symbols
-    statement_to_symbol = {}
-
-    # dict<str, global_statement>: function name to its global statement
-    global_functions = {}
-
-    parsed_functions = []
-
-    # Set of the symbol names
-    imported_symbols = set()
-
-    # dict<str, global_statement>: imported symbol name to global statement
-    imported_symbol_to_global_statement = {}
-
-    # dict<str, int>: dict from label for manual override to the line number of the comment
-    include_overrides_lineno = {}
-
-    # dict<str, globalobj>: dict from label for manual override to the line number of the comment
-    include_overrides_glob = {}
-
     # init method or constructor
     def __init__(self, location):
         if not os.path.isfile(location):
             raise FileNotFoundError(
                 f"parser_utils: could not find file at -> {location}")
-
+        
+        # Path to the file
         self.file_location = location
+
+        # Source code
+        self.src_code = []
+
+        # dict<str, global_statement>: imported symbol name to global statement
         self.imported_symbol_to_global_statement = {}
+
+        # Set of the symbol names
+        self.imported_symbols = set()
+
+        # List of parsed function objects
         self.parsed_functions = []
+
+        # dict<str, global_statement>: function name to its global statement
         self.global_functions = {}
+
+        
+        # dict<statement, list(str)>: fuction from statement to symbols
         self.statement_to_symbol = {}
+
+        # dict<str, list(statement)>: dictionary from string name of symbol to global statement
         self.symbol_to_statement = {}
+
+        # list[global_statements]
         self.top_level_statements = []
+
+        # dict<str, int>: dict from label for manual override to the line number of the comment
         self.include_overrides_lineno = {}
+
+        # dict<str, globalobj>: dict from label for manual override to the line number of the comment
         self.include_overrides_glob = {}
+
+        # symbol table for the file
+        self.symbol_table = ""
+
+        
+        # abstract syntax tree for the file
+        self.ast = ""
 
         with open(location, 'r') as fh:
             self.src_code = fh.readlines()
@@ -246,9 +239,6 @@ class file_information():
                 # from the token module 
                 if toktype == tokenize.COMMENT:
                     self._evaluate_comment(line, start)
-
-        #print(self.include_overrides_lineno)
-
 
         try:
             self.symbol_table = symtable.symtable("".join(self.src_code),
@@ -269,8 +259,6 @@ class file_information():
         if match_obj:
             if len(match_obj.groups()) == 1:
                 self.include_overrides_lineno[match_obj.groups()[0]] = start[0]
-                #print(f"MATCH {line}")
-                #print(f"Groups: {match_obj.groups()}")
 
 
     def get_source_code(self):
