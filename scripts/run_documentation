@@ -1,0 +1,4 @@
+#!/bin/bash
+
+pdoc --http  : --config "logo_path='https://s3.amazonaws.com/cdevframework.io/images/Logo.svg'" --template-dir ./scripts/documentation-template/templates  src/cdev
+

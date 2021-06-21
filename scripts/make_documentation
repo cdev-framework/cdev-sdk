@@ -1,4 +1,8 @@
 #!/bin/bash
 
 
-pdoc --html --force --output-dir documentation-output src
+pdoc --html --force --output-dir documentation-output  --template-dir ./scripts/documentation-template/templates src/cdev
+
+mkdir $cdevwebsitepath/public/docs/api/
+
+cp -r ./documentation-output/cdev/* $cdevwebsitepath/public/docs/api

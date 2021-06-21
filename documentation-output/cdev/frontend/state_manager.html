@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>cdev.frontend.state_manager API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden;background:#07085d}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}a.sidebar{color:white;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#f7463a}a.nav-header{color:white}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0;background:#07085d}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cdev.frontend.state_manager</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import json
+import os
+from sys import prefix
+import time
+
+from cdev.settings import SETTINGS as cdev_settings
+from cdev.schema import utils as schema_utils
+from cdev.fs_manager import writer as cdev_writer
+
+BASE_PATH = cdev_settings.get(&#34;BASE_PATH&#34;)
+
+STATE_FOLDER_LOCATION = cdev_settings.get(&#34;STATE_FOLDER&#34;) 
+LOCAL_STATE_LOCATION = cdev_settings.get(&#34;LOCAL_STATE_LOCATION&#34;)
+
+FULL_LOCAL_STATE_PATH = os.path.join(BASE_PATH, LOCAL_STATE_LOCATION)
+
+
+def update_component_state(project_info, component_name):
+    # Returns a dictionary with the actions taken to update the local state
+    # RV: {
+    #   &#34;appends&#34;: [], these are the completely new resources
+    #   &#34;deletes&#34;: [], these are the resources that are removed
+    #   &#34;updates&#34;: [], these are the resources that were updated 
+    # }
+
+    previous_local_state = _load_local_state()
+
+    if not previous_local_state:
+        # IF there was no previous local state then write the entire state as appends
+
+        rv = _write_full_local_state(project_info, component_name)
+
+        return rv
+
+    if not component_name in previous_local_state.get(&#34;components&#34;):
+        # TODO throw error
+        print(&#34;COMPONENT NOT IN STATE&#34;)
+        rv = _write_new_component(project_info, previous_local_state, component_name)
+        return rv
+
+
+    # get the pure diffs in the current project and previous local state
+    #print(f&#34;-&gt; {project_info}&#34;)
+    diffs = _get_diffs_in_local_state(project_info, previous_local_state, component_name)
+
+    seen_paths = {}
+    updates = []
+    additions = []
+
+    # We want to construct updates based on the idea if there is an addition and deletion to the same 
+    # parsed path meaning that parsed path was updated.
+
+    for deleted_function in diffs.get(&#39;deletes&#39;):
+        try:
+            seen_paths[deleted_function.get(&#39;parsed_path&#39;)] = deleted_function
+            os.remove(deleted_function.get(&#39;parsed_path&#39;))
+            previous_local_state.get(&#34;components&#34;).get(component_name).get(&#39;functions&#39;).remove(deleted_function)
+        except Exception as e:
+            # TODO THROW BETTER ERROR
+            print(f&#34;BAD DELETE ITEM {e}&#34;)
+
+    
+    for d in diffs.get(&#34;appends&#34;):
+        parsed_path = cdev_writer.write_intermediate_file(d.get(&#34;original_path&#34;), d, prefix=component_name)
+
+        tmp_obj = {
+            &#34;original_path&#34;: d.get(&#34;original_path&#34;),
+            &#34;parsed_path&#34;: parsed_path,
+            &#34;hash&#34;: d.get(&#34;hash&#34;),
+            &#34;local_function_name&#34;: d.get(&#34;function_name&#34;),
+            &#34;timestamp&#34;: str(time.time()),
+            &#34;configuration&#34;: [
+                {
+                    &#34;name&#34;: &#34;Runtime&#34;,
+                    &#34;value&#34;: &#34;python3.7&#34;
+                }
+            ]
+        }
+
+        previous_local_state.get(&#34;components&#34;).get(component_name).get(&#34;functions&#34;).append(tmp_obj)
+
+        if parsed_path in seen_paths:
+            updates.append(tmp_obj)
+            diffs.get(&#39;deletes&#39;).remove(seen_paths.get(parsed_path))
+        else:
+            additions.append(tmp_obj)
+
+        
+
+    diffs[&#39;updates&#39;] = updates
+    diffs[&#39;appends&#39;] = additions
+
+    _write_local_state(previous_local_state)
+
+    return diffs
+
+
+def _write_full_local_state(project_info, component_name):
+    # NO previous local state so write current state and don&#39;t worry about diffs
+    print(&#39;DO ALL CURRENT STATE&#39;)
+    final_function_info = []
+
+    for file_info in project_info:
+        file_name = file_info.get(&#34;filename&#34;)
+
+        for function_info in file_info.get(&#39;function_information&#39;):
+            parsed_path = cdev_writer.write_intermediate_file(file_name, function_info, prefix=component_name)
+
+
+            tmp_obj = {
+                &#34;original_path&#34;: file_name,
+                &#34;parsed_path&#34;: parsed_path,
+                &#34;hash&#34;: function_info.get(&#34;hash&#34;),
+                &#34;local_function_name&#34;: function_info.get(&#34;function_name&#34;),
+                &#34;timestamp&#34;: str(time.time()),
+                &#34;configuration&#34;: [
+                    {
+                        &#34;name&#34;: &#34;Runtime&#34;,
+                        &#34;value&#34;: &#34;python3.7&#34;
+                    }
+                ]
+            }
+
+            final_function_info.append(tmp_obj)
+
+
+    final_component_state = {
+        &#34;functions&#34;: final_function_info
+    }
+
+    final_project_state = {
+        &#34;components&#34;: {
+            component_name: final_component_state
+        }
+    }
+
+    _write_local_state(final_project_state)
+
+    return {&#39;appends&#39;: final_function_info}
+
+
+def _write_new_component(component_info, previous_state, component_name):
+    # NO previous state for this component so write current component state as appends and dont worry about diffs
+    print(&#39;DO ALL CURRENT STATE&#39;)
+    final_function_info = []
+
+    for file_info in component_info:
+        file_name = file_info.get(&#34;filename&#34;)
+
+        for function_info in file_info.get(&#39;function_information&#39;):
+            parsed_path = cdev_writer.write_intermediate_file(file_name, function_info, prefix=component_name)
+
+
+            tmp_obj = {
+                &#34;original_path&#34;: file_name,
+                &#34;parsed_path&#34;: parsed_path,
+                &#34;hash&#34;: function_info.get(&#34;hash&#34;),
+                &#34;local_function_name&#34;: function_info.get(&#34;function_name&#34;),
+                &#34;timestamp&#34;: str(time.time()),
+                &#34;configuration&#34;: [
+                    {
+                        &#34;name&#34;: &#34;Runtime&#34;,
+                        &#34;value&#34;: &#34;python3.7&#34;
+                    }
+                ]
+            }
+
+            final_function_info.append(tmp_obj)
+
+
+    final_component_state = {
+        &#34;functions&#34;: final_function_info
+    }
+
+    previous_state.get(&#34;components&#34;)[component_name] = final_component_state
+
+    _write_local_state(previous_state)
+
+    return {&#39;appends&#39;: final_function_info}
+
+
+def _get_diffs_in_local_state(project_info, previous_local_state, component_name):
+    # This only returns all changes as either deletes or appends
+
+    # For example, changing the src code of a handler results in a delete and append because
+    # the old version is deleted and a new version created. It helps to have this primitive view
+    # because it can be used to construct more advanced states like updates. Any advanced change 
+    # to state can be constructed from these primitives
+
+
+    diffs = {
+        &#39;appends&#39;: [],
+        &#39;deletes&#39;: []
+    }
+
+    component_info = project_info
+
+    previous_component_state = previous_local_state.get(&#34;components&#34;).get(component_name)
+
+    for file_info in component_info:
+        file_name = file_info.get(&#34;filename&#34;)
+
+        for function_info in file_info.get(&#39;function_information&#39;):
+            hashed = function_info.get(&#34;hash&#34;)
+
+            if hashed in previous_component_state.get(&#34;hash_to_function&#34;):
+                previous_component_state.get(&#34;hash_to_function&#34;).pop(hashed)
+                continue
+
+            function_info[&#34;original_path&#34;] = file_name
+            diffs.get(&#39;appends&#39;).append(function_info)
+
+
+    for remaining in previous_component_state.get(&#34;hash_to_function&#34;):
+        diffs.get(&#39;deletes&#39;).append(previous_component_state.get(&#39;hash_to_function&#39;).get(remaining))
+
+
+    return diffs
+
+    
+def _write_local_state(state):
+    
+    for component_name in state.get(&#34;components&#34;):
+        try:
+            state.get(&#34;components&#34;).get(component_name).pop(&#39;hash_to_function&#39;)
+        except Exception as e:
+            print(f&#34;ERROR -&gt; {e}&#34;)
+            continue
+
+    with open(FULL_LOCAL_STATE_PATH, &#39;w&#39;) as fp:
+        json.dump(state, fp, indent=4)
+
+
+def _load_local_state():
+    # TODO Make this a class and json representation use json schema 
+    if not os.path.isfile(FULL_LOCAL_STATE_PATH):
+        # TODO Throw error
+        return None
+
+
+    with open(FULL_LOCAL_STATE_PATH) as fp:
+        previous_data = json.load(fp)
+
+    rv = {}
+
+    for component_name in previous_data.get(&#34;components&#34;):
+
+        previous_data.get(&#34;components&#34;).get(component_name)[&#39;hash_to_function&#39;] = {}
+        
+    
+        for function_state in previous_data.get(&#34;components&#34;).get(component_name).get(&#34;functions&#34;):
+            schema_utils.validate(schema_utils.SCHEMA.FRONTEND_FUNCTION, function_state)
+
+            previous_data.get(&#34;components&#34;).get(component_name)[&#39;hash_to_function&#39;][function_state.get(&#34;hash&#34;)] = function_state
+
+    
+    return previous_data</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="cdev.frontend.state_manager.update_component_state"><code class="name flex">
+<span>def <span class="ident">update_component_state</span></span>(<span>project_info, component_name)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def update_component_state(project_info, component_name):
+    # Returns a dictionary with the actions taken to update the local state
+    # RV: {
+    #   &#34;appends&#34;: [], these are the completely new resources
+    #   &#34;deletes&#34;: [], these are the resources that are removed
+    #   &#34;updates&#34;: [], these are the resources that were updated 
+    # }
+
+    previous_local_state = _load_local_state()
+
+    if not previous_local_state:
+        # IF there was no previous local state then write the entire state as appends
+
+        rv = _write_full_local_state(project_info, component_name)
+
+        return rv
+
+    if not component_name in previous_local_state.get(&#34;components&#34;):
+        # TODO throw error
+        print(&#34;COMPONENT NOT IN STATE&#34;)
+        rv = _write_new_component(project_info, previous_local_state, component_name)
+        return rv
+
+
+    # get the pure diffs in the current project and previous local state
+    #print(f&#34;-&gt; {project_info}&#34;)
+    diffs = _get_diffs_in_local_state(project_info, previous_local_state, component_name)
+
+    seen_paths = {}
+    updates = []
+    additions = []
+
+    # We want to construct updates based on the idea if there is an addition and deletion to the same 
+    # parsed path meaning that parsed path was updated.
+
+    for deleted_function in diffs.get(&#39;deletes&#39;):
+        try:
+            seen_paths[deleted_function.get(&#39;parsed_path&#39;)] = deleted_function
+            os.remove(deleted_function.get(&#39;parsed_path&#39;))
+            previous_local_state.get(&#34;components&#34;).get(component_name).get(&#39;functions&#39;).remove(deleted_function)
+        except Exception as e:
+            # TODO THROW BETTER ERROR
+            print(f&#34;BAD DELETE ITEM {e}&#34;)
+
+    
+    for d in diffs.get(&#34;appends&#34;):
+        parsed_path = cdev_writer.write_intermediate_file(d.get(&#34;original_path&#34;), d, prefix=component_name)
+
+        tmp_obj = {
+            &#34;original_path&#34;: d.get(&#34;original_path&#34;),
+            &#34;parsed_path&#34;: parsed_path,
+            &#34;hash&#34;: d.get(&#34;hash&#34;),
+            &#34;local_function_name&#34;: d.get(&#34;function_name&#34;),
+            &#34;timestamp&#34;: str(time.time()),
+            &#34;configuration&#34;: [
+                {
+                    &#34;name&#34;: &#34;Runtime&#34;,
+                    &#34;value&#34;: &#34;python3.7&#34;
+                }
+            ]
+        }
+
+        previous_local_state.get(&#34;components&#34;).get(component_name).get(&#34;functions&#34;).append(tmp_obj)
+
+        if parsed_path in seen_paths:
+            updates.append(tmp_obj)
+            diffs.get(&#39;deletes&#39;).remove(seen_paths.get(parsed_path))
+        else:
+            additions.append(tmp_obj)
+
+        
+
+    diffs[&#39;updates&#39;] = updates
+    diffs[&#39;appends&#39;] = additions
+
+    _write_local_state(previous_local_state)
+
+    return diffs</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<img class='logo-img' src="/images/Logo.svg" alt="site">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a class="sidebar" title="cdev.frontend" href="index.html">cdev.frontend</a></code></li>
+</ul>
+</li>
+<li><h3><a class='nav-header' href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a class="sidebar" title="cdev.frontend.state_manager.update_component_state" href="#cdev.frontend.state_manager.update_component_state">update_component_state</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>
