@@ -1,7 +1,6 @@
 import ast
 import os
 import symtable
-import math
 from enum import Enum
 import tokenize
 import re
@@ -27,6 +26,8 @@ class parsed_function():
         # just packages we need to actually package into layers
         # EX: 'os' does not need to be packaged into a layer
         self.needed_imports = set()
+
+        self.needed_imports_hash = ""
 
     def __eq__(self):
         return self.name == self.name

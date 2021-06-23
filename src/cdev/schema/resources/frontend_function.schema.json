@@ -24,6 +24,10 @@
             "$id": "#/properties/hash",
             "type": "string"
         },
+        "dependencies_hash": {
+            "$id": "#/properties/dependencies_hash",
+            "type": "string"
+        },
         "timestamp": {
             "$id": "#/properties/timestamp",
             "type": "string"

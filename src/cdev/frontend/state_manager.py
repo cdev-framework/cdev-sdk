@@ -2,6 +2,7 @@ import json
 import os
 from sys import prefix
 import time
+import hashlib
 
 from cdev.settings import SETTINGS as cdev_settings
 from cdev.schema import utils as schema_utils
@@ -34,13 +35,11 @@ def update_component_state(project_info, component_name):
 
     if not component_name in previous_local_state.get("components"):
         # TODO throw error
-        print("COMPONENT NOT IN STATE")
         rv = _write_new_component(project_info, previous_local_state, component_name)
         return rv
 
 
     # get the pure diffs in the current project and previous local state
-    #print(f"-> {project_info}")
     diffs = _get_diffs_in_local_state(project_info, previous_local_state, component_name)
 
     seen_paths = {}
@@ -67,6 +66,7 @@ def update_component_state(project_info, component_name):
             "original_path": d.get("original_path"),
             "parsed_path": parsed_path,
             "hash": d.get("hash"),
+            "dependencies_hash": d.get("dependencies_hash"),
             "local_function_name": d.get("function_name"),
             "timestamp": str(time.time()),
             "configuration": [
@@ -80,7 +80,15 @@ def update_component_state(project_info, component_name):
         previous_local_state.get("components").get(component_name).get("functions").append(tmp_obj)
 
         if parsed_path in seen_paths:
+
+            if not tmp_obj.get("hash") == seen_paths.get(parsed_path).get("hash"):
+                tmp_obj["action"] = "SOURCE CODE"
+            else:
+                tmp_obj["action"] = "DEPENDENCY"
+
             updates.append(tmp_obj)
+           
+
             diffs.get('deletes').remove(seen_paths.get(parsed_path))
         else:
             additions.append(tmp_obj)
@@ -111,6 +119,7 @@ def _write_full_local_state(project_info, component_name):
                 "original_path": file_name,
                 "parsed_path": parsed_path,
                 "hash": function_info.get("hash"),
+                "dependencies_hash": function_info.get("dependencies_hash"),
                 "local_function_name": function_info.get("function_name"),
                 "timestamp": str(time.time()),
                 "configuration": [
@@ -155,6 +164,7 @@ def _write_new_component(component_info, previous_state, component_name):
                 "original_path": file_name,
                 "parsed_path": parsed_path,
                 "hash": function_info.get("hash"),
+                "dependencies_hash": function_info.get("dependencies_hash"),
                 "local_function_name": function_info.get("function_name"),
                 "timestamp": str(time.time()),
                 "configuration": [
@@ -201,10 +211,15 @@ def _get_diffs_in_local_state(project_info, previous_local_state, component_name
         file_name = file_info.get("filename")
 
         for function_info in file_info.get('function_information'):
-            hashed = function_info.get("hash")
+            src_code_hashed = function_info.get("hash")
+            dependencies_hashed = function_info.get("dependencies_hash")
 
-            if hashed in previous_component_state.get("hash_to_function"):
-                previous_component_state.get("hash_to_function").pop(hashed)
+            joined_hashes = "".join([src_code_hashed, dependencies_hashed]).encode()
+
+            total_hash = hashlib.md5(joined_hashes).hexdigest() 
+
+            if total_hash in previous_component_state.get("hash_to_function"):
+                previous_component_state.get("hash_to_function").pop(total_hash)
                 continue
 
             function_info["original_path"] = file_name
@@ -251,7 +266,12 @@ def _load_local_state():
         for function_state in previous_data.get("components").get(component_name).get("functions"):
             schema_utils.validate(schema_utils.SCHEMA.FRONTEND_FUNCTION, function_state)
 
-            previous_data.get("components").get(component_name)['hash_to_function'][function_state.get("hash")] = function_state
+            items_to_hash = [function_state.get("hash"), function_state.get("dependencies_hash")]
+            joined_hashes = "".join(items_to_hash).encode()
+
+            total_hash = hashlib.md5(joined_hashes).hexdigest() 
+
+            previous_data.get("components").get(component_name)['hash_to_function'][total_hash] = function_state
 
     
     return previous_data

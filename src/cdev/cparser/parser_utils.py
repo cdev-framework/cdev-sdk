@@ -1,5 +1,6 @@
 import ast
 import os
+from sys import modules
 import tokenize 
 
 from cdev.cparser.parser_objects import *
@@ -487,3 +488,47 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
         file_info_obj.add_parsed_functions(p_function)
 
     return file_info_obj
+
+
+def _get_individual_files_imported_symbols(file_location):
+    
+    rv = set()
+    
+    with open(file_location, 'r') as fh:
+        src_code = fh.readlines()
+        fh.seek(0)
+
+    ast_rep = ast.parse("".join(src_code))
+
+    for node in ast.walk(ast_rep):
+        if isinstance(node, ast.Import):
+            for pkg_name in node.names:
+                rv.add(pkg_name.name)
+    
+        elif isinstance(node, ast.ImportFrom):
+            # if the import has levels > 0 and no module it is a local referenced package and will already be included
+            # if not then it is a package on the PYTHONPATH and we need to add it as a dependency
+            
+            if not node.module and node.level > 0:
+                continue
+
+            rv.add(node.module)
+           
+    return rv
+
+
+def get_folders_imported_symbols(folder_path):
+    # Walk the whole dir/children importing all python files and then searching their symbol tree to find import statements
+
+    all_symbols = set()
+
+    for (dirpath, dirnames, filenames) in os.walk(folder_path):
+        for filename in filenames:
+            if filename.endswith('.py'): 
+                rv = _get_individual_files_imported_symbols(os.sep.join([dirpath, filename]))
+
+                all_symbols = all_symbols.union(rv)
+
+    return all_symbols
+
+

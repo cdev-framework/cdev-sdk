@@ -45,10 +45,14 @@ def find_serverless_function_information_from_file(fp):
     # return a [{function_name, needed_lines},...]  that represents the parsed function and their 
     rv = []
 
+    
+
     for f in parsed_function_info.parsed_functions:
+        dependencies_hash = f.needed_imports_hash if not f.needed_imports_hash == "" else "0"
         rv.append({
             "function_name": f.name,
-            "needed_lines": f.needed_line_numbers
+            "needed_lines": f.needed_line_numbers,
+            "dependencies_hash": dependencies_hash
         })
 
     return rv
@@ -115,6 +119,7 @@ def parse_folder(folder_path):
             file_hash = hashlib.md5(encoded_file_as_string).hexdigest()
 
             info['hash'] = file_hash
+            info['dependencies_hash'] = info.get("dependencies_hash")
     
             #print(f'{fullfilepath} -> {file_as_string}; {file_hash}')
             final_function_info.append(info)
