@@ -36,9 +36,6 @@ def parse_functions_from_file(file_loc, include_functions=[], function_manual_in
         if ALL_PACKAGES:
             sorted_packages =  SortedList(ALL_PACKAGES)
             parsed_function.needed_imports = sorted_packages
-            parsed_function.needed_imports_hash = hashlib.md5("".join(sorted_packages).encode()).hexdigest() 
-
-            #print(f"{parsed_function.name} -> {sorted_packages}; {parsed_function.needed_imports_hash }")
 
     return file_information
 

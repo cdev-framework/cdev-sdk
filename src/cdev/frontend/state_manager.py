@@ -4,6 +4,8 @@ from sys import prefix
 import time
 import hashlib
 
+from sortedcontainers.sortedlist import identity
+
 from cdev.settings import SETTINGS as cdev_settings
 from cdev.schema import utils as schema_utils
 from cdev.fs_manager import writer as cdev_writer
@@ -16,7 +18,9 @@ LOCAL_STATE_LOCATION = cdev_settings.get("LOCAL_STATE_LOCATION")
 FULL_LOCAL_STATE_PATH = os.path.join(BASE_PATH, LOCAL_STATE_LOCATION)
 
 
-def update_component_state(project_info, component_name):
+def update_component_state(component_info, component_name):
+    # This function takes in a component object and updates the local state to reflect the changes in the component 
+
     # Returns a dictionary with the actions taken to update the local state
     # RV: {
     #   "appends": [], these are the completely new resources
@@ -27,31 +31,34 @@ def update_component_state(project_info, component_name):
     previous_local_state = _load_local_state()
 
     if not previous_local_state:
-        # IF there was no previous local state then write the entire state as appends
+        # IF there was not previous local state then write the entire state as appends
+        previous_local_state = _create_local_state_file("PROJECT 1")
 
-        rv = _write_full_local_state(project_info, component_name)
-
-        return rv
 
     if not component_name in previous_local_state.get("components"):
-        # TODO throw error
-        rv = _write_new_component(project_info, previous_local_state, component_name)
+        # IF the component was not previously in the local state add it
+        rv = _write_new_component(component_info, previous_local_state, component_name)
         return rv
 
 
-    # get the pure diffs in the current project and previous local state
-    diffs = _get_diffs_in_local_state(project_info, previous_local_state, component_name)
+    # get the pure diffs in the current component and previous local state
+    pure_diffs = _get_diffs_in_local_state(component_info, previous_local_state, component_name)
 
     seen_paths = {}
+    seen_total_hashed = {}
     updates = []
     additions = []
 
     # We want to construct updates based on the idea if there is an addition and deletion to the same 
-    # parsed path meaning that parsed path was updated.
+    # parsed path means that function at that parsed path was updated. To support moving files to different directories,
+    # we also look to see if the appends and deletes are just changes in the parsed_path (so no change in total hash)
 
-    for deleted_function in diffs.get('deletes'):
+    for deleted_function in pure_diffs.get('deletes'):
+        # We want to delete all items that have been changed in the component as they will either be added back as an update or
+        # the resource has actually been deleted. 
         try:
             seen_paths[deleted_function.get('parsed_path')] = deleted_function
+            seen_total_hashed[deleted_function.get('total_hash')] = deleted_function
             os.remove(deleted_function.get('parsed_path'))
             previous_local_state.get("components").get(component_name).get('functions').remove(deleted_function)
         except Exception as e:
@@ -59,123 +66,101 @@ def update_component_state(project_info, component_name):
             print(f"BAD DELETE ITEM {e}")
 
     
-    for d in diffs.get("appends"):
-        parsed_path = cdev_writer.write_intermediate_file(d.get("original_path"), d, prefix=component_name)
+    for diff in pure_diffs.get("appends"):
+        # We need to determine if the pure appends are updates or actual new resources
+        # Updates can be:
+        #   - Change in src code (change in source code hash)
+        #   - Change in the dependencies (change in dependency hash)
+        #   - Change in parsed path (files have been moved)
+        # An Update can contain both change in src code and dependency at the same time, but 
+        # an update to the file system must be exclusive to be registered as an update
+        
+        #cdev_writer.write_intermediate_file(diff.get("original_path"), diff, prefix=component_name)
+        cdev_writer.write_intermediate_file(diff.get("original_path"), diff, diff.get("parsed_path"))
 
-        tmp_obj = {
-            "original_path": d.get("original_path"),
-            "parsed_path": parsed_path,
-            "hash": d.get("hash"),
-            "dependencies_hash": d.get("dependencies_hash"),
-            "local_function_name": d.get("function_name"),
-            "timestamp": str(time.time()),
-            "configuration": [
-                {
-                    "name": "Runtime",
-                    "value": "python3.7"
-                }
-            ]
-        }
+        tmp_obj = _create_function_object(
+                    original_path=diff.get("original_path"), 
+                    parsed_path=diff.get("parsed_path"), 
+                    src_code_hash=diff.get("source_code_hash"), 
+                    dependencies_hash=diff.get("dependencies_hash"),
+                    identity_hash=diff.get("identity_hash"),
+                    metadata_hash=diff.get("metadata_hash"),
+                    total_hash=diff.get("total_hash"),
+                    local_function_name=diff.get("function_name")
+                )
 
         previous_local_state.get("components").get(component_name).get("functions").append(tmp_obj)
 
-        if parsed_path in seen_paths:
 
-            if not tmp_obj.get("hash") == seen_paths.get(parsed_path).get("hash"):
-                tmp_obj["action"] = "SOURCE CODE"
-            else:
-                tmp_obj["action"] = "DEPENDENCY"
+        parsed_path = diff.get("parsed_path")
+
+        tmp_obj["action"] = []
+        if parsed_path in seen_paths:
+            # This path was a previous parsed path so check for the change in the source code and dependency
+            if not tmp_obj.get("source_code_hash") == seen_paths.get(parsed_path).get("source_code_hash"):
+                tmp_obj["action"].append("SOURCE CODE")
+            
+            if not tmp_obj.get("dependencies_hash") == seen_paths.get(parsed_path).get("dependencies_hash"):
+                tmp_obj["action"].append("DEPENDENCY")
 
             updates.append(tmp_obj)
-           
+            pure_diffs.get('deletes').remove(seen_paths.get(parsed_path))
 
-            diffs.get('deletes').remove(seen_paths.get(parsed_path))
+
+        elif tmp_obj.get("total_hash") in seen_total_hashed:
+            # This 
+            tmp_obj["action"].append("MOVE")
+            updates.append(tmp_obj)
+            pure_diffs.get('deletes').remove(seen_total_hashed.get(parsed_path))
         else:
             additions.append(tmp_obj)
 
         
 
-    diffs['updates'] = updates
-    diffs['appends'] = additions
+    pure_diffs['updates'] = updates
+    pure_diffs['appends'] = additions
 
     _write_local_state(previous_local_state)
 
-    return diffs
+    return pure_diffs
 
 
-def _write_full_local_state(project_info, component_name):
-    # NO previous local state so write current state and don't worry about diffs
-    print('DO ALL CURRENT STATE')
-    final_function_info = []
-
-    for file_info in project_info:
-        file_name = file_info.get("filename")
-
-        for function_info in file_info.get('function_information'):
-            parsed_path = cdev_writer.write_intermediate_file(file_name, function_info, prefix=component_name)
-
-
-            tmp_obj = {
-                "original_path": file_name,
-                "parsed_path": parsed_path,
-                "hash": function_info.get("hash"),
-                "dependencies_hash": function_info.get("dependencies_hash"),
-                "local_function_name": function_info.get("function_name"),
-                "timestamp": str(time.time()),
-                "configuration": [
-                    {
-                        "name": "Runtime",
-                        "value": "python3.7"
-                    }
-                ]
-            }
-
-            final_function_info.append(tmp_obj)
-
-
-    final_component_state = {
-        "functions": final_function_info
-    }
-
-    final_project_state = {
+def _create_local_state_file(project_name):
+    # NO previous local state so write an empty object to the file then return the object
+  
+    project_state = {
         "components": {
-            component_name: final_component_state
-        }
+        },
+        "project_name": project_name
     }
 
-    _write_local_state(final_project_state)
+    _write_local_state(project_state)
 
-    return {'appends': final_function_info}
+    return project_state
 
 
 def _write_new_component(component_info, previous_state, component_name):
     # NO previous state for this component so write current component state as appends and dont worry about diffs
-    print('DO ALL CURRENT STATE')
     final_function_info = []
 
     for file_info in component_info:
         file_name = file_info.get("filename")
 
         for function_info in file_info.get('function_information'):
-            parsed_path = cdev_writer.write_intermediate_file(file_name, function_info, prefix=component_name)
-
-
-            tmp_obj = {
-                "original_path": file_name,
-                "parsed_path": parsed_path,
-                "hash": function_info.get("hash"),
-                "dependencies_hash": function_info.get("dependencies_hash"),
-                "local_function_name": function_info.get("function_name"),
-                "timestamp": str(time.time()),
-                "configuration": [
-                    {
-                        "name": "Runtime",
-                        "value": "python3.7"
-                    }
-                ]
-            }
+            tmp_obj = _create_function_object(
+                            original_path=file_name, 
+                            parsed_path=function_info.get("parsed_path"), 
+                            src_code_hash=function_info.get("source_code_hash"), 
+                            dependencies_hash=function_info.get("dependencies_hash"),
+                            identity_hash=function_info.get("identity_hash"),
+                            metadata_hash=function_info.get("metadata_hash"),
+                            total_hash=function_info.get("total_hash"),
+                            local_function_name=function_info.get("function_name")
+                        )
 
             final_function_info.append(tmp_obj)
+
+            cdev_writer.write_intermediate_file(file_name, function_info, function_info.get("parsed_path"))
 
 
     final_component_state = {
@@ -189,7 +174,7 @@ def _write_new_component(component_info, previous_state, component_name):
     return {'appends': final_function_info}
 
 
-def _get_diffs_in_local_state(project_info, previous_local_state, component_name):
+def _get_diffs_in_local_state(component_info, previous_local_state, component_name):
     # This only returns all changes as either deletes or appends
 
     # For example, changing the src code of a handler results in a delete and append because
@@ -203,7 +188,7 @@ def _get_diffs_in_local_state(project_info, previous_local_state, component_name
         'deletes': []
     }
 
-    component_info = project_info
+    component_info = component_info
 
     previous_component_state = previous_local_state.get("components").get(component_name)
 
@@ -211,13 +196,7 @@ def _get_diffs_in_local_state(project_info, previous_local_state, component_name
         file_name = file_info.get("filename")
 
         for function_info in file_info.get('function_information'):
-            src_code_hashed = function_info.get("hash")
-            dependencies_hashed = function_info.get("dependencies_hash")
-
-            joined_hashes = "".join([src_code_hashed, dependencies_hashed]).encode()
-
-            total_hash = hashlib.md5(joined_hashes).hexdigest() 
-
+            total_hash = function_info.get("total_hash")
             if total_hash in previous_component_state.get("hash_to_function"):
                 previous_component_state.get("hash_to_function").pop(total_hash)
                 continue
@@ -229,6 +208,7 @@ def _get_diffs_in_local_state(project_info, previous_local_state, component_name
     for remaining in previous_component_state.get("hash_to_function"):
         diffs.get('deletes').append(previous_component_state.get('hash_to_function').get(remaining))
 
+    print(diffs)
 
     return diffs
 
@@ -266,12 +246,31 @@ def _load_local_state():
         for function_state in previous_data.get("components").get(component_name).get("functions"):
             schema_utils.validate(schema_utils.SCHEMA.FRONTEND_FUNCTION, function_state)
 
-            items_to_hash = [function_state.get("hash"), function_state.get("dependencies_hash")]
-            joined_hashes = "".join(items_to_hash).encode()
-
-            total_hash = hashlib.md5(joined_hashes).hexdigest() 
+            total_hash = function_state.get("total_hash")
 
             previous_data.get("components").get(component_name)['hash_to_function'][total_hash] = function_state
 
     
     return previous_data
+
+def _create_function_object(original_path="", parsed_path="", src_code_hash="", dependencies_hash="",
+                            identity_hash="", metadata_hash="",  total_hash="", local_function_name=""):    
+    tmp_obj = {
+        "original_path": original_path,
+        "parsed_path": parsed_path,
+        "source_code_hash": src_code_hash,
+        "dependencies_hash": dependencies_hash,
+        "identity_hash": identity_hash,
+        "metadata_hash": metadata_hash,
+        "total_hash": total_hash,
+        "local_function_name": local_function_name,
+        "timestamp": str(time.time()),
+        "configuration": [
+            {
+                "name": "Runtime",
+                "value": "python3.7"
+            }
+        ]
+    }
+
+    return tmp_obj

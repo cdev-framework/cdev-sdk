@@ -6,7 +6,11 @@
     "required": [
         "original_path",
         "parsed_path",
-        "hash",
+        "source_code_hash",
+        "dependencies_hash",
+        "identity_hash",
+        "metadata_hash",
+        "total_hash",
         "timestamp",
         "local_function_name",
         "configuration"
@@ -20,12 +24,24 @@
             "$id": "#/properties/parsed_path",
             "type": "string"
         },
-        "hash": {
-            "$id": "#/properties/hash",
+        "source_code_hash": {
+            "$id": "#/properties/source_code_hash",
             "type": "string"
         },
         "dependencies_hash": {
             "$id": "#/properties/dependencies_hash",
+            "type": "string"
+        },
+        "identity_hash": {
+            "$id": "#/properties/identity_hash",
+            "type": "string"
+        },
+        "metadata_hash": {
+            "$id": "#/properties/metadata_hash",
+            "type": "string"
+        },
+        "total_hash": {
+            "$id": "#/properties/total_hash",
             "type": "string"
         },
         "timestamp": {

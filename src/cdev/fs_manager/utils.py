@@ -1,5 +1,9 @@
 import os
 
+from cdev.settings import SETTINGS as cdev_settings
+
+BASE_FILES_PATH = cdev_settings.get("CDEV_INTERMEDIATE_FILES_LOCATION")
+
 def get_lines_from_file_list(file_list, function_info):
     # Get the list of lines from a file based on the function info provided
     line_nos = _compress_lines(function_info)
@@ -38,3 +42,44 @@ def _compress_lines(original_lines):
             rv.append(i)
 
     return rv 
+
+
+def get_parsed_path(original_path, function_name, prefix=None):
+    split_path = original_path.split("/")
+    # the last item in the path is .py file name... change the  .py to _py so it works as a dir
+    split_path[-1] = split_path[-1].split(".")[0] + "_py"
+    try:
+        split_path.remove(".")
+        split_path.remove("..")
+    except Exception as e:
+        pass
+
+    if prefix:
+        split_path.insert(0, prefix)
+
+    final_file_dir = _create_path(BASE_FILES_PATH, split_path)
+
+    return os.path.join(final_file_dir,function_name+".py")
+
+
+def _create_path(startingpath, fullpath):
+    # This functions takes a starting path and list of child dir and makes them all
+    # Returns the final path
+
+    # ex: _create_path(""./basedir", ["sub1", "sub2"])
+    # creates: 
+    #   - ./basedir/sub1/
+    #   - ./basedir/sub1/sub2
+
+    if not os.path.isdir(startingpath):
+        return None
+
+    intermediate_path = startingpath
+
+    for p in fullpath:
+        if not os.path.isdir(os.path.join(intermediate_path, p)):
+            os.mkdir(os.path.join(intermediate_path, p))
+
+        intermediate_path = os.path.join(intermediate_path, p)
+
+    return intermediate_path

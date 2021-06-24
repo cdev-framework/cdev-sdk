@@ -1,6 +1,7 @@
 import importlib
 import os
 import sys
+from cdev.cparser.parser_objects import file_information
 
 from cdev.settings import SETTINGS as cdev_settings
 from cdev.fs_manager import finder
@@ -69,15 +70,13 @@ class Cdev_Component():
 
 
 class Cdev_FileSystem_Component(Cdev_Component):
-    COMPONENT_FILE_NAME = cdev_settings.get("COMPONENT_FILE_NAME")
 
     def __init__(self, fp, name):
         super().__init__(name)
         self.fp = fp
 
     def render(self):
-        #print(f"REDERING -> {self.fp}")
-        return finder.parse_folder(self.fp)
+        return finder.parse_folder(self.fp, self.get_name())
 
     
 
