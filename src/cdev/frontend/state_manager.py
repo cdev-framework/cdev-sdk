@@ -59,7 +59,6 @@ def update_component_state(component_info, component_name):
         try:
             seen_paths[deleted_function.get('parsed_path')] = deleted_function
             seen_total_hashed[deleted_function.get('total_hash')] = deleted_function
-            os.remove(deleted_function.get('parsed_path'))
             previous_local_state.get("components").get(component_name).get('functions').remove(deleted_function)
         except Exception as e:
             # TODO THROW BETTER ERROR
@@ -75,9 +74,6 @@ def update_component_state(component_info, component_name):
         # An Update can contain both change in src code and dependency at the same time, but 
         # an update to the file system must be exclusive to be registered as an update
         
-        #cdev_writer.write_intermediate_file(diff.get("original_path"), diff, prefix=component_name)
-        cdev_writer.write_intermediate_file(diff.get("original_path"), diff, diff.get("parsed_path"))
-
         tmp_obj = _create_function_object(
                     original_path=diff.get("original_path"), 
                     parsed_path=diff.get("parsed_path"), 
@@ -127,7 +123,6 @@ def update_component_state(component_info, component_name):
 
 def _create_local_state_file(project_name):
     # NO previous local state so write an empty object to the file then return the object
-  
     project_state = {
         "components": {
         },
@@ -159,9 +154,6 @@ def _write_new_component(component_info, previous_state, component_name):
                         )
 
             final_function_info.append(tmp_obj)
-
-            cdev_writer.write_intermediate_file(file_name, function_info, function_info.get("parsed_path"))
-
 
     final_component_state = {
         "functions": final_function_info
@@ -208,13 +200,10 @@ def _get_diffs_in_local_state(component_info, previous_local_state, component_na
     for remaining in previous_component_state.get("hash_to_function"):
         diffs.get('deletes').append(previous_component_state.get('hash_to_function').get(remaining))
 
-    print(diffs)
-
     return diffs
 
     
 def _write_local_state(state):
-    
     for component_name in state.get("components"):
         try:
             state.get("components").get(component_name).pop('hash_to_function')
@@ -252,6 +241,8 @@ def _load_local_state():
 
     
     return previous_data
+
+
 
 def _create_function_object(original_path="", parsed_path="", src_code_hash="", dependencies_hash="",
                             identity_hash="", metadata_hash="",  total_hash="", local_function_name=""):    
