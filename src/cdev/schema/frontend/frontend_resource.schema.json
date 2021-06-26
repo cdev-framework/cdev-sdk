@@ -1,0 +1,27 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "frontend_resource.json",
+    "type": "object",
+    "reference_name": "FRONTEND_RESOURCE",
+    "required": [
+        "uuid",
+        "configuration",
+        "hash"
+    ],
+    "properties": {
+        "uuid": {
+            "$id": "#/properties/uuid",
+            "type": "string"
+        },
+        "hash": {
+            "$id": "#/properties/hash",
+            "type": "string"
+        },
+        "configuration": {
+            "$id": "#/properties/configuration",
+            "type": "object"
+        }
+
+    },
+    "additionalProperties": true
+}

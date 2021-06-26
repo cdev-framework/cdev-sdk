@@ -53,7 +53,7 @@ def update_component_state(component_info, component_name):
         # the resource has actually been deleted. 
         try:
             seen_paths[deleted_function.get('parsed_path')] = deleted_function
-            seen_total_hashed[deleted_function.get('total_hash')] = deleted_function
+            seen_total_hashed[deleted_function.get('hash')] = deleted_function
             previous_local_state.get("components").get(component_name).get('functions').remove(deleted_function)
         except Exception as e:
             # TODO THROW BETTER ERROR
@@ -76,7 +76,7 @@ def update_component_state(component_info, component_name):
                     dependencies_hash=diff.get("dependencies_hash"),
                     identity_hash=diff.get("identity_hash"),
                     metadata_hash=diff.get("metadata_hash"),
-                    total_hash=diff.get("total_hash"),
+                    hash=diff.get("hash"),
                     local_function_name=diff.get("function_name"),
                     needed_lines=diff.get("needed_lines"),
                     dependencies=diff.get("dependencies")
@@ -100,7 +100,7 @@ def update_component_state(component_info, component_name):
             pure_diffs.get('deletes').remove(seen_paths.get(parsed_path))
 
 
-        elif tmp_obj.get("total_hash") in seen_total_hashed:
+        elif tmp_obj.get("hash") in seen_total_hashed:
             # This 
             tmp_obj["action"].append("MOVE")
             updates.append(tmp_obj)
@@ -137,7 +137,6 @@ def _write_new_component(component_info, previous_state, component_name):
 
     for file_info in component_info:
         file_name = file_info.get("filename")
-
         for function_info in file_info.get('function_information'):
             tmp_obj = _create_function_object(
                             original_path=file_name, 
@@ -146,7 +145,7 @@ def _write_new_component(component_info, previous_state, component_name):
                             dependencies_hash=function_info.get("dependencies_hash"),
                             identity_hash=function_info.get("identity_hash"),
                             metadata_hash=function_info.get("metadata_hash"),
-                            total_hash=function_info.get("total_hash"),
+                            hash=function_info.get("hash"),
                             local_function_name=function_info.get("function_name"),
                             needed_lines = function_info.get("needed_lines"),
                             dependencies=function_info.get("dependencies")
@@ -185,7 +184,7 @@ def _get_diffs_in_local_state(component_info, previous_local_state, component_na
         file_name = file_info.get("filename")
 
         for function_info in file_info.get('function_information'):
-            total_hash = function_info.get("total_hash")
+            total_hash = function_info.get("hash")
             if total_hash in previous_component_state.get("hash_to_function"):
                 previous_component_state.get("hash_to_function").pop(total_hash)
                 continue
@@ -233,7 +232,7 @@ def _load_local_state():
         for function_state in previous_data.get("components").get(component_name).get("functions"):
             schema_utils.validate(schema_utils.SCHEMA.FRONTEND_FUNCTION, function_state)
 
-            total_hash = function_state.get("total_hash")
+            total_hash = function_state.get("hash")
 
             previous_data.get("components").get(component_name)['hash_to_function'][total_hash] = function_state
 
@@ -243,7 +242,7 @@ def _load_local_state():
 
 
 def _create_function_object(original_path="", parsed_path="", src_code_hash="", dependencies_hash="",
-                            identity_hash="", metadata_hash="",  total_hash="", local_function_name="",
+                            identity_hash="", metadata_hash="",  hash="", local_function_name="",
                             needed_lines=[], dependencies=[]):    
     tmp_obj = {
         "original_path": original_path,
@@ -252,7 +251,7 @@ def _create_function_object(original_path="", parsed_path="", src_code_hash="", 
         "dependencies_hash": dependencies_hash,
         "identity_hash": identity_hash,
         "metadata_hash": metadata_hash,
-        "total_hash": total_hash,
+        "hash": hash,
         "local_function_name": local_function_name,
         "timestamp": str(time.time()),
         "needed_lines": needed_lines,

@@ -158,7 +158,7 @@ def parse_folder(folder_path, prefix=None):
             # Create the total hash
             joined_total_str = "".join([identity_hash, metadata_hash])
             total_hash = hashlib.md5(joined_total_str.encode()).hexdigest()
-            function_info['total_hash'] = total_hash
+            function_info['hash'] = total_hash
             
     
             final_function_info.append(function_info)

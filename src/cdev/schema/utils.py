@@ -15,15 +15,18 @@ class SCHEMA:
 
     BACKEND_LAMBDA_DELETE_FUNCTION = "BACKEND_LAMBDA_DELETE_FUNCTION"
 
-    FRONTEND_FUNCTION = "FRONTEND_FUNCTION"
     DYNAMODB_RESOURCE = "BACKEND_DYNAMODB"
+
+    FRONTEND_RESOURCE = "FRONTEND_RESOURCE"
+    FRONTEND_FUNCTION = "FRONTEND_FUNCTION"
 
 
 _VALIDATORS = {}
 
-RESOURCES =  os.path.join(os.path.dirname(__file__), "resources")
+BACKEND_RESOURCES =  os.path.join(os.path.dirname(__file__), "backend")
+FRONTEND_RESOURCES =  os.path.join(os.path.dirname(__file__), "frontend")
 
-ALL_PATHS = [RESOURCES]
+ALL_PATHS = [BACKEND_RESOURCES, FRONTEND_RESOURCES]
 
 def _init():
     for path in ALL_PATHS:

@@ -10,7 +10,7 @@
         "dependencies_hash",
         "identity_hash",
         "metadata_hash",
-        "total_hash",
+        "hash",
         "timestamp",
         "local_function_name",
         "configuration",
@@ -42,8 +42,8 @@
             "$id": "#/properties/metadata_hash",
             "type": "string"
         },
-        "total_hash": {
-            "$id": "#/properties/total_hash",
+        "hash": {
+            "$id": "#/properties/hash",
             "type": "string"
         },
         "timestamp": {
@@ -65,7 +65,7 @@
         "configuration": {
             "anyOf": [
                 {
-                    "$ref": "./aws/lambda_configuration.schema.json"
+                    "$ref": "../../backend/aws/lambda_configuration.schema.json"
                 }
             ]
         }

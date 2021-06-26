@@ -11,11 +11,11 @@ def print_local_diffs(diffs):
 
     if diffs.get('appends'):
         for append in diffs.get('appends'):
-            console.print(f"[bold green]ADDING[/bold green] {append.get('original_path')}: {append.get('local_function_name')} ({append.get('total_hash')}) -> {append.get('parsed_path')} ")
+            console.print(f"[bold green]ADDING[/bold green] {append.get('original_path')}: {append.get('local_function_name')} ({append.get('hash')}) -> {append.get('parsed_path')} ")
 
     if diffs.get('updates'):
         for append in diffs.get('updates'):
-            console.print(f"[bold yellow]UPDATE {append.get('action')}[/bold yellow] {append.get('original_path')}: {append.get('local_function_name')} ({append.get('total_hash')}) -> {append.get('parsed_path')} ")
+            console.print(f"[bold yellow]UPDATE {append.get('action')}[/bold yellow] {append.get('original_path')}: {append.get('local_function_name')} ({append.get('hash')}) -> {append.get('parsed_path')} ")
 
     if diffs.get('deletes'):
         for append in diffs.get('deletes'):

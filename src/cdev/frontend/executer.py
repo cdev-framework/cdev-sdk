@@ -1,95 +1,40 @@
 import importlib
 import os
 import sys
-from cdev.cparser.parser_objects import file_information
 
 from cdev.settings import SETTINGS as cdev_settings
-from cdev.fs_manager import finder, writer
+from cdev.fs_manager import writer
 
 from . import state_manager as local_state_manager
 
-# This file defines the way that a project is parsed and exectued to produce the frontend state 
+from . import constructs
 
-class Cdev_Project():
-    _instance = None
-    _components = []
-    _state = None
+"""
+    This file defines the way that a project is parsed and executed to produce the frontend state. 
 
-    def __new__(cls, name):
-        if cls._instance is None:
-            #print(f'Creating the Cdev Proejct object -> {name}')
-            cls._instance = super(Cdev_Project, cls).__new__(cls)
-            # Put any initialization here.
-        else:
-            # Raise Error
-            print("SECOND TIME")
+    The Cdev project object is the singleton that represents the information and configuration of the current Cdev Project.
 
-
-        return cls._instance
-
-    @classmethod
-    def instance(cls):
-        if cls._instance is None:
-            print('HAVE NOT CREATED PROJECT OBJECT YET')
-        return cls._instance
-
-
-    def add_component(self, component):
-        if not isinstance(component, Cdev_Component):
-            # TODO Throw Error
-            print(f"CANT ADD THIS COMPONENT -> {component}")
-            return 
-        
-        self._components.append(component)
-
-    def add_components(self, components):
-        if not isinstance(components, list):
-            return 
-
-        for component in components:
-            try:
-                self.add_component(component)
-            except Exception as e:
-                print(e)
-        
-
-    def get_components(self):
-        return self._components
-
-
-class Cdev_Component():
-    def __init__(self, name) -> None:
-        self.name = name
-        pass
-
-    def render(self):
-        pass
-
-    def get_name(self):
-        return self.name
-
-
-class Cdev_FileSystem_Component(Cdev_Component):
-
-    def __init__(self, fp, name):
-        super().__init__(name)
-        self.fp = fp
-
-    def render(self):
-        return finder.parse_folder(self.fp, self.get_name())
-
-    
-
-
+"""
 
 def execute_cdev_project():
+    """
+        This is the function that executes the code to generate a desired state for the project. 
+
+        The order of the execution is:
+        - Import the cdev project file
+        - For each Cdev Component attached to the project 
+            - Call the `render` method to get the resources 
+            - Take the returned resources and diff that against the current local state
+        - Return the diffs in the local state from the components 
+    """
+
+
     CDEV_PROJECT_FILE = _get_cdev_project_file()
-    BASEDIR = os.path.dirname(CDEV_PROJECT_FILE)
 
     # This creates the singleton Cdev_Project object 
     _import_project_file(CDEV_PROJECT_FILE)
 
-    ALL_COMPONENTS = Cdev_Project.instance().get_components()
+    ALL_COMPONENTS = constructs.Cdev_Project.instance().get_components()
     actions = {
         "appends": [],
         "deletes": [],
@@ -98,9 +43,9 @@ def execute_cdev_project():
 
     # Generate the local diffs
     for component in ALL_COMPONENTS:
-        if isinstance(component, Cdev_FileSystem_Component):
+        if isinstance(component, constructs.Cdev_FileSystem_Component):
             rv = component.render()
-            #print(rv)
+
             new_diffs = local_state_manager.update_component_state(rv, component.get_name())
 
             for action_type in new_diffs:
