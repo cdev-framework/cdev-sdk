@@ -11,13 +11,30 @@
         "identity_hash",
         "metadata_hash",
         "hash",
-        "timestamp",
         "local_function_name",
         "configuration",
         "needed_lines",
         "dependencies"
     ],
     "properties": {
+        "uuid": {
+            "$id": "#/properties/uuid",
+            "type": "string"
+        },
+        "hash": {
+            "$id": "#/properties/hash",
+            "type": "string"
+        },
+        "configuration": {
+            "anyOf": [
+                {
+                    "$ref": "../../backend/aws/lambda_configuration.schema.json"
+                },
+                {
+                    "type": "object"
+                }
+            ]
+        },
         "original_path": {
             "$id": "#/properties/original_path",
             "type": "string"
@@ -42,14 +59,6 @@
             "$id": "#/properties/metadata_hash",
             "type": "string"
         },
-        "hash": {
-            "$id": "#/properties/hash",
-            "type": "string"
-        },
-        "timestamp": {
-            "$id": "#/properties/timestamp",
-            "type": "string"
-        },
         "local_function_name": {
             "$id": "#/properties/local_function_name",
             "type": "string"
@@ -61,13 +70,6 @@
         "dependencies": {
             "$id": "#/properties/dependencies",
             "type": "array"
-        },  
-        "configuration": {
-            "anyOf": [
-                {
-                    "$ref": "../../backend/aws/lambda_configuration.schema.json"
-                }
-            ]
         }
 
     },

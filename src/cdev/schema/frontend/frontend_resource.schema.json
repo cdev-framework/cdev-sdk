@@ -4,12 +4,12 @@
     "type": "object",
     "reference_name": "FRONTEND_RESOURCE",
     "required": [
-        "uuid",
+        "ruuid",
         "configuration",
         "hash"
     ],
     "properties": {
-        "uuid": {
+        "ruuid": {
             "$id": "#/properties/uuid",
             "type": "string"
         },

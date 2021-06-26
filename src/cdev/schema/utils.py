@@ -59,7 +59,7 @@ def _load_validators(path):
             _VALIDATORS[schema_obj['reference_name']] = validator
 
 
-def validate(schema_name, object):
+def validate(schema_name, object: object):
     if schema_name in _VALIDATORS:
         _VALIDATORS.get(schema_name).validate(object)
 

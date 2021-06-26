@@ -1,4 +1,7 @@
+from sortedcontainers.sortedlist import SortedList, SortedKeyList
 from cdev.fs_manager import finder
+
+import hashlib
 
 """
 This file defines the basic constructs that can be used to create projects with Cdev. These constructs are designed to provided the
@@ -110,8 +113,6 @@ class Cdev_Component():
         return self.name
 
 
-
-
 class Cdev_FileSystem_Component(Cdev_Component):
     """
         A simple implementation of a Cdev Component that uses a folder on the file system to render the desired resources.
@@ -123,6 +124,20 @@ class Cdev_FileSystem_Component(Cdev_Component):
         super().__init__(name)
         self.fp = fp
 
-    def render(self) -> str:
+    def render(self) -> object:
         """Render this component based on the information in the files at the provided folder path"""
-        return finder.parse_folder(self.fp, self.get_name())
+        resources_sorted = finder.parse_folder(self.fp, self.get_name())
+
+        appended_hashes = ":".join([x.get("hash") for x in resources_sorted])
+
+        total_component_str = ":".join(appended_hashes)
+        
+        total_component_hash = hashlib.md5(total_component_str.encode()).hexdigest()
+
+        rv = {
+            "rendered_resources": resources_sorted,
+            "hash": total_component_hash,
+            "name": self.get_name()
+        }
+
+        return rv

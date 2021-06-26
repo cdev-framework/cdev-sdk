@@ -3,11 +3,17 @@ import inspect
 import importlib
 import os
 import sys
+import json
+from typing import List
+
+from sortedcontainers.sortedlist import SortedKeyList
 
 from cdev.cparser import cdev_parser as cparser
 from cdev.fs_manager import package_mananger
+from cdev.schema import utils as cdev_schema_utils
 
 from . import utils as fs_utils
+from . import writer
 
 
 ANNOTATION_LABEL = "lambda_function"
@@ -47,7 +53,7 @@ def find_serverless_function_information_from_file(fp):
 
     for f in parsed_function_info.parsed_functions:
         rv.append({
-            "function_name": f.name,
+            "local_function_name": f.name,
             "needed_lines": f.get_line_numbers_serializeable(),
             "dependencies": list(f.imported_packages).sort(),
         })
@@ -83,7 +89,7 @@ def find_serverless_function_information_in_module(python_module):
     return serverless_function_information
 
 
-def parse_folder(folder_path, prefix=None):
+def parse_folder(folder_path, prefix=None) -> List[object]:
     if not os.path.isdir(folder_path):
         return None
 
@@ -92,8 +98,9 @@ def parse_folder(folder_path, prefix=None):
     original_path = os.getcwd()
     os.chdir(folder_path)
 
-    # [{"filename", "function_information"}]
-    rv = []
+    # [{<resource>}]
+    rv = SortedKeyList(key=lambda x: x.get("hash"))
+
 
     for pf in python_files:
         fullfilepath = os.path.join("..",folder_path, pf)
@@ -101,7 +108,6 @@ def parse_folder(folder_path, prefix=None):
         from_root_path = os.path.join(folder_path, pf)
         localpath = os.path.join(".", pf)
 
-        # rv: [{"function_name", "needed_lines", "dependencies_hash"},]
         file_info = find_serverless_function_information_from_file(localpath)
 
         if not file_info:
@@ -124,7 +130,7 @@ def parse_folder(folder_path, prefix=None):
             #   - Metadata Hash        -> hash(parsed_path)
    
             # Parsed Path
-            function_info['parsed_path'] = fs_utils.get_parsed_path(from_root_path, function_info.get("function_name"), prefix)
+            function_info['parsed_path'] = fs_utils.get_parsed_path(from_root_path, function_info.get("local_function_name"), prefix)
 
             # Join the needed lined into a string and get the md5 hash 
             file_as_string = ''.join(fs_utils.get_lines_from_file_list(file_list, function_info.get('needed_lines')))
@@ -149,7 +155,6 @@ def parse_folder(folder_path, prefix=None):
             identity_hash = hashlib.md5(joined_identity_str.encode()).hexdigest() 
             function_info['identity_hash'] = identity_hash
 
-
             # Create metadata hash
             joined_metadata_str = "".join([function_info['parsed_path']])
             metadata_hash = hashlib.md5(joined_metadata_str.encode()).hexdigest() 
@@ -159,14 +164,35 @@ def parse_folder(folder_path, prefix=None):
             joined_total_str = "".join([identity_hash, metadata_hash])
             total_hash = hashlib.md5(joined_total_str.encode()).hexdigest()
             function_info['hash'] = total_hash
+
+            function_info['configuration'] = {}
+            function_info['original_path'] = localpath
             
+            function_info['ruuid'] = "cdev::serverless_function"
+
+            _validate_function(function_info)
+            _validate_resource(function_info)
     
             final_function_info.append(function_info)
 
         
-        rv.append({"filename": from_root_path, "function_information": final_function_info})
+        rv .update(final_function_info)
 
         
     os.chdir(original_path)
 
-    return rv
+    return list(rv)
+
+
+def _validate_function(function_info: object) -> None:
+    try: 
+        cdev_schema_utils.validate(cdev_schema_utils.SCHEMA.FRONTEND_FUNCTION, function_info )
+    except Exception as e:
+        print(e)
+
+
+def _validate_resource(resource: object) -> None:
+    try: 
+        cdev_schema_utils.validate(cdev_schema_utils.SCHEMA.FRONTEND_RESOURCE, resource )
+    except Exception as e:
+        print(e)
