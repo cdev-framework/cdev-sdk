@@ -32,6 +32,8 @@ def _write_intermediate_function(path, lines):
     # This function is used to create the intermediate file
     # It creates the file on the file system and also returns metadata about the file
 
+    # TODO (Medium) Add Formatting settings from Cdev Settings
+    #_strip_new_lines_from_source_lines(lines)
 
     with open(path, "w") as fh:
         for line in lines:
@@ -42,3 +44,7 @@ def _write_intermediate_function(path, lines):
 
 
 
+def _strip_new_lines_from_source_lines(source_lines):
+    # We want to standardize the lines the formatting of the lines that are written to 
+    # cause the least amount of hash changes because of formatting around the lines
+    print(source_lines)

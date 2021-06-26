@@ -5,6 +5,7 @@ import os
 import sys
 
 from cdev.cparser import cdev_parser as cparser
+from cdev.fs_manager import package_mananger
 
 from . import utils as fs_utils
 
@@ -41,16 +42,14 @@ def find_serverless_function_information_from_file(fp):
 
     parsed_function_info = cparser.parse_functions_from_file(fp, include_functions=include_functions, remove_top_annotation=True)
 
-    # return a [{function_name, needed_lines},...]  that represents the parsed function and their 
+    # return a [{function_name, needed_lines, dependencies},...]  that represents the parsed function and their 
     rv = []
-
-    
 
     for f in parsed_function_info.parsed_functions:
         rv.append({
             "function_name": f.name,
-            "needed_lines": f.needed_line_numbers,
-            "dependencies": f.needed_imports
+            "needed_lines": f.get_line_numbers_serializeable(),
+            "dependencies": list(f.imported_packages).sort(),
         })
 
     return rv
@@ -116,7 +115,7 @@ def parse_folder(folder_path, prefix=None):
         final_function_info = []
 
         for function_info in file_info:
-            # For each function needed to add info about:
+            # For each function need to add info about:
             #   - Parsed Path Location -> path to parsed file loc
             #   - Source Code Hash     -> hash([line1,line2,....])
             #   - Dependencies Hash    -> hash([dep1,dep2,...])
@@ -133,14 +132,17 @@ def parse_folder(folder_path, prefix=None):
             file_hash = hashlib.md5(encoded_file_as_string).hexdigest()
             function_info['source_code_hash'] = file_hash
 
-            # Has of dependencies
-            if function_info['dependencies']:
-                dependencies_hash = hashlib.md5("".join(function_info['dependencies']).encode()).hexdigest() 
+
+            # Hash of dependencies directly used in this function
+            if function_info.get('dependencies'):
+                dependencies_hash = hashlib.md5("".join(function_info.get("dependencies")).encode()).hexdigest()
             else:
                 dependencies_hash = "0"
             
             function_info['dependencies_hash'] = dependencies_hash
+            function_info['dependencies'] = []
 
+            
 
             # Create identity hash
             joined_identity_str = "".join([function_info['source_code_hash'], function_info['dependencies_hash']])
@@ -153,6 +155,7 @@ def parse_folder(folder_path, prefix=None):
             metadata_hash = hashlib.md5(joined_metadata_str.encode()).hexdigest() 
             function_info['metadata_hash'] = metadata_hash
 
+            # Create the total hash
             joined_total_str = "".join([identity_hash, metadata_hash])
             total_hash = hashlib.md5(joined_total_str.encode()).hexdigest()
             function_info['total_hash'] = total_hash

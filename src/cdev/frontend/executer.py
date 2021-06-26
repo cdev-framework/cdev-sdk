@@ -4,7 +4,7 @@ import sys
 from cdev.cparser.parser_objects import file_information
 
 from cdev.settings import SETTINGS as cdev_settings
-from cdev.fs_manager import finder
+from cdev.fs_manager import finder, writer
 
 from . import state_manager as local_state_manager
 
@@ -96,10 +96,11 @@ def execute_cdev_project():
         "updates": []
     }
 
+    # Generate the local diffs
     for component in ALL_COMPONENTS:
-        
         if isinstance(component, Cdev_FileSystem_Component):
             rv = component.render()
+            #print(rv)
             new_diffs = local_state_manager.update_component_state(rv, component.get_name())
 
             for action_type in new_diffs:
@@ -107,14 +108,40 @@ def execute_cdev_project():
 
         else:
             print("NOT FILE TYPE")
-        #print(f"actions -> {actions}")
 
-    #print(actions)
+    # Modify local system to reflect changes
+    for action_type in actions:
+        if action_type == "updates":
+            _handler_update_actions(actions.get(action_type))
+        elif action_type == "appends":
+            _handle_append_actions(actions.get(action_type))
+        elif action_type == "deletes":
+            _handle_delete_actions(actions.get(action_type))
 
     return actions
-        
 
+ 
         
+def _handle_append_actions(actions):
+    #print(f"appends: {actions}")
+    for append_action in actions:
+        writer.write_intermediate_file(append_action.get("original_path"), append_action.get("needed_lines"), append_action.get("parsed_path"))
+        
+        if not append_action.get("dependencies_hash") == "0":
+            print(f"ADD NEW DEP {append_action}")
+
+def _handle_delete_actions(actions):
+    #print(f"deletes: {actions}")
+    for delete_action in actions:
+        os.remove(delete_action.get("parsed_path"))
+
+
+def _handler_update_actions(actions):
+    #print(f"updates: {actions}")
+
+    for update_action in actions:
+        if 'SOURCE CODE' in update_action.get("action"):
+            writer.write_intermediate_file(update_action.get("original_path"), update_action.get("needed_lines"), update_action.get("parsed_path"))
 
 
 def _get_cdev_project_file():

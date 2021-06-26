@@ -26,6 +26,15 @@ class PackageTypes:
     LOCALPACKAGE = "localpackage"
     AWSINCLUDED = "awsincluded"
 
+def get_all_package_info(pkg_names): 
+    # Take in a list/set of all top level pkgs a function uses and return the set of ALL pkgs that are needed for its layers
+    rv = set()
+
+    for pkg_name in pkg_names:
+        rv = rv.union(get_package_info(pkg_name))
+
+    return sorted(rv)
+
 
 def get_package_info(pkg_name):
     info =  create_package_info(pkg_name)

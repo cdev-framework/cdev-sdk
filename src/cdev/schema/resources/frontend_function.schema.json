@@ -13,7 +13,9 @@
         "total_hash",
         "timestamp",
         "local_function_name",
-        "configuration"
+        "configuration",
+        "needed_lines",
+        "dependencies"
     ],
     "properties": {
         "original_path": {
@@ -52,6 +54,14 @@
             "$id": "#/properties/local_function_name",
             "type": "string"
         },
+        "needed_lines": {
+            "$id": "#/properties/needed_lines",
+            "type": "array"
+        },
+        "dependencies": {
+            "$id": "#/properties/dependencies",
+            "type": "array"
+        },  
         "configuration": {
             "anyOf": [
                 {

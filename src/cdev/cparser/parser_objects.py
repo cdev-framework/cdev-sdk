@@ -39,6 +39,9 @@ class parsed_function():
     def get_line_numbers(self):
         return self.needed_line_numbers
 
+    def get_line_numbers_serializeable(self):
+        return list(self.needed_line_numbers)
+
     def add_import(self, global_import_obj):
         self.add_line_numbers(global_import_obj.get_line_no())
         self.imported_packages.add(global_import_obj.orginal_package)

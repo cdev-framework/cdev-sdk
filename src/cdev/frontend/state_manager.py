@@ -1,10 +1,6 @@
 import json
 import os
-from sys import prefix
 import time
-import hashlib
-
-from sortedcontainers.sortedlist import identity
 
 from cdev.settings import SETTINGS as cdev_settings
 from cdev.schema import utils as schema_utils
@@ -43,7 +39,6 @@ def update_component_state(component_info, component_name):
 
     # get the pure diffs in the current component and previous local state
     pure_diffs = _get_diffs_in_local_state(component_info, previous_local_state, component_name)
-
     seen_paths = {}
     seen_total_hashed = {}
     updates = []
@@ -82,7 +77,9 @@ def update_component_state(component_info, component_name):
                     identity_hash=diff.get("identity_hash"),
                     metadata_hash=diff.get("metadata_hash"),
                     total_hash=diff.get("total_hash"),
-                    local_function_name=diff.get("function_name")
+                    local_function_name=diff.get("function_name"),
+                    needed_lines=diff.get("needed_lines"),
+                    dependencies=diff.get("dependencies")
                 )
 
         previous_local_state.get("components").get(component_name).get("functions").append(tmp_obj)
@@ -150,7 +147,9 @@ def _write_new_component(component_info, previous_state, component_name):
                             identity_hash=function_info.get("identity_hash"),
                             metadata_hash=function_info.get("metadata_hash"),
                             total_hash=function_info.get("total_hash"),
-                            local_function_name=function_info.get("function_name")
+                            local_function_name=function_info.get("function_name"),
+                            needed_lines = function_info.get("needed_lines"),
+                            dependencies=function_info.get("dependencies")
                         )
 
             final_function_info.append(tmp_obj)
@@ -180,8 +179,6 @@ def _get_diffs_in_local_state(component_info, previous_local_state, component_na
         'deletes': []
     }
 
-    component_info = component_info
-
     previous_component_state = previous_local_state.get("components").get(component_name)
 
     for file_info in component_info:
@@ -207,10 +204,11 @@ def _write_local_state(state):
     for component_name in state.get("components"):
         try:
             state.get("components").get(component_name).pop('hash_to_function')
+
         except Exception as e:
             print(f"ERROR -> {e}")
-            continue
-
+            
+    
     with open(FULL_LOCAL_STATE_PATH, 'w') as fp:
         json.dump(state, fp, indent=4)
 
@@ -245,7 +243,8 @@ def _load_local_state():
 
 
 def _create_function_object(original_path="", parsed_path="", src_code_hash="", dependencies_hash="",
-                            identity_hash="", metadata_hash="",  total_hash="", local_function_name=""):    
+                            identity_hash="", metadata_hash="",  total_hash="", local_function_name="",
+                            needed_lines=[], dependencies=[]):    
     tmp_obj = {
         "original_path": original_path,
         "parsed_path": parsed_path,
@@ -256,6 +255,8 @@ def _create_function_object(original_path="", parsed_path="", src_code_hash="", 
         "total_hash": total_hash,
         "local_function_name": local_function_name,
         "timestamp": str(time.time()),
+        "needed_lines": needed_lines,
+        "dependencies": dependencies,
         "configuration": [
             {
                 "name": "Runtime",
