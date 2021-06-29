@@ -3,7 +3,8 @@ import os
 import cdev.fs_manager.finder as fs
 import cdev.fs_manager.project_initializer as initalizer
 
-from cdev.frontend import executer
+from cdev.frontend import executer as frontend_executer
+from cdev.backend import executer as backend_executer
 
 """
 Some doc string
@@ -11,11 +12,11 @@ Some doc string
 
 def plan():
     print("PLAN2")
-    #folder_information = fs.parse_folder(os.path.join(".", "src"))
-    #return local_state_manager.update_local_state(folder_information)
 
-    rv = executer.execute_cdev_project()
-    return rv
+    rendered_frontend = frontend_executer.execute_frontend()
+    #backend_executer.create_diffs(rendered_frontend)
+
+    return {}
 
 def init():
     print("INIT")

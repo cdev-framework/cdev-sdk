@@ -1,17 +1,8 @@
-import json
-import os
 import time
 
-from cdev.settings import SETTINGS as cdev_settings
-from cdev.schema import utils as schema_utils
-from cdev.fs_manager import writer as cdev_writer
+from . import utils as backend_utils
 
-BASE_PATH = cdev_settings.get("BASE_PATH")
 
-STATE_FOLDER_LOCATION = cdev_settings.get("STATE_FOLDER") 
-LOCAL_STATE_LOCATION = cdev_settings.get("LOCAL_STATE_LOCATION")
-
-FULL_LOCAL_STATE_PATH = os.path.join(BASE_PATH, LOCAL_STATE_LOCATION)
 
 
 def update_component_state(component_info, component_name):
@@ -24,11 +15,11 @@ def update_component_state(component_info, component_name):
     #   "updates": [], these are the resources that were updated 
     # }
 
-    previous_local_state = _load_local_state()
+    previous_local_state = backend_utils.load_local_state()
 
     if not previous_local_state:
         # IF there was not previous local state then write the entire state as appends
-        previous_local_state = _create_local_state_file("PROJECT 1")
+        previous_local_state = backend_utils.create_local_state_file("PROJECT 1")
 
 
     if not component_name in previous_local_state.get("components"):
@@ -113,45 +104,30 @@ def update_component_state(component_info, component_name):
     pure_diffs['updates'] = updates
     pure_diffs['appends'] = additions
 
-    _write_local_state(previous_local_state)
+    backend_utils.write_local_state(previous_local_state)
 
     return pure_diffs
-
-
-def _create_local_state_file(project_name):
-    # NO previous local state so write an empty object to the file then return the object
-    project_state = {
-        "components": {
-        },
-        "project_name": project_name
-    }
-
-    _write_local_state(project_state)
-
-    return project_state
 
 
 def _write_new_component(component_info, previous_state, component_name):
     # NO previous state for this component so write current component state as appends and dont worry about diffs
     final_function_info = []
 
-    for file_info in component_info:
-        file_name = file_info.get("filename")
-        for function_info in file_info.get('function_information'):
-            tmp_obj = _create_function_object(
-                            original_path=file_name, 
-                            parsed_path=function_info.get("parsed_path"), 
-                            src_code_hash=function_info.get("source_code_hash"), 
-                            dependencies_hash=function_info.get("dependencies_hash"),
-                            identity_hash=function_info.get("identity_hash"),
-                            metadata_hash=function_info.get("metadata_hash"),
-                            hash=function_info.get("hash"),
-                            local_function_name=function_info.get("function_name"),
-                            needed_lines = function_info.get("needed_lines"),
-                            dependencies=function_info.get("dependencies")
-                        )
+    for function_info in component_info.get("rendered_resources"):
+        tmp_obj = _create_function_object(
+                        original_path=function_info.get("original_path"), 
+                        parsed_path=function_info.get("parsed_path"), 
+                        src_code_hash=function_info.get("source_code_hash"), 
+                        dependencies_hash=function_info.get("dependencies_hash"),
+                        identity_hash=function_info.get("identity_hash"),
+                        metadata_hash=function_info.get("metadata_hash"),
+                        hash=function_info.get("hash"),
+                        local_function_name=function_info.get("function_name"),
+                        needed_lines = function_info.get("needed_lines"),
+                        dependencies=function_info.get("dependencies")
+                    )
 
-            final_function_info.append(tmp_obj)
+        final_function_info.append(tmp_obj)
 
     final_component_state = {
         "functions": final_function_info
@@ -159,7 +135,7 @@ def _write_new_component(component_info, previous_state, component_name):
 
     previous_state.get("components")[component_name] = final_component_state
 
-    _write_local_state(previous_state)
+    backend_utils.write_local_state(previous_state)
 
     return {'appends': final_function_info}
 
@@ -180,17 +156,14 @@ def _get_diffs_in_local_state(component_info, previous_local_state, component_na
 
     previous_component_state = previous_local_state.get("components").get(component_name)
 
-    for file_info in component_info:
-        file_name = file_info.get("filename")
+    for function_info in component_info.get("rendered_resources"):
 
-        for function_info in file_info.get('function_information'):
-            total_hash = function_info.get("hash")
-            if total_hash in previous_component_state.get("hash_to_function"):
-                previous_component_state.get("hash_to_function").pop(total_hash)
-                continue
+        total_hash = function_info.get("hash")
+        if total_hash in previous_component_state.get("hash_to_function"):
+            previous_component_state.get("hash_to_function").pop(total_hash)
+            continue
 
-            function_info["original_path"] = file_name
-            diffs.get('appends').append(function_info)
+        diffs.get('appends').append(function_info)
 
 
     for remaining in previous_component_state.get("hash_to_function"):
@@ -199,45 +172,9 @@ def _get_diffs_in_local_state(component_info, previous_local_state, component_na
     return diffs
 
     
-def _write_local_state(state):
-    for component_name in state.get("components"):
-        try:
-            state.get("components").get(component_name).pop('hash_to_function')
-
-        except Exception as e:
-            print(f"ERROR -> {e}")
-            
-    
-    with open(FULL_LOCAL_STATE_PATH, 'w') as fp:
-        json.dump(state, fp, indent=4)
 
 
-def _load_local_state():
-    # TODO Make this a class and json representation use json schema 
-    if not os.path.isfile(FULL_LOCAL_STATE_PATH):
-        # TODO Throw error
-        return None
 
-
-    with open(FULL_LOCAL_STATE_PATH) as fp:
-        previous_data = json.load(fp)
-
-    rv = {}
-
-    for component_name in previous_data.get("components"):
-
-        previous_data.get("components").get(component_name)['hash_to_function'] = {}
-        
-    
-        for function_state in previous_data.get("components").get(component_name).get("functions"):
-            schema_utils.validate(schema_utils.SCHEMA.FRONTEND_FUNCTION, function_state)
-
-            total_hash = function_state.get("hash")
-
-            previous_data.get("components").get(component_name)['hash_to_function'][total_hash] = function_state
-
-    
-    return previous_data
 
 
 

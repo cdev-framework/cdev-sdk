@@ -1,6 +1,9 @@
 from sortedcontainers.sortedlist import SortedList, SortedKeyList
-from cdev.fs_manager import finder
 
+from typing import List
+
+from cdev.fs_manager import finder
+from .models import Rendered_Component as frontend_component
 import hashlib
 
 """
@@ -29,6 +32,37 @@ most basic structure that can then be extended and expanded.
             - Parallelization: (In the future) rendering components should be able to be parallelized, so using multiple non dependant 
             components  should lead to better total evaluation times.
 """
+
+
+class Cdev_Component():
+    """
+    A component is a logical collection of resources. This simple definition is intended to allow flexibility for different
+    styles of projects. It is up to the end user to decide on how they group the resources.
+
+    A component must override the `render` method, which returns the desired resources with configuration as a component model. 
+    The `render` method does not take any input parameters, therefore all configuration for the component should be done via the `__init__` 
+    method. 
+
+    Some properties that components exhibit that can help with determining the best way to group resources are:
+    
+    - __Information__: Config of other resources will by default be available within a component, but you will be able to explicitly 
+    define output that is available for other components to use. 
+    - __Triggered deployments__: Any change in a resource within the component will trigger the component to need to be revaluated 
+    for changes. This means in a monolothic component, all changes will trigger a re-evaluation on the whole state of the project
+    - __Parallelization__: (In the future) rendering components should be able to be parallelized, so using multiple non dependant 
+    components  should lead to better total evaluation times.
+    """
+
+    def __init__(self, name: str):
+        self.name = name
+        pass
+
+    def render(self)  -> frontend_component:
+        """Abstract Class that must be implemented by the descendant that returns a component model"""
+        pass
+
+    def get_name(self) -> str:
+        return self.name
 
 class Cdev_Project():
     """
@@ -61,7 +95,7 @@ class Cdev_Project():
         return cls._instance
 
 
-    def add_component(self, component):
+    def add_component(self, component: Cdev_Component) -> None:
         if not isinstance(component, Cdev_Component):
             # TODO Throw Error
             print(f"CANT ADD THIS COMPONENT -> {component}")
@@ -69,7 +103,7 @@ class Cdev_Project():
         
         self._components.append(component)
 
-    def add_components(self, components):
+    def add_components(self, components: List[Cdev_Component]) -> None:
         if not isinstance(components, list):
             return 
 
@@ -80,37 +114,10 @@ class Cdev_Project():
                 print(e)
         
 
-    def get_components(self):
+    def get_components(self) -> List[Cdev_Component]:
         return self._components
 
 
-class Cdev_Component():
-    """
-    A component is a logical collection of resources. This simple definition is intended to allow flexibility for different
-    styles of projects. It is up to the end user to decide on how they group the resources.
-
-    A component must override the `render` method, which returns the desired resources with configuration as a json object (schema<>). 
-    The `render` method does not take any input parameters, therefore all configuration for the component should be done via the `__init__` 
-    method. 
-
-    Some properties that components exhibit that can help with determining the best way to group resources are:
-    
-    - __Information__: Config of other resources will by default be available within a component, but you will be able to explicitly 
-    define output that is available for other components to use. 
-    - __Triggered deployments__: Any change in a resource within the component will trigger the component to need to be revaluated 
-    for changes. This means in a monolothic component, all changes will trigger a revaluation on the whole state of the project
-    - __Parallelization__: (In the future) rendering components should be able to be parallelized, so using multiple non dependant 
-    components  should lead to better total evaluation times.
-    """
-    def __init__(self, name: str):
-        self.name = name
-        pass
-
-    def render(self):
-        pass
-
-    def get_name(self) -> str:
-        return self.name
 
 
 class Cdev_FileSystem_Component(Cdev_Component):
@@ -124,20 +131,24 @@ class Cdev_FileSystem_Component(Cdev_Component):
         super().__init__(name)
         self.fp = fp
 
-    def render(self) -> object:
+    def render(self) -> frontend_component:
         """Render this component based on the information in the files at the provided folder path"""
         resources_sorted = finder.parse_folder(self.fp, self.get_name())
 
-        appended_hashes = ":".join([x.get("hash") for x in resources_sorted])
+        appended_hashes = ":".join([x.hash for x in resources_sorted])
 
         total_component_str = ":".join(appended_hashes)
         
         total_component_hash = hashlib.md5(total_component_str.encode()).hexdigest()
 
-        rv = {
-            "rendered_resources": resources_sorted,
-            "hash": total_component_hash,
-            "name": self.get_name()
-        }
+
+
+        rv = frontend_component(
+            **{
+                "rendered_resources": resources_sorted,
+                "hash": total_component_hash,
+                "name": self.get_name()
+            }
+        )
 
         return rv

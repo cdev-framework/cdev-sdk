@@ -11,7 +11,8 @@ setuptools.setup(
         "sortedcontainers==2.3.0",
         "jsonschema",
         "rich",
-        "boto3"
+        "boto3",
+        "pydantic"
     ],
     python_requires='>=3.5'
 )

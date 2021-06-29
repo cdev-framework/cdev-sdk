@@ -16,6 +16,7 @@ packaging==20.9
 pdoc3==0.9.2
 pluggy==0.13.1
 py==1.10.0
+pydantic==1.8.2
 Pygments==2.8.0
 pyparsing==2.4.7
 pyrsistent==0.17.3

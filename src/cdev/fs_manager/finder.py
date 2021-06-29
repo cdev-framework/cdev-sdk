@@ -9,8 +9,8 @@ from typing import List
 from sortedcontainers.sortedlist import SortedKeyList
 
 from cdev.cparser import cdev_parser as cparser
-from cdev.fs_manager import package_mananger
 from cdev.schema import utils as cdev_schema_utils
+from cdev.frontend.models import Rendered_Resource as frontend_resource
 
 from . import utils as fs_utils
 from . import writer
@@ -89,7 +89,7 @@ def find_serverless_function_information_in_module(python_module):
     return serverless_function_information
 
 
-def parse_folder(folder_path, prefix=None) -> List[object]:
+def parse_folder(folder_path, prefix=None) -> List[frontend_resource]:
     if not os.path.isdir(folder_path):
         return None
 
@@ -99,7 +99,7 @@ def parse_folder(folder_path, prefix=None) -> List[object]:
     os.chdir(folder_path)
 
     # [{<resource>}]
-    rv = SortedKeyList(key=lambda x: x.get("hash"))
+    rv = SortedKeyList(key=lambda x: x.hash)
 
 
     for pf in python_files:
@@ -131,6 +131,8 @@ def parse_folder(folder_path, prefix=None) -> List[object]:
    
             # Parsed Path
             function_info['parsed_path'] = fs_utils.get_parsed_path(from_root_path, function_info.get("local_function_name"), prefix)
+
+            writer.write_intermediate_file(localpath, function_info.get("needed_lines"), function_info.get("parsed_path"))
 
             # Join the needed lined into a string and get the md5 hash 
             file_as_string = ''.join(fs_utils.get_lines_from_file_list(file_list, function_info.get('needed_lines')))
@@ -170,13 +172,14 @@ def parse_folder(folder_path, prefix=None) -> List[object]:
             
             function_info['ruuid'] = "cdev::serverless_function"
 
-            _validate_function(function_info)
-            _validate_resource(function_info)
+            as_resource = frontend_resource(
+                **function_info
+            )
     
-            final_function_info.append(function_info)
+            final_function_info.append(as_resource)
 
-        
-        rv .update(final_function_info)
+
+        rv.update(final_function_info)
 
         
     os.chdir(original_path)
