@@ -1,7 +1,7 @@
 
 import hashlib
 
-from cdev.fs_manager import finder
+from ..fs_manager import finder
 
 from cdev.frontend.constructs import Cdev_Component
 from cdev.frontend.models import Rendered_Component 

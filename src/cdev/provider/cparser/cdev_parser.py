@@ -3,11 +3,11 @@ import hashlib
 
 from sortedcontainers import SortedList
 
-from cdev.cparser.parser_objects import *
-import cdev.cparser.parser_utils as p_utils
-from cdev.cparser.cdev_parser_exceptions import *
+from .parser_objects import *
+from .import parser_utils as p_utils
+from .cdev_parser_exceptions import *
 
-from cdev.fs_manager.package_mananger import get_package_info
+from ..fs_manager.package_mananger import get_package_info
 
 
 

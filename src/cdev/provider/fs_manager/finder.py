@@ -8,7 +8,8 @@ from typing import List
 
 from sortedcontainers.sortedlist import SortedKeyList
 
-from cdev.cparser import cdev_parser as cparser
+from ..cparser import cdev_parser as cparser
+
 from cdev.schema import utils as cdev_schema_utils
 from cdev.frontend.models import Rendered_Resource as frontend_resource
 

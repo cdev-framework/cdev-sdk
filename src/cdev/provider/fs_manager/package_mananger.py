@@ -4,7 +4,7 @@ import pkg_resources
 from zipfile import ZipFile
 
 from cdev.settings import SETTINGS as CDEV_SETTINGS
-from cdev.cparser import cdev_parser 
+from ..cparser import cdev_parser 
 
 # Keep cache of already seen package names
 PACKAGE_CACHE = {}
