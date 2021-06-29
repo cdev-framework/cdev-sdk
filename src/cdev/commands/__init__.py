@@ -1,7 +1,6 @@
 import os
 
 import cdev.fs_manager.finder as fs
-import cdev.fs_manager.project_initializer as initalizer
 
 from cdev.frontend import executer as frontend_executer
 from cdev.backend import executer as backend_executer
@@ -20,6 +19,6 @@ def plan():
 
 def init():
     print("INIT")
-    initalizer.initialize_project(os.getcwd())
+    #initalizer.initialize_project(os.getcwd())
     return
 
