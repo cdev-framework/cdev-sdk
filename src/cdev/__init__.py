@@ -1,7 +1,7 @@
-from . import commands, resources, cli, settings
+from . import commands, cli, settings, utils
 
 
-__all__ = [ "resources", "cli", "settings", "commands"]
+__all__ = [ "cli", "settings", "commands", "utils"]
 
 __pdoc__ = {}
 __pdoc__['.venv'] = False

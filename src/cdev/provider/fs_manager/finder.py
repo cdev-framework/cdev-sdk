@@ -1,30 +1,32 @@
-import hashlib
 import inspect
 import importlib
 import os
 import sys
-import json
+from sortedcontainers.sortedlist import SortedKeyList, SortedList, identity
 from typing import List
 
-from sortedcontainers.sortedlist import SortedKeyList
 
-from ..cparser import cdev_parser as cparser
 
 from cdev.schema import utils as cdev_schema_utils
 from cdev.frontend.models import Rendered_Resource as frontend_resource
+from cdev.utils import hasher
+
+from ..cparser import cdev_parser as cparser
+
+from ..resources.general import pre_parsed_serverless_function, parsed_serverless_function_info, parsed_serverless_function_resource
 
 from . import utils as fs_utils
 from . import writer
 
 
-ANNOTATION_LABEL = "lambda_function"
+ANNOTATION_LABEL = "lambda_function_annotation"
 
 
 def _get_module_name_from_path(fp):
     return fp.split("/")[-1][:-3]
 
 
-def find_serverless_function_information_from_file(fp):
+def find_serverless_function_information_from_file(fp) -> List[parsed_serverless_function_info]:
     # Input: filepath
     if not os.path.isfile(fp):
         print("OH NO")
@@ -45,33 +47,40 @@ def find_serverless_function_information_from_file(fp):
     if not serverless_function_information:
         return
 
-    include_functions = [x.get("handler_name") for x in serverless_function_information]
+    include_functions_list = [x.handler_name for x in serverless_function_information]
+    include_functions_set = set(include_functions_list)
 
-    parsed_function_info = cparser.parse_functions_from_file(fp, include_functions=include_functions, remove_top_annotation=True)
+    parsed_function_info = cparser.parse_functions_from_file(fp, include_functions=include_functions_list, remove_top_annotation=True)
 
-    # return a [{function_name, needed_lines, dependencies},...]  that represents the parsed function and their 
+    handler_to_functionobj = {}
+    for serverless_func in serverless_function_information:
+
+        if serverless_func.handler_name in include_functions_set:
+            handler_to_functionobj[serverless_func.handler_name] = serverless_func
+
     rv = []
 
-    for f in parsed_function_info.parsed_functions:
-        rv.append({
-            "local_function_name": f.name,
-            "needed_lines": f.get_line_numbers_serializeable(),
-            "dependencies": list(f.imported_packages).sort(),
-        })
+    for parsed_function in parsed_function_info.parsed_functions:
+        tmp = handler_to_functionobj.get(parsed_function.name).dict()
+        tmp["needed_lines"] = parsed_function.get_line_numbers_serializeable()
+        tmp["dependencies"] = list(SortedList(parsed_function.imported_packages))
+        
+        rv.append(parsed_serverless_function_info(**tmp))
 
     return rv
 
 
-def find_serverless_function_information_in_module(python_module):
+def find_serverless_function_information_in_module(python_module) -> List[pre_parsed_serverless_function]:
     listOfFunctions = inspect.getmembers(python_module, inspect.isfunction)
     
     if not listOfFunctions:
-        # print(f"No functions in {path}")
         return
 
     any_servless_functions = False
 
+    # TODO Expand this to handle other annotation symbols
     for _name, func in listOfFunctions:
+
         if func.__qualname__.startswith(ANNOTATION_LABEL+"."):
             any_servless_functions = True
 
@@ -84,7 +93,8 @@ def find_serverless_function_information_in_module(python_module):
 
     for _name, func in listOfFunctions:
         if func.__qualname__.startswith(ANNOTATION_LABEL+"."):
-            serverless_function_information.append(func())
+            info = func()
+            serverless_function_information.append(info)
             
 
     return serverless_function_information
@@ -104,83 +114,10 @@ def parse_folder(folder_path, prefix=None) -> List[frontend_resource]:
 
 
     for pf in python_files:
-        fullfilepath = os.path.join("..",folder_path, pf)
-        # Direction from the current dir
-        from_root_path = os.path.join(folder_path, pf)
-        localpath = os.path.join(".", pf)
+        final_function_info = _generate_resources_from_file(pf, folder_path, prefix)
 
-        file_info = find_serverless_function_information_from_file(localpath)
-
-        if not file_info:
-            continue
-        
-
-        # Get the file as a list of lines so that we can get individual lines
-        file_list = fs_utils.get_file_as_list(fullfilepath)
-
-    
-        final_function_info = []
-
-        for function_info in file_info:
-            # For each function need to add info about:
-            #   - Parsed Path Location -> path to parsed file loc
-            #   - Source Code Hash     -> hash([line1,line2,....])
-            #   - Dependencies Hash    -> hash([dep1,dep2,...])
-            #   - Identity Hash        -> hash(src_code_hash, dependencies_hash)
-            #   - Total Hash           -> hash(identity_hash, metadata_hash) 
-            #   - Metadata Hash        -> hash(parsed_path)
-   
-            # Parsed Path
-            function_info['parsed_path'] = fs_utils.get_parsed_path(from_root_path, function_info.get("local_function_name"), prefix)
-
-            writer.write_intermediate_file(localpath, function_info.get("needed_lines"), function_info.get("parsed_path"))
-
-            # Join the needed lined into a string and get the md5 hash 
-            file_as_string = ''.join(fs_utils.get_lines_from_file_list(file_list, function_info.get('needed_lines')))
-            encoded_file_as_string = file_as_string.encode()
-            file_hash = hashlib.md5(encoded_file_as_string).hexdigest()
-            function_info['source_code_hash'] = file_hash
-
-
-            # Hash of dependencies directly used in this function
-            if function_info.get('dependencies'):
-                dependencies_hash = hashlib.md5("".join(function_info.get("dependencies")).encode()).hexdigest()
-            else:
-                dependencies_hash = "0"
-            
-            function_info['dependencies_hash'] = dependencies_hash
-            function_info['dependencies'] = []
-
-            
-
-            # Create identity hash
-            joined_identity_str = "".join([function_info['source_code_hash'], function_info['dependencies_hash']])
-            identity_hash = hashlib.md5(joined_identity_str.encode()).hexdigest() 
-            function_info['identity_hash'] = identity_hash
-
-            # Create metadata hash
-            joined_metadata_str = "".join([function_info['parsed_path']])
-            metadata_hash = hashlib.md5(joined_metadata_str.encode()).hexdigest() 
-            function_info['metadata_hash'] = metadata_hash
-
-            # Create the total hash
-            joined_total_str = "".join([identity_hash, metadata_hash])
-            total_hash = hashlib.md5(joined_total_str.encode()).hexdigest()
-            function_info['hash'] = total_hash
-
-            function_info['configuration'] = {}
-            function_info['original_path'] = localpath
-            
-            function_info['ruuid'] = "cdev::serverless_function"
-
-            as_resource = frontend_resource(
-                **function_info
-            )
-    
-            final_function_info.append(as_resource)
-
-
-        rv.update(final_function_info)
+        if final_function_info:
+            rv.update(final_function_info)
 
         
     os.chdir(original_path)
@@ -188,15 +125,76 @@ def parse_folder(folder_path, prefix=None) -> List[frontend_resource]:
     return list(rv)
 
 
-def _validate_function(function_info: object) -> None:
-    try: 
-        cdev_schema_utils.validate(cdev_schema_utils.SCHEMA.FRONTEND_FUNCTION, function_info )
-    except Exception as e:
-        print(e)
+
+def _generate_resources_from_file(python_file: str, parent_folder: str, prefix) -> List[dict]:
+    fullfilepath = os.path.join("..", parent_folder, python_file)
+    # Direction from the current dir
+    from_root_path = os.path.join(parent_folder, python_file)
+    localpath = os.path.join(".", python_file)
+
+    file_info = find_serverless_function_information_from_file(localpath)
+
+    if not file_info:
+        # TODO BAD THROW ERROR
+        return 
+    
+
+    # Get the file as a list of lines so that we can get individual lines
+    file_list = fs_utils.get_file_as_list(fullfilepath)
 
 
-def _validate_resource(resource: object) -> None:
-    try: 
-        cdev_schema_utils.validate(cdev_schema_utils.SCHEMA.FRONTEND_RESOURCE, resource )
-    except Exception as e:
-        print(e)
+    final_function_info = []
+
+    for function_info_obj in file_info:
+        # For each function need to add info about:
+        #   - Parsed Path Location -> path to parsed file loc
+        #   - Source Code Hash     -> hash([line1,line2,....])
+        #   - Dependencies Hash    -> hash([dep1,dep2,...])
+        #   - Identity Hash        -> hash(src_code_hash, dependencies_hash)
+        #   - Total Hash           -> hash(identity_hash, metadata_hash) 
+        #   - Metadata Hash        -> hash(parsed_path)
+
+        # Used keys:
+
+        # Parsed Path
+        function_info = function_info_obj.dict()
+
+
+
+        function_info['original_path'] = fullfilepath
+        function_info['parsed_path'] = fs_utils.get_parsed_path(from_root_path, function_info.get("handler_name"), prefix)
+
+        writer.write_intermediate_file(localpath, function_info.get("needed_lines"), function_info.get("parsed_path"))
+
+        # Join the needed lined into a string and get the md5 hash 
+        function_info['source_code_hash'] = hasher.hash_list(fs_utils.get_lines_from_file_list(file_list, function_info.get('needed_lines')))
+
+
+        # Hash of dependencies directly used in this function
+        if function_info.get('dependencies'):
+            dependencies_hash = hasher.hash_list(function_info.get('dependencies'))
+        else:
+            dependencies_hash = "0"
+        
+        function_info['dependencies_hash'] = dependencies_hash
+
+
+        # Create identity hash
+        function_info['identity_hash'] = hasher.hash_list([function_info['source_code_hash'], function_info['dependencies_hash']])
+
+        # Create metadata hash
+        function_info['metadata_hash'] = hasher.hash_list([function_info['parsed_path']])
+
+        ## BASE RENDERED RESOURCE INFORMATION
+        # Create the total hash
+        function_info['hash'] = hasher.hash_list([function_info['identity_hash'], function_info['metadata_hash'] ])
+    
+        function_info['ruuid'] = "cdev::general::parsed_function"
+
+        as_resource = parsed_serverless_function_resource(
+            **function_info
+        )
+
+        final_function_info.append(as_resource)
+
+    return final_function_info

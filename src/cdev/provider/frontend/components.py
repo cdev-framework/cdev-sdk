@@ -1,10 +1,9 @@
 
-import hashlib
-
 from ..fs_manager import finder
 
 from cdev.frontend.constructs import Cdev_Component
 from cdev.frontend.models import Rendered_Component 
+from cdev.utils import hasher
 
 
 class Cdev_FileSystem_Component(Cdev_Component):
@@ -20,13 +19,8 @@ class Cdev_FileSystem_Component(Cdev_Component):
 
     def render(self) -> Rendered_Component :
         """Render this component based on the information in the files at the provided folder path"""
-        resources_sorted = finder.parse_folder(self.fp, self.get_name())
-
-        appended_hashes = ":".join([x.hash for x in resources_sorted])
-
-        total_component_str = ":".join(appended_hashes)
-        
-        total_component_hash = hashlib.md5(total_component_str.encode()).hexdigest()
+        resources_sorted = finder.parse_folder(self.fp, self.get_name())        
+        total_component_hash =  hasher.hash_list([x.hash for x in resources_sorted])
 
 
 

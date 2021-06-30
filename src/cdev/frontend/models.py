@@ -28,6 +28,8 @@ class Rendered_Resource(BaseModel):
 
 class Rendered_Component(BaseModel):
     """
+    **Rendered_Resource**
+
     This is the most basic information needed to describe a rendered component. 
 
     --- Attributes ---
