@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2" />
-<title>cdev API documentation</title>
+<title>cdev.provider.cparser.cdev_parser API documentation</title>
 <meta name="description" content="" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
@@ -19,62 +19,115 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Package <code>cdev</code></h1>
+<h1 class="title">Module <code>cdev.provider.cparser.cdev_parser</code></h1>
 </header>
 <section id="section-intro">
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from . import commands, cli, settings, utils
+<pre><code class="python">import os
+import hashlib
+
+from sortedcontainers import SortedList
+
+from .parser_objects import *
+from .import parser_utils as p_utils
+from .cdev_parser_exceptions import *
+
+from ..fs_manager.package_mananger import get_package_info
 
 
-__all__ = [ &#34;cli&#34;, &#34;settings&#34;, &#34;commands&#34;, &#34;utils&#34;]
 
-__pdoc__ = {}
-__pdoc__[&#39;.venv&#39;] = False</code></pre>
+## This file has the highest level functions for use by other modules. Only this file will expose functionality to other modules.
+
+
+def parse_functions_from_file(file_loc, include_functions=[], function_manual_includes={}, global_manual_includes=[], remove_top_annotation=False):
+    try:
+        file_information = p_utils.get_file_information(
+            file_loc, include_functions, function_manual_includes, global_manual_includes, remove_top_annotation)
+    except InvalidDataError as e:
+        file_information = None
+        print(f&#34;{type(e)} -&gt; {e.message}&#34;)
+    except CouldNotParseFileError as e:
+        file_information = None
+        print(f&#34;{type(e.error)} -&gt; {e.error.message}&#34;)
+
+    for parsed_function in file_information.parsed_functions:
+        if parsed_function.imported_packages:
+            ALL_PACKAGES = set()
+            for pkg_name in parsed_function.imported_packages:
+                ALL_PACKAGES = ALL_PACKAGES.union(get_package_info(pkg_name))
+
+        parsed_function.needed_packages = ALL_PACKAGES
+
+        if ALL_PACKAGES:
+            sorted_packages =  SortedList(ALL_PACKAGES)
+            parsed_function.needed_imports = sorted_packages
+
+    return file_information
+
+
+def parse_folder_for_dependencies(folder_loc):
+    return p_utils.get_folders_imported_symbols(folder_loc)</code></pre>
 </details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt><code class="name"><a class="" title="cdev.backend" href="backend/index.html">cdev.backend</a></code></dt>
+<dt id="cdev.provider.cparser.cdev_parser.parse_folder_for_dependencies"><code class="name flex">
+<span>def <span class="ident">parse_folder_for_dependencies</span></span>(<span>folder_loc)</span>
+</code></dt>
 <dd>
 <div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def parse_folder_for_dependencies(folder_loc):
+    return p_utils.get_folders_imported_symbols(folder_loc)</code></pre>
+</details>
 </dd>
-<dt><code class="name"><a class="" title="cdev.cli" href="cli/index.html">cdev.cli</a></code></dt>
+<dt id="cdev.provider.cparser.cdev_parser.parse_functions_from_file"><code class="name flex">
+<span>def <span class="ident">parse_functions_from_file</span></span>(<span>file_loc, include_functions=[], function_manual_includes={}, global_manual_includes=[], remove_top_annotation=False)</span>
+</code></dt>
 <dd>
 <div class="desc"></div>
-</dd>
-<dt><code class="name"><a class="" title="cdev.commands" href="commands/index.html">cdev.commands</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a class="" title="cdev.frontend" href="frontend/index.html">cdev.frontend</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a class="" title="cdev.provider" href="provider/index.html">cdev.provider</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a class="" title="cdev.schema" href="schema/index.html">cdev.schema</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a class="" title="cdev.settings" href="settings/index.html">cdev.settings</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a class="" title="cdev.utils" href="utils/index.html">cdev.utils</a></code></dt>
-<dd>
-<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def parse_functions_from_file(file_loc, include_functions=[], function_manual_includes={}, global_manual_includes=[], remove_top_annotation=False):
+    try:
+        file_information = p_utils.get_file_information(
+            file_loc, include_functions, function_manual_includes, global_manual_includes, remove_top_annotation)
+    except InvalidDataError as e:
+        file_information = None
+        print(f&#34;{type(e)} -&gt; {e.message}&#34;)
+    except CouldNotParseFileError as e:
+        file_information = None
+        print(f&#34;{type(e.error)} -&gt; {e.error.message}&#34;)
+
+    for parsed_function in file_information.parsed_functions:
+        if parsed_function.imported_packages:
+            ALL_PACKAGES = set()
+            for pkg_name in parsed_function.imported_packages:
+                ALL_PACKAGES = ALL_PACKAGES.union(get_package_info(pkg_name))
+
+        parsed_function.needed_packages = ALL_PACKAGES
+
+        if ALL_PACKAGES:
+            sorted_packages =  SortedList(ALL_PACKAGES)
+            parsed_function.needed_imports = sorted_packages
+
+    return file_information</code></pre>
+</details>
 </dd>
 </dl>
-</section>
-<section>
-</section>
-<section>
 </section>
 <section>
 </section>
@@ -85,16 +138,15 @@ __pdoc__[&#39;.venv&#39;] = False</code></pre>
 <ul></ul>
 </div>
 <ul id="index">
-<li><h3><a class='nav-header' href="#header-submodules">Sub-modules</a></h3>
+<li><h3>Super-module</h3>
 <ul>
-<li><code><a class="sidebar" title="cdev.backend" href="backend/index.html">cdev.backend</a></code></li>
-<li><code><a class="sidebar" title="cdev.cli" href="cli/index.html">cdev.cli</a></code></li>
-<li><code><a class="sidebar" title="cdev.commands" href="commands/index.html">cdev.commands</a></code></li>
-<li><code><a class="sidebar" title="cdev.frontend" href="frontend/index.html">cdev.frontend</a></code></li>
-<li><code><a class="sidebar" title="cdev.provider" href="provider/index.html">cdev.provider</a></code></li>
-<li><code><a class="sidebar" title="cdev.schema" href="schema/index.html">cdev.schema</a></code></li>
-<li><code><a class="sidebar" title="cdev.settings" href="settings/index.html">cdev.settings</a></code></li>
-<li><code><a class="sidebar" title="cdev.utils" href="utils/index.html">cdev.utils</a></code></li>
+<li><code><a class="sidebar" title="cdev.provider.cparser" href="index.html">cdev.provider.cparser</a></code></li>
+</ul>
+</li>
+<li><h3><a class='nav-header' href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a class="sidebar" title="cdev.provider.cparser.cdev_parser.parse_folder_for_dependencies" href="#cdev.provider.cparser.cdev_parser.parse_folder_for_dependencies">parse_folder_for_dependencies</a></code></li>
+<li><code><a class="sidebar" title="cdev.provider.cparser.cdev_parser.parse_functions_from_file" href="#cdev.provider.cparser.cdev_parser.parse_functions_from_file">parse_functions_from_file</a></code></li>
 </ul>
 </li>
 </ul>
