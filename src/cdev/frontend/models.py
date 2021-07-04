@@ -18,8 +18,32 @@ class Rendered_Resource(BaseModel):
         
     **BASEMODEL DOCUMENTATION:**
     """
+
+
     ruuid: str
+    """
+    Name space indemnificator that is used to pass this resource to a downstream mapper
+
+    Form: (top-level-namespace):(resource-type-id)
+    """
+
+
     hash: str
+    """
+    This is a hash that is used to identify if changes in the resources have occurred. It should have the property:
+    - This value changes only if a there is a change in the resource. 
+    """
+
+
+    name: str
+    """
+    This is a human readable logical name for the resource. This must be unique for the resource within the namespace and resource type
+    (i.e. the concat value of <ruuid>:<name> must be unique)
+
+    This value is important for allow human level refactoring of resources. To update a resources name once created, you must edit only the 
+    name and not change the hash. If you change both the hash and name in the same deployment, it will register this as a delete and create 
+    instead of update. 
+    """
 
     class Config:
         validate_assignment = True
@@ -44,9 +68,29 @@ class Rendered_Component(BaseModel):
     **BASEMODEL DOCUMENTATION:**
     """
 
+
+
     rendered_resources: List[Rendered_Resource]
+    """
+    List of Rendered Resources that make up the current state of this component
+    """
+
+
     hash: str
+    """
+    This is a hash that is used to identify if changes in the resources have occurred. It should have the property:
+    - This value changes only if a there is a change in the resource. 
+    """
+
+
     name: str
+    """
+    This is a human readable logical name for the component. 
+
+    This value is important for allow human level refactoring of components. To update a component name once created, you must edit only the 
+    name and not change the hash. If you change both the hash and name in the same deployment, it will register this as a delete and create 
+    instead of update. 
+    """
 
 
 class Rendered_State(BaseModel):

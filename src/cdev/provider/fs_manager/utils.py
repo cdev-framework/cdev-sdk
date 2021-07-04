@@ -1,6 +1,9 @@
 import os
+from posixpath import split
+import cdev
 
 from cdev.settings import SETTINGS as cdev_settings
+from cdev.utils import paths as cdev_paths
 
 BASE_FILES_PATH = cdev_settings.get("CDEV_INTERMEDIATE_FILES_LOCATION")
 
@@ -45,7 +48,7 @@ def _compress_lines(original_lines):
 
 
 def get_parsed_path(original_path, function_name, prefix=None):
-    split_path = original_path.split("/")
+    split_path = cdev_paths.get_relative_to_project_path(original_path).split("/")
     # the last item in the path is .py file name... change the  .py to _py so it works as a dir
     split_path[-1] = split_path[-1].split(".")[0] + "_py"
     try:

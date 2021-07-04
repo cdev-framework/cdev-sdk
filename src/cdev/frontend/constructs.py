@@ -118,3 +118,9 @@ class Cdev_Project():
 
 
 
+class Cdev_Resource():
+    def __init__(self) -> None:
+        print("PARENT")
+
+    def render(self) -> str:
+        return "::"

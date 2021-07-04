@@ -2,18 +2,17 @@ import inspect
 import importlib
 import os
 import sys
-from sortedcontainers.sortedlist import SortedKeyList, SortedList, identity
+from sortedcontainers.sortedlist import SortedKeyList, SortedList
 from typing import List
 
 
-
-from cdev.schema import utils as cdev_schema_utils
+from cdev.frontend.constructs import Cdev_Resource
 from cdev.frontend.models import Rendered_Resource as frontend_resource
 from cdev.utils import hasher
 
 from ..cparser import cdev_parser as cparser
 
-from ..resources.general import pre_parsed_serverless_function, parsed_serverless_function_info, parsed_serverless_function_resource
+from ..resources.aws.lambda_function import pre_parsed_serverless_function, parsed_serverless_function_info, parsed_serverless_function_resource
 
 from . import utils as fs_utils
 from . import writer
@@ -26,7 +25,7 @@ def _get_module_name_from_path(fp):
     return fp.split("/")[-1][:-3]
 
 
-def find_serverless_function_information_from_file(fp) -> List[parsed_serverless_function_info]:
+def _find_resources_information_from_file(fp) -> List[frontend_resource]:
     # Input: filepath
     if not os.path.isfile(fp):
         print("OH NO")
@@ -42,7 +41,24 @@ def find_serverless_function_information_from_file(fp) -> List[parsed_serverless
     # singleton
     mod = importlib.import_module(mod_name)
 
-    serverless_function_information = find_serverless_function_information_in_module(mod)
+    rv = []
+
+    info = _create_serverless_function_resources(mod, fp)
+    if info:
+        rv.extend(info)
+    
+
+    for i in dir(mod):
+        if isinstance(getattr(mod,i), Cdev_Resource):
+            # Find all the Cdev_Resources in the module and render them
+            obj = getattr(mod,i)
+            rv.append(obj.render())
+
+    return rv
+
+
+def _create_serverless_function_resources(mod, fp) -> List[parsed_serverless_function_resource]:
+    serverless_function_information = _find_serverless_function_information_in_module(mod)
 
     if not serverless_function_information:
         return
@@ -58,94 +74,19 @@ def find_serverless_function_information_from_file(fp) -> List[parsed_serverless
         if serverless_func.handler_name in include_functions_set:
             handler_to_functionobj[serverless_func.handler_name] = serverless_func
 
-    rv = []
+    function_info = []
 
     for parsed_function in parsed_function_info.parsed_functions:
         tmp = handler_to_functionobj.get(parsed_function.name).dict()
         tmp["needed_lines"] = parsed_function.get_line_numbers_serializeable()
         tmp["dependencies"] = list(SortedList(parsed_function.imported_packages))
         
-        rv.append(parsed_serverless_function_info(**tmp))
-
-    return rv
-
-
-def find_serverless_function_information_in_module(python_module) -> List[pre_parsed_serverless_function]:
-    listOfFunctions = inspect.getmembers(python_module, inspect.isfunction)
-    
-    if not listOfFunctions:
-        return
-
-    any_servless_functions = False
-
-    # TODO Expand this to handle other annotation symbols
-    for _name, func in listOfFunctions:
-
-        if func.__qualname__.startswith(ANNOTATION_LABEL+"."):
-            any_servless_functions = True
-
-    if not any_servless_functions:
-        return
-
-
-    serverless_function_information = []
-
-
-    for _name, func in listOfFunctions:
-        if func.__qualname__.startswith(ANNOTATION_LABEL+"."):
-            info = func()
-            serverless_function_information.append(info)
-            
-
-    return serverless_function_information
-
-
-def parse_folder(folder_path, prefix=None) -> List[frontend_resource]:
-    if not os.path.isdir(folder_path):
-        return None
-
-    python_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f)) and f[-3:]==".py"]
-
-    original_path = os.getcwd()
-    os.chdir(folder_path)
-
-    # [{<resource>}]
-    rv = SortedKeyList(key=lambda x: x.hash)
-
-
-    for pf in python_files:
-        final_function_info = _generate_resources_from_file(pf, folder_path, prefix)
-
-        if final_function_info:
-            rv.update(final_function_info)
-
-        
-    os.chdir(original_path)
-
-    return list(rv)
-
-
-
-def _generate_resources_from_file(python_file: str, parent_folder: str, prefix) -> List[dict]:
-    fullfilepath = os.path.join("..", parent_folder, python_file)
-    # Direction from the current dir
-    from_root_path = os.path.join(parent_folder, python_file)
-    localpath = os.path.join(".", python_file)
-
-    file_info = find_serverless_function_information_from_file(localpath)
-
-    if not file_info:
-        # TODO BAD THROW ERROR
-        return 
-    
+        function_info.append(parsed_serverless_function_info(**tmp))
 
     # Get the file as a list of lines so that we can get individual lines
-    file_list = fs_utils.get_file_as_list(fullfilepath)
-
-
-    final_function_info = []
-
-    for function_info_obj in file_info:
+    file_list = fs_utils.get_file_as_list(fp)
+    rv = []
+    for function_info_obj in function_info:
         # For each function need to add info about:
         #   - Parsed Path Location -> path to parsed file loc
         #   - Source Code Hash     -> hash([line1,line2,....])
@@ -161,10 +102,10 @@ def _generate_resources_from_file(python_file: str, parent_folder: str, prefix) 
 
 
 
-        function_info['original_path'] = fullfilepath
-        function_info['parsed_path'] = fs_utils.get_parsed_path(from_root_path, function_info.get("handler_name"), prefix)
+        function_info['original_path'] = fp
+        function_info['parsed_path'] = fs_utils.get_parsed_path(fp, function_info.get("handler_name"))
 
-        writer.write_intermediate_file(localpath, function_info.get("needed_lines"), function_info.get("parsed_path"))
+        writer.write_intermediate_file(fp, function_info.get("needed_lines"), function_info.get("parsed_path"))
 
         # Join the needed lined into a string and get the md5 hash 
         function_info['source_code_hash'] = hasher.hash_list(fs_utils.get_lines_from_file_list(file_list, function_info.get('needed_lines')))
@@ -195,6 +136,71 @@ def _generate_resources_from_file(python_file: str, parent_folder: str, prefix) 
             **function_info
         )
 
-        final_function_info.append(as_resource)
+        rv.append(as_resource)
 
-    return final_function_info
+    return rv
+
+    
+
+
+def _find_serverless_function_information_in_module(python_module) -> List[pre_parsed_serverless_function]:
+    listOfFunctions = inspect.getmembers(python_module, inspect.isfunction)
+    
+    if not listOfFunctions:
+        return
+
+    any_servless_functions = False
+
+    # TODO Expand this to handle other annotation symbols
+    for _name, func in listOfFunctions:
+
+        if func.__qualname__.startswith(ANNOTATION_LABEL+"."):
+            any_servless_functions = True
+
+    if not any_servless_functions:
+        return
+
+
+    serverless_function_information = []
+
+
+    for _name, func in listOfFunctions:
+        if func.__qualname__.startswith(ANNOTATION_LABEL+"."):
+            info = func()
+            serverless_function_information.append(info)
+            
+
+    return serverless_function_information
+
+
+
+def parse_folder(folder_path, prefix=None) -> List[frontend_resource]:
+    """
+    This function takes a folder and goes through it looking for cdev resources. Specifically, it loads all available python files
+    and uses the loaded module to determine the resources defined in the files. Most resources are simple, but there is extra work
+    needed to handle the serverless functions. Serverless functions are parsed to optimized the actual deployed artifact using the 
+    cparser library.
+    """
+    if not os.path.isdir(folder_path):
+        return None
+
+    python_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f)) and f[-3:]==".py"]
+
+    original_path = os.getcwd()
+    os.chdir(folder_path)
+
+    # [{<resource>}]
+    rv = SortedKeyList(key=lambda x: x.hash)
+
+
+    for pf in python_files:
+        print(os.path.join(os.getcwd(),pf))
+        final_function_info = _find_resources_information_from_file(os.path.join(os.getcwd(),pf))
+        print(final_function_info)
+        if final_function_info:
+            rv.update(final_function_info)
+
+        
+    os.chdir(original_path)
+
+    return list(rv)
