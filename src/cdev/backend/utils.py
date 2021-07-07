@@ -1,8 +1,11 @@
 import json
 import os
 
+from pydantic.types import NonPositiveInt
+
+from cdev.frontend.models import Rendered_State
+
 from cdev.settings import SETTINGS as cdev_settings
-from cdev.schema import utils as schema_utils
 
 
 BASE_PATH = cdev_settings.get("BASE_PATH")
@@ -28,7 +31,9 @@ def write_local_state(state):
     with open(FULL_LOCAL_STATE_PATH, 'w') as fp:
         json.dump(state, fp, indent=4)
 
-def load_local_state():
+
+
+def load_local_state() -> Rendered_State:
     # TODO Make this a class and json representation use json schema 
     if not os.path.isfile(FULL_LOCAL_STATE_PATH):
         # TODO Throw error
@@ -38,19 +43,9 @@ def load_local_state():
     with open(FULL_LOCAL_STATE_PATH) as fp:
         previous_data = json.load(fp)
 
-    rv = {}
-
-    for component_name in previous_data.get("components"):
-
-        previous_data.get("components").get(component_name)['hash_to_function'] = {}
-        
-    
-        for function_state in previous_data.get("components").get(component_name).get("functions"):
-            schema_utils.validate(schema_utils.SCHEMA.FRONTEND_FUNCTION, function_state)
-
-            total_hash = function_state.get("hash")
-
-            previous_data.get("components").get(component_name)['hash_to_function'][total_hash] = function_state
-
-    
-    return previous_data
+    try: 
+        rv = Remote_State(**previous_data)
+        return rv
+    except BaseException as e:
+        print(e)
+        return None

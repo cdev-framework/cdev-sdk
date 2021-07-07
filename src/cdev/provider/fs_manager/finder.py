@@ -194,9 +194,9 @@ def parse_folder(folder_path, prefix=None) -> List[frontend_resource]:
 
 
     for pf in python_files:
-        print(os.path.join(os.getcwd(),pf))
+        #print(os.path.join(os.getcwd(),pf))
         final_function_info = _find_resources_information_from_file(os.path.join(os.getcwd(),pf))
-        print(final_function_info)
+        #print(final_function_info)
         if final_function_info:
             rv.update(final_function_info)
 

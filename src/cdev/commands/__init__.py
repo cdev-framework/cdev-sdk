@@ -12,7 +12,7 @@ def plan():
     print("PLAN2")
 
     rendered_frontend = frontend_executer.execute_frontend()
-    #backend_executer.create_diffs(rendered_frontend)
+    backend_executer.create_diffs(rendered_frontend)
 
     return {}
 

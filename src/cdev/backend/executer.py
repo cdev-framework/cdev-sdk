@@ -1,20 +1,28 @@
 import os
+from typing import List
 
 
 from . import initializer as backend_initializer
 from . import state_manager 
+from .models import Component_State_Difference
+
+from cdev.frontend.models import Rendered_State
 
 
-def create_diffs(rendered_frontend: object) -> None:
-
-    if not backend_initializer.is_backend_initialized():
-        # TODO throw error
-        print("NO BACKEND")
-        backend_initializer.initialize_backend("project")
-
-
-    for comp in rendered_frontend.get("rendered_resources"):
-        print(state_manager.update_component_state(comp, comp.get("name")))
+def create_diffs(rendered_frontend: Rendered_State) -> List[Component_State_Difference]:
+    
+    #print(rendered_frontend)
+    project_diffs = state_manager.create_project_diffs(rendered_frontend)
+    print(project_diffs) 
+    #if not backend_initializer.is_backend_initialized():
+    #    # TODO throw error
+    #    print("NO BACKEND")
+    #    backend_initializer.initialize_backend("project")
+#
+#
+    #for comp in rendered_frontend.get("rendered_resources"):
+    #    #print(state_manager.update_component_state(comp, comp.get("name")))
+    #    print(Hello)
         
     # Modify local system to reflect changes
     #for action_type in actions:

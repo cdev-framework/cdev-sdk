@@ -1,204 +1,92 @@
 import time
+from typing import List, Tuple
 
 from . import utils as backend_utils
+from .models import Resource_State_Difference, Component_State_Difference, Action_Type
+
+from cdev.frontend.models import Rendered_Component, Rendered_State, Rendered_Resource
 
 
 
-
-def update_component_state(component_info, component_name):
-    # This function takes in a component object and updates the local state to reflect the changes in the component 
-
-    # Returns a dictionary with the actions taken to update the local state
-    # RV: {
-    #   "appends": [], these are the completely new resources
-    #   "deletes": [], these are the resources that are removed
-    #   "updates": [], these are the resources that were updated 
-    # }
+def create_project_diffs(new_project: Rendered_State) -> List[Component_State_Difference]:
+    """
+    This function takes in a rendered component object creates a list[State_Difference] based on the difference between that and 
+    the previous state.
+    """
 
     previous_local_state = backend_utils.load_local_state()
-
+    rv = []
     if not previous_local_state:
-        # IF there was not previous local state then write the entire state as appends
-        previous_local_state = backend_utils.create_local_state_file("PROJECT 1")
-
-
-    if not component_name in previous_local_state.get("components"):
-        # IF the component was not previously in the local state add it
-        rv = _write_new_component(component_info, previous_local_state, component_name)
-        return rv
-
-
-    # get the pure diffs in the current component and previous local state
-    pure_diffs = _get_diffs_in_local_state(component_info, previous_local_state, component_name)
-    seen_paths = {}
-    seen_total_hashed = {}
-    updates = []
-    additions = []
-
-    # We want to construct updates based on the idea if there is an addition and deletion to the same 
-    # parsed path means that function at that parsed path was updated. To support moving files to different directories,
-    # we also look to see if the appends and deletes are just changes in the parsed_path (so no change in total hash)
-
-    for deleted_function in pure_diffs.get('deletes'):
-        # We want to delete all items that have been changed in the component as they will either be added back as an update or
-        # the resource has actually been deleted. 
-        try:
-            seen_paths[deleted_function.get('parsed_path')] = deleted_function
-            seen_total_hashed[deleted_function.get('hash')] = deleted_function
-            previous_local_state.get("components").get(component_name).get('functions').remove(deleted_function)
-        except Exception as e:
-            # TODO THROW BETTER ERROR
-            print(f"BAD DELETE ITEM {e}")
-
-    
-    for diff in pure_diffs.get("appends"):
-        # We need to determine if the pure appends are updates or actual new resources
-        # Updates can be:
-        #   - Change in src code (change in source code hash)
-        #   - Change in the dependencies (change in dependency hash)
-        #   - Change in parsed path (files have been moved)
-        # An Update can contain both change in src code and dependency at the same time, but 
-        # an update to the file system must be exclusive to be registered as an update
-        
-        tmp_obj = _create_function_object(
-                    original_path=diff.get("original_path"), 
-                    parsed_path=diff.get("parsed_path"), 
-                    src_code_hash=diff.get("source_code_hash"), 
-                    dependencies_hash=diff.get("dependencies_hash"),
-                    identity_hash=diff.get("identity_hash"),
-                    metadata_hash=diff.get("metadata_hash"),
-                    hash=diff.get("hash"),
-                    local_function_name=diff.get("function_name"),
-                    needed_lines=diff.get("needed_lines"),
-                    dependencies=diff.get("dependencies")
+        # Create COMPONENT and ALL RESOURCES
+        for component in new_project.rendered_components:
+            rv.append( Component_State_Difference(
+                    **{
+                        "action_type": Action_Type.CREATE,
+                        "previous_component": None,
+                        "new_component": component,
+                        "resource_diff": _create_resource_diffs(component.rendered_resources,[])
+                    }
                 )
+            )
 
-        previous_local_state.get("components").get(component_name).get("functions").append(tmp_obj)
+    # For each component in the new state
+        # if there is same hash and same name
+            # DO NOTHING
+
+        # if there is the diff name and same hash
+            # UPDATE NAME
+
+        # if there is the same name and diff hash
+            # UPDATE IDENTITY
+            # _create_resource_diffs(new,old)
+
+        # if there is diff hash and diff name 
+            # Create COMPONENT and ALL RESOURCES
+            # _create_resource_diffs(new,{})
 
 
-        parsed_path = diff.get("parsed_path")
-
-        tmp_obj["action"] = []
-        if parsed_path in seen_paths:
-            # This path was a previous parsed path so check for the change in the source code and dependency
-            if not tmp_obj.get("source_code_hash") == seen_paths.get(parsed_path).get("source_code_hash"):
-                tmp_obj["action"].append("SOURCE CODE")
-            
-            if not tmp_obj.get("dependencies_hash") == seen_paths.get(parsed_path).get("dependencies_hash"):
-                tmp_obj["action"].append("DEPENDENCY")
-
-            updates.append(tmp_obj)
-            pure_diffs.get('deletes').remove(seen_paths.get(parsed_path))
-
-
-        elif tmp_obj.get("hash") in seen_total_hashed:
-            # This 
-            tmp_obj["action"].append("MOVE")
-            updates.append(tmp_obj)
-            pure_diffs.get('deletes').remove(seen_total_hashed.get(parsed_path))
-        else:
-            additions.append(tmp_obj)
-
+        # POP the seen previous component as we go so only remaining resources will be deletes
         
+        # For each remaining resource:
+            # DELETE object
 
-    pure_diffs['updates'] = updates
-    pure_diffs['appends'] = additions
+        # append to rv
 
-    backend_utils.write_local_state(previous_local_state)
+    return rv
 
-    return pure_diffs
+def _create_resource_diffs(new_resources: List[Rendered_Resource], old_resource: List[Rendered_Resource]) -> List[Resource_State_Difference]:
+    # build map<hash,resource>
+    old_hash_to_resource = {x.hash: x for x in old_resource}
+    # build map<name,resource>
+    old_name_to_resource = {x.name: x for x in old_resource}
 
-
-def _write_new_component(component_info, previous_state, component_name):
-    # NO previous state for this component so write current component state as appends and dont worry about diffs
-    final_function_info = []
-
-    for function_info in component_info.get("rendered_resources"):
-        tmp_obj = _create_function_object(
-                        original_path=function_info.get("original_path"), 
-                        parsed_path=function_info.get("parsed_path"), 
-                        src_code_hash=function_info.get("source_code_hash"), 
-                        dependencies_hash=function_info.get("dependencies_hash"),
-                        identity_hash=function_info.get("identity_hash"),
-                        metadata_hash=function_info.get("metadata_hash"),
-                        hash=function_info.get("hash"),
-                        local_function_name=function_info.get("function_name"),
-                        needed_lines = function_info.get("needed_lines"),
-                        dependencies=function_info.get("dependencies")
-                    )
-
-        final_function_info.append(tmp_obj)
-
-    final_component_state = {
-        "functions": final_function_info
-    }
-
-    previous_state.get("components")[component_name] = final_component_state
-
-    backend_utils.write_local_state(previous_state)
-
-    return {'appends': final_function_info}
-
-
-def _get_diffs_in_local_state(component_info, previous_local_state, component_name):
-    # This only returns all changes as either deletes or appends
-
-    # For example, changing the src code of a handler results in a delete and append because
-    # the old version is deleted and a new version created. It helps to have this primitive view
-    # because it can be used to construct more advanced states like updates. Any advanced change 
-    # to state can be constructed from these primitives
-
-
-    diffs = {
-        'appends': [],
-        'deletes': []
-    }
-
-    previous_component_state = previous_local_state.get("components").get(component_name)
-
-    for function_info in component_info.get("rendered_resources"):
-
-        total_hash = function_info.get("hash")
-        if total_hash in previous_component_state.get("hash_to_function"):
-            previous_component_state.get("hash_to_function").pop(total_hash)
+    rv = []
+    for resource in new_resources:
+        if resource.hash in old_hash_to_resource and resource.name in old_name_to_resource:
+            if not old_hash_to_resource.get(resource.hash) == old_name_to_resource.get(resource.name):
+                print("BAD")
+                # TODO throw err
             continue
+            
+        if resource.hash in old_hash_to_resource and not resource.name in old_name_to_resource:
+            print(f"UPDATE NAME FROM {old_hash_to_resource.get(resource.hash).name} -> {resource.name}")
 
-        diffs.get('appends').append(function_info)
+        if not resource.hash in old_hash_to_resource and resource.name in old_name_to_resource:
+            print(f"UPDATE IDENTITY FROM {old_name_to_resource.get(resource.name).hash} -> {resource.hash}")
 
+        if not resource.hash in old_hash_to_resource and not resource.name in old_name_to_resource:
+            #print(f"CREATE {resource}")
+            rv.append(Resource_State_Difference(
+                **{
+                    "action_type": Action_Type.CREATE,
+                    "previous_resource": None,
+                    "new_resource": resource
+                }
+            ))
 
-    for remaining in previous_component_state.get("hash_to_function"):
-        diffs.get('deletes').append(previous_component_state.get('hash_to_function').get(remaining))
+        # POP the seen previous resources as we go so only remaining resources will be deletes
 
-    return diffs
+    # For each remaining resource:
+        # DELETE object
 
-    
-
-
-
-
-
-
-def _create_function_object(original_path="", parsed_path="", src_code_hash="", dependencies_hash="",
-                            identity_hash="", metadata_hash="",  hash="", local_function_name="",
-                            needed_lines=[], dependencies=[]):    
-    tmp_obj = {
-        "original_path": original_path,
-        "parsed_path": parsed_path,
-        "source_code_hash": src_code_hash,
-        "dependencies_hash": dependencies_hash,
-        "identity_hash": identity_hash,
-        "metadata_hash": metadata_hash,
-        "hash": hash,
-        "local_function_name": local_function_name,
-        "timestamp": str(time.time()),
-        "needed_lines": needed_lines,
-        "dependencies": dependencies,
-        "configuration": [
-            {
-                "name": "Runtime",
-                "value": "python3.7"
-            }
-        ]
-    }
-
-    return tmp_obj
+    return rv
