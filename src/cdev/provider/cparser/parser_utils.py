@@ -1,6 +1,7 @@
 import ast
 import os
-from sys import modules
+from sys import modules, version_info
+
 import tokenize 
 
 from .parser_objects import *
@@ -118,10 +119,11 @@ def _generate_global_statement(file_info_obj, node, line_info):
             manual_include_sym = k
             break
 
-
+    print(start_line)
+    print(last_line)
     tmp_src_code = file_info_obj.get_lines_of_source_code(
         start_line, last_line)
-
+    print(tmp_src_code)
     tmp_symbol_table = symtable.symtable(tmp_src_code,
                                          file_info_obj.file_location, 'exec')
 
@@ -295,7 +297,11 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
     file_info_obj.set_imported_symbols(imported_symbols)
 
     # Need to get the line range of each global statement, but this requires looping over all the global nodes in the ast
-    # in the top level of the file. To support earlier versions of python (<3.7) we must use the starting line of
+    # in the top level of the file. 
+    # 
+    # Python3.8 introduced node.end_lineno to ast nodes, which makes it easier to get the ending line info
+    # 
+    # To support earlier versions of python (<3.7) we must use the starting line of
     # the next statement as the last line of previous node. We are going to store this info in a tmp dict then
     # once we have all the information create the objects
 
@@ -304,21 +310,28 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
     # dict<ast.node, [line1,line2]>
     _tmp_global_information = {}
 
-    previous_node = None
-    for node in file_ast.body:
-        if previous_node:
-            prev_vals = _tmp_global_information.get(previous_node)
-            prev_vals.append(node.lineno - 1)
-            _tmp_global_information[previous_node]
+    # sys.version_info
+    if version_info < (3,8):
+        previous_node = None
+        for node in file_ast.body:
+            #_tmp_global_information[node] = [node.lineno, node.end_lineno]
+            if previous_node:
+                prev_vals = _tmp_global_information.get(previous_node)
+                prev_vals.append(node.lineno-1)
+                _tmp_global_information[previous_node] = prev_vals
 
-        _tmp_global_information[node] = [node.lineno]
+            _tmp_global_information[node] = [node.lineno]
 
-        previous_node = node
+            previous_node = node
 
-    # Set the last line of the last global statement to the last line of the file
-    prev_vals = _tmp_global_information.get(previous_node)
-    prev_vals.append(file_info_obj.get_file_length() + 1)
-    _tmp_global_information[previous_node]
+        # Set the last line of the last global statement to the last line of the file
+        prev_vals = _tmp_global_information.get(previous_node)
+        prev_vals.append(file_info_obj.get_file_length() + 1)
+        _tmp_global_information[previous_node] = prev_vals
+    else:
+        for node in file_ast.body:
+            _tmp_global_information[node] = [node.lineno, node.end_lineno]
+
 
     # Now that the information has been collected for the global statements, we can create the actual objs and add
     # them to the file_info_obj
