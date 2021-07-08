@@ -1,6 +1,7 @@
 from typing import (
     Deque, Dict, FrozenSet, List, Optional, Sequence, Set, Tuple, Union
 )
+from pathlib import PosixPath, WindowsPath
 
 from pydantic import BaseModel
 
@@ -47,7 +48,8 @@ class Rendered_Resource(BaseModel):
 
     class Config:
         validate_assignment = True
-        allow_extra = True
+        extra = 'allow'
+        
 
 
 class Rendered_Component(BaseModel):
@@ -93,6 +95,7 @@ class Rendered_Component(BaseModel):
     """
 
 
+
 class Rendered_State(BaseModel):
     """
     This is the most basic information needed to describe a projects rendered state. 
@@ -106,7 +109,7 @@ class Rendered_State(BaseModel):
 
     **BASEMODEL DOCUMENTATION:**
     """
-    rendered_components: List[Rendered_Component]
+    rendered_components: Union[List[Rendered_Component], None]
     hash: str
 
 

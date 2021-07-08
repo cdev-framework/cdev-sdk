@@ -1,5 +1,4 @@
 import os
-from posixpath import split
 from sys import version_info
 from typing import List
 

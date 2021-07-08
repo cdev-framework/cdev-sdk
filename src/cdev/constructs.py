@@ -1,34 +1,7 @@
 from typing import List
 
-from .models import Rendered_Component as frontend_component
+from .models import Rendered_Component 
 
-
-"""
-This file defines the basic constructs that can be used to create projects with Cdev. These constructs are designed to provided the
-most basic structure that can then be extended and expanded. 
-
-    Cdev_project:
-        - A singleton that encapsulates the configuration and high level information needed to construct the project. This singleton
-        can be used within the different components to gain information about the higher level project that it is within. Once constructed,
-        the object should remain a read only object to prevent components from changing configuration beyond their scope. 
-
-    Cdev_component:
-        - A component is a logical collection of resources. This simple definition is intended to allow flexibility for different
-        styles of projects. It is up to the end user to decide on how they group the resources.
-        
-        A component must override the `render` method, which returns the desired resources with configuration as a json object (schema<>). 
-        The `render` method does not take any input parameters, therefore all configuration for the component should be done via the __init__ 
-        method. 
-
-        
-        Some properties that components exhibit that can help with determining the best way to group resources are:
-            - Information: Config of other resources will by default be available within a component, but you will be able to explicitly 
-            define output that is available for other components to use. 
-            - Triggered deployments: Any change in a resource within the component will trigger the component to need to be revaluated 
-            for changes. This means in a monolothic component, all changes will trigger a revaluation on the whole state of the project
-            - Parallelization: (In the future) rendering components should be able to be parallelized, so using multiple non dependant 
-            components  should lead to better total evaluation times.
-"""
 
 
 class Cdev_Component():
@@ -54,7 +27,7 @@ class Cdev_Component():
         self.name = name
         pass
 
-    def render(self)  -> frontend_component:
+    def render(self)  -> Rendered_Component:
         """Abstract Class that must be implemented by the descendant that returns a component model"""
         pass
 
@@ -120,7 +93,7 @@ class Cdev_Project():
 
 class Cdev_Resource():
     def __init__(self) -> None:
-        print("PARENT")
+        pass
 
     def render(self) -> str:
         return "::"

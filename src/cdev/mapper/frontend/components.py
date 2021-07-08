@@ -1,8 +1,8 @@
 
 from ..fs_manager import finder
 
-from cdev.frontend.constructs import Cdev_Component
-from cdev.frontend.models import Rendered_Component 
+from cdev.constructs import Cdev_Component
+from cdev.models import Rendered_Component 
 from cdev.utils import hasher
 
 

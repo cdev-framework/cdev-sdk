@@ -41,10 +41,3 @@ def _write_intermediate_function(path, lines):
             fh.write("\n")
 
     return True
-
-
-
-def _strip_new_lines_from_source_lines(source_lines):
-    # We want to standardize the lines the formatting of the lines that are written to 
-    # cause the least amount of hash changes because of formatting around the lines
-    print(source_lines)

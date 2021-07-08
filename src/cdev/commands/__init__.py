@@ -3,14 +3,16 @@ import os
 
 from cdev.frontend import executer as frontend_executer
 from cdev.backend import executer as backend_executer
+from cdev.backend import initializer
+from cdev.utils import project
 
 """
 Some doc string
 """
 
 def plan():
-    print("PLAN2")
 
+    project.initialize_project()
     rendered_frontend = frontend_executer.execute_frontend()
     backend_executer.create_diffs(rendered_frontend)
 
@@ -18,6 +20,6 @@ def plan():
 
 def init():
     print("INIT")
-    #initalizer.initialize_project(os.getcwd())
+    initializer.initialize_backend(os.getcwd())
     return
 

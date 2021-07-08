@@ -1,8 +1,10 @@
 import inspect
+from pathlib import PosixPath, WindowsPath
 from typing import List, Union
 from pydantic import BaseModel, FilePath, conint
 
-from cdev.frontend.models import Rendered_Resource
+
+from cdev.models import Rendered_Resource
 
 
 def lambda_function_annotation(name, events={}, configuration={}, includes=[]):
@@ -111,3 +113,11 @@ class parsed_serverless_function_resource(Rendered_Resource):
     identity_hash: str
 
     metadata_hash: str
+
+    class Config:
+        json_encoders = {
+            PosixPath: lambda v: v.as_posix(), # or lambda v: str(v)
+            WindowsPath: lambda v: v.as_posix()
+        }
+
+        extra='ignore'

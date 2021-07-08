@@ -1,5 +1,5 @@
-from cdev.frontend.constructs import Cdev_Resource
-from cdev.frontend.models import Rendered_Resource
+from cdev.constructs import Cdev_Resource
+from cdev.models import Rendered_Resource
 
 class DynamoDBTable(Cdev_Resource):
     def __init__(self,name) -> None:

@@ -6,8 +6,8 @@ from sortedcontainers.sortedlist import SortedKeyList, SortedList
 from typing import List
 
 
-from cdev.frontend.constructs import Cdev_Resource
-from cdev.frontend.models import Rendered_Resource as frontend_resource
+from cdev.constructs import Cdev_Resource
+from cdev.models import Rendered_Resource 
 from cdev.utils import hasher
 
 from ..cparser import cdev_parser as cparser
@@ -25,7 +25,7 @@ def _get_module_name_from_path(fp):
     return fp.split("/")[-1][:-3]
 
 
-def _find_resources_information_from_file(fp) -> List[frontend_resource]:
+def _find_resources_information_from_file(fp) -> List[Rendered_Resource]:
     # Input: filepath
     if not os.path.isfile(fp):
         print("OH NO")
@@ -172,7 +172,7 @@ def _find_serverless_function_information_in_module(python_module) -> List[pre_p
 
 
 
-def parse_folder(folder_path, prefix=None) -> List[frontend_resource]:
+def parse_folder(folder_path, prefix=None) -> List[Rendered_Resource]:
     """
     This function takes a folder and goes through it looking for cdev resources. Specifically, it loads all available python files
     and uses the loaded module to determine the resources defined in the files. Most resources are simple, but there is extra work

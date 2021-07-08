@@ -6,7 +6,7 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-from cdev.frontend.models import Rendered_Component, Rendered_Resource
+from ..models import Rendered_Component, Rendered_Resource
 
 
 
