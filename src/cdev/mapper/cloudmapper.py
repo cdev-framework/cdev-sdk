@@ -1,8 +1,9 @@
 from typing import List
 
-from cdev.backend.models import Resource_State_Difference
+from cdev.models import Resource_State_Difference
+from cdev.constructs import CloudMapper
 
-class Mapper():
+class DefaultMapper(CloudMapper):
     def __init__(self) -> None:
         pass
 

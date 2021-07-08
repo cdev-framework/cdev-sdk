@@ -4,9 +4,9 @@ from typing import List, Tuple
 
 from . import utils as backend_utils
 from . import initializer as backend_initializer
-from .models import Resource_State_Difference, Component_State_Difference, Action_Type
 
-from ..models import Rendered_Component, Rendered_State, Rendered_Resource
+
+from ..models import Rendered_Component, Rendered_State, Rendered_Resource, Resource_State_Difference, Component_State_Difference, Action_Type
 
 
 

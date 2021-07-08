@@ -4,7 +4,8 @@ import sys
 
 
 from cdev.settings import SETTINGS as cdev_settings
-
+from cdev.mapper.cloudmapper import DefaultMapper
+from cdev.constructs import Cdev_Project
 
 
 INTERNAL_FOLDER_NAME = cdev_settings.get("INTERNAL_FOLDER_NAME")
@@ -21,6 +22,8 @@ CDEV_PROJECT_FILE = cdev_settings.get("CDEV_PROJECT_FILE")
 
 def initialize_project() -> None:
     _import_project_file(_get_cdev_project_file())
+    Cdev_Project.instance().add_mapper(DefaultMapper())
+
 
 
 def initialize_project_structure(folder_path):

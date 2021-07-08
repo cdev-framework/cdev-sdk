@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Dict
 
-from .models import Rendered_Component 
+from .models import Rendered_Component, Resource_State_Difference
 
 
 
@@ -34,6 +34,22 @@ class Cdev_Component():
     def get_name(self) -> str:
         return self.name
 
+
+
+class CloudMapper():
+    """
+    A Cloud Mapper is the construct responsible for directly interacting with the Cloud Provider and managing resource state. 
+    """
+    def __init__(self) -> None:
+        pass
+
+    def get_namespaces(self) -> List[str]:
+        pass
+
+    def deploy_resource(self, component_name: str, resource_diff: Resource_State_Difference) -> Resource_State_Difference:
+        return resource_diff
+
+
         
 
 class Cdev_Project():
@@ -46,6 +62,7 @@ class Cdev_Project():
 
     _instance = None
     _components = []
+    _mappers = []
     _state = None
 
     def __new__(cls, name):
@@ -75,6 +92,7 @@ class Cdev_Project():
         
         self._components.append(component)
 
+
     def add_components(self, components: List[Cdev_Component]) -> None:
         if not isinstance(components, list):
             return 
@@ -85,9 +103,34 @@ class Cdev_Project():
             except Exception as e:
                 print(e)
         
-
+    
     def get_components(self) -> List[Cdev_Component]:
         return self._components
+
+
+    def add_mapper(self, mapper: CloudMapper ) -> None:
+        if not isinstance(mapper, CloudMapper):
+            # TODO Throw error
+            print(f"BAD CLOUD MAPPER {mapper}")
+            return
+
+        self._mappers.append(mapper)
+
+    def get_mappers(self) -> List[CloudMapper]:
+        return self._mappers
+
+    def get_mapper_namespace(self) -> Dict:
+        rv = {}
+
+        for mapper in self.get_mappers():
+            for namespace in mapper.get_namespaces():
+                rv[namespace] = mapper
+
+        return rv
+
+
+
+
 
 
 
