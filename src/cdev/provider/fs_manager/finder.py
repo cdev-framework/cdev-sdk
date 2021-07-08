@@ -32,6 +32,8 @@ def _find_resources_information_from_file(fp) -> List[frontend_resource]:
         return
 
     mod_name = _get_module_name_from_path(fp)
+    print(fp)
+    print(mod_name)
         
     if sys.modules.get(mod_name):
         print(f"already loaded {mod_name}")
@@ -187,14 +189,16 @@ def parse_folder(folder_path, prefix=None) -> List[frontend_resource]:
     python_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f)) and f[-3:]==".py"]
 
     original_path = os.getcwd()
+    print(folder_path)
     os.chdir(folder_path)
+    print(os.getcwd())
+    sys.path.append(os.getcwd())
 
     # [{<resource>}]
     rv = SortedKeyList(key=lambda x: x.hash)
 
 
     for pf in python_files:
-        #print(os.path.join(os.getcwd(),pf))
         final_function_info = _find_resources_information_from_file(os.path.join(os.getcwd(),pf))
         #print(final_function_info)
         if final_function_info:

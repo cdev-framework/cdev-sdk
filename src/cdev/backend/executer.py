@@ -13,7 +13,7 @@ def create_diffs(rendered_frontend: Rendered_State) -> List[Component_State_Diff
     
     #print(rendered_frontend)
     project_diffs = state_manager.create_project_diffs(rendered_frontend)
-    print(project_diffs) 
+    #print(project_diffs) 
     #if not backend_initializer.is_backend_initialized():
     #    # TODO throw error
     #    print("NO BACKEND")

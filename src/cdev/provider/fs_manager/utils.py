@@ -1,20 +1,23 @@
 import os
 from posixpath import split
-import cdev
+from sys import version_info
+from typing import List
 
 from cdev.settings import SETTINGS as cdev_settings
 from cdev.utils import paths as cdev_paths
 
 BASE_FILES_PATH = cdev_settings.get("CDEV_INTERMEDIATE_FILES_LOCATION")
 
-def get_lines_from_file_list(file_list, function_info):
+def get_lines_from_file_list(file_list, function_info) -> List[str]:
     # Get the list of lines from a file based on the function info provided
     line_nos = _compress_lines(function_info)
 
     actual_lines = []
 
     for i in line_nos:
-        if i <= len(file_list):
+        if i == -1:
+            actual_lines.append(os.linesep)
+        elif i <= len(file_list):
             actual_lines.append(file_list[i-1])
 
     return actual_lines
@@ -43,6 +46,9 @@ def _compress_lines(original_lines):
                 continue
 
             rv.append(i)
+
+        if version_info > (3,8):
+            rv.append(-1)
 
     return rv 
 

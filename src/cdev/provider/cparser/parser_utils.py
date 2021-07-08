@@ -106,7 +106,17 @@ def _get_global_class_definitions_in_symboltable(table):
 def _generate_global_statement(file_info_obj, node, line_info):
     # This function is used to determine the type of global statement the node is and create the corresponding global statement obj
     ast_node = node
+    # Need to adjust the starting line if using python3.8 or greater
+
+    #start_line = line_info[0] if  version_info < (3,8) else line_info[0]-1
     start_line = line_info[0]
+
+    if isinstance(ast_node, ast.FunctionDef):
+        if ast_node.decorator_list:
+            start_line = line_info[0] if  version_info < (3,8) else line_info[0]-1
+    
+
+    
     last_line = line_info[1]
 
     manual_include = False
@@ -119,11 +129,9 @@ def _generate_global_statement(file_info_obj, node, line_info):
             manual_include_sym = k
             break
 
-    print(start_line)
-    print(last_line)
     tmp_src_code = file_info_obj.get_lines_of_source_code(
         start_line, last_line)
-    print(tmp_src_code)
+
     tmp_symbol_table = symtable.symtable(tmp_src_code,
                                          file_info_obj.file_location, 'exec')
 
@@ -428,7 +436,7 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
         next_symbols = set()
         already_included_global_obj = set()
 
-        #print(f"{function_name} -> {needed_global_objects}")
+        
         for global_object in needed_global_objects:
             # Add the functions lines to the parsed function
             p_function.add_line_numbers(global_object.get_line_no())
@@ -446,32 +454,39 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
         keep_looping = True
         remaining_symbols = set()
 
-
+        print(f"{function_name} -> {needed_global_objects}")
         while keep_looping:
             # If there are no more symbols than break the loop
-            if not next_symbols:
-                break
+            
+
 
             # Add the previous iterations symbols as already seen so they are not readded
             already_included_symbols = already_included_symbols.union(
                 remaining_symbols)
             remaining_symbols = next_symbols
+
+            if not next_symbols:
+                break
+
             next_symbols = set()
 
             for sym in remaining_symbols:
                 if sym in already_included_symbols:
                     # If we have already added this symbol than we have all of its dependencies
                     continue
-
+                print(sym)
+                print(p_function.get_line_numbers())
                 # Add all dependant global statements to this symbol needs to the need lines for the function
                 for glob_obj in file_info_obj.symbol_to_statement.get(sym):
-
+                    print(glob_obj)
                     if glob_obj in already_included_global_obj:
                         #IF this global statement has already been added continue
                         continue
 
                     # Add the lines numbers and place it in the already included set
+                    print(f"ADDING {glob_obj} LINE NOS: {glob_obj.get_line_no()}")
                     p_function.add_line_numbers(glob_obj.get_line_no())
+                    print("----->>>>")
                     already_included_global_obj.add(glob_obj)
 
                     # include this statements
@@ -491,14 +506,19 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
                     next_symbols = next_symbols.union(
                         actual_new_needed_symbols)
 
+        print(f"CHECK IS IMPORT <<<---->>> {already_included_symbols}")
         for symbol in all_used_symbols:
-            if symbol in file_info_obj.imported_symbol_to_global_statement:
+            
+            if symbol in file_info_obj.imported_symbol_to_global_statement and not symbol in already_included_symbols:
                 p_function.add_import(
                     file_info_obj.imported_symbol_to_global_statement.get(symbol)
                 )
 
+        
+
         #finally add the parsed function object to the file info
         file_info_obj.add_parsed_functions(p_function)
+        print(p_function.get_line_numbers())
 
     return file_info_obj
 

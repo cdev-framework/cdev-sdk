@@ -17,7 +17,7 @@ class parsed_function():
 
     def __init__(self, name):
         self.name = name
-        self.needed_line_numbers = SortedList()
+        self.needed_line_numbers = SortedList(key=lambda x: x[0])
 
         # set of imported packages
         self.imported_packages = set()
@@ -34,6 +34,7 @@ class parsed_function():
 
     def add_line_numbers(self, line_no):
         # Use a sorted list
+        print(f"ADDING {line_no} TO SORTED LIST")
         self.needed_line_numbers.add(line_no)
 
     def get_line_numbers(self):

@@ -44,8 +44,8 @@ def load_local_state() -> Rendered_State:
         previous_data = json.load(fp)
 
     try: 
-        rv = Remote_State(**previous_data)
+        rv = Rendered_State(**previous_data)
         return rv
     except BaseException as e:
-        print(e)
+        #print(e)
         return None
