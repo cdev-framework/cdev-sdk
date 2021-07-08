@@ -454,7 +454,6 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
         keep_looping = True
         remaining_symbols = set()
 
-        print(f"{function_name} -> {needed_global_objects}")
         while keep_looping:
             # If there are no more symbols than break the loop
             
@@ -474,19 +473,15 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
                 if sym in already_included_symbols:
                     # If we have already added this symbol than we have all of its dependencies
                     continue
-                print(sym)
-                print(p_function.get_line_numbers())
+
                 # Add all dependant global statements to this symbol needs to the need lines for the function
                 for glob_obj in file_info_obj.symbol_to_statement.get(sym):
-                    print(glob_obj)
                     if glob_obj in already_included_global_obj:
                         #IF this global statement has already been added continue
                         continue
 
                     # Add the lines numbers and place it in the already included set
-                    print(f"ADDING {glob_obj} LINE NOS: {glob_obj.get_line_no()}")
                     p_function.add_line_numbers(glob_obj.get_line_no())
-                    print("----->>>>")
                     already_included_global_obj.add(glob_obj)
 
                     # include this statements
@@ -506,7 +501,6 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
                     next_symbols = next_symbols.union(
                         actual_new_needed_symbols)
 
-        print(f"CHECK IS IMPORT <<<---->>> {already_included_symbols}")
         for symbol in all_used_symbols:
             
             if symbol in file_info_obj.imported_symbol_to_global_statement and not symbol in already_included_symbols:
@@ -518,7 +512,6 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
 
         #finally add the parsed function object to the file info
         file_info_obj.add_parsed_functions(p_function)
-        print(p_function.get_line_numbers())
 
     return file_info_obj
 

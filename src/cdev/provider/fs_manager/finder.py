@@ -32,8 +32,6 @@ def _find_resources_information_from_file(fp) -> List[frontend_resource]:
         return
 
     mod_name = _get_module_name_from_path(fp)
-    print(fp)
-    print(mod_name)
         
     if sys.modules.get(mod_name):
         print(f"already loaded {mod_name}")
@@ -101,8 +99,6 @@ def _create_serverless_function_resources(mod, fp) -> List[parsed_serverless_fun
 
         # Parsed Path
         function_info = function_info_obj.dict()
-
-
 
         function_info['original_path'] = fp
         function_info['parsed_path'] = fs_utils.get_parsed_path(fp, function_info.get("handler_name"))
@@ -189,9 +185,9 @@ def parse_folder(folder_path, prefix=None) -> List[frontend_resource]:
     python_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f)) and f[-3:]==".py"]
 
     original_path = os.getcwd()
-    print(folder_path)
+
     os.chdir(folder_path)
-    print(os.getcwd())
+
     sys.path.append(os.getcwd())
 
     # [{<resource>}]

@@ -31,28 +31,27 @@ def lambda_function_annotation(name, events={}, configuration={}, includes=[]):
                         function_name=item[1]
                     elif item[0] == "__doc__":
                         description = item[1] if item[1] else ""
-                    elif item[0] == "__code__":
-                        code_prop_names = set(["co_varnames", "co_argcount", "co_posonlyargcount"])
-                        code_props = [(z[0],z[1]) for z in inspect.getmembers(item[1]) if z[0] in code_prop_names]
+                    #elif item[0] == "__code__":
+                    #    code_prop_names = set(["co_varnames", "co_argcount", "co_posonlyargcount"])
+                        #code_props = [(z[0],z[1]) for z in inspect.getmembers(item[1]) if z[0] in code_prop_names]
 
-                        is_valid_signature = True
-
-                        for prop in code_props:
-                            if prop[0] == "co_argcount":
-                                if not prop[1] == 2:
-                                    is_valid_signature = False
-                                    print(f'bad sig argcnt {prop[1]}')
-                                    break
-                            elif prop[0] == "co_posonlyargcount":
-                                 if not prop[1] == 2:
-                                    is_valid_signature = False
-                                    print('bad sig poscnt')
-                                    break
-                            elif prop[0] == "co_varnames": 
-                                 if not ("context" in prop[1] and "event" in prop[1]):
-                                    is_valid_signature = False
-                                    print(f'bad sig names')
-                                    break
+                        #is_valid_signature = True
+#
+                        #for prop in code_props:
+                        #    if prop[0] == "co_argcount":
+                        #        if not prop[1] == 2:
+                        #            is_valid_signature = False
+                        #            print(f'bad sig argcnt {prop[1]}')
+                        #            break
+                        #    elif prop[0] == "co_posonlyargcount":
+                        #        if not prop[1] == 2:
+                        #            is_valid_signature = False
+                        #            print(f'bad sig poscnt -> {prop[1]}')
+                        #    elif prop[0] == "co_varnames":
+                        #        if not ("context" in prop[1] and "event" in prop[1]):
+                        #            is_valid_signature = False
+                        #            print(f'bad sig names')
+                        #            break
 
                     
                         

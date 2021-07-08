@@ -34,7 +34,6 @@ class parsed_function():
 
     def add_line_numbers(self, line_no):
         # Use a sorted list
-        print(f"ADDING {line_no} TO SORTED LIST")
         self.needed_line_numbers.add(line_no)
 
     def get_line_numbers(self):
