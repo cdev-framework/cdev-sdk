@@ -73,7 +73,7 @@ class Rendered_Component(BaseModel):
 
 
 
-    rendered_resources: List[Rendered_Resource]
+    rendered_resources: Union[List[Rendered_Resource], None]
     """
     List of Rendered Resources that make up the current state of this component
     """
@@ -137,7 +137,7 @@ class Component_State_Difference(BaseModel):
     previous_component: Union[Rendered_Component, None]
     new_component: Union[Rendered_Component, None]
 
-    resource_diff: Union[List[Resource_State_Difference], None]
+    resource_diffs: Union[List[Resource_State_Difference], None]
 
     class Config:  
         use_enum_values = True

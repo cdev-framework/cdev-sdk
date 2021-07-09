@@ -8,7 +8,7 @@ class DynamoDBTable(Cdev_Resource):
 
     def render(self):
         return Rendered_Resource(**{
-            "ruuid": "cdev:aws:dynamodb",
+            "ruuid": "cdev::aws::dynamodb",
             "name": self.name,
             "hash": 1
         })
