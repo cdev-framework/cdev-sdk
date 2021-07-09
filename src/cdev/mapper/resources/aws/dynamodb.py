@@ -13,7 +13,8 @@ from cdev.models import Rendered_Resource
 
 class dynamo_db_attribute_types(str, Enum):
     """
-    (Link to aws documentation)
+    [AWS Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.create_table)
+
     A dynamo db attribute type is used to denote the data type the a dynamodb key will be associated with. 
 
     - N: Number
@@ -28,7 +29,7 @@ class dynamo_db_attribute_types(str, Enum):
 
 class dynamo_db_key_type(str, Enum):
     """
-    (Link to aws documentation)
+    [AWS Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.create_table)
 
     These are the two key types that are available through Dynamodb. Using a Hash key means that records will be identified by that
     key in generally O(1) time. A range key is used to keep an index that allows for reconstructions of ranges of values
@@ -39,6 +40,13 @@ class dynamo_db_key_type(str, Enum):
 
 
 class dynamo_db_attribute_definition(BaseModel):
+    """
+    [AWS Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.create_table)
+    
+    
+    Attribute that describe the key schema for the table and indexes.
+    """
+
     AttributeName: str
     AttributeType: dynamo_db_attribute_types
 
@@ -51,9 +59,7 @@ class dynamo_db_attribute_definition(BaseModel):
 
 class dynamo_db_key_schema_element(BaseModel):
     """
-    (link to aws documentation)
-
-    Object representation of a dynamo db key element
+    [AWS Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.create_table)
     """
 
     
@@ -70,6 +76,8 @@ class dynamo_db_key_schema_element(BaseModel):
 
 class dynamo_db_table(Rendered_Resource):
     """
+    [AWS Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.create_table)
+
     High level representation of a Dynamodb table that is stored in Cdev's memory. This should be constructed from the `render`
     method of a DynamoDBTable.
 
@@ -92,15 +100,22 @@ class dynamo_db_table(Rendered_Resource):
 
 class DynamoDBTable(Cdev_Resource):
     """
+    
+    [AWS Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.create_table)
+
     Python class for an Aws Dynamodb table
+
+    The attributes in KeySchema must also be defined in the AttributeDefinitions List. If the Attribute isn't present in the AttributeDefinitions 
+    List, this object will throw an error.
+    TODO throw error
+
+    More information about the [DynamoDB Data Model](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.html)
 
     Attributes:
         name: cdev name for this resource
         TableName: Name the table will receive in AWS
         AttributeDefinitions: List of attributes this Table will have
         KeySchema: The List of key schema that will be used for this table
-
-
     """
     def __init__(self,name: str, TableName: str, AttributeDefinitions: List[dynamo_db_attribute_definition], KeySchema: List[dynamo_db_key_schema_element] ) -> None:
 
