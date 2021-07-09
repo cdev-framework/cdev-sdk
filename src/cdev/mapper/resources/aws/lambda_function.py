@@ -17,7 +17,6 @@ def lambda_function_annotation(name, events={}, configuration={}, includes=[]):
     Functions that are annotated with this symbol will be put through the cdev function parser to optimize the final deployed artifact
     to only contain global statements needed for this function. For more information on this process read <link>.
 
-
     """
 
     events = events if events else [""]
