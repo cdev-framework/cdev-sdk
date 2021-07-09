@@ -1,6 +1,7 @@
 from sortedcontainers.sortedlist import SortedList
 
 from cdev.settings import SETTINGS as cdev_settings
+from cdev.utils import hasher
 
 from ..constructs import Cdev_Project, Cdev_Component
 from ..models import Rendered_State
@@ -37,7 +38,7 @@ def execute_frontend() -> Rendered_State:
         else:
             print("NOT FILE TYPE")
 
-    project_hash = ":".join([x.hash for x in project_components_sorted])
+    project_hash = hasher.hash_list([x.hash for x in project_components_sorted])
 
     project = Rendered_State(
         **{

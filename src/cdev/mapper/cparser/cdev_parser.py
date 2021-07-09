@@ -26,8 +26,8 @@ def parse_functions_from_file(file_loc, include_functions=[], function_manual_in
         print(f"{type(e.error)} -> {e.error.message}")
 
     for parsed_function in file_information.parsed_functions:
+        ALL_PACKAGES = set()
         if parsed_function.imported_packages:
-            ALL_PACKAGES = set()
             for pkg_name in parsed_function.imported_packages:
                 ALL_PACKAGES = ALL_PACKAGES.union(get_package_info(pkg_name))
 

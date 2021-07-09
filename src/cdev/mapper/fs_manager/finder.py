@@ -126,7 +126,7 @@ def _create_serverless_function_resources(mod, fp) -> List[parsed_serverless_fun
 
         ## BASE RENDERED RESOURCE INFORMATION
         # Create the total hash
-        function_info['hash'] = hasher.hash_list([function_info['identity_hash'], function_info['metadata_hash'] ])
+        function_info['hash'] = hasher.hash_list([function_info['identity_hash']])
     
         function_info['ruuid'] = "cdev::general::parsed_function"
 

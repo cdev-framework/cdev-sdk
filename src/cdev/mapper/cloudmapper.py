@@ -1,6 +1,6 @@
 from typing import List
 
-from cdev.models import Resource_State_Difference
+from cdev.models import Action_Type, Resource_State_Difference
 from cdev.constructs import CloudMapper
 
 
@@ -17,11 +17,14 @@ class DefaultMapper(CloudMapper):
         return ["cdev"]
 
     def deploy_resource(self, component_name: str, resource_diff: Resource_State_Difference) -> Resource_State_Difference:
-        if not resource_diff.new_resource.ruuid in self.resources:
-            # TODO throw error
-            print(f"PROVIDER CAN NOT CREATE RESOURCE: {resource_diff.new_resource.ruuid}")
+        
+        
+        if not resource_diff.action_type == Action_Type.DELETE:
+            if not resource_diff.new_resource.ruuid in self.resources:
+                # TODO throw error
+                print(f"PROVIDER CAN NOT CREATE RESOURCE: {resource_diff.new_resource.ruuid}")
 
         print(f"DEPLOYING -> {component_name}:{resource_diff}")
 
 
-        return resource_diff
+        return True

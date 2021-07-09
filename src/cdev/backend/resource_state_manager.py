@@ -2,6 +2,8 @@ from pathlib import PosixPath
 import time
 from typing import List, Tuple
 
+from cdev.utils import hasher
+
 from . import utils as backend_utils
 from . import initializer as backend_initializer
 
@@ -60,9 +62,27 @@ def create_project_diffs(new_project_state: Rendered_State) -> List[Component_St
             )
 
         elif component.hash in previous_hash_to_component and component.name in previous_name_to_component:
-            print(f"KEEP SAME {previous_hash_to_component.get(component.hash).name}")
+            # Even though the hash has remained same we need to check for name changes in the resources
+
+            resource_diffs = _create_resource_diffs(component.rendered_resources, previous_name_to_component.get(component.name).rendered_resources)
+            
+            if len(resource_diffs)  == 0:
+                print(f"KEEP SAME {previous_hash_to_component.get(component.hash).name}")
+            else:
+                print(f"UPDATE RESOURCE NAME {previous_hash_to_component.get(component.hash).name}")
+                rv.append(
+                    Component_State_Difference(
+                        **{
+                            "action_type": Action_Type.UPDATE_IDENTITY,
+                            "previous_component": previous_hash_to_component.get(component.hash),
+                            "new_component": component,
+                            "resource_diffs": resource_diffs
+                        }
+                    )
+                )
+
+
             continue
-            # DO NOTHING
 
         if component.hash in previous_hash_to_component and not component.name in previous_name_to_component:
             print(f"UPDATE NAME FROM {previous_hash_to_component.get(component.hash).name} -> {component.name} ")
@@ -120,17 +140,21 @@ def _create_resource_diffs(new_resources: List[Rendered_Resource], old_resource:
     for resource in new_resources:
         if resource.hash in old_hash_to_resource and resource.name in old_name_to_resource:
             print(f"    KEEP SAME {old_hash_to_resource.get(resource.hash).name}")
+            # POP the seen previous resources as we go so only remaining resources will be deletess
+            old_resource.remove(old_hash_to_resource.get(resource.hash))
             continue
             
         elif resource.hash in old_hash_to_resource and not resource.name in old_name_to_resource:
             print(f"    UPDATE NAME FROM {old_hash_to_resource.get(resource.hash).name} -> {resource.name}")
             rv.append(Resource_State_Difference(
                 **{
-                    "action_type": Action_Type.UPDATE_IDENTITY,
+                    "action_type": Action_Type.UPDATE_NAME,
                     "previous_resource": old_hash_to_resource.get(resource.hash),
                     "new_resource": resource
                 }
             ))
+            # POP the seen previous resources as we go so only remaining resources will be deletes
+            old_resource.remove(old_hash_to_resource.get(resource.hash))
 
         elif not resource.hash in old_hash_to_resource and resource.name in old_name_to_resource:
             print(f"    UPDATE IDENTITY FROM {old_name_to_resource.get(resource.name).hash} -> {resource.hash}")
@@ -141,6 +165,8 @@ def _create_resource_diffs(new_resources: List[Rendered_Resource], old_resource:
                     "new_resource": resource
                 }
             ))
+            # POP the seen previous resources as we go so only remaining resources will be deletes
+            old_resource.remove(old_name_to_resource.get(resource.name))
 
         elif not resource.hash in old_hash_to_resource and not resource.name in old_name_to_resource:
             print(f"CREATE {resource}")
@@ -152,10 +178,17 @@ def _create_resource_diffs(new_resources: List[Rendered_Resource], old_resource:
                 }
             ))
 
-        # POP the seen previous resources as we go so only remaining resources will be deletes
 
-    # For each remaining resource:
-        # DELETE object
+    for resource in old_resource:
+        print(f"DELETE {resource}")
+        rv.append(Resource_State_Difference(
+                **{
+                    "action_type": Action_Type.DELETE,
+                    "previous_resource": resource,
+                    "new_resource": None
+                }
+            )
+        )
 
     return rv
 
@@ -202,3 +235,66 @@ def _create_skeleton_component(rendered_component: Rendered_Component) -> Render
             "name": rendered_component.name
         }
     )
+
+
+def write_resource_difference(component_name: str, diff: Resource_State_Difference) -> bool:
+    """
+    This function handles changes at the resource level that have already occured. This happens downstream of the mapper deploying
+    the resource, so we know that making the changes makes the rendered state more accurate to the deployed state. Because the basics
+    of the component state have been handled upstream (basic creates and name changes) we can get the component by name.
+
+    AFTER the change has been made we will need to recompute the component and project hashes. 
+
+    Create: Append the resource to the component
+    Update Identity: Overwrite the previous resource
+    Update Name: Change the name of the resource
+    Delete: Delete old resource
+    """
+    
+    if not backend_initializer.is_backend_initialized():
+        print("BAD NO BACKEND")
+        return None
+
+    current_backend = backend_utils.load_local_state()
+    
+    for indx, rendered_component  in enumerate(current_backend.rendered_components):
+        if rendered_component.name == component_name:
+            previous_component = current_backend.rendered_components.pop(indx)
+            
+            
+            if diff.action_type == Action_Type.CREATE:
+                # Append the updated resource
+                if previous_component.rendered_resources:
+                    previous_component.rendered_resources.append(diff.new_resource)
+                else:
+                    previous_component.rendered_resources = [diff.new_resource]
+
+            elif diff.action_type == Action_Type.UPDATE_IDENTITY:
+                # Replace the previous components rendered resources with a list excluding the previous resource we are updating by hash
+                previous_component.rendered_resources = [x for x in previous_component.rendered_resources if not x.hash == diff.previous_resource.hash]
+                
+                # Append the updated resource
+                previous_component.rendered_resources.append(diff.new_resource)
+
+            elif diff.action_type == Action_Type.UPDATE_NAME:
+                # Replace the previous components rendered resources with a list excluding the previous resource we are updating by name
+                previous_component.rendered_resources = [x for x in previous_component.rendered_resources if not x.name == diff.previous_resource.name]
+                # Append the updated resource
+                previous_component.rendered_resources.append(diff.new_resource)
+
+            elif diff.action_type == Action_Type.DELETE:
+                # Replace the previous components rendered resources with a list excluding the previous resource we are updating by hash
+                previous_component.rendered_resources = [x for x in previous_component.rendered_resources if not x.hash == diff.previous_resource.hash]
+
+            previous_component.rendered_resources.sort(key=lambda x: x.hash)
+            previous_component.hash = hasher.hash_list([x.hash for x in previous_component.rendered_resources])
+
+            current_backend.rendered_components.append(previous_component)
+            break
+
+    
+    current_backend.rendered_components.sort(key=lambda x: x.name)
+    current_backend.hash = hasher.hash_list([x.hash for x in current_backend.rendered_components])
+
+    backend_utils.write_local_state(current_backend)
+        
