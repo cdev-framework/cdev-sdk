@@ -139,13 +139,13 @@ def _create_resource_diffs(new_resources: List[Rendered_Resource], old_resource:
     rv = []
     for resource in new_resources:
         if resource.hash in old_hash_to_resource and resource.name in old_name_to_resource:
-            print(f"    KEEP SAME {old_hash_to_resource.get(resource.hash).name}")
+            #print(f"    KEEP SAME {old_hash_to_resource.get(resource.hash).name}")
             # POP the seen previous resources as we go so only remaining resources will be deletess
             old_resource.remove(old_hash_to_resource.get(resource.hash))
             continue
             
         elif resource.hash in old_hash_to_resource and not resource.name in old_name_to_resource:
-            print(f"    UPDATE NAME FROM {old_hash_to_resource.get(resource.hash).name} -> {resource.name}")
+            #print(f"    UPDATE NAME FROM {old_hash_to_resource.get(resource.hash).name} -> {resource.name}")
             rv.append(Resource_State_Difference(
                 **{
                     "action_type": Action_Type.UPDATE_NAME,
@@ -157,7 +157,7 @@ def _create_resource_diffs(new_resources: List[Rendered_Resource], old_resource:
             old_resource.remove(old_hash_to_resource.get(resource.hash))
 
         elif not resource.hash in old_hash_to_resource and resource.name in old_name_to_resource:
-            print(f"    UPDATE IDENTITY FROM {old_name_to_resource.get(resource.name).hash} -> {resource.hash}")
+            #print(f"    UPDATE IDENTITY FROM {old_name_to_resource.get(resource.name).hash} -> {resource.hash}")
             rv.append(Resource_State_Difference(
                 **{
                     "action_type": Action_Type.UPDATE_IDENTITY,
@@ -169,7 +169,7 @@ def _create_resource_diffs(new_resources: List[Rendered_Resource], old_resource:
             old_resource.remove(old_name_to_resource.get(resource.name))
 
         elif not resource.hash in old_hash_to_resource and not resource.name in old_name_to_resource:
-            print(f"CREATE {resource}")
+            #print(f"CREATE {resource}")
             rv.append(Resource_State_Difference(
                 **{
                     "action_type": Action_Type.CREATE,
@@ -180,7 +180,7 @@ def _create_resource_diffs(new_resources: List[Rendered_Resource], old_resource:
 
 
     for resource in old_resource:
-        print(f"DELETE {resource}")
+        #print(f"DELETE {resource}")
         rv.append(Resource_State_Difference(
                 **{
                     "action_type": Action_Type.DELETE,

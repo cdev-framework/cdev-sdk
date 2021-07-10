@@ -2,9 +2,11 @@ import inspect
 from pathlib import PosixPath, WindowsPath
 from typing import List, Union
 from pydantic import BaseModel, FilePath, conint
-
+from enum import Enum
 
 from cdev.models import Rendered_Resource
+
+from .s3 import s3_object
 
 
 def lambda_function_annotation(name, events={}, configuration={}, includes=[]):
@@ -72,7 +74,15 @@ def lambda_function_annotation(name, events={}, configuration={}, includes=[]):
     return wrap_create_function
 
 
-class lambda_function_configuration_Environment(BaseModel):
+
+
+class lambda_runtime_environments(str,Enum):
+    python3_6="python3.6"
+    python3_7="python3.7"
+    python3_8="python3_8"
+
+
+class lambda_function_configuration_environment(BaseModel):
     Variables: dict
 
 
@@ -82,7 +92,15 @@ class lambda_function_configuration(BaseModel):
     Description: str
     Timeout: conint(gt=1,lt=300)
     MemorySize: conint(gt=1,lt=1024)
-    Environment: lambda_function_configuration_Environment
+    Environment: lambda_function_configuration_environment
+    Runtime: lambda_runtime_environments
+    Layers: List[str]
+
+
+class aws_lambda_function(Rendered_Resource):
+    FunctionName: str
+    Code: s3_object
+    Configuration: lambda_function_configuration
 
 
 
