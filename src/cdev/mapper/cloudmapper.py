@@ -1,9 +1,20 @@
+import os
 from typing import List
+import zipfile
+from cdev.mapper.backend.aws.aws_lambda_models import create_aws_lambda_function
+
 
 from cdev.models import Action_Type, Resource_State_Difference
 from cdev.constructs import CloudMapper
+from cdev.settings import SETTINGS
 
+from cdev.backend import cloud_mapper as cdev_cloud_mapper
 
+from .backend.aws import aws_lambda
+from .backend.aws import aws_s3, aws_s3_models 
+
+from .resources.aws.s3 import s3_object
+from .resources.aws.lambda_function import lambda_function_configuration, lambda_runtime_environments, lambda_function_configuration_environment
 
 
 class DefaultMapper(CloudMapper):
@@ -22,21 +33,64 @@ class DefaultMapper(CloudMapper):
                 print(f"PROVIDER CAN NOT CREATE RESOURCE: {resource_diff.new_resource.ruuid}")
 
         print(f"DEPLOYING -> {component_name}:{resource_diff}")
-        self.get_resource_to_handler()[resource_diff.new_resource.ruuid](component_name, resource_diff)
+        self.get_resource_to_handler()[resource_diff.new_resource.ruuid](resource_diff)
 
         return True
 
 
-def handle_aws_lambda_deployment(component_name: str, resource_diff):
+def handle_aws_lambda_deployment(resource_diff: Resource_State_Difference):
     # TODO throw error if resource is not lambda function
 
-    print(resource_diff)
+    if resource_diff.action_type == Action_Type.CREATE:
+        try: 
+            filename = os.path.split(resource_diff.new_resource.parsed_path)[1]
+            original_zipname = filename[:-3] + ".zip"
+            keyname = filename[:-3] + f"-{resource_diff.new_resource.hash}" + ".zip"
+            zip_location = os.path.join(os.path.dirname(resource_diff.new_resource.parsed_path), original_zipname )
+            
+            aws_s3.put_object(put_object_event=aws_s3_models.put_object_event(**{
+                "Filename": zip_location,
+                "Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"),
+                "Key": keyname
+            }))
+
+            cdev_cloud_mapper.add_cloud_resource(resource_diff.new_resource.hash, {
+            "Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"),
+            "Key": keyname
+            })
+            
 
 
+            base_config = lambda_function_configuration(
+                Role="arn:aws:iam::369004794337:role/test-lambda-role",
+                Handler=filename[:-3]+"."+resource_diff.new_resource.handler_name,
+                Description="MyDescription",
+                Timeout=60,
+                MemorySize=128,
+                Environment={"Variables": resource_diff.new_resource.configuration},
+                Runtime=lambda_runtime_environments.python3_6,
+            )
 
-def handle_aws_dynamodb_deployment(component_name: str, resource_diff):
+            event = create_aws_lambda_function(resource_diff.new_resource.hash, s3_object(**{
+                                                "S3Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"),
+                                                "S3Key": keyname
+                                                }),
+                                                base_config)
+
+            aws_lambda.create_lambda_function(event)
+
+        except Exception as e:
+            print(e)
+
+        
+
+    
+
+def handle_aws_dynamodb_deployment(resource_diff: Resource_State_Difference):
     # TODO throw error if resource is not lambda function
-
+    if resource_diff.action_type == Action_Type.CREATE:
+        cdev_cloud_mapper.add_cloud_resource(resource_diff.new_resource.hash, {"s3key": resource_diff.new_resource.TableName})
+    
     print(f"DYNAMODB {resource_diff}")
 
 

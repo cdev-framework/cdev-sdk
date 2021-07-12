@@ -1,7 +1,10 @@
 from ast import parse
 import os
 
+from pydantic.types import FilePath
+
 from . import utils as fs_utils
+from zipfile import ZipFile
 
 
 def write_intermediate_file(original_path, needed_lines, parsed_path):
@@ -24,6 +27,7 @@ def write_intermediate_file(original_path, needed_lines, parsed_path):
 
     actual_lines = fs_utils.get_lines_from_file_list(file_list, needed_lines)
     _write_intermediate_function(parsed_path, actual_lines)
+    _make_intermediate_zip(parsed_path)
 
     return True
 
@@ -41,3 +45,11 @@ def _write_intermediate_function(path, lines):
             fh.write("\n")
 
     return True
+
+def _make_intermediate_zip(path: str):
+    filename = os.path.split(path)[1]
+    zip_archive_location = os.path.join(os.path.dirname(path), filename[:-3] + ".zip")
+
+    with ZipFile(zip_archive_location, 'w') as zipfile:
+        zipfile.write(path, filename)
+

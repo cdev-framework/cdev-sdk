@@ -23,7 +23,7 @@ def create_lambda_function(create_event: create_aws_lambda_function) -> bool:
 
     args["Code"] = create_event.Code.dict()
     args["FunctionName"] = create_event.FunctionName
-
+    print("CALLING TO AWS")
     try:
         response = client.create_function(**args)
         print(json.dumps(response))

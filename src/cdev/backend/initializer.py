@@ -14,7 +14,7 @@ def initialize_backend(project_name):
 
     cloudmapping = CloudMapping(**{
         "state": {
-            "1": [{}]
+            "1111": [{}]
         }
     })
 
@@ -26,7 +26,7 @@ def initialize_backend(project_name):
 
 def is_backend_initialized() -> bool:
     # NO previous local state so write an empty object to the file then return the object
-    path_of_backend = backend_utils.get_local_state_path()
+    path_of_backend = backend_utils.get_resource_state_path()
 
     if not os.path.isfile(path_of_backend):
         return False

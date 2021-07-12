@@ -16,3 +16,5 @@ SETTINGS["CLOUD_MAPPING_LOCATION"] = os.path.join(SETTINGS.get("STATE_FOLDER"), 
 
 SETTINGS["CDEV_PROJECT_FILE"] = os.path.join(SETTINGS.get("BASE_PATH"), "cdev_project.py")
 SETTINGS["COMPONENT_FILE_NAME"] = "cdev_component.py"
+
+SETTINGS["S3_ARTIFACTS_BUCKET"] = "cdev-demo-project-artificats"

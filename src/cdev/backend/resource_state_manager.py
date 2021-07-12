@@ -19,7 +19,7 @@ def create_project_diffs(new_project_state: Rendered_State) -> List[Component_St
     """
     rv = []
 
-    previous_local_state = backend_utils.load_local_state()
+    previous_local_state = backend_utils.load_resource_state()
 
     if not previous_local_state:
         # Create COMPONENT and ALL RESOURCES
@@ -210,7 +210,7 @@ def handle_component_difference(diff: Component_State_Difference):
         print("BAD NO BACKEND")
         return None
 
-    current_backend = backend_utils.load_local_state()
+    current_backend = backend_utils.load_resource_state()
 
     if diff.action_type == Action_Type.CREATE:
         if current_backend.rendered_components:
@@ -255,7 +255,7 @@ def write_resource_difference(component_name: str, diff: Resource_State_Differen
         print("BAD NO BACKEND")
         return None
 
-    current_backend = backend_utils.load_local_state()
+    current_backend = backend_utils.load_resource_state()
     
     for indx, rendered_component  in enumerate(current_backend.rendered_components):
         if rendered_component.name == component_name:

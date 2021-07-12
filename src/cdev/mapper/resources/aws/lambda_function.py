@@ -23,7 +23,7 @@ def lambda_function_annotation(name, events={}, configuration={}, includes=[]):
 
     events = events if events else [""]
 
-    configuration =  configuration if configuration else {"v":"s"}
+    configuration =  configuration if configuration else {"ve":"se"}
 
     def wrap_create_function(func):
         
@@ -98,13 +98,12 @@ class lambda_function_configuration(BaseModel):
     Description: str
     Timeout: conint(gt=1,lt=300)
     MemorySize: conint(gt=1,lt=1024)
-    Environment: lambda_function_configuration_environment
+    Environment: Dict
     Runtime: lambda_runtime_environments
-    Layers: List[str]
 
     def __init__(__pydantic_self__, Role: str, Handler: str, Description: str, Timeout: int,
                 MemorySize: int, Environment: lambda_function_configuration_environment, 
-                Runtime: lambda_runtime_environments, Layers: List[str]) -> None:
+                Runtime: lambda_runtime_environments ) -> None:
         super().__init__(**{
             "Role": Role,
             "Handler": Handler,
@@ -113,7 +112,6 @@ class lambda_function_configuration(BaseModel):
             "MemorySize": MemorySize,
             "Environment": Environment,
             "Runtime": Runtime,
-            "Layers": Layers
         })
 
 
