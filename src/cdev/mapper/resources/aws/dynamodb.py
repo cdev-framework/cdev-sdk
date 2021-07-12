@@ -81,9 +81,12 @@ class dynamo_db_table(Rendered_Resource):
     AttributeDefinitions: List[dynamo_db_attribute_definition]
     KeySchema: List[dynamo_db_key_schema_element]
 
-    def __init__(__pydantic_self__, TableName: str, AttributeDefinitions: List[dynamo_db_attribute_definition], KeySchema: List[dynamo_db_key_schema_element] ) -> None:
+    def __init__(__pydantic_self__, name: str, ruuid: str, hash:str, TableName: str, AttributeDefinitions: List[dynamo_db_attribute_definition], KeySchema: List[dynamo_db_key_schema_element] ) -> None:
         super().__init__(**{
-            "TablaName": TableName,
+            "ruuid": ruuid,
+            "name": name,
+            "hash": 1,
+            "TableName": TableName,
             "AttributeDefinitions": AttributeDefinitions,
             "KeySchema": KeySchema
         })
