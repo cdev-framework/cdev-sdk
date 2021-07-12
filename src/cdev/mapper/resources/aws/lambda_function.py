@@ -1,8 +1,10 @@
 import inspect
 from pathlib import PosixPath, WindowsPath
-from typing import List, Union
+from typing import List, Union, Dict
 from pydantic import BaseModel, FilePath, conint
 from enum import Enum
+
+from pydantic.errors import EnumError
 
 from cdev.models import Rendered_Resource
 
@@ -84,6 +86,11 @@ class lambda_runtime_environments(str,Enum):
 class lambda_function_configuration_environment(BaseModel):
     Variables: dict
 
+    def __init__(__pydantic_self__, Variables: Dict) -> None:
+        super().__init__(**{
+            "Variables": Variables
+        })
+
 
 class lambda_function_configuration(BaseModel):
     Role: str
@@ -95,11 +102,32 @@ class lambda_function_configuration(BaseModel):
     Runtime: lambda_runtime_environments
     Layers: List[str]
 
+    def __init__(__pydantic_self__, Role: str, Handler: str, Description: str, Timeout: int,
+                MemorySize: int, Environment: lambda_function_configuration_environment, 
+                Runtime: lambda_runtime_environments, Layers: List[str]) -> None:
+        super().__init__(**{
+            "Role": Role,
+            "Handler": Handler,
+            "Description": Description,
+            "Timeout": Timeout,
+            "MemorySize": MemorySize,
+            "Environment": Environment,
+            "Runtime": Runtime,
+            "Layers": Layers
+        })
+
 
 class aws_lambda_function(Rendered_Resource):
     FunctionName: str
     Code: s3_object
     Configuration: lambda_function_configuration
+
+    def __init__(__pydantic_self__, FunctionName: str, Code: s3_object, Configuration: lambda_function_configuration) -> None:
+        super().__init__(**{
+            "FunctionName": FunctionName,
+            "Code": Code,
+            "Configuration": Configuration
+        })
 
 
 
@@ -109,11 +137,26 @@ class pre_parsed_serverless_function(BaseModel):
     events: List[str]
     description: str 
     configuration: dict
+
+    def __init__(__pydantic_self__, name: str, handler_name: str, events: List[str], description: str, configuration: dict) -> None:
+        super().__init__(**{
+            "name": name,
+            "handler_name": handler_name,
+            "events": events,
+            "description": description,
+            "configuration": configuration
+        })
     
 
 class parsed_serverless_function_info(pre_parsed_serverless_function):
     needed_lines: List[List[int]]
     dependencies: Union[List[str], None]
+
+    def __init__(__pydantic_self__, needed_lines: List[List[str]], dependencies: List[str]) -> None:
+        super().__init__(**{
+            "needed_lines": needed_lines,
+            "dependencies": dependencies
+        })
 
 
 class parsed_serverless_function_resource(Rendered_Resource):
@@ -138,3 +181,16 @@ class parsed_serverless_function_resource(Rendered_Resource):
         }
 
         extra='ignore'
+
+    def __init__(__pydantic_self__, original_path: FilePath, parsed_path: FilePath, source_code_hash: str, handler_name: str,
+                dependencies: List[str], dependencies_hash: str, configuration: Dict, identity_hash: str, metadata_hash: str) -> None:
+        super().__init__(**{
+            "original_path": original_path,
+            "parsed_path": parsed_path,
+            "source_code_hash": source_code_hash,
+            "handler_name": handler_name,
+            "dependencies": dependencies, 
+            "configuration": configuration,
+            "identity_hash": identity_hash,
+            "metadata_hash": metadata_hash
+        })
