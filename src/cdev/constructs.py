@@ -1,4 +1,4 @@
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Callable
 
 from .models import Rendered_Component, Resource_State_Difference
 
@@ -40,8 +40,8 @@ class CloudMapper():
     """
     A Cloud Mapper is the construct responsible for directly interacting with the Cloud Provider and managing resource state. 
     """
-    def __init__(self, resources: Set[str]) -> None:
-        self.resources = resources
+    def __init__(self, resource_to_handler: Dict[str, Callable]) -> None:
+        self.resource_to_handler = resource_to_handler
         pass
 
     def get_namespaces(self) -> List[str]:
@@ -51,7 +51,10 @@ class CloudMapper():
         pass
 
     def get_available_resources(self) -> Set[str]:
-        return self.resources
+        return set(self.resource_to_handler.keys())
+
+    def get_resource_to_handler(self) -> Dict[str, Callable]:
+        return self.resource_to_handler
 
 
         

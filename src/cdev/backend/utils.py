@@ -5,6 +5,8 @@ from pydantic.types import NonPositiveInt
 
 from ..models import Rendered_State
 
+from .models import CloudMapping
+
 from cdev.settings import SETTINGS as cdev_settings
 
 
@@ -14,17 +16,24 @@ from cdev.settings import SETTINGS as cdev_settings
 BASE_PATH = cdev_settings.get("BASE_PATH")
 
 STATE_FOLDER_LOCATION = cdev_settings.get("STATE_FOLDER") 
-LOCAL_STATE_LOCATION = cdev_settings.get("LOCAL_STATE_LOCATION")
+RESOURCE_STATE_LOCATION = cdev_settings.get("RESOURCE_STATE_LOCATION")
+CLOUD_MAPPING_LOCATION = cdev_settings.get("CLOUD_MAPPING_LOCATION")
 
-FULL_LOCAL_STATE_PATH = os.path.join(BASE_PATH, LOCAL_STATE_LOCATION)
+FULL_LOCAL_STATE_PATH = os.path.join(BASE_PATH, RESOURCE_STATE_LOCATION)
+FULL_CLOUD_MAPPING_PATH = os.path.join(BASE_PATH, CLOUD_MAPPING_LOCATION)
 
 
 def get_local_state_path():
     return FULL_LOCAL_STATE_PATH
 
 
-def write_local_state(state: Rendered_State):
+def write_resource_state(state: Rendered_State):
     with open(FULL_LOCAL_STATE_PATH, 'w') as fp:
+        fp.write(state.json(indent=4))
+
+
+def write_cloud_mapping(state: CloudMapping):
+    with open(FULL_CLOUD_MAPPING_PATH, 'w') as fp:
         fp.write(state.json(indent=4))
 
 

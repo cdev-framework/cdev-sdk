@@ -8,7 +8,7 @@ from . import output
 
 parser = argparse.ArgumentParser(description='cdev cli')
 
-CDEV_COMMANDS = ["plan", "build", "form", "init"]
+CDEV_COMMANDS = ["plan", "deploy" , "init"]
 parser.add_argument('command', metavar="<command>", type=str, choices=CDEV_COMMANDS)
 
 
@@ -16,8 +16,8 @@ args = parser.parse_args()
 
 if args.command == "plan":
     commands.plan()
-elif args.command == "form":
-    print("YOU CALLED FORM")
+elif args.command == "deploy":
+    commands.deploy()
 elif args.command == "init":
     commands.init()
 

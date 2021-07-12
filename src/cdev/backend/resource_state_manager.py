@@ -224,7 +224,7 @@ def handle_component_difference(diff: Component_State_Difference):
                 rendered_component.name = diff.new_component.name
                 break
 
-    backend_utils.write_local_state(current_backend)
+    backend_utils.write_resource_state(current_backend)
 
 
 def _create_skeleton_component(rendered_component: Rendered_Component) -> Rendered_Component:
@@ -296,5 +296,5 @@ def write_resource_difference(component_name: str, diff: Resource_State_Differen
     current_backend.rendered_components.sort(key=lambda x: x.name)
     current_backend.hash = hasher.hash_list([x.hash for x in current_backend.rendered_components])
 
-    backend_utils.write_local_state(current_backend)
+    backend_utils.write_resource_state(current_backend)
         

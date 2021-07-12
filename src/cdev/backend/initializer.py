@@ -1,5 +1,7 @@
 import os
 
+from .models import CloudMapping
+
 from . import utils as backend_utils
 from ..models import Rendered_State
 
@@ -10,7 +12,14 @@ def initialize_backend(project_name):
         "hash": "1"
     })
 
-    backend_utils.write_local_state(project_state)
+    cloudmapping = CloudMapping(**{
+        "state": {
+            "1": [{}]
+        }
+    })
+
+    backend_utils.write_resource_state(project_state)
+    backend_utils.write_cloud_mapping(cloudmapping)
 
     return project_state
 
