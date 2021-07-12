@@ -138,25 +138,43 @@ class pre_parsed_serverless_function(BaseModel):
     description: str 
     configuration: dict
 
-    def __init__(__pydantic_self__, name: str, handler_name: str, events: List[str], description: str, configuration: dict) -> None:
-        super().__init__(**{
-            "name": name,
-            "handler_name": handler_name,
-            "events": events,
-            "description": description,
-            "configuration": configuration
-        })
+    def __init__(__pydantic_self__, name: str, handler_name: str, events: List[str], description: str, configuration: dict, **kwargs) -> None:
+        if kwargs:
+            kwargs.update({
+                "name": name,
+                "handler_name": handler_name,
+                "events": events,
+                "description": description,
+                "configuration": configuration
+            })
+            super().__init__(**kwargs)
+
+        else:
+            super().__init__(**{
+                "name": name,
+                "handler_name": handler_name,
+                "events": events,
+                "description": description,
+                "configuration": configuration
+            })
     
 
 class parsed_serverless_function_info(pre_parsed_serverless_function):
     needed_lines: List[List[int]]
     dependencies: Union[List[str], None]
 
-    def __init__(__pydantic_self__, needed_lines: List[List[str]], dependencies: List[str]) -> None:
-        super().__init__(**{
-            "needed_lines": needed_lines,
-            "dependencies": dependencies
-        })
+    def __init__(__pydantic_self__, needed_lines: List[List[str]], dependencies: List[str], **kwargs) -> None:
+        if kwargs:
+            kwargs.update({
+                "needed_lines": needed_lines,
+                "dependencies": dependencies
+            })
+            super().__init__(**kwargs)
+        else:
+            super().__init__(**{
+                "needed_lines": needed_lines,
+                "dependencies": dependencies
+            })
 
 
 class parsed_serverless_function_resource(Rendered_Resource):
@@ -183,14 +201,30 @@ class parsed_serverless_function_resource(Rendered_Resource):
         extra='ignore'
 
     def __init__(__pydantic_self__, original_path: FilePath, parsed_path: FilePath, source_code_hash: str, handler_name: str,
-                dependencies: List[str], dependencies_hash: str, configuration: Dict, identity_hash: str, metadata_hash: str) -> None:
-        super().__init__(**{
+                dependencies: List[str], dependencies_hash: str, configuration: Dict, identity_hash: str, metadata_hash: str, **kwargs) -> None:
+        
+        if kwargs:
+            kwargs.update({
             "original_path": original_path,
             "parsed_path": parsed_path,
             "source_code_hash": source_code_hash,
             "handler_name": handler_name,
-            "dependencies": dependencies, 
+            "dependencies": dependencies,
+            "dependencies_hash": dependencies_hash,
             "configuration": configuration,
             "identity_hash": identity_hash,
             "metadata_hash": metadata_hash
-        })
+            })
+            super().__init__(**kwargs)
+        
+        else:   
+            super().__init__(**{
+                "original_path": original_path,
+                "parsed_path": parsed_path,
+                "source_code_hash": source_code_hash,
+                "handler_name": handler_name,
+                "dependencies": dependencies, 
+                "configuration": configuration,
+                "identity_hash": identity_hash,
+                "metadata_hash": metadata_hash
+            })
