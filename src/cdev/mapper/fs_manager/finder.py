@@ -7,12 +7,13 @@ from typing import List
 
 
 from cdev.constructs import Cdev_Resource
-from cdev.models import Rendered_Resource 
-from cdev.utils import hasher
+from cdev.models import Rendered_Resource
+from cdev.resources.aws.lambda_function import aws_lambda_function 
+from cdev.utils import hasher, paths
 
 from ..cparser import cdev_parser as cparser
 
-from ..resources.aws.lambda_function import pre_parsed_serverless_function, parsed_serverless_function_info, parsed_serverless_function_resource
+from  .models import pre_parsed_serverless_function, parsed_serverless_function_info, parsed_serverless_function_resource
 
 from . import utils as fs_utils
 from . import writer
@@ -57,9 +58,9 @@ def _find_resources_information_from_file(fp) -> List[Rendered_Resource]:
     return rv
 
 
-def _create_serverless_function_resources(mod, fp) -> List[parsed_serverless_function_resource]:
+def _create_serverless_function_resources(mod, fp) -> List[aws_lambda_function]:
     serverless_function_information = _find_serverless_function_information_in_module(mod)
-
+    
     if not serverless_function_information:
         return
 
@@ -87,6 +88,10 @@ def _create_serverless_function_resources(mod, fp) -> List[parsed_serverless_fun
     file_list = fs_utils.get_file_as_list(fp)
     rv = []
     for function_info_obj in function_info:
+        # TODO add ability to create the layers and events for this function
+        # For now I don't have an easy way of doing this because I have not implemented
+        # Output objects
+
         # For each function need to add info about:
         #   - Parsed Path Location -> path to parsed file loc
         #   - Source Code Hash     -> hash([line1,line2,....])
@@ -98,40 +103,41 @@ def _create_serverless_function_resources(mod, fp) -> List[parsed_serverless_fun
         # Used keys:
 
         # Parsed Path
-        function_info = function_info_obj.dict()
+        final_function_info = {}
 
-        function_info['original_path'] = fp
-        function_info['parsed_path'] = fs_utils.get_parsed_path(fp, function_info.get("handler_name"))
+        full_path = fs_utils.get_parsed_path(fp, function_info_obj.handler_name)
+        writer.write_intermediate_file(fp, function_info_obj.needed_lines, full_path)
+        final_function_info['FPath'] = paths.get_relative_to_project_path(full_path)
+        
+        final_function_info['Configuration'] = function_info_obj.configuration
+        final_function_info['FunctionName'] = function_info_obj.name
 
-        writer.write_intermediate_file(fp, function_info.get("needed_lines"), function_info.get("parsed_path"))
-
-        # Join the needed lined into a string and get the md5 hash 
-        function_info['source_code_hash'] = hasher.hash_list(fs_utils.get_lines_from_file_list(file_list, function_info.get('needed_lines')))
+        # Create the total hash
+        final_function_info['hash'] = hasher.hash_list(fs_utils.get_lines_from_file_list(file_list, function_info_obj.needed_lines))
+        final_function_info['ruuid'] = "cdev::aws::lambda_function"
+        final_function_info['name'] = function_info_obj.name
 
 
         # Hash of dependencies directly used in this function
-        if function_info.get('dependencies'):
-            dependencies_hash = hasher.hash_list(function_info.get('dependencies'))
-        else:
-            dependencies_hash = "0"
-        
-        function_info['dependencies_hash'] = dependencies_hash
+        #if function_info.get('dependencies'):
+        #    dependencies_hash = hasher.hash_list(function_info.get('dependencies'))
+        #else:
+        #    dependencies_hash = "0"
+        #
+        #function_info['dependencies_hash'] = dependencies_hash
 
 
         # Create identity hash
-        function_info['identity_hash'] = hasher.hash_list([function_info['source_code_hash'], function_info['dependencies_hash']])
+        #function_info['identity_hash'] = hasher.hash_list([, function_info['dependencies_hash']])
 
-        # Create metadata hash
-        function_info['metadata_hash'] = hasher.hash_list([function_info['parsed_path']])
 
         ## BASE RENDERED RESOURCE INFORMATION
-        # Create the total hash
-        function_info['hash'] = hasher.hash_list([function_info['identity_hash']])
+        
     
-        function_info['ruuid'] = "cdev::general::parsed_function"
+        
 
-        as_resource = parsed_serverless_function_resource(
-            **function_info
+        as_resource = aws_lambda_function(
+            **final_function_info
         )
 
         rv.append(as_resource)
@@ -164,12 +170,21 @@ def _find_serverless_function_information_in_module(python_module) -> List[pre_p
 
     for _name, func in listOfFunctions:
         if func.__qualname__.startswith(ANNOTATION_LABEL+"."):
-            info = func()
+            info = _convert_to_preparsed_info(func())
+            print(info)
             serverless_function_information.append(info)
             
 
     return serverless_function_information
 
+
+def _convert_to_preparsed_info(obj: aws_lambda_function) -> pre_parsed_serverless_function:
+    return pre_parsed_serverless_function(**{
+        "name": obj.name,
+        "handler_name":obj.Configuration.Handler,
+        "description":obj.Configuration.Description,
+        "configuration": obj.Configuration 
+    })
 
 
 def parse_folder(folder_path, prefix=None) -> List[Rendered_Resource]:
@@ -196,7 +211,6 @@ def parse_folder(folder_path, prefix=None) -> List[Rendered_Resource]:
 
     for pf in python_files:
         final_function_info = _find_resources_information_from_file(os.path.join(os.getcwd(),pf))
-        #print(final_function_info)
         if final_function_info:
             rv.update(final_function_info)
 

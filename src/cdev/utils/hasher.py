@@ -1,6 +1,8 @@
 import hashlib
 from typing import List
 
+from pydantic.types import FilePath
+
 
 """
 These functions provide the a 'standardized' way of producing hashes to identify uniqueness. These hash functions are **not**
@@ -12,5 +14,13 @@ that will be used to track changes throughout the system.
 def hash_list(val: List[str]) -> str:
     return hash_string("".join(val))
 
+
 def hash_string(val: str) -> str:
     return hashlib.md5(val.encode()).hexdigest() 
+
+
+def hash_file(fp: FilePath) -> str:
+    with open(fp, "r") as fh:
+        hash = hashlib.md5(fh.read().encode()).hexdigest()
+
+    return hash

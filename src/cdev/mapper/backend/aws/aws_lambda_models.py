@@ -1,7 +1,7 @@
 from typing import List, Union
 from pydantic import BaseModel, FilePath, conint
 
-from ...resources.aws import s3, lambda_function
+from cdev.resources.aws import s3, lambda_function
 
 
 

@@ -4,8 +4,8 @@ from enum import Enum
 from typing import List
 
 
-from cdev.constructs import Cdev_Resource
-from cdev.models import Rendered_Resource
+from ...constructs import Cdev_Resource
+from ...models import Rendered_Resource
 
 
 

@@ -23,7 +23,6 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
         resource_state_manager.handle_component_difference(diff)
         for resource_diff in diff.resource_diffs:
             if resource_diff.new_resource:
-                print("WHY HERE")
                 mapper_namespace = resource_diff.new_resource.ruuid.split("::")[0]
             else:
                 mapper_namespace = resource_diff.previous_resource.ruuid.split("::")[0]
@@ -37,16 +36,15 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
 
 
     mapper_namespace = get_mapper_namespace()
-    print(mapper_namespace)
-    print(mapper_to_resource_diffs)
+
     for mapper in mapper_to_resource_diffs:
         if mapper not in mapper_namespace:
             print("REALLLY BAD")
             # TODO throw error
         for resource_diff in mapper_to_resource_diffs.get(mapper):
             try:
-                did_deploy = mapper_namespace[mapper].deploy_resource(resource_diff[0], resource_diff[1])
-
+                #did_deploy = mapper_namespace[mapper].deploy_resource(resource_diff[0], resource_diff[1])
+                did_deploy = True
                 if did_deploy:
                     resource_state_manager.write_resource_difference(resource_diff[0], resource_diff[1])
 

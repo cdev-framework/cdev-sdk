@@ -13,8 +13,8 @@ from cdev.backend import cloud_mapper as cdev_cloud_mapper
 from .backend.aws import aws_lambda
 from .backend.aws import aws_s3, aws_s3_models 
 
-from .resources.aws.s3 import s3_object
-from .resources.aws.lambda_function import lambda_function_configuration, lambda_runtime_environments, lambda_function_configuration_environment
+from cdev.resources.aws.s3 import s3_object
+from cdev.resources.aws.lambda_function import lambda_function_configuration, lambda_runtime_environments, lambda_function_configuration_environment
 
 
 class DefaultMapper(CloudMapper):

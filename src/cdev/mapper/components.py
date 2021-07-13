@@ -1,5 +1,5 @@
 
-from ..fs_manager import finder
+from .fs_manager import finder
 
 from cdev.constructs import Cdev_Component
 from cdev.models import Rendered_Component 
