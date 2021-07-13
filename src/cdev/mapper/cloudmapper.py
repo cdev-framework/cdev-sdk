@@ -1,7 +1,7 @@
 import os
 from typing import List
 import zipfile
-from cdev.mapper.backend.aws.aws_lambda_models import create_aws_lambda_function
+from cdev.mapper.backend.aws.aws_lambda_models import create_aws_lambda_function, delete_aws_lambda_function
 
 
 from cdev.models import Action_Type, Resource_State_Difference
@@ -32,8 +32,15 @@ class DefaultMapper(CloudMapper):
                 # TODO throw error
                 print(f"PROVIDER CAN NOT CREATE RESOURCE: {resource_diff.new_resource.ruuid}")
 
+            self.get_resource_to_handler()[resource_diff.new_resource.ruuid](resource_diff)
+
+        else:
+            self.get_resource_to_handler()[resource_diff.previous_resource.ruuid](resource_diff)
+
         print(f"DEPLOYING -> {component_name}:{resource_diff}")
-        self.get_resource_to_handler()[resource_diff.new_resource.ruuid](resource_diff)
+
+
+        
 
         return True
 
@@ -77,11 +84,63 @@ def handle_aws_lambda_deployment(resource_diff: Resource_State_Difference):
                                                 }),
                                                 base_config)
 
+            
             aws_lambda.create_lambda_function(event)
+
+            cdev_cloud_mapper.add_cloud_resource(resource_diff.new_resource.hash, {
+                "FunctionName": resource_diff.new_resource.hash,
+                "Code": s3_object(**{
+                        "S3Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"),
+                        "S3Key": keyname
+                    }),
+                "Configuration": base_config
+            })
 
         except Exception as e:
             print(e)
 
+    elif resource_diff.action_type == Action_Type.DELETE:
+        try:
+            filename = os.path.split(resource_diff.previous_resource.parsed_path)[1]
+            original_zipname = filename[:-3] + ".zip"
+            keyname = filename[:-3] + f"-{resource_diff.previous_resource.hash}" + ".zip"
+            zip_location = os.path.join(os.path.dirname(resource_diff.previous_resource.parsed_path), original_zipname )
+
+
+            aws_lambda.delete_lambda_function(delete_aws_lambda_function(
+                **{"FunctionName": resource_diff.previous_resource.hash}
+            ))
+
+            base_config = lambda_function_configuration(
+                Role="arn:aws:iam::369004794337:role/test-lambda-role",
+                Handler=filename[:-3]+"."+resource_diff.previous_resource.handler_name,
+                Description="MyDescription",
+                Timeout=60,
+                MemorySize=128,
+                Environment={"Variables": resource_diff.previous_resource.configuration},
+                Runtime=lambda_runtime_environments.python3_6,
+            )
+
+            cdev_cloud_mapper.remove_cloud_resource(resource_diff.previous_resource.hash, 
+                {
+                "FunctionName": resource_diff.previous_resource.hash,
+                "Code": s3_object(**{
+                        "S3Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"),
+                        "S3Key": keyname
+                    }),
+                "Configuration": base_config
+                }
+            )
+
+            cdev_cloud_mapper.remove_cloud_resource(resource_diff.previous_resource.hash, {
+            "Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"),
+            "Key": keyname
+            })
+
+            cdev_cloud_mapper.remove_indentifier(resource_diff.previous_resource.hash)
+
+        except Exception as e:
+            print(e)
         
 
     

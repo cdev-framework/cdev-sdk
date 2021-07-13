@@ -29,7 +29,21 @@ def add_indentifier(identifier) -> bool:
         # TODO throw error
         return False
 
-    cloud_mapping[identifier] = []
+    cloud_mapping.state[identifier] = []
+
+    backend_utils.write_cloud_mapping(cloud_mapping)
+
+    return True
+
+
+
+def remove_indentifier(identifier) -> bool:
+    cloud_mapping =  backend_utils.load_cloud_mapping()
+    if not identifier in cloud_mapping.state:
+        # TODO throw error
+        return False
+
+    cloud_mapping.state.pop(identifier)
 
     backend_utils.write_cloud_mapping(cloud_mapping)
 
@@ -43,8 +57,8 @@ def reidentify_cloud_resource(old_identifier: str, new_identifier: str):
         # TODO throw error
         return False
 
-    cloud_mapping[new_identifier] = cloud_mapping[old_identifier]
-    cloud_mapping.pop(old_identifier)
+    cloud_mapping.state[new_identifier] = cloud_mapping.state[old_identifier]
+    cloud_mapping.state.pop(old_identifier)
 
     backend_utils.write_cloud_mapping(cloud_mapping)
 
@@ -59,7 +73,7 @@ def remove_cloud_resource(identifier: str, old_resource) -> bool:
         return False
 
     try:
-        cloud_mapping[identifier].remove(old_resource)
+        cloud_mapping.state[identifier].remove(old_resource)
     except Exception as e:
         print(e)
         return False
