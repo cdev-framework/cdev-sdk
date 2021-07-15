@@ -33,7 +33,6 @@ def write_resource_state(state: Rendered_State):
 
 
 def write_cloud_mapping(state: CloudMapping):
-    print("WRITE")
     with open(FULL_CLOUD_MAPPING_PATH, 'w') as fp:
         fp.write(state.json(indent=4))
 

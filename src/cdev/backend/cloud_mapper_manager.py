@@ -9,9 +9,6 @@ def add_cloud_resource(identifier: str, new_resource: dict) -> bool:
 
     cloud_mapping =  backend_utils.load_cloud_mapping()
 
-    if identifier in cloud_mapping.state:
-        # TODO throw error
-        return False
 
     if cloud_mapping.state.get(identifier):
         cloud_mapping.state[identifier].append(new_resource)
@@ -25,6 +22,7 @@ def add_cloud_resource(identifier: str, new_resource: dict) -> bool:
 
 def add_indentifier(identifier) -> bool:
     cloud_mapping =  backend_utils.load_cloud_mapping()
+    
     if identifier in cloud_mapping.state:
         # TODO throw error
         return False

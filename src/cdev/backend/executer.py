@@ -18,6 +18,7 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
     # This is the return value that will be used in the next step to deploy actualt cloud resources
     # It is important to buffer all these request before actual making them because we can then do
     # basic syntax checks and other integrity confirmations before actually creating the resources.
+
     mapper_to_resource_diffs = {}
     for diff in project_diffs:
         resource_state_manager.handle_component_difference(diff)
@@ -26,7 +27,6 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
                 mapper_namespace = resource_diff.new_resource.ruuid.split("::")[0]
             else:
                 mapper_namespace = resource_diff.previous_resource.ruuid.split("::")[0]
-                
 
             if mapper_namespace in mapper_to_resource_diffs:
                 mapper_to_resource_diffs[mapper_namespace].append((diff.new_component.name,resource_diff))
@@ -43,8 +43,7 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
             # TODO throw error
         for resource_diff in mapper_to_resource_diffs.get(mapper):
             try:
-                #did_deploy = mapper_namespace[mapper].deploy_resource(resource_diff[0], resource_diff[1])
-                did_deploy = True
+                did_deploy = mapper_namespace[mapper].deploy_resource(resource_diff[0], resource_diff[1])
                 if did_deploy:
                     resource_state_manager.write_resource_difference(resource_diff[0], resource_diff[1])
 

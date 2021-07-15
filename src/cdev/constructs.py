@@ -47,7 +47,7 @@ class CloudMapper():
     def get_namespaces(self) -> List[str]:
         pass
 
-    def deploy_resource(self, component_name: str, resource_diff: Resource_State_Difference) -> bool:
+    def deploy_resource(self, resource_diff: Resource_State_Difference) -> bool:
         pass
 
     def get_available_resources(self) -> Set[str]:

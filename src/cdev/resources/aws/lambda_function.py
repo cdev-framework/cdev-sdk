@@ -4,7 +4,7 @@ import importlib
 import os
 from pathlib import PosixPath, WindowsPath
 from pydantic import BaseModel, FilePath, conint
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Optional
 
 from ...models import Rendered_Resource
 from ...utils import hasher, paths
@@ -12,7 +12,7 @@ from ...utils import hasher, paths
 from .s3 import s3_object
 
 
-def lambda_function_annotation(name, events=[], configuration={}, includes=[], Role:str=None, Timeout:conint(gt=1,lt=300)=None, MemorySize:conint(gt=1,lt=1024)=None ):
+def lambda_function_annotation(name, events=[], includes=[], Enivornment={},  Role:str=None, Timeout:conint(gt=1,lt=300)=None, MemorySize:conint(gt=1,lt=1024)=None ):
     """
     This annotation is used to designate that a function should be deployed on the AWS lambda platform. Functions that are designated
     using this annotation should have a signature that takes two inputs (event,context) to conform to the aws lambda handler signature.
@@ -24,7 +24,7 @@ def lambda_function_annotation(name, events=[], configuration={}, includes=[], R
 
     events = events if events else [""]
 
-    EnvironmentVars =  {"Variables": configuration} if configuration else None
+    EnvironmentVars =  {"Variables": Enivornment} if Enivornment else None
 
 
     base_config = {
@@ -123,9 +123,9 @@ class lambda_function_configuration(BaseModel):
     Environment: Union[Dict,None]
     Runtime: Union[lambda_runtime_environments,None]
 
-    def __init__(__pydantic_self__, Role: str, Handler: str, Description: str, Timeout: int,
-                MemorySize: int, Environment: lambda_function_configuration_environment, 
-                Runtime: lambda_runtime_environments ) -> None:
+    def __init__(__pydantic_self__, Role: str="", Handler: str="", Description: str="", Timeout: int=60,
+                MemorySize: int=128, Environment: lambda_function_configuration_environment={}, 
+                Runtime: lambda_runtime_environments="python3.6" ) -> None:
         super().__init__(**{
             "Role": Role,
             "Handler": Handler,

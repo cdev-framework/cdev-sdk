@@ -178,7 +178,6 @@ def _create_resource_diffs(new_resources: List[Rendered_Resource], old_resource:
                 }
             ))
 
-    print(old_resource)
     for resource in old_resource:
         #print(f"DELETE {resource}")
         rv.append(Resource_State_Difference(

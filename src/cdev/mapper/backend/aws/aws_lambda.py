@@ -23,10 +23,9 @@ def create_lambda_function(create_event: create_aws_lambda_function) -> bool:
 
     args["Code"] = create_event.Code.dict()
     args["FunctionName"] = create_event.FunctionName
-    print("CALLING TO AWS")
     try:
         response = client.create_function(**args)
-        print(json.dumps(response))
+        print(f"AWS RESPONSE -> {json.dumps(response)}")
     except botocore.exceptions.ClientError as e:
         print(e.response)
         return False
@@ -51,7 +50,7 @@ def update_lambda_function_code(update_code_event: update_lambda_function_code) 
 
     try:
         response = client.update_function_code(**args)
-        print(json.dumps(response))
+        print(f"AWS RESPONSE -> {json.dumps(response)}")
     except botocore.exceptions.ClientError as e:
         print(e.response)
         return False
@@ -77,7 +76,7 @@ def update_lambda_function_configuration(update_configuration_event: update_lamb
 
     try:
         response = client.update_function_configuration(**args)
-        print(json.dumps(response))
+        print(f"AWS RESPONSE -> {json.dumps(response)}")
     except botocore.exceptions.ClientError as e:
         print(e.response)
         return False
@@ -98,7 +97,7 @@ def delete_lambda_function(delete_event: delete_aws_lambda_function):
 
     try:
         response = client.delete_function(**args)
-        print(json.dumps(response))
+        print(f"AWS RESPONSE -> {json.dumps(response)}")
     except botocore.exceptions.ClientError as e:
         print(e.response)
         return False
