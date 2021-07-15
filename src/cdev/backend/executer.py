@@ -22,16 +22,18 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
     mapper_to_resource_diffs = {}
     for diff in project_diffs:
         resource_state_manager.handle_component_difference(diff)
+        component_name = diff.new_component.name
         for resource_diff in diff.resource_diffs:
             if resource_diff.new_resource:
                 mapper_namespace = resource_diff.new_resource.ruuid.split("::")[0]
             else:
                 mapper_namespace = resource_diff.previous_resource.ruuid.split("::")[0]
+                
 
             if mapper_namespace in mapper_to_resource_diffs:
-                mapper_to_resource_diffs[mapper_namespace].append((diff.new_component.name,resource_diff))
+                mapper_to_resource_diffs[mapper_namespace].append((component_name,resource_diff))
             else:
-                mapper_to_resource_diffs[mapper_namespace] = [(diff.new_component.name, resource_diff)]
+                mapper_to_resource_diffs[mapper_namespace] = [(component_name, resource_diff)]
 
 
 
@@ -43,11 +45,12 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
             # TODO throw error
         for resource_diff in mapper_to_resource_diffs.get(mapper):
             try:
-                did_deploy = mapper_namespace[mapper].deploy_resource(resource_diff[0], resource_diff[1])
+                did_deploy = mapper_namespace[mapper].deploy_resource(resource_diff[1])
                 if did_deploy:
-                    resource_state_manager.write_resource_difference(resource_diff[0], resource_diff[1])
+                    resource_state_manager.write_resource_difference(resource_diff[0],resource_diff[1])
 
             except Exception as e:
+                print("EXCEPT HERE")
                 print(e)
 
 

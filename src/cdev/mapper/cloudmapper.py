@@ -43,7 +43,7 @@ class DefaultMapper(CloudMapper):
 
 def handle_aws_lambda_deployment(resource_diff: Resource_State_Difference):
     # TODO throw error if resource is not lambda function
-
+    print()
     if resource_diff.action_type == Action_Type.CREATE:
         try: 
             filename = os.path.split(resource_diff.new_resource.FPath)[1]
@@ -86,6 +86,7 @@ def handle_aws_lambda_deployment(resource_diff: Resource_State_Difference):
             })
 
         except Exception as e:
+            print("EXCEPTION IS RIGHT HERE")
             print(e)
 
 
@@ -125,7 +126,12 @@ def handle_aws_lambda_deployment(resource_diff: Resource_State_Difference):
 
         except Exception as e:
             print(e)
-        
+
+    elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
+        pass
+
+    elif resource_diff.action_type == Action_Type.UPDATE_NAME:
+        pass
 
     
 

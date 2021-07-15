@@ -8,7 +8,7 @@ from typing import List
 
 from cdev.constructs import Cdev_Resource
 from cdev.models import Rendered_Resource
-from cdev.resources.aws.lambda_function import aws_lambda_function 
+from cdev.resources.aws.lambda_function import aws_lambda_function, lambda_function_configuration
 from cdev.utils import hasher, paths
 
 from ..cparser import cdev_parser as cparser
@@ -112,8 +112,14 @@ def _create_serverless_function_resources(mod, fp) -> List[aws_lambda_function]:
         final_function_info['Configuration'] = function_info_obj.configuration
         final_function_info['FunctionName'] = function_info_obj.name
 
+
+
+        final_function_info['src_code_hash'] = hasher.hash_file(full_path)
+        print(f"AM I HEHRE {function_info_obj.configuration}")
+        final_function_info['config_hash'] = lambda_function_configuration(**function_info_obj.configuration).get_cdev_hash()
+
         # Create the total hash
-        final_function_info['hash'] = hasher.hash_list(fs_utils.get_lines_from_file_list(file_list, function_info_obj.needed_lines))
+        final_function_info['hash'] = hasher.hash_list([final_function_info['src_code_hash'], final_function_info['config_hash']])
         final_function_info['ruuid'] = "cdev::aws::lambda_function"
         final_function_info['name'] = function_info_obj.name
 
@@ -127,8 +133,6 @@ def _create_serverless_function_resources(mod, fp) -> List[aws_lambda_function]:
         #function_info['dependencies_hash'] = dependencies_hash
 
 
-        # Create identity hash
-        #function_info['identity_hash'] = hasher.hash_list([, function_info['dependencies_hash']])
 
 
         ## BASE RENDERED RESOURCE INFORMATION

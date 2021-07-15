@@ -4,7 +4,10 @@ import importlib
 import os
 from pathlib import PosixPath, WindowsPath
 from pydantic import BaseModel, FilePath, conint
+from sortedcontainers import SortedList
 from typing import List, Union, Dict, Optional
+
+from sortedcontainers.sorteddict import SortedDict
 
 from ...models import Rendered_Resource
 from ...utils import hasher, paths
@@ -12,7 +15,7 @@ from ...utils import hasher, paths
 from .s3 import s3_object
 
 
-def lambda_function_annotation(name, events=[], includes=[], Enivornment={},  Role:str=None, Timeout:conint(gt=1,lt=300)=None, MemorySize:conint(gt=1,lt=1024)=None ):
+def lambda_function_annotation(name, events=[], includes=[], Environment={},  Role:str=None, Timeout:conint(gt=1,lt=300)=None, MemorySize:conint(gt=1,lt=1024)=None ):
     """
     This annotation is used to designate that a function should be deployed on the AWS lambda platform. Functions that are designated
     using this annotation should have a signature that takes two inputs (event,context) to conform to the aws lambda handler signature.
@@ -24,7 +27,7 @@ def lambda_function_annotation(name, events=[], includes=[], Enivornment={},  Ro
 
     events = events if events else [""]
 
-    EnvironmentVars =  {"Variables": Enivornment} if Enivornment else None
+    EnvironmentVars =  {"Variables": Environment} if Environment else None
 
 
     base_config = {
@@ -77,9 +80,14 @@ def lambda_function_annotation(name, events=[], includes=[], Enivornment={},  Ro
 
             final_config = lambda_function_configuration(**base_config)
 
+            
+
             mod = importlib.import_module(mod_name)
 
             full_filepath = os.path.abspath(mod.__file__)
+
+            src_code_hash = hasher.hash_file(full_filepath)
+            config_hash = final_config.get_cdev_hash()
            
             rv_func = aws_lambda_function(**{
                 "FunctionName": name,
@@ -87,8 +95,10 @@ def lambda_function_annotation(name, events=[], includes=[], Enivornment={},  Ro
                 "FPath": full_filepath,
                 "name": name,
                 "ruuid": "cdev::aws::lambdafunction",
-                "hash": hasher.hash_list([hasher.hash_file(full_filepath), name]),
-                "events": events
+                "hash": hasher.hash_list([src_code_hash,config_hash]),
+                "events": events,
+                "src_code_hash": src_code_hash,
+                "config_hash": config_hash
             })
                         
             return rv_func
@@ -113,6 +123,12 @@ class lambda_function_configuration_environment(BaseModel):
             "Variables": Variables
         })
 
+    def get_cdev_hash(self):
+        sorted_dic = SortedDict(self.Variables)
+        
+        as_list = [f"{k}:{v}" for (k,v) in sorted_dic.items() ]
+        return hasher.hash_list(as_list)
+
 
 class lambda_function_configuration(BaseModel):
     Role: Union[str,None]
@@ -120,7 +136,7 @@ class lambda_function_configuration(BaseModel):
     Description: Union[str,None]
     Timeout: Union[conint(gt=1,lt=300),None]
     MemorySize: Union[conint(gt=1,lt=1024),None]
-    Environment: Union[Dict,None]
+    Environment: Union[lambda_function_configuration_environment,None]
     Runtime: Union[lambda_runtime_environments,None]
 
     def __init__(__pydantic_self__, Role: str="", Handler: str="", Description: str="", Timeout: int=60,
@@ -136,18 +152,31 @@ class lambda_function_configuration(BaseModel):
             "Runtime": Runtime,
         })
 
+    def get_cdev_hash(self) -> str:
+        if self.Environment:
+            env_hash = self.Environment.get_cdev_hash()
+        else: 
+            env_hash = ""
+        rv = hasher.hash_list([self.Description, env_hash, self.Handler, str(self.MemorySize), self.Role, self.Runtime, str(self.Timeout)])
+        return rv
+
 
 class aws_lambda_function(Rendered_Resource):
     FunctionName: str
     Configuration: lambda_function_configuration
     FPath: str # Don't use FilePath because this will be a relative path and might not always point correctly to a file in all contexts
 
-    def __init__(__pydantic_self__, FunctionName: str, Configuration: lambda_function_configuration, FPath: FilePath, **kwargs) -> None:
+    src_code_hash: str
+    config_hash: str
+
+    def __init__(__pydantic_self__, FunctionName: str, Configuration: lambda_function_configuration, FPath: FilePath, src_code_hash: str, config_hash: str,**kwargs) -> None:
         if kwargs:
             kwargs.update(**{
                 "FunctionName": FunctionName,
                 "Configuration": Configuration,
-                "FPath": FPath
+                "FPath": FPath,
+                "src_code_hash": src_code_hash,
+                "config_hash": config_hash
             })
             super().__init__(**kwargs)
         else:
