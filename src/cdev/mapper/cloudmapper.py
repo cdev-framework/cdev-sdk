@@ -12,7 +12,7 @@ from .backend.aws import aws_lambda
 
 class DefaultMapper(CloudMapper):
     def __init__(self) -> None:
-        super().__init__(RESOURCE_TO_HANDLER_FUNCTION)
+        super().__init__(RESOURCE_TO_HANDLER_FUNCTION,RESOURCE_TO_OUTPUT_RENDERER)
 
     def get_namespaces(self) -> List[str]:
         return ["cdev"]
@@ -30,10 +30,13 @@ class DefaultMapper(CloudMapper):
         else:
             self.get_resource_to_handler()[resource_diff.previous_resource.ruuid](resource_diff)
 
-        #print(f"DEPLOYING -> {resource_diff}")
-
         return True
-    
+
+    def render_resource_outputs(self, resource_diff):
+        if resource_diff.new_resource:
+            resource_diff.new_resource = self.get_resource_to_output_renderer()[resource_diff.new_resource.ruuid](resource_diff.new_resource)
+
+        return resource_diff
 
 def handle_aws_dynamodb_deployment(resource_diff: Resource_State_Difference):
     # TODO throw error if resource is not lambda function
@@ -42,8 +45,16 @@ def handle_aws_dynamodb_deployment(resource_diff: Resource_State_Difference):
     
     #print(f"DYNAMODB {resource_diff}")
 
+def dynamodb_replace_output(resource):
+    return resource
+
 
 RESOURCE_TO_HANDLER_FUNCTION = {
     "cdev::aws::lambda_function": aws_lambda.handle_aws_lambda_deployment,
     "cdev::aws::dynamodb": handle_aws_dynamodb_deployment
+}
+
+RESOURCE_TO_OUTPUT_RENDERER = {
+    "cdev::aws::lambda_function": aws_lambda.lambda_replace_output,
+    "cdev::aws::dynamodb": dynamodb_replace_output
 }

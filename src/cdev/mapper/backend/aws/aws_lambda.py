@@ -2,7 +2,7 @@ import botocore
 import json
 import os
 
-from cdev.models import Action_Type, Resource_State_Difference
+from cdev.models import Action_Type, Cloud_Output, Resource_State_Difference
 from cdev.settings import SETTINGS
 
 from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
@@ -219,11 +219,24 @@ def handle_aws_lambda_deployment(resource_diff: Resource_State_Difference) -> bo
             _replace_old_lambda_object(resource_diff.previous_resource.hash, resource_diff.previous_resource, resource_diff.new_resource)
             cdev_cloud_mapper.reidentify_cloud_resource(resource_diff.previous_resource.hash, resource_diff.new_resource.hash)
 
-            
-
-
+        
     except Exception as e:
         print(e)
         return False
 
     return True
+
+
+def lambda_replace_output(resource: aws_lambda_function) -> aws_lambda_function:
+    if isinstance(resource.Configuration.Role, Cloud_Output):
+        resource.Configuration.Role = "arn:aws:iam::369004794337:role/test-lambda-role"
+
+    resource.Configuration.Environment.Variables = {k:_wrap_get_cloud_output(v) for (k,v) in resource.Configuration.Environment.Variables.items()}
+
+    return resource
+
+def _wrap_get_cloud_output(val: Union[Cloud_Output, str]) -> str:
+    if isinstance(val, str):
+        return val
+
+    return "TableName"

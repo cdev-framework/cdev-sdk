@@ -35,10 +35,14 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
         resource_dag = nx.DiGraph()
         top_level_resources = []
         resource_id_to_resource_diff = {f"{x.new_resource.ruuid}::{x.new_resource.hash}":x for x in diff.resource_diffs if x.new_resource }
+        resource_id_to_resource_diff.update({f"{x.previous_resource.ruuid}::{x.previous_resource.hash}":x for x in diff.resource_diffs if not x.new_resource })
         
         print(resource_id_to_resource_diff)
         for resource_diff in diff.resource_diffs:
-            resource_id = f"{resource_diff.new_resource.ruuid}::{resource_diff.new_resource.hash}"
+            if resource_diff.new_resource:
+                resource_id = f"{resource_diff.new_resource.ruuid}::{resource_diff.new_resource.hash}"
+            else:
+                resource_id = f"{resource_diff.previous_resource.ruuid}::{resource_diff.previous_resource.hash}"
 
             if resource_diff.new_resource:
                 if resource_diff.new_resource.parent_resources:
@@ -67,7 +71,7 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
         for resource_id in resource_dag_list:
             sorted_resources.append(resource_id_to_resource_diff.get(resource_id))
 
-
+        print(f"SORTED ---- {sorted_resources}")
         for resource_diff in sorted_resources:
             try:
                 if resource_diff.new_resource:
@@ -76,9 +80,16 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
                     mapper = resource_diff.previous_resource.ruuid.split("::")[0]
 
 
+
                 if mapper in mapper_namespace:
-                    ouput_rendered_resource = render_resource_outputs(resource_diff)
-                    did_deploy = mapper_namespace[mapper].deploy_resource(ouput_rendered_resource)
+                    
+                    output_rendered_resource = mapper_namespace[mapper].render_resource_outputs(resource_diff)
+                    print("-------")
+                    print(resource_diff)
+                    print(">>>>><<<<<<")
+                    print(output_rendered_resource)
+                    print("-------")
+                    did_deploy = mapper_namespace[mapper].deploy_resource(output_rendered_resource)
                     if did_deploy:
                         resource_state_manager.write_resource_difference(component_name,resource_diff)
                 else:
@@ -88,13 +99,6 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
                 print("EXCEPT HERE")
                 print(e)
 
-
-
-def render_resource_outputs(resourse_diff):
-    return resourse_diff
-
-
-                
 
 
 
