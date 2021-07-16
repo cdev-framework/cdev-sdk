@@ -9,10 +9,10 @@ setuptools.setup(
     install_requires=[
         "setuptools",
         "sortedcontainers==2.3.0",
-        "jsonschema",
-        "rich",
-        "boto3",
-        "pydantic"
+        "rich==9.11.0",
+        "boto3==1.17.90",
+        "pydantic==1.8.2",
+        "networkx==2.5.1"
     ],
     python_requires='>=3.5'
 )
