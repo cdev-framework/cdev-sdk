@@ -30,7 +30,7 @@ class DefaultMapper(CloudMapper):
         else:
             self.get_resource_to_handler()[resource_diff.previous_resource.ruuid](resource_diff)
 
-        print(f"DEPLOYING -> {resource_diff}")
+        #print(f"DEPLOYING -> {resource_diff}")
 
         return True
     
@@ -40,7 +40,7 @@ def handle_aws_dynamodb_deployment(resource_diff: Resource_State_Difference):
     if resource_diff.action_type == Action_Type.CREATE:
         cdev_cloud_mapper.add_cloud_resource(resource_diff.new_resource.hash, {"s3key": resource_diff.new_resource.TableName})
     
-    print(f"DYNAMODB {resource_diff}")
+    #print(f"DYNAMODB {resource_diff}")
 
 
 RESOURCE_TO_HANDLER_FUNCTION = {

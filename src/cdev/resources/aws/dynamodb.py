@@ -5,7 +5,8 @@ from typing import List
 
 
 from ...constructs import Cdev_Resource
-from ...models import Rendered_Resource
+from ...models import Cloud_Output, Rendered_Resource
+from ...utils import hasher
 
 
 
@@ -93,13 +94,17 @@ class dynamo_db_table(Rendered_Resource):
         super().__init__(**{
             "ruuid": ruuid,
             "name": name,
-            "hash": 1,
+            "hash": hash,
             "TableName": TableName,
             "AttributeDefinitions": AttributeDefinitions,
             "KeySchema": KeySchema
         })
 
 
+
+class DynamoDBTable_Output(str, Enum):
+    TableArn = "TableArn"
+    TableName = "TableName"
 
 class DynamoDBTable(Cdev_Resource):
     """
@@ -120,21 +125,28 @@ class DynamoDBTable(Cdev_Resource):
         AttributeDefinitions: List of attributes this Table will have
         KeySchema: The List of key schema that will be used for this table
     """
+
+    OUTPUTS = set([""])
+
+
     def __init__(self,name: str, TableName: str, AttributeDefinitions: List[dynamo_db_attribute_definition], KeySchema: List[dynamo_db_key_schema_element] ) -> None:
 
         
-        super().__init__()
-        self.name = name
+        super().__init__(name)
         self.TableName = TableName
         self.AttributeDefinitions = AttributeDefinitions
         self.KeySchema = KeySchema
+        self.hash = hasher.hash_string(self.TableName)
 
     def render(self):
         return dynamo_db_table(**{
             "ruuid": "cdev::aws::dynamodb",
             "name": self.name,
-            "hash": 1,
+            "hash": self.hash,
             "TableName": self.TableName,
             "AttributeDefinitions": self.AttributeDefinitions,
             "KeySchema": self.KeySchema
         })
+
+    def from_output(self, key: DynamoDBTable_Output) -> Cloud_Output:
+        return Cloud_Output(**{"resource": f"cdev::aws::dynamodb::{self.hash}", "key": key})

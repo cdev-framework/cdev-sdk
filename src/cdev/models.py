@@ -47,10 +47,44 @@ class Rendered_Resource(BaseModel):
     instead of update. 
     """
 
+    parent_resources: Optional[Set[str]]
+    """
+    A set of all resource identifications (ruuid:hash) that are a parent resource to some other resource in the component. This set serves as 
+    a fast way of checking if we need to update descandants when a resource is updated 
+    """
+
     class Config:
         validate_assignment = True
         extra = 'allow'
+
+
+    def get_parent_resources(self) -> List[str]:
+        """
+        This function returns any resources that this resources depeneds on via the Output mechanism
+        """
+        return None
+
+
+class Cloud_Output(BaseModel):
+    """
+    Often we want resources that depend on the value of output of other resoures that is only known after a cloud resource is created. This servers
+    as an placeholder for that desired value until it is available. 
+    """
+
+    resource: str
+    """
+    ruuid:hash
+    """
+
+    key: str
+    """
+    The key to lookup the output value by (ex: arn)
+    """
         
+    def __str__(self) -> str:
+        return f"{self.resource}$${self.key}"
+
+    
 
 
 class Rendered_Component(BaseModel):
@@ -81,18 +115,24 @@ class Rendered_Component(BaseModel):
 
     hash: str
     """
-    This is a hash that is used to identify if changes in the resources have occurred. It should have the property:
+    A hash that is used to identify if changes in the resources have occurred. It should have the property:
     - This value changes only if a there is a change in the resource. 
     """
 
 
     name: str
     """
-    This is a human readable logical name for the component. 
+    A human readable logical name for the component. 
 
     This value is important for allow human level refactoring of components. To update a component name once created, you must edit only the 
     name and not change the hash. If you change both the hash and name in the same deployment, it will register this as a delete and create 
     instead of update. 
+    """
+
+    all_parent_resources: Optional[Set[str]]
+    """
+    A set of all resource identifications (ruuid:hash) that are a parent resource to some other resource in the component. This set serves as 
+    a fast way of checking if we need to update descandants when a resource is updated 
     """
 
 
@@ -141,3 +181,5 @@ class Component_State_Difference(BaseModel):
 
     class Config:  
         use_enum_values = True
+
+

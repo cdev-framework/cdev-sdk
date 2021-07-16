@@ -9,7 +9,7 @@ from typing import List, Union, Dict, Optional
 
 from sortedcontainers.sorteddict import SortedDict
 
-from ...models import Rendered_Resource
+from ...models import Rendered_Resource, Cloud_Output
 from ...utils import hasher, paths
 
 from .s3 import s3_object
@@ -116,9 +116,9 @@ class lambda_runtime_environments(str,Enum):
 
 
 class lambda_function_configuration_environment(BaseModel):
-    Variables: dict
+    Variables: Dict[str, Union[str, Cloud_Output]]
 
-    def __init__(__pydantic_self__, Variables: Dict) -> None:
+    def __init__(__pydantic_self__, Variables: Dict[str, Union[str, Cloud_Output]]) -> None:
         super().__init__(**{
             "Variables": Variables
         })
@@ -131,7 +131,7 @@ class lambda_function_configuration_environment(BaseModel):
 
 
 class lambda_function_configuration(BaseModel):
-    Role: Union[str,None]
+    Role: Union[str,Cloud_Output,None]
     Handler: Union[str,None]
     Description: Union[str,None]
     Timeout: Union[conint(gt=1,lt=300),None]
@@ -170,13 +170,23 @@ class aws_lambda_function(Rendered_Resource):
     config_hash: str
 
     def __init__(__pydantic_self__, FunctionName: str, Configuration: lambda_function_configuration, FPath: FilePath, src_code_hash: str, config_hash: str,**kwargs) -> None:
+        parents = set()
+
+        if isinstance(Configuration.Role, Cloud_Output):
+            parents.add(Configuration.Role.resource)
+
+        for _,value in Configuration.Environment.Variables.items():
+            if isinstance(value, Cloud_Output):
+                parents.add(value.resource)
+
         if kwargs:
             kwargs.update(**{
                 "FunctionName": FunctionName,
                 "Configuration": Configuration,
                 "FPath": FPath,
                 "src_code_hash": src_code_hash,
-                "config_hash": config_hash
+                "config_hash": config_hash,
+                "parent_resources": parents
             })
             super().__init__(**kwargs)
         else:
@@ -189,3 +199,7 @@ class aws_lambda_function(Rendered_Resource):
         }
 
         extra='ignore'
+
+    def get_parent_resources(self):
+        return self.parent_resources
+

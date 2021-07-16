@@ -16,6 +16,7 @@ def plan():
     project.initialize_project()
     rendered_frontend = frontend_executer.execute_frontend()
     project_diffs = resource_state_manager.create_project_diffs(rendered_frontend)
+    print(project_diffs)
     backend_executer.validate_diffs(project_diffs)
      
 

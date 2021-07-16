@@ -109,14 +109,14 @@ def _create_serverless_function_resources(mod, fp) -> List[aws_lambda_function]:
         writer.write_intermediate_file(fp, function_info_obj.needed_lines, full_path)
         final_function_info['FPath'] = paths.get_relative_to_project_path(full_path)
         
-        final_function_info['Configuration'] = function_info_obj.configuration
+        final_function_info['Configuration'] = lambda_function_configuration(**function_info_obj.configuration)
         final_function_info['FunctionName'] = function_info_obj.name
 
 
 
         final_function_info['src_code_hash'] = hasher.hash_file(full_path)
-        print(f"AM I HEHRE {function_info_obj.configuration}")
-        final_function_info['config_hash'] = lambda_function_configuration(**function_info_obj.configuration).get_cdev_hash()
+
+        final_function_info['config_hash'] = final_function_info['Configuration'].get_cdev_hash()
 
         # Create the total hash
         final_function_info['hash'] = hasher.hash_list([final_function_info['src_code_hash'], final_function_info['config_hash']])
@@ -175,7 +175,6 @@ def _find_serverless_function_information_in_module(python_module) -> List[pre_p
     for _name, func in listOfFunctions:
         if func.__qualname__.startswith(ANNOTATION_LABEL+"."):
             info = _convert_to_preparsed_info(func())
-            print(info)
             serverless_function_information.append(info)
             
 

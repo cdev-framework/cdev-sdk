@@ -17,18 +17,25 @@ class Cdev_FileSystem_Component(Cdev_Component):
         super().__init__(name)
         self.fp = fp
 
-    def render(self) -> Rendered_Component :
+    def render(self) -> Rendered_Component:
         """Render this component based on the information in the files at the provided folder path"""
         resources_sorted = finder.parse_folder(self.fp, self.get_name())        
         total_component_hash =  hasher.hash_list([x.hash for x in resources_sorted])
 
-
+        all_parents = set()
+        for resource in resources_sorted:
+            tmp = resource.get_parent_resources()
+            if tmp:
+                all_parents.update(tmp)
+        
+        print(all_parents)
 
         rv = Rendered_Component (
             **{
                 "rendered_resources": resources_sorted,
                 "hash": total_component_hash,
-                "name": self.get_name()
+                "name": self.get_name(),
+                "all_parent_resources": all_parents
             }
         )
 

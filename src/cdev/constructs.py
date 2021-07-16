@@ -1,6 +1,6 @@
 from typing import List, Dict, Set, Callable
 
-from .models import Rendered_Component, Resource_State_Difference
+from .models import Rendered_Component, Resource_State_Difference, Cloud_Output
 
 
 
@@ -142,8 +142,12 @@ class Cdev_Project():
 
 
 class Cdev_Resource():
-    def __init__(self) -> None:
+    def __init__(self, name: str ) -> None:
+        self.name = name
         pass
 
     def render(self) -> str:
         return "::"
+
+    def from_output(key: str) -> Cloud_Output:
+        return Cloud_Output()
