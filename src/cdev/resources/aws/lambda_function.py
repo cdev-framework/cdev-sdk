@@ -186,7 +186,7 @@ class aws_lambda_function(Rendered_Resource):
                 "FPath": FPath,
                 "src_code_hash": src_code_hash,
                 "config_hash": config_hash,
-                "parent_resources": parents
+                "parent_resources": list(parents)
             })
             super().__init__(**kwargs)
         else:

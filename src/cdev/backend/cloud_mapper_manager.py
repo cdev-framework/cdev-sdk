@@ -79,6 +79,7 @@ def remove_cloud_resource(identifier: str, old_resource) -> bool:
         return False
 
     try:
+        
         cloud_mapping.state[identifier].deployed_resources.remove(old_resource)
     except Exception as e:
         print(e)

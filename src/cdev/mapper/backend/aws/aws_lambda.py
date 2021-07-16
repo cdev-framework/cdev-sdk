@@ -178,16 +178,7 @@ def _delete_lambda_function(delete_event: delete_aws_lambda_function_event):
     return
 
 def _replace_old_lambda_object(identifier: str, previous_resource: aws_lambda_function, new_resource: aws_lambda_function):
-
-    previous_base_config = { k:v for (k,v) in previous_resource.Configuration.items() if v }
-    new_base_config = { k:v for (k,v) in new_resource.Configuration.dict().items() if v }
-    
-
-    previous_resource.Configuration = previous_base_config
-    new_resource.Configuration = new_base_config 
-
-    cdev_cloud_mapper.remove_cloud_resource(identifier, previous_resource)
-
+    cdev_cloud_mapper.remove_cloud_resource(identifier, previous_resource.dict())
 
     cdev_cloud_mapper.add_cloud_resource(identifier, new_resource)
 
@@ -211,7 +202,7 @@ def handle_aws_lambda_deployment(resource_diff: Resource_State_Difference) -> bo
             
             
             if not resource_diff.new_resource.src_code_hash == resource_diff.previous_resource.src_code_hash:
-                # IF the source code hash is different than reploy lambda code 
+                # IF the source code hash is different than redeploy lambda code 
                 upload_lambda_function_code(resource_diff.previous_resource.hash, resource_diff.new_resource)
 
                 update_lambda_function_code(resource_diff.new_resource)

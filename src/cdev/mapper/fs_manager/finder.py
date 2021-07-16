@@ -108,6 +108,8 @@ def _create_serverless_function_resources(mod, fp) -> List[aws_lambda_function]:
         full_path = fs_utils.get_parsed_path(fp, function_info_obj.handler_name)
         writer.write_intermediate_file(fp, function_info_obj.needed_lines, full_path)
         final_function_info['FPath'] = paths.get_relative_to_project_path(full_path)
+
+        function_info_obj.configuration["Handler"] = function_info_obj.configuration["Handler"] +"."+ function_info_obj.configuration["Handler"]
         
         final_function_info['Configuration'] = lambda_function_configuration(**function_info_obj.configuration)
         final_function_info['FunctionName'] = function_info_obj.name

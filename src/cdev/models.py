@@ -47,7 +47,7 @@ class Rendered_Resource(BaseModel):
     instead of update. 
     """
 
-    parent_resources: Optional[Set[str]]
+    parent_resources: Optional[List[str]]
     """
     A set of all resource identifications (ruuid:hash) that are a parent resource to some other resource in the component. This set serves as 
     a fast way of checking if we need to update descandants when a resource is updated 
