@@ -1,6 +1,6 @@
 import os
 
-from .models import CloudMapping
+from .models import CloudMapping, CloudState
 
 from . import utils as backend_utils
 from ..models import Rendered_State
@@ -14,7 +14,10 @@ def initialize_backend(project_name):
 
     cloudmapping = CloudMapping(**{
         "state": {
-            "1111": [{}]
+            "1111": CloudState(**{
+                "output": {},
+                "deployed_resources": []
+            })
         }
     })
 

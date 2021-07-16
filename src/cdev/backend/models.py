@@ -7,8 +7,13 @@ from enum import Enum
 from pydantic import BaseModel
 
 
+
+class CloudState(BaseModel):
+    deployed_resources: List[Dict]
+    output: Dict
+
 class CloudMapping(BaseModel):
-    state: Dict[str,List[Dict]]
+    state: Dict[str,CloudState]
     """
     Dictionary from hash of the resource to the Cloud Resources
     """

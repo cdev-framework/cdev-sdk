@@ -17,7 +17,7 @@ from . import aws_s3, aws_s3_models
 client = aws_client.get_boto_client("lambda")
 
 
-def upload_lambda_function_code(idenifier: str, lambda_resource: aws_lambda_function):
+def upload_lambda_function_code(identifier: str, lambda_resource: aws_lambda_function):
     filename = os.path.split(lambda_resource.FPath)[1]
     keyname = filename[:-3] + f"-{lambda_resource.hash}" + ".zip"
 
@@ -32,13 +32,13 @@ def upload_lambda_function_code(idenifier: str, lambda_resource: aws_lambda_func
     }))
 
 
-    cdev_cloud_mapper.add_cloud_resource(idenifier, {
+    cdev_cloud_mapper.add_cloud_resource(identifier, {
             "Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"),
             "Key": keyname
     })
 
 
-def create_lambda_function(idenifier: str, lambda_resource: aws_lambda_function):
+def create_lambda_function(identifier: str, lambda_resource: aws_lambda_function):
     filename = os.path.split(lambda_resource.FPath)[1]
     keyname = filename[:-3] + f"-{lambda_resource.hash}" + ".zip"
     function_name = lambda_resource.FunctionName
@@ -55,7 +55,7 @@ def create_lambda_function(idenifier: str, lambda_resource: aws_lambda_function)
     _create_lambda_function(event)
     lambda_resource.Configuration = base_config
 
-    cdev_cloud_mapper.add_cloud_resource(idenifier, lambda_resource)
+    cdev_cloud_mapper.add_cloud_resource(identifier, lambda_resource)
 
 
 def update_lambda_function_code(lambda_resource: aws_lambda_function):
@@ -69,7 +69,7 @@ def update_lambda_function_code(lambda_resource: aws_lambda_function):
     ))
 
 
-def delete_lambda_function(idenifier: str, lambda_resource: aws_lambda_function):
+def delete_lambda_function(identifier: str, lambda_resource: aws_lambda_function):
 
     _delete_lambda_function(delete_aws_lambda_function_event(
         **{"FunctionName": lambda_resource.FunctionName}
@@ -80,7 +80,7 @@ def delete_lambda_function(idenifier: str, lambda_resource: aws_lambda_function)
     lambda_resource.Configuration = base_config
 
 
-    cdev_cloud_mapper.remove_cloud_resource(idenifier, lambda_resource)
+    cdev_cloud_mapper.remove_cloud_resource(identifier, lambda_resource)
 
 
 def _create_lambda_function(create_event: create_aws_lambda_function_event) -> bool:
@@ -204,7 +204,7 @@ def handle_aws_lambda_deployment(resource_diff: Resource_State_Difference) -> bo
 
         elif resource_diff.action_type == Action_Type.DELETE:
             delete_lambda_function(resource_diff.previous_resource.hash, resource_diff.previous_resource)
-            cdev_cloud_mapper.remove_indentifier(resource_diff.previous_resource.hash)
+            cdev_cloud_mapper.remove_identifier(resource_diff.previous_resource.hash)
 
 
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
@@ -215,10 +215,11 @@ def handle_aws_lambda_deployment(resource_diff: Resource_State_Difference) -> bo
                 upload_lambda_function_code(resource_diff.previous_resource.hash, resource_diff.new_resource)
 
                 update_lambda_function_code(resource_diff.new_resource)
+                print("UPDATE A LAMBDAS CODE")
 
             _replace_old_lambda_object(resource_diff.previous_resource.hash, resource_diff.previous_resource, resource_diff.new_resource)
             cdev_cloud_mapper.reidentify_cloud_resource(resource_diff.previous_resource.hash, resource_diff.new_resource.hash)
-
+            
         
     except Exception as e:
         print(e)
@@ -239,4 +240,6 @@ def _wrap_get_cloud_output(val: Union[Cloud_Output, str]) -> str:
     if isinstance(val, str):
         return val
 
-    return "TableName"
+    identifier = val.resource.split("::")[-1]
+    print(f'LOOKING UP OUTPUT {val.key} FROM {identifier}')
+    return cdev_cloud_mapper.get_output_value(identifier, val.key)

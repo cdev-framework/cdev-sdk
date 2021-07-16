@@ -102,9 +102,11 @@ class dynamo_db_table(Rendered_Resource):
 
 
 
+
 class DynamoDBTable_Output(str, Enum):
     TableArn = "TableArn"
     TableName = "TableName"
+
 
 class DynamoDBTable(Cdev_Resource):
     """

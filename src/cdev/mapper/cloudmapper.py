@@ -7,7 +7,7 @@ from cdev.settings import SETTINGS
 
 from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
 
-from .backend.aws import aws_lambda
+from .backend.aws import aws_lambda, aws_dynamodb
 
 
 class DefaultMapper(CloudMapper):
@@ -17,9 +17,7 @@ class DefaultMapper(CloudMapper):
     def get_namespaces(self) -> List[str]:
         return ["cdev"]
 
-    def deploy_resource(self, resource_diff: Resource_State_Difference) -> Resource_State_Difference:
-        
-        
+    def deploy_resource(self, resource_diff: Resource_State_Difference) -> bool:
         if not resource_diff.action_type == Action_Type.DELETE:
             if not resource_diff.new_resource.ruuid in self.get_resource_to_handler():
                 # TODO throw error
@@ -32,18 +30,12 @@ class DefaultMapper(CloudMapper):
 
         return True
 
-    def render_resource_outputs(self, resource_diff):
+    def render_resource_outputs(self, resource_diff)-> Resource_State_Difference:
         if resource_diff.new_resource:
             resource_diff.new_resource = self.get_resource_to_output_renderer()[resource_diff.new_resource.ruuid](resource_diff.new_resource)
-
+        print(f"    RENDERED RESOURCE ->> {resource_diff}")
         return resource_diff
 
-def handle_aws_dynamodb_deployment(resource_diff: Resource_State_Difference):
-    # TODO throw error if resource is not lambda function
-    if resource_diff.action_type == Action_Type.CREATE:
-        cdev_cloud_mapper.add_cloud_resource(resource_diff.new_resource.hash, {"s3key": resource_diff.new_resource.TableName})
-    
-    #print(f"DYNAMODB {resource_diff}")
 
 def dynamodb_replace_output(resource):
     return resource
@@ -51,7 +43,7 @@ def dynamodb_replace_output(resource):
 
 RESOURCE_TO_HANDLER_FUNCTION = {
     "cdev::aws::lambda_function": aws_lambda.handle_aws_lambda_deployment,
-    "cdev::aws::dynamodb": handle_aws_dynamodb_deployment
+    "cdev::aws::dynamodb": aws_dynamodb.handle_dynamodb_deployment
 }
 
 RESOURCE_TO_OUTPUT_RENDERER = {
