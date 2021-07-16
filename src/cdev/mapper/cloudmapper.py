@@ -1,6 +1,4 @@
-import os
 from typing import List
-from cdev.mapper.backend.aws.aws_lambda_models import create_aws_lambda_function, delete_aws_lambda_function
 
 
 from cdev.models import Action_Type, Resource_State_Difference
@@ -10,10 +8,6 @@ from cdev.settings import SETTINGS
 from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
 
 from .backend.aws import aws_lambda
-from .backend.aws import aws_s3, aws_s3_models 
-
-from cdev.resources.aws.s3 import s3_object
-from cdev.resources.aws.lambda_function import lambda_function_configuration, lambda_runtime_environments, lambda_function_configuration_environment
 
 
 class DefaultMapper(CloudMapper):
@@ -39,100 +33,6 @@ class DefaultMapper(CloudMapper):
         print(f"DEPLOYING -> {resource_diff}")
 
         return True
-
-
-def handle_aws_lambda_deployment(resource_diff: Resource_State_Difference):
-    # TODO throw error if resource is not lambda function
-    print()
-    if resource_diff.action_type == Action_Type.CREATE:
-        try: 
-            filename = os.path.split(resource_diff.new_resource.FPath)[1]
-            original_zipname = filename[:-3] + ".zip"
-            keyname = filename[:-3] + f"-{resource_diff.new_resource.hash}" + ".zip"
-            zip_location = os.path.join(os.path.dirname(resource_diff.new_resource.FPath), original_zipname )
-            
-            aws_s3.put_object(put_object_event=aws_s3_models.put_object_event(**{
-                "Filename": zip_location,
-                "Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"),
-                "Key": keyname
-            }))
-
-            cdev_cloud_mapper.add_cloud_resource(resource_diff.new_resource.hash, {
-            "Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"),
-            "Key": keyname
-            })
-            
-
-            base_config = { k:v for (k,v) in resource_diff.new_resource.Configuration.dict().items() if v }
-            function_name = resource_diff.new_resource.FunctionName
-             
-
-            event = create_aws_lambda_function(function_name, s3_object(**{
-                                                "S3Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"),
-                                                "S3Key": keyname
-                                                }),
-                                                base_config)
-
-            
-            aws_lambda.create_lambda_function(event)
-
-            cdev_cloud_mapper.add_cloud_resource(resource_diff.new_resource.hash, {
-                "FunctionName": function_name,
-                "Code": s3_object(**{
-                        "S3Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"),
-                        "S3Key": keyname
-                    }),
-                "Configuration": base_config
-            })
-
-        except Exception as e:
-            print("EXCEPTION IS RIGHT HERE")
-            print(e)
-
-
-    elif resource_diff.action_type == Action_Type.DELETE:
-        try:
-            filename = os.path.split(resource_diff.previous_resource.FPath)[1]
-            original_zipname = filename[:-3] + ".zip"
-            keyname = filename[:-3] + f"-{resource_diff.previous_resource.hash}" + ".zip"
-            zip_location = os.path.join(os.path.dirname(resource_diff.previous_resource.FPath), original_zipname )
-
-            base_config = base_config = { k:v for (k,v) in resource_diff.previous_resource.Configuration.items() if v }
-            function_name = resource_diff.previous_resource.FunctionName
-
-            aws_lambda.delete_lambda_function(delete_aws_lambda_function(
-                **{"FunctionName": function_name}
-            ))
-
-            
-
-            cdev_cloud_mapper.remove_cloud_resource(resource_diff.previous_resource.hash, 
-                {
-                "FunctionName": function_name,
-                "Code": s3_object(**{
-                        "S3Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"),
-                        "S3Key": keyname
-                    }),
-                "Configuration": base_config
-                }
-            )
-
-            cdev_cloud_mapper.remove_cloud_resource(resource_diff.previous_resource.hash, {
-            "Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"),
-            "Key": keyname
-            })
-
-            cdev_cloud_mapper.remove_indentifier(resource_diff.previous_resource.hash)
-
-        except Exception as e:
-            print(e)
-
-    elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
-        pass
-
-    elif resource_diff.action_type == Action_Type.UPDATE_NAME:
-        pass
-
     
 
 def handle_aws_dynamodb_deployment(resource_diff: Resource_State_Difference):
@@ -144,6 +44,6 @@ def handle_aws_dynamodb_deployment(resource_diff: Resource_State_Difference):
 
 
 RESOURCE_TO_HANDLER_FUNCTION = {
-    "cdev::aws::lambda_function": handle_aws_lambda_deployment,
+    "cdev::aws::lambda_function": aws_lambda.handle_aws_lambda_deployment,
     "cdev::aws::dynamodb": handle_aws_dynamodb_deployment
 }

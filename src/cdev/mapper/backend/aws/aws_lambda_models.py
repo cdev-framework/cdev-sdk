@@ -5,7 +5,7 @@ from cdev.resources.aws import s3, lambda_function
 
 
 
-class create_aws_lambda_function(BaseModel):
+class create_aws_lambda_function_event(BaseModel):
     """ 
     
     (AWS documentation Link) 
@@ -30,7 +30,7 @@ class create_aws_lambda_function(BaseModel):
         })
 
 
-class delete_aws_lambda_function(BaseModel):
+class delete_aws_lambda_function_event(BaseModel):
     """
     (AWS documentation Link)
     Model that encapsulates the needed paramaters to **DELETE** a lambda function using the boto3 client. 
@@ -42,7 +42,7 @@ class delete_aws_lambda_function(BaseModel):
     FunctionName: str
 
 
-class update_lambda_function_code(BaseModel):
+class update_lambda_function_code_event(BaseModel):
     """
     (AWS documentation Link)
     Model that encapsulates the needed paramaters to **UPDATE** a lambda function's code using the boto3 client. 
@@ -52,9 +52,17 @@ class update_lambda_function_code(BaseModel):
         Code: S3 object that denotes the uploaded artifact
     """
     FunctionName: str
-    Code: s3.s3_object
+    S3Bucket: str
+    S3Key: str
 
-class update_lambda_configuration(BaseModel):
+    def __init__(__pydantic_self__, FunctionName: str, S3Bucket: str, S3Key: str) -> None:
+        super().__init__(**{
+            "FunctionName": FunctionName,
+            "S3Bucket": S3Bucket,
+            "S3Key": S3Key
+        })
+
+class update_lambda_configuration_event(BaseModel):
     """
     (AWS documentation Link)
     Model that encapsulates the needed paramaters to **UPDATE** a lambda function's configuration using the boto3 client. 
@@ -67,7 +75,7 @@ class update_lambda_configuration(BaseModel):
     Configuration: lambda_function.lambda_function_configuration
 
 
-class create_lambda_eventsource(BaseModel):
+class create_lambda_eventsource_event(BaseModel):
     """
     (AWS documentation Link)
     Model that encapsulates the needed paramaters to **CREATE** a lambda function event source.
