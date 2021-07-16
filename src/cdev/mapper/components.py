@@ -28,7 +28,7 @@ class Cdev_FileSystem_Component(Cdev_Component):
             if tmp:
                 all_parents.update(tmp)
         
-        print(all_parents)
+        
 
         rv = Rendered_Component (
             **{

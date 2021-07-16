@@ -33,7 +33,7 @@ class DefaultMapper(CloudMapper):
     def render_resource_outputs(self, resource_diff)-> Resource_State_Difference:
         if resource_diff.new_resource:
             resource_diff.new_resource = self.get_resource_to_output_renderer()[resource_diff.new_resource.ruuid](resource_diff.new_resource)
-        print(f"    RENDERED RESOURCE ->> {resource_diff}")
+        
         return resource_diff
 
 

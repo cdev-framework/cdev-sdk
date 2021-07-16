@@ -28,7 +28,6 @@ def get_resource_state_path():
 
 
 def write_resource_state(state: Rendered_State):
-    print(state.dict())
     with open(FULL_RESOURCE_STATE_PATH, 'w') as fp:
         fp.write(state.json(indent=4))
 
