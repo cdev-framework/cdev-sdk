@@ -68,6 +68,16 @@ def update_lambda_function_code(lambda_resource: aws_lambda_function):
         S3Key=keyname
     ))
 
+def update_lambda_function_configuration(lambda_resource: aws_lambda_function):
+
+    base_config = { k:v for (k,v) in lambda_resource.Configuration.dict().items() if v }
+    _update_lambda_function_configuration(
+        update_lambda_configuration_event(
+            FunctionName=lambda_resource.FunctionName,
+            Configuration=base_config
+        )
+    )
+
 
 def delete_lambda_function(identifier: str, lambda_resource: aws_lambda_function):
 
@@ -148,7 +158,7 @@ def _update_lambda_function_configuration(update_configuration_event: update_lam
 
 
     try:
-        response = client.update_function_configuration(**update_configuration_event.dict())
+        response = client.update_function_configuration(**args)
         print(f"AWS RESPONSE -> {json.dumps(response)}")
     except botocore.exceptions.ClientError as e:
         print(e.response)
@@ -207,6 +217,10 @@ def handle_aws_lambda_deployment(resource_diff: Resource_State_Difference) -> bo
 
                 update_lambda_function_code(resource_diff.new_resource)
                 print("UPDATE A LAMBDAS CODE")
+
+            if not resource_diff.new_resource.config_hash == resource_diff.previous_resource.config_hash:
+                update_lambda_function_configuration(resource_diff.new_resource)
+                print("UPDATE_LAMBDA_CONFIG")
 
             _replace_old_lambda_object(resource_diff.previous_resource.hash, resource_diff.previous_resource, resource_diff.new_resource)
             cdev_cloud_mapper.reidentify_cloud_resource(resource_diff.previous_resource.hash, resource_diff.new_resource.hash)

@@ -74,6 +74,12 @@ class update_lambda_configuration_event(BaseModel):
     FunctionName: str
     Configuration: lambda_function.lambda_function_configuration
 
+    def __init__(__pydantic_self__, FunctionName: str, Configuration: lambda_function.lambda_function_configuration) -> None:
+        super().__init__(**{
+            "FunctionName": FunctionName,
+            "Configuration": Configuration
+        })
+
 
 class create_lambda_eventsource_event(BaseModel):
     """
