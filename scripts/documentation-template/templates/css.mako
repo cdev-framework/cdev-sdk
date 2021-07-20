@@ -12,6 +12,7 @@
 
   body {
     line-height: 1.5em;
+    background: #EEE
   }
 
   #content {
@@ -26,6 +27,23 @@
     #sidebar > *:last-child {
       margin-bottom: 2cm;
     }
+
+  
+  #sidebar::-webkit-scrollbar {
+      width: 8px;
+  }
+
+  #sidebar::-webkit-scrollbar-track {
+
+      border-radius: 10px;
+      background: #f1f1f100;
+  }
+
+  #sidebar::-webkit-scrollbar-thumb {
+      border-radius: 10px;
+      background: linear-gradient( 37deg, rgb(247,70,58) 1%, rgb(180,62,121) 80% );
+
+  }
 
   % if lunr_search is not None:
   #lunr-search {
@@ -111,7 +129,7 @@
     display: block;
     margin-left: auto;
     margin-right: auto;
-    width: 50%;
+    width: 25%;
   }
 
 
@@ -203,7 +221,7 @@
       margin: 10px 0;
     }
     .name {
-      background: #eee;
+      background: #e0e0e0;
       font-weight: bold;
       font-size: .85em;
       padding: 5px 10px;
@@ -335,7 +353,7 @@
     }
     #content {
       width: 70%;
-      max-width: 100ch;
+      max-width: 200ch;
       padding: 3em 4em;
       border-left: 1px solid #ddd;
     }
@@ -358,6 +376,7 @@
       margin-top: .5em;
     }
   }
+
 </%def>
 
 <%def name="print()" filter="minify_css">
@@ -440,4 +459,5 @@
         page-break-after: avoid;
     }
 }
+
 </%def>

@@ -11,6 +11,11 @@ from .backend.aws import aws_lambda, aws_dynamodb
 
 
 class DefaultMapper(CloudMapper):
+    """
+    This is the class documentation 
+
+    ---------------------------------
+    """
     def __init__(self) -> None:
         super().__init__(RESOURCE_TO_HANDLER_FUNCTION,RESOURCE_TO_OUTPUT_RENDERER)
 

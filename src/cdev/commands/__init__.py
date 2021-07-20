@@ -1,3 +1,7 @@
+"""
+All the commands available for use
+"""
+
 import os
 
 
@@ -7,9 +11,6 @@ from cdev.backend import resource_state_manager
 from cdev.backend import initializer
 from cdev.utils import project
 
-"""
-Some doc string
-"""
 
 def plan():
 

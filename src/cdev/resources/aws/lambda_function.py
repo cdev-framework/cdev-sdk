@@ -162,6 +162,10 @@ class lambda_function_configuration(BaseModel):
 
 
 class aws_lambda_function(Rendered_Resource):
+    """
+    An aws lambda function
+    """
+
     FunctionName: str
     Configuration: lambda_function_configuration
     FPath: str # Don't use FilePath because this will be a relative path and might not always point correctly to a file in all contexts

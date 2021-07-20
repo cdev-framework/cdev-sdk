@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>cdev.models API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background:#EEE}#content{padding:20px}#sidebar{padding:30px;overflow:hidden;background:#07085d}#sidebar > *:last-child{margin-bottom:2cm}#sidebar::-webkit-scrollbar{width:8px}#sidebar::-webkit-scrollbar-track{border-radius:10px;background:#f1f1f100}#sidebar::-webkit-scrollbar-thumb{border-radius:10px;background:linear-gradient( 37deg,rgb(247,70,58) 1%,rgb(180,62,121) 80% )}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}a.sidebar{color:white;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#f7463a}a.nav-header{color:white}img.logo-img{display:block;margin-left:auto;margin-right:auto;width:25%}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#e0e0e0;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{height:100vh;overflow:auto;position:sticky;top:0;background:#07085d}#content{width:70%;max-width:200ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}.static-nav-bg{background-color:#07085d}.navigation{padding:20px 100px;transition:.3s ease;&.nav-bg{background-color:#07085d;padding:15px 100px;@include desktop{padding:15px 20px}}@include desktop{padding:20px;background:#07085d}}.navbar{.nav-item{.nav-link{font-family:'Poppins',sans-serif;padding:15px;font-size:18px}&.active{font-weight:bold}}.dropdown{&-menu{box-shadow:0px 3px 9px 0px rgba(0,0,0,0.12);padding:15px;border:0;top:calc(100% - 2px);left:-10px;border-radius:0;background:#fff;&.show{display:block !important}}&-item{position:relative;color:#000;transition:.2s ease;font-family:'Poppins',sans-serif;padding:10px;text-decoration:none;margin-bottom:0 !important;&:not(:last-child){margin-bottom:10px}}}}.navbar-dark .navbar-nav .nav-link{color:#FFF}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<header class="static-nav-bg navigation">
+<nav class="navbar navbar-expand-lg navbar-dark">
+<a class="navbar-brand" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/"><img class='logo-img' src="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/images/Logo.svg" alt="Cdev | Dynamic Serverless Framework"></a>
+<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation"
+aria-controls="navigation" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse text-center" id="navigation">
+<ul class="navbar-nav ml-auto">
+<li class="nav-item dropdown ">
+<a class="nav-link dropdown-toggle" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/docs" role="button" data-toggle="dropdown" aria-haspopup="true"
+aria-expanded="false">
+Docs
+</a>
+<div class="dropdown-menu
+dropdown-mobile" >
+<a class="dropdown-item dropdown-item-mobile" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/docs/tutorials">Tutorials</a>
+<a class="dropdown-item dropdown-item-mobile" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/docs/firstprinciples">First Principles</a>
+<a class="dropdown-item dropdown-item-mobile" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/docs/examples">Example Projects</a>
+<a class="dropdown-item dropdown-item-mobile" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/docs/api">API</a>
+</div>
+</li>
+<li class="nav-item">
+<a class="nav-link" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/about">About</a>
+</li>
+<li class="nav-item">
+<a class="nav-link" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/contact">Contact</a>
+</li>
+</ul>
+</div>
+</nav>
+</header>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cdev.models</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from typing import (
+    Deque, Dict, FrozenSet, List, Optional, Sequence, Set, Tuple, Union
+)
+
+from enum import Enum
+
+from pydantic import BaseModel
+
+
+class Rendered_Resource(BaseModel):
+    &#34;&#34;&#34;
+    This is the most basic information needed to describe a rendered resource. 
+
+    --- Attributes ---
+
+    - ruuid -&gt;  a string that represents the resource identifier (provider::resource-type)
+
+    - hash  -&gt;  a string that is the hash of this object. This hash must be computed such that 
+                it changes only if a change in the state is desired.
+        
+    **BASEMODEL DOCUMENTATION:**
+    &#34;&#34;&#34;
+
+
+    ruuid: str
+    &#34;&#34;&#34;
+    Name space indemnificator that is used to pass this resource to a downstream mapper
+
+    Form: (top-level-namespace):(resource-type-id)
+    &#34;&#34;&#34;
+
+
+    hash: str
+    &#34;&#34;&#34;
+    This is a hash that is used to identify if changes in the resources have occurred. It should have the property:
+    - This value changes only if a there is a change in the resource. 
+    &#34;&#34;&#34;
+
+
+    name: str
+    &#34;&#34;&#34;
+    This is a human readable logical name for the resource. This must be unique for the resource within the namespace and resource type
+    (i.e. the concat value of &lt;ruuid&gt;:&lt;name&gt; must be unique)
+
+    This value is important for allow human level refactoring of resources. To update a resources name once created, you must edit only the 
+    name and not change the hash. If you change both the hash and name in the same deployment, it will register this as a delete and create 
+    instead of update. 
+    &#34;&#34;&#34;
+
+    parent_resources: Optional[List[str]]
+    &#34;&#34;&#34;
+    A set of all resource identifications (ruuid:hash) that are a parent resource to some other resource in the component. This set serves as 
+    a fast way of checking if we need to update descandants when a resource is updated 
+    &#34;&#34;&#34;
+
+    class Config:
+        validate_assignment = True
+        extra = &#39;allow&#39;
+
+
+    def get_parent_resources(self) -&gt; List[str]:
+        &#34;&#34;&#34;
+        This function returns any resources that this resources depeneds on via the Output mechanism
+        &#34;&#34;&#34;
+        return None
+
+
+class Cloud_Output(BaseModel):
+    &#34;&#34;&#34;
+    Often we want resources that depend on the value of output of other resoures that is only known after a cloud resource is created. This servers
+    as an placeholder for that desired value until it is available. 
+    &#34;&#34;&#34;
+
+    resource: str
+    &#34;&#34;&#34;
+    ruuid:hash
+    &#34;&#34;&#34;
+
+    key: str
+    &#34;&#34;&#34;
+    The key to lookup the output value by (ex: arn)
+    &#34;&#34;&#34;
+        
+    def __str__(self) -&gt; str:
+        return f&#34;{self.resource}$${self.key}&#34;
+
+    
+
+
+class Rendered_Component(BaseModel):
+    &#34;&#34;&#34;
+    **Rendered_Resource**
+
+    This is the most basic information needed to describe a rendered component. 
+
+    --- Attributes ---
+
+    - rendered_resources -&gt;  a list of rendered resources that make up this resource
+
+    - hash  -&gt;  a string that is the hash of this component. This hash must be computed such that 
+                it changes only if a change in the state is desired.
+
+    - name  -&gt;  a string that is the human readable name for this component
+        
+    **BASEMODEL DOCUMENTATION:**
+    &#34;&#34;&#34;
+
+
+
+    rendered_resources: Union[List[Rendered_Resource], None]
+    &#34;&#34;&#34;
+    List of Rendered Resources that make up the current state of this component
+    &#34;&#34;&#34;
+
+
+    hash: str
+    &#34;&#34;&#34;
+    A hash that is used to identify if changes in the resources have occurred. It should have the property:
+    - This value changes only if a there is a change in the resource. 
+    &#34;&#34;&#34;
+
+
+    name: str
+    &#34;&#34;&#34;
+    A human readable logical name for the component. 
+
+    This value is important for allow human level refactoring of components. To update a component name once created, you must edit only the 
+    name and not change the hash. If you change both the hash and name in the same deployment, it will register this as a delete and create 
+    instead of update. 
+    &#34;&#34;&#34;
+
+    all_parent_resources: Optional[Set[str]]
+    &#34;&#34;&#34;
+    A set of all resource identifications (ruuid:hash) that are a parent resource to some other resource in the component. This set serves as 
+    a fast way of checking if we need to update descandants when a resource is updated 
+    &#34;&#34;&#34;
+
+
+
+class Rendered_State(BaseModel):
+    &#34;&#34;&#34;
+    This is the most basic information needed to describe a projects rendered state. 
+
+    --- Attributes ---
+
+    - rendered_components -&gt;  a list of rendered components that make up this project
+
+    - hash  -&gt;  a string that is the hash of this component. This hash must be computed such that 
+                it changes only if a change in the state is desired.
+
+    **BASEMODEL DOCUMENTATION:**
+    &#34;&#34;&#34;
+    rendered_components: Union[List[Rendered_Component], None]
+    hash: str
+
+
+
+class Action_Type(str, Enum):
+    CREATE=&#39;CREATE&#39;
+    UPDATE_IDENTITY=&#39;UPDATE_IDENTITY&#39;
+    UPDATE_NAME=&#39;UPDATE_NAME&#39;
+    DELETE=&#39;DELETE&#39;
+
+
+
+class Resource_State_Difference(BaseModel):
+    action_type: Action_Type
+    previous_resource: Union[Rendered_Resource, None]
+    new_resource: Union[Rendered_Resource, None]
+
+    class Config:  
+        use_enum_values = True
+
+
+class Component_State_Difference(BaseModel):
+    action_type: Action_Type
+    previous_component: Union[Rendered_Component, None]
+    new_component: Union[Rendered_Component, None]
+
+    resource_diffs: Union[List[Resource_State_Difference], None]
+
+    class Config:  
+        use_enum_values = True</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cdev.models.Action_Type"><code class="flex name class">
+<span>class <span class="ident">Action_Type</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>An enumeration.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Action_Type(str, Enum):
+    CREATE=&#39;CREATE&#39;
+    UPDATE_IDENTITY=&#39;UPDATE_IDENTITY&#39;
+    UPDATE_NAME=&#39;UPDATE_NAME&#39;
+    DELETE=&#39;DELETE&#39;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>builtins.str</li>
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cdev.models.Action_Type.CREATE"><code class="name">var <span class="ident">CREATE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cdev.models.Action_Type.DELETE"><code class="name">var <span class="ident">DELETE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cdev.models.Action_Type.UPDATE_IDENTITY"><code class="name">var <span class="ident">UPDATE_IDENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cdev.models.Action_Type.UPDATE_NAME"><code class="name">var <span class="ident">UPDATE_NAME</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="cdev.models.Cloud_Output"><code class="flex name class">
+<span>class <span class="ident">Cloud_Output</span></span>
+<span>(</span><span>**data: Any)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Often we want resources that depend on the value of output of other resoures that is only known after a cloud resource is created. This servers
+as an placeholder for that desired value until it is available. </p>
+<p>Create a new model by parsing and validating input data from keyword arguments.</p>
+<p>Raises ValidationError if the input data cannot be parsed to form a valid model.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Cloud_Output(BaseModel):
+    &#34;&#34;&#34;
+    Often we want resources that depend on the value of output of other resoures that is only known after a cloud resource is created. This servers
+    as an placeholder for that desired value until it is available. 
+    &#34;&#34;&#34;
+
+    resource: str
+    &#34;&#34;&#34;
+    ruuid:hash
+    &#34;&#34;&#34;
+
+    key: str
+    &#34;&#34;&#34;
+    The key to lookup the output value by (ex: arn)
+    &#34;&#34;&#34;
+        
+    def __str__(self) -&gt; str:
+        return f&#34;{self.resource}$${self.key}&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>pydantic.main.BaseModel</li>
+<li>pydantic.utils.Representation</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cdev.models.Cloud_Output.key"><code class="name">var <span class="ident">key</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The key to lookup the output value by (ex: arn)</p></div>
+</dd>
+<dt id="cdev.models.Cloud_Output.resource"><code class="name">var <span class="ident">resource</span> : str</code></dt>
+<dd>
+<div class="desc"><p>ruuid:hash</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="cdev.models.Component_State_Difference"><code class="flex name class">
+<span>class <span class="ident">Component_State_Difference</span></span>
+<span>(</span><span>**data: Any)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create a new model by parsing and validating input data from keyword arguments.</p>
+<p>Raises ValidationError if the input data cannot be parsed to form a valid model.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Component_State_Difference(BaseModel):
+    action_type: Action_Type
+    previous_component: Union[Rendered_Component, None]
+    new_component: Union[Rendered_Component, None]
+
+    resource_diffs: Union[List[Resource_State_Difference], None]
+
+    class Config:  
+        use_enum_values = True</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>pydantic.main.BaseModel</li>
+<li>pydantic.utils.Representation</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cdev.models.Component_State_Difference.Config"><code class="name">var <span class="ident">Config</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cdev.models.Component_State_Difference.action_type"><code class="name">var <span class="ident">action_type</span> : <a class="" title="cdev.models.Action_Type" href="#cdev.models.Action_Type">Action_Type</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cdev.models.Component_State_Difference.new_component"><code class="name">var <span class="ident">new_component</span> : Union[<a class="" title="cdev.models.Rendered_Component" href="#cdev.models.Rendered_Component">Rendered_Component</a>, NoneType]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cdev.models.Component_State_Difference.previous_component"><code class="name">var <span class="ident">previous_component</span> : Union[<a class="" title="cdev.models.Rendered_Component" href="#cdev.models.Rendered_Component">Rendered_Component</a>, NoneType]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cdev.models.Component_State_Difference.resource_diffs"><code class="name">var <span class="ident">resource_diffs</span> : Union[List[<a class="" title="cdev.models.Resource_State_Difference" href="#cdev.models.Resource_State_Difference">Resource_State_Difference</a>], NoneType]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="cdev.models.Rendered_Component"><code class="flex name class">
+<span>class <span class="ident">Rendered_Component</span></span>
+<span>(</span><span>**data: Any)</span>
+</code></dt>
+<dd>
+<div class="desc"><p><strong>Rendered_Resource</strong></p>
+<p>This is the most basic information needed to describe a rendered component. </p>
+<p>&mdash; Attributes &mdash;</p>
+<ul>
+<li>
+<p>rendered_resources -&gt;
+a list of rendered resources that make up this resource</p>
+</li>
+<li>
+<p>hash
+-&gt;
+a string that is the hash of this component. This hash must be computed such that
+it changes only if a change in the state is desired.</p>
+</li>
+<li>
+<p>name
+-&gt;
+a string that is the human readable name for this component</p>
+</li>
+</ul>
+<p><strong>BASEMODEL DOCUMENTATION:</strong></p>
+<p>Create a new model by parsing and validating input data from keyword arguments.</p>
+<p>Raises ValidationError if the input data cannot be parsed to form a valid model.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Rendered_Component(BaseModel):
+    &#34;&#34;&#34;
+    **Rendered_Resource**
+
+    This is the most basic information needed to describe a rendered component. 
+
+    --- Attributes ---
+
+    - rendered_resources -&gt;  a list of rendered resources that make up this resource
+
+    - hash  -&gt;  a string that is the hash of this component. This hash must be computed such that 
+                it changes only if a change in the state is desired.
+
+    - name  -&gt;  a string that is the human readable name for this component
+        
+    **BASEMODEL DOCUMENTATION:**
+    &#34;&#34;&#34;
+
+
+
+    rendered_resources: Union[List[Rendered_Resource], None]
+    &#34;&#34;&#34;
+    List of Rendered Resources that make up the current state of this component
+    &#34;&#34;&#34;
+
+
+    hash: str
+    &#34;&#34;&#34;
+    A hash that is used to identify if changes in the resources have occurred. It should have the property:
+    - This value changes only if a there is a change in the resource. 
+    &#34;&#34;&#34;
+
+
+    name: str
+    &#34;&#34;&#34;
+    A human readable logical name for the component. 
+
+    This value is important for allow human level refactoring of components. To update a component name once created, you must edit only the 
+    name and not change the hash. If you change both the hash and name in the same deployment, it will register this as a delete and create 
+    instead of update. 
+    &#34;&#34;&#34;
+
+    all_parent_resources: Optional[Set[str]]
+    &#34;&#34;&#34;
+    A set of all resource identifications (ruuid:hash) that are a parent resource to some other resource in the component. This set serves as 
+    a fast way of checking if we need to update descandants when a resource is updated 
+    &#34;&#34;&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>pydantic.main.BaseModel</li>
+<li>pydantic.utils.Representation</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cdev.models.Rendered_Component.all_parent_resources"><code class="name">var <span class="ident">all_parent_resources</span> : Union[Set[str], NoneType]</code></dt>
+<dd>
+<div class="desc"><p>A set of all resource identifications (ruuid:hash) that are a parent resource to some other resource in the component. This set serves as
+a fast way of checking if we need to update descandants when a resource is updated</p></div>
+</dd>
+<dt id="cdev.models.Rendered_Component.hash"><code class="name">var <span class="ident">hash</span> : str</code></dt>
+<dd>
+<div class="desc"><p>A hash that is used to identify if changes in the resources have occurred. It should have the property:
+- This value changes only if a there is a change in the resource.</p></div>
+</dd>
+<dt id="cdev.models.Rendered_Component.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
+<dd>
+<div class="desc"><p>A human readable logical name for the component. </p>
+<p>This value is important for allow human level refactoring of components. To update a component name once created, you must edit only the
+name and not change the hash. If you change both the hash and name in the same deployment, it will register this as a delete and create
+instead of update.</p></div>
+</dd>
+<dt id="cdev.models.Rendered_Component.rendered_resources"><code class="name">var <span class="ident">rendered_resources</span> : Union[List[<a class="" title="cdev.models.Rendered_Resource" href="#cdev.models.Rendered_Resource">Rendered_Resource</a>], NoneType]</code></dt>
+<dd>
+<div class="desc"><p>List of Rendered Resources that make up the current state of this component</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="cdev.models.Rendered_Resource"><code class="flex name class">
+<span>class <span class="ident">Rendered_Resource</span></span>
+<span>(</span><span>**data: Any)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This is the most basic information needed to describe a rendered resource. </p>
+<p>&mdash; Attributes &mdash;</p>
+<ul>
+<li>
+<p>ruuid -&gt;
+a string that represents the resource identifier (provider::resource-type)</p>
+</li>
+<li>
+<p>hash
+-&gt;
+a string that is the hash of this object. This hash must be computed such that
+it changes only if a change in the state is desired.</p>
+</li>
+</ul>
+<p><strong>BASEMODEL DOCUMENTATION:</strong></p>
+<p>Create a new model by parsing and validating input data from keyword arguments.</p>
+<p>Raises ValidationError if the input data cannot be parsed to form a valid model.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Rendered_Resource(BaseModel):
+    &#34;&#34;&#34;
+    This is the most basic information needed to describe a rendered resource. 
+
+    --- Attributes ---
+
+    - ruuid -&gt;  a string that represents the resource identifier (provider::resource-type)
+
+    - hash  -&gt;  a string that is the hash of this object. This hash must be computed such that 
+                it changes only if a change in the state is desired.
+        
+    **BASEMODEL DOCUMENTATION:**
+    &#34;&#34;&#34;
+
+
+    ruuid: str
+    &#34;&#34;&#34;
+    Name space indemnificator that is used to pass this resource to a downstream mapper
+
+    Form: (top-level-namespace):(resource-type-id)
+    &#34;&#34;&#34;
+
+
+    hash: str
+    &#34;&#34;&#34;
+    This is a hash that is used to identify if changes in the resources have occurred. It should have the property:
+    - This value changes only if a there is a change in the resource. 
+    &#34;&#34;&#34;
+
+
+    name: str
+    &#34;&#34;&#34;
+    This is a human readable logical name for the resource. This must be unique for the resource within the namespace and resource type
+    (i.e. the concat value of &lt;ruuid&gt;:&lt;name&gt; must be unique)
+
+    This value is important for allow human level refactoring of resources. To update a resources name once created, you must edit only the 
+    name and not change the hash. If you change both the hash and name in the same deployment, it will register this as a delete and create 
+    instead of update. 
+    &#34;&#34;&#34;
+
+    parent_resources: Optional[List[str]]
+    &#34;&#34;&#34;
+    A set of all resource identifications (ruuid:hash) that are a parent resource to some other resource in the component. This set serves as 
+    a fast way of checking if we need to update descandants when a resource is updated 
+    &#34;&#34;&#34;
+
+    class Config:
+        validate_assignment = True
+        extra = &#39;allow&#39;
+
+
+    def get_parent_resources(self) -&gt; List[str]:
+        &#34;&#34;&#34;
+        This function returns any resources that this resources depeneds on via the Output mechanism
+        &#34;&#34;&#34;
+        return None</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>pydantic.main.BaseModel</li>
+<li>pydantic.utils.Representation</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a class="" title="cdev.mapper.fs_manager.models.parsed_serverless_function_resource" href="mapper/fs_manager/models.html#cdev.mapper.fs_manager.models.parsed_serverless_function_resource">parsed_serverless_function_resource</a></li>
+<li><a class="" title="cdev.resources.aws.dynamodb.dynamo_db_table" href="resources/aws/dynamodb.html#cdev.resources.aws.dynamodb.dynamo_db_table">dynamo_db_table</a></li>
+<li><a class="" title="cdev.resources.aws.lambda_function.aws_lambda_function" href="resources/aws/lambda_function.html#cdev.resources.aws.lambda_function.aws_lambda_function">aws_lambda_function</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cdev.models.Rendered_Resource.Config"><code class="name">var <span class="ident">Config</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cdev.models.Rendered_Resource.hash"><code class="name">var <span class="ident">hash</span> : str</code></dt>
+<dd>
+<div class="desc"><p>This is a hash that is used to identify if changes in the resources have occurred. It should have the property:
+- This value changes only if a there is a change in the resource.</p></div>
+</dd>
+<dt id="cdev.models.Rendered_Resource.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
+<dd>
+<div class="desc"><p>This is a human readable logical name for the resource. This must be unique for the resource within the namespace and resource type
+(i.e. the concat value of <ruuid>:<name> must be unique)</p>
+<p>This value is important for allow human level refactoring of resources. To update a resources name once created, you must edit only the
+name and not change the hash. If you change both the hash and name in the same deployment, it will register this as a delete and create
+instead of update.</p></div>
+</dd>
+<dt id="cdev.models.Rendered_Resource.parent_resources"><code class="name">var <span class="ident">parent_resources</span> : Union[List[str], NoneType]</code></dt>
+<dd>
+<div class="desc"><p>A set of all resource identifications (ruuid:hash) that are a parent resource to some other resource in the component. This set serves as
+a fast way of checking if we need to update descandants when a resource is updated</p></div>
+</dd>
+<dt id="cdev.models.Rendered_Resource.ruuid"><code class="name">var <span class="ident">ruuid</span> : str</code></dt>
+<dd>
+<div class="desc"><p>Name space indemnificator that is used to pass this resource to a downstream mapper</p>
+<p>Form: (top-level-namespace):(resource-type-id)</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cdev.models.Rendered_Resource.get_parent_resources"><code class="name flex">
+<span>def <span class="ident">get_parent_resources</span></span>(<span>self) ‑> List[str]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This function returns any resources that this resources depeneds on via the Output mechanism</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_parent_resources(self) -&gt; List[str]:
+    &#34;&#34;&#34;
+    This function returns any resources that this resources depeneds on via the Output mechanism
+    &#34;&#34;&#34;
+    return None</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cdev.models.Rendered_State"><code class="flex name class">
+<span>class <span class="ident">Rendered_State</span></span>
+<span>(</span><span>**data: Any)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This is the most basic information needed to describe a projects rendered state. </p>
+<p>&mdash; Attributes &mdash;</p>
+<ul>
+<li>
+<p>rendered_components -&gt;
+a list of rendered components that make up this project</p>
+</li>
+<li>
+<p>hash
+-&gt;
+a string that is the hash of this component. This hash must be computed such that
+it changes only if a change in the state is desired.</p>
+</li>
+</ul>
+<p><strong>BASEMODEL DOCUMENTATION:</strong></p>
+<p>Create a new model by parsing and validating input data from keyword arguments.</p>
+<p>Raises ValidationError if the input data cannot be parsed to form a valid model.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Rendered_State(BaseModel):
+    &#34;&#34;&#34;
+    This is the most basic information needed to describe a projects rendered state. 
+
+    --- Attributes ---
+
+    - rendered_components -&gt;  a list of rendered components that make up this project
+
+    - hash  -&gt;  a string that is the hash of this component. This hash must be computed such that 
+                it changes only if a change in the state is desired.
+
+    **BASEMODEL DOCUMENTATION:**
+    &#34;&#34;&#34;
+    rendered_components: Union[List[Rendered_Component], None]
+    hash: str</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>pydantic.main.BaseModel</li>
+<li>pydantic.utils.Representation</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cdev.models.Rendered_State.hash"><code class="name">var <span class="ident">hash</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cdev.models.Rendered_State.rendered_components"><code class="name">var <span class="ident">rendered_components</span> : Union[List[<a class="" title="cdev.models.Rendered_Component" href="#cdev.models.Rendered_Component">Rendered_Component</a>], NoneType]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="cdev.models.Resource_State_Difference"><code class="flex name class">
+<span>class <span class="ident">Resource_State_Difference</span></span>
+<span>(</span><span>**data: Any)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create a new model by parsing and validating input data from keyword arguments.</p>
+<p>Raises ValidationError if the input data cannot be parsed to form a valid model.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Resource_State_Difference(BaseModel):
+    action_type: Action_Type
+    previous_resource: Union[Rendered_Resource, None]
+    new_resource: Union[Rendered_Resource, None]
+
+    class Config:  
+        use_enum_values = True</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>pydantic.main.BaseModel</li>
+<li>pydantic.utils.Representation</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cdev.models.Resource_State_Difference.Config"><code class="name">var <span class="ident">Config</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cdev.models.Resource_State_Difference.action_type"><code class="name">var <span class="ident">action_type</span> : <a class="" title="cdev.models.Action_Type" href="#cdev.models.Action_Type">Action_Type</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cdev.models.Resource_State_Difference.new_resource"><code class="name">var <span class="ident">new_resource</span> : Union[<a class="" title="cdev.models.Rendered_Resource" href="#cdev.models.Rendered_Resource">Rendered_Resource</a>, NoneType]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cdev.models.Resource_State_Difference.previous_resource"><code class="name">var <span class="ident">previous_resource</span> : Union[<a class="" title="cdev.models.Rendered_Resource" href="#cdev.models.Rendered_Resource">Rendered_Resource</a>, NoneType]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<img class='logo-img' src="/images/Logo.svg" alt="site">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a class="sidebar" title="cdev" href="index.html">cdev</a></code></li>
+</ul>
+</li>
+<li><h3><a class='nav-header' href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a class="sidebar" title="cdev.models.Action_Type" href="#cdev.models.Action_Type">Action_Type</a></code></h4>
+<ul >
+<li><code><a class="sidebar" title="cdev.models.Action_Type.CREATE" href="#cdev.models.Action_Type.CREATE">CREATE</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Action_Type.DELETE" href="#cdev.models.Action_Type.DELETE">DELETE</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Action_Type.UPDATE_IDENTITY" href="#cdev.models.Action_Type.UPDATE_IDENTITY">UPDATE_IDENTITY</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Action_Type.UPDATE_NAME" href="#cdev.models.Action_Type.UPDATE_NAME">UPDATE_NAME</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a class="sidebar" title="cdev.models.Cloud_Output" href="#cdev.models.Cloud_Output">Cloud_Output</a></code></h4>
+<ul >
+<li><code><a class="sidebar" title="cdev.models.Cloud_Output.key" href="#cdev.models.Cloud_Output.key">key</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Cloud_Output.resource" href="#cdev.models.Cloud_Output.resource">resource</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a class="sidebar" title="cdev.models.Component_State_Difference" href="#cdev.models.Component_State_Difference">Component_State_Difference</a></code></h4>
+<ul >
+<li><code><a class="sidebar" title="cdev.models.Component_State_Difference.Config" href="#cdev.models.Component_State_Difference.Config">Config</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Component_State_Difference.action_type" href="#cdev.models.Component_State_Difference.action_type">action_type</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Component_State_Difference.new_component" href="#cdev.models.Component_State_Difference.new_component">new_component</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Component_State_Difference.previous_component" href="#cdev.models.Component_State_Difference.previous_component">previous_component</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Component_State_Difference.resource_diffs" href="#cdev.models.Component_State_Difference.resource_diffs">resource_diffs</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a class="sidebar" title="cdev.models.Rendered_Component" href="#cdev.models.Rendered_Component">Rendered_Component</a></code></h4>
+<ul >
+<li><code><a class="sidebar" title="cdev.models.Rendered_Component.all_parent_resources" href="#cdev.models.Rendered_Component.all_parent_resources">all_parent_resources</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Rendered_Component.hash" href="#cdev.models.Rendered_Component.hash">hash</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Rendered_Component.name" href="#cdev.models.Rendered_Component.name">name</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Rendered_Component.rendered_resources" href="#cdev.models.Rendered_Component.rendered_resources">rendered_resources</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a class="sidebar" title="cdev.models.Rendered_Resource" href="#cdev.models.Rendered_Resource">Rendered_Resource</a></code></h4>
+<ul >
+<li><code><a class="sidebar" title="cdev.models.Rendered_Resource.Config" href="#cdev.models.Rendered_Resource.Config">Config</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Rendered_Resource.get_parent_resources" href="#cdev.models.Rendered_Resource.get_parent_resources">get_parent_resources</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Rendered_Resource.hash" href="#cdev.models.Rendered_Resource.hash">hash</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Rendered_Resource.name" href="#cdev.models.Rendered_Resource.name">name</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Rendered_Resource.parent_resources" href="#cdev.models.Rendered_Resource.parent_resources">parent_resources</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Rendered_Resource.ruuid" href="#cdev.models.Rendered_Resource.ruuid">ruuid</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a class="sidebar" title="cdev.models.Rendered_State" href="#cdev.models.Rendered_State">Rendered_State</a></code></h4>
+<ul >
+<li><code><a class="sidebar" title="cdev.models.Rendered_State.hash" href="#cdev.models.Rendered_State.hash">hash</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Rendered_State.rendered_components" href="#cdev.models.Rendered_State.rendered_components">rendered_components</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a class="sidebar" title="cdev.models.Resource_State_Difference" href="#cdev.models.Resource_State_Difference">Resource_State_Difference</a></code></h4>
+<ul >
+<li><code><a class="sidebar" title="cdev.models.Resource_State_Difference.Config" href="#cdev.models.Resource_State_Difference.Config">Config</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Resource_State_Difference.action_type" href="#cdev.models.Resource_State_Difference.action_type">action_type</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Resource_State_Difference.new_resource" href="#cdev.models.Resource_State_Difference.new_resource">new_resource</a></code></li>
+<li><code><a class="sidebar" title="cdev.models.Resource_State_Difference.previous_resource" href="#cdev.models.Resource_State_Difference.previous_resource">previous_resource</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>

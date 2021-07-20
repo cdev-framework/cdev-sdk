@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>cdev.mapper.fs_manager.finder API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background:#EEE}#content{padding:20px}#sidebar{padding:30px;overflow:hidden;background:#07085d}#sidebar > *:last-child{margin-bottom:2cm}#sidebar::-webkit-scrollbar{width:8px}#sidebar::-webkit-scrollbar-track{border-radius:10px;background:#f1f1f100}#sidebar::-webkit-scrollbar-thumb{border-radius:10px;background:linear-gradient( 37deg,rgb(247,70,58) 1%,rgb(180,62,121) 80% )}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}a.sidebar{color:white;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#f7463a}a.nav-header{color:white}img.logo-img{display:block;margin-left:auto;margin-right:auto;width:25%}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#e0e0e0;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{height:100vh;overflow:auto;position:sticky;top:0;background:#07085d}#content{width:70%;max-width:200ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}.static-nav-bg{background-color:#07085d}.navigation{padding:20px 100px;transition:.3s ease;&.nav-bg{background-color:#07085d;padding:15px 100px;@include desktop{padding:15px 20px}}@include desktop{padding:20px;background:#07085d}}.navbar{.nav-item{.nav-link{font-family:'Poppins',sans-serif;padding:15px;font-size:18px}&.active{font-weight:bold}}.dropdown{&-menu{box-shadow:0px 3px 9px 0px rgba(0,0,0,0.12);padding:15px;border:0;top:calc(100% - 2px);left:-10px;border-radius:0;background:#fff;&.show{display:block !important}}&-item{position:relative;color:#000;transition:.2s ease;font-family:'Poppins',sans-serif;padding:10px;text-decoration:none;margin-bottom:0 !important;&:not(:last-child){margin-bottom:10px}}}}.navbar-dark .navbar-nav .nav-link{color:#FFF}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<header class="static-nav-bg navigation">
+<nav class="navbar navbar-expand-lg navbar-dark">
+<a class="navbar-brand" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/"><img class='logo-img' src="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/images/Logo.svg" alt="Cdev | Dynamic Serverless Framework"></a>
+<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation"
+aria-controls="navigation" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse text-center" id="navigation">
+<ul class="navbar-nav ml-auto">
+<li class="nav-item dropdown ">
+<a class="nav-link dropdown-toggle" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/docs" role="button" data-toggle="dropdown" aria-haspopup="true"
+aria-expanded="false">
+Docs
+</a>
+<div class="dropdown-menu
+dropdown-mobile" >
+<a class="dropdown-item dropdown-item-mobile" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/docs/tutorials">Tutorials</a>
+<a class="dropdown-item dropdown-item-mobile" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/docs/firstprinciples">First Principles</a>
+<a class="dropdown-item dropdown-item-mobile" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/docs/examples">Example Projects</a>
+<a class="dropdown-item dropdown-item-mobile" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/docs/api">API</a>
+</div>
+</li>
+<li class="nav-item">
+<a class="nav-link" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/about">About</a>
+</li>
+<li class="nav-item">
+<a class="nav-link" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/contact">Contact</a>
+</li>
+</ul>
+</div>
+</nav>
+</header>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cdev.mapper.fs_manager.finder</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import inspect
+import importlib
+import os
+import sys
+from sortedcontainers.sortedlist import SortedKeyList, SortedList
+from typing import List
+
+
+from cdev.constructs import Cdev_Resource
+from cdev.models import Rendered_Resource
+from cdev.resources.aws.lambda_function import aws_lambda_function, lambda_function_configuration
+from cdev.utils import hasher, paths
+
+from ..cparser import cdev_parser as cparser
+
+from  .models import pre_parsed_serverless_function, parsed_serverless_function_info, parsed_serverless_function_resource
+
+from . import utils as fs_utils
+from . import writer
+
+
+ANNOTATION_LABEL = &#34;lambda_function_annotation&#34;
+
+
+def _get_module_name_from_path(fp):
+    return fp.split(&#34;/&#34;)[-1][:-3]
+
+
+def _find_resources_information_from_file(fp) -&gt; List[Rendered_Resource]:
+    # Input: filepath
+    if not os.path.isfile(fp):
+        print(&#34;OH NO&#34;)
+        return
+
+    mod_name = _get_module_name_from_path(fp)
+        
+    if sys.modules.get(mod_name):
+        print(f&#34;already loaded {mod_name}&#34;)
+        importlib.reload(sys.modules.get(mod_name))
+        
+    # When the python file is imported and executed all the Cdev resources are created and registered with the
+    # singleton
+    mod = importlib.import_module(mod_name)
+
+    rv = []
+
+    info = _create_serverless_function_resources(mod, fp)
+    if info:
+        rv.extend(info)
+    
+
+    for i in dir(mod):
+        if isinstance(getattr(mod,i), Cdev_Resource):
+            # Find all the Cdev_Resources in the module and render them
+            obj = getattr(mod,i)
+            rv.append(obj.render())
+
+    return rv
+
+
+def _create_serverless_function_resources(mod, fp) -&gt; List[aws_lambda_function]:
+    serverless_function_information = _find_serverless_function_information_in_module(mod)
+    
+    if not serverless_function_information:
+        return
+
+    include_functions_list = [x.handler_name for x in serverless_function_information]
+    include_functions_set = set(include_functions_list)
+
+    parsed_function_info = cparser.parse_functions_from_file(fp, include_functions=include_functions_list, remove_top_annotation=True)
+
+    handler_to_functionobj = {}
+    for serverless_func in serverless_function_information:
+
+        if serverless_func.handler_name in include_functions_set:
+            handler_to_functionobj[serverless_func.handler_name] = serverless_func
+
+    function_info = []
+
+    for parsed_function in parsed_function_info.parsed_functions:
+        tmp = handler_to_functionobj.get(parsed_function.name).dict()
+        tmp[&#34;needed_lines&#34;] = parsed_function.get_line_numbers_serializeable()
+        tmp[&#34;dependencies&#34;] = list(SortedList(parsed_function.imported_packages))
+        
+        function_info.append(parsed_serverless_function_info(**tmp))
+
+    # Get the file as a list of lines so that we can get individual lines
+    file_list = fs_utils.get_file_as_list(fp)
+    rv = []
+    for function_info_obj in function_info:
+        # TODO add ability to create the layers and events for this function
+        # For now I don&#39;t have an easy way of doing this because I have not implemented
+        # Output objects
+
+        # For each function need to add info about:
+        #   - Parsed Path Location -&gt; path to parsed file loc
+        #   - Source Code Hash     -&gt; hash([line1,line2,....])
+        #   - Dependencies Hash    -&gt; hash([dep1,dep2,...])
+        #   - Identity Hash        -&gt; hash(src_code_hash, dependencies_hash)
+        #   - Total Hash           -&gt; hash(identity_hash, metadata_hash) 
+        #   - Metadata Hash        -&gt; hash(parsed_path)
+
+        # Used keys:
+
+        # Parsed Path
+        final_function_info = {}
+
+        full_path = fs_utils.get_parsed_path(fp, function_info_obj.handler_name)
+        writer.write_intermediate_file(fp, function_info_obj.needed_lines, full_path)
+        final_function_info[&#39;FPath&#39;] = paths.get_relative_to_project_path(full_path)
+
+        function_info_obj.configuration[&#34;Handler&#34;] = function_info_obj.configuration[&#34;Handler&#34;] +&#34;.&#34;+ function_info_obj.configuration[&#34;Handler&#34;]
+        
+        final_function_info[&#39;Configuration&#39;] = lambda_function_configuration(**function_info_obj.configuration)
+        final_function_info[&#39;FunctionName&#39;] = function_info_obj.name
+
+
+
+        final_function_info[&#39;src_code_hash&#39;] = hasher.hash_file(full_path)
+
+        final_function_info[&#39;config_hash&#39;] = final_function_info[&#39;Configuration&#39;].get_cdev_hash()
+
+        # Create the total hash
+        final_function_info[&#39;hash&#39;] = hasher.hash_list([final_function_info[&#39;src_code_hash&#39;], final_function_info[&#39;config_hash&#39;]])
+        final_function_info[&#39;ruuid&#39;] = &#34;cdev::aws::lambda_function&#34;
+        final_function_info[&#39;name&#39;] = function_info_obj.name
+
+
+        # Hash of dependencies directly used in this function
+        #if function_info.get(&#39;dependencies&#39;):
+        #    dependencies_hash = hasher.hash_list(function_info.get(&#39;dependencies&#39;))
+        #else:
+        #    dependencies_hash = &#34;0&#34;
+        #
+        #function_info[&#39;dependencies_hash&#39;] = dependencies_hash
+
+
+
+
+        ## BASE RENDERED RESOURCE INFORMATION
+        
+    
+        
+
+        as_resource = aws_lambda_function(
+            **final_function_info
+        )
+
+        rv.append(as_resource)
+
+    return rv
+
+    
+
+
+def _find_serverless_function_information_in_module(python_module) -&gt; List[pre_parsed_serverless_function]:
+    listOfFunctions = inspect.getmembers(python_module, inspect.isfunction)
+    
+    if not listOfFunctions:
+        return
+
+    any_servless_functions = False
+
+    # TODO Expand this to handle other annotation symbols
+    for _name, func in listOfFunctions:
+
+        if func.__qualname__.startswith(ANNOTATION_LABEL+&#34;.&#34;):
+            any_servless_functions = True
+
+    if not any_servless_functions:
+        return
+
+
+    serverless_function_information = []
+
+
+    for _name, func in listOfFunctions:
+        if func.__qualname__.startswith(ANNOTATION_LABEL+&#34;.&#34;):
+            info = _convert_to_preparsed_info(func())
+            serverless_function_information.append(info)
+            
+
+    return serverless_function_information
+
+
+def _convert_to_preparsed_info(obj: aws_lambda_function) -&gt; pre_parsed_serverless_function:
+    return pre_parsed_serverless_function(**{
+        &#34;name&#34;: obj.name,
+        &#34;handler_name&#34;:obj.Configuration.Handler,
+        &#34;description&#34;:obj.Configuration.Description,
+        &#34;configuration&#34;: obj.Configuration 
+    })
+
+
+def parse_folder(folder_path, prefix=None) -&gt; List[Rendered_Resource]:
+    &#34;&#34;&#34;
+    This function takes a folder and goes through it looking for cdev resources. Specifically, it loads all available python files
+    and uses the loaded module to determine the resources defined in the files. Most resources are simple, but there is extra work
+    needed to handle the serverless functions. Serverless functions are parsed to optimized the actual deployed artifact using the 
+    cparser library.
+    &#34;&#34;&#34;
+    if not os.path.isdir(folder_path):
+        return None
+
+    python_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f)) and f[-3:]==&#34;.py&#34;]
+
+    original_path = os.getcwd()
+
+    os.chdir(folder_path)
+
+    sys.path.append(os.getcwd())
+
+    # [{&lt;resource&gt;}]
+    rv = SortedKeyList(key=lambda x: x.hash)
+
+
+    for pf in python_files:
+        final_function_info = _find_resources_information_from_file(os.path.join(os.getcwd(),pf))
+        if final_function_info:
+            rv.update(final_function_info)
+
+        
+    os.chdir(original_path)
+
+    return list(rv)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="cdev.mapper.fs_manager.finder.parse_folder"><code class="name flex">
+<span>def <span class="ident">parse_folder</span></span>(<span>folder_path, prefix=None) ‑> List[<a class="" title="cdev.models.Rendered_Resource" href="../../models.html#cdev.models.Rendered_Resource">Rendered_Resource</a>]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This function takes a folder and goes through it looking for cdev resources. Specifically, it loads all available python files
+and uses the loaded module to determine the resources defined in the files. Most resources are simple, but there is extra work
+needed to handle the serverless functions. Serverless functions are parsed to optimized the actual deployed artifact using the
+cparser library.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def parse_folder(folder_path, prefix=None) -&gt; List[Rendered_Resource]:
+    &#34;&#34;&#34;
+    This function takes a folder and goes through it looking for cdev resources. Specifically, it loads all available python files
+    and uses the loaded module to determine the resources defined in the files. Most resources are simple, but there is extra work
+    needed to handle the serverless functions. Serverless functions are parsed to optimized the actual deployed artifact using the 
+    cparser library.
+    &#34;&#34;&#34;
+    if not os.path.isdir(folder_path):
+        return None
+
+    python_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f)) and f[-3:]==&#34;.py&#34;]
+
+    original_path = os.getcwd()
+
+    os.chdir(folder_path)
+
+    sys.path.append(os.getcwd())
+
+    # [{&lt;resource&gt;}]
+    rv = SortedKeyList(key=lambda x: x.hash)
+
+
+    for pf in python_files:
+        final_function_info = _find_resources_information_from_file(os.path.join(os.getcwd(),pf))
+        if final_function_info:
+            rv.update(final_function_info)
+
+        
+    os.chdir(original_path)
+
+    return list(rv)</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<img class='logo-img' src="/images/Logo.svg" alt="site">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a class="sidebar" title="cdev.mapper.fs_manager" href="index.html">cdev.mapper.fs_manager</a></code></li>
+</ul>
+</li>
+<li><h3><a class='nav-header' href="#header-functions">Functions</a></h3>
+<ul >
+<li><code><a class="sidebar" title="cdev.mapper.fs_manager.finder.parse_folder" href="#cdev.mapper.fs_manager.finder.parse_folder">parse_folder</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>

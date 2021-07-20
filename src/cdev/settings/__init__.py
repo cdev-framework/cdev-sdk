@@ -1,3 +1,7 @@
+"""
+Basic available settings 
+"""
+
 import os
 
 SETTINGS = {

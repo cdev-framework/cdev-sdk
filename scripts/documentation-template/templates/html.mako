@@ -88,10 +88,7 @@
 </%def>
 
 <%def name="show_column_list(items)">
-  <%
-      two_column = len(items) >= 6 and all(len(i.name) < 20 for i in items)
-  %>
-  <ul class="${'two-column' if two_column else ''}">
+  <ul >
   % for item in items:
     <li><code>${link(item, item.name, sidebar=True)}</code></li>
   % endfor
@@ -384,7 +381,8 @@
   <style>${css.mobile()}</style>
   <style media="screen and (min-width: 700px)">${css.desktop()}</style>
   <style media="print">${css.print()}</style>
-
+  
+  
   % if latex_math:
     <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML" integrity="sha256-kZafAc6mZvK3W3v1pHOcUix30OHQN6pU/NO2oFkqZVw=" crossorigin></script>
   % endif
@@ -396,7 +394,10 @@
 
   <%include file="head.mako"/>
 </head>
+
 <body>
+
+
 <main>
   % if module_list:
     <article id="content">

@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>cdev.mapper.fs_manager.package_mananger API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background:#EEE}#content{padding:20px}#sidebar{padding:30px;overflow:hidden;background:#07085d}#sidebar > *:last-child{margin-bottom:2cm}#sidebar::-webkit-scrollbar{width:8px}#sidebar::-webkit-scrollbar-track{border-radius:10px;background:#f1f1f100}#sidebar::-webkit-scrollbar-thumb{border-radius:10px;background:linear-gradient( 37deg,rgb(247,70,58) 1%,rgb(180,62,121) 80% )}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}a.sidebar{color:white;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#f7463a}a.nav-header{color:white}img.logo-img{display:block;margin-left:auto;margin-right:auto;width:25%}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#e0e0e0;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{height:100vh;overflow:auto;position:sticky;top:0;background:#07085d}#content{width:70%;max-width:200ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}.static-nav-bg{background-color:#07085d}.navigation{padding:20px 100px;transition:.3s ease;&.nav-bg{background-color:#07085d;padding:15px 100px;@include desktop{padding:15px 20px}}@include desktop{padding:20px;background:#07085d}}.navbar{.nav-item{.nav-link{font-family:'Poppins',sans-serif;padding:15px;font-size:18px}&.active{font-weight:bold}}.dropdown{&-menu{box-shadow:0px 3px 9px 0px rgba(0,0,0,0.12);padding:15px;border:0;top:calc(100% - 2px);left:-10px;border-radius:0;background:#fff;&.show{display:block !important}}&-item{position:relative;color:#000;transition:.2s ease;font-family:'Poppins',sans-serif;padding:10px;text-decoration:none;margin-bottom:0 !important;&:not(:last-child){margin-bottom:10px}}}}.navbar-dark .navbar-nav .nav-link{color:#FFF}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<header class="static-nav-bg navigation">
+<nav class="navbar navbar-expand-lg navbar-dark">
+<a class="navbar-brand" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/"><img class='logo-img' src="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/images/Logo.svg" alt="Cdev | Dynamic Serverless Framework"></a>
+<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation"
+aria-controls="navigation" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse text-center" id="navigation">
+<ul class="navbar-nav ml-auto">
+<li class="nav-item dropdown ">
+<a class="nav-link dropdown-toggle" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/docs" role="button" data-toggle="dropdown" aria-haspopup="true"
+aria-expanded="false">
+Docs
+</a>
+<div class="dropdown-menu
+dropdown-mobile" >
+<a class="dropdown-item dropdown-item-mobile" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/docs/tutorials">Tutorials</a>
+<a class="dropdown-item dropdown-item-mobile" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/docs/firstprinciples">First Principles</a>
+<a class="dropdown-item dropdown-item-mobile" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/docs/examples">Example Projects</a>
+<a class="dropdown-item dropdown-item-mobile" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/docs/api">API</a>
+</div>
+</li>
+<li class="nav-item">
+<a class="nav-link" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/about">About</a>
+</li>
+<li class="nav-item">
+<a class="nav-link" href="http://cdevwebsitestaging.s3-website-us-east-1.amazonaws.com/contact">Contact</a>
+</li>
+</ul>
+</div>
+</nav>
+</header>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cdev.mapper.fs_manager.package_mananger</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import os
+import sys
+import pkg_resources
+from zipfile import ZipFile
+
+from cdev.settings import SETTINGS as CDEV_SETTINGS
+from ..cparser import cdev_parser 
+
+# Keep cache of already seen package names
+PACKAGE_CACHE = {}
+
+# There isn&#39;t a great runtime way of identifying python standard libraries (non C builtin libraries packaged with python).
+# So I scraped the information from the python documentation website using the ./scripts/list-python-builtins
+STANDARD_LIBRARY_FILES = [&#39;3_6&#39;, &#34;3_7&#34;, &#34;3_8&#34;]
+
+# Build a dict of pkg name to pip package obj so you don&#39;t have to loop over all the packages when doing a look up
+PKG_NAME_TO_PIP_PKG = {}
+for f in pkg_resources.working_set:
+    PKG_NAME_TO_PIP_PKG[f.key] = f
+
+
+class PackageTypes:
+    BUILTIN = &#34;builtin&#34;
+    STANDARDLIB = &#34;standardlib&#34;
+    PIP = &#34;pip&#34;
+    LOCALPACKAGE = &#34;localpackage&#34;
+    AWSINCLUDED = &#34;awsincluded&#34;
+
+def get_all_package_info(pkg_names): 
+    # Take in a list/set of all top level pkgs a function uses and return the set of ALL pkgs that are needed for its layers
+    rv = set()
+
+    for pkg_name in pkg_names:
+        rv = rv.union(get_package_info(pkg_name))
+
+    return sorted(rv)
+
+
+def get_package_info(pkg_name):
+    info =  create_package_info(pkg_name)
+
+    if info.get(&#34;flat&#34;):
+        return info.get(&#34;flat&#34;)
+
+    return set()
+
+
+def create_package_info(pkg_name):
+    # RV :  {
+    #   pkg_name: pkg_name,
+    #   type: ENUM(&#34;builtin&#34;, &#34;standardlib&#34;, &#34;pip&#34;, &#34;localpackage&#34;, &#34;awsincluded&#34;)
+    #   ?Dependencies: SET({&lt;objs&gt;}),
+    #   ?AsList: [{objs}],
+    #   ?fp: path_to_dir
+    # }
+    pkg_info =  _recursive_create_package_info(pkg_name)
+    #print(pkg_info)
+    return pkg_info
+
+
+def create_zip_archive(pkgs, layername):
+    print(layername)
+    BASE_LOCATION = os.path.join(CDEV_SETTINGS.get(&#34;CDEV_INTERMEDIATE_FOLDER_LOCATION&#34;), &#34;layers&#34;)
+
+    zip_file_location = os.path.join(BASE_LOCATION,&#34;layer_&#34;+layername+&#34;.zip&#34;)
+
+    with ZipFile(zip_file_location, &#39;w&#39;) as zipfile:
+        for pkg in pkgs:
+            pkg_info = PACKAGE_CACHE.get(pkg)
+
+            if not pkg_info:
+                print(&#34;CANT FIND INFORMATION&#34;)
+
+            for dirname, subdirs, files in os.walk(pkg_info.get(&#34;fp&#34;)):
+                zip_dir_name = os.path.normpath( os.path.join(&#39;python&#39;, pkg ,os.path.relpath(dirname ,pkg_info.get(&#39;fp&#39;) )) )
+
+                for filename in files:
+                    zipfile.write(os.path.join(dirname, filename), os.path.join(zip_dir_name, filename))
+
+    return zip_file_location
+
+
+def _recursive_create_package_info(pkg_name):
+
+    if pkg_name in PACKAGE_CACHE:
+        #print(f&#34;CACHE HIT -&gt; {pkg_name}&#34;)
+        return PACKAGE_CACHE.get(pkg_name)
+        
+
+    rv =  {&#34;pkg_name&#34;: pkg_name}
+    if not pkg_name in sys.modules and not pkg_name in PKG_NAME_TO_PIP_PKG:
+        print(f&#34;BAD PKG NAME -&gt; {pkg_name}&#34;)
+        #print(sys.modules)
+        return {}
+
+    else:
+        standard_lib_info = _load_standard_library_information(&#34;3_6&#34;)
+        aws_packages = _load_aws_packages(&#34;3_6&#34;)
+        pip_packages = _load_pip_packages()
+        mod = sys.modules.get(pkg_name)
+        
+
+        if pkg_name in standard_lib_info:
+            rv[&#34;type&#34;] = PackageTypes.STANDARDLIB 
+
+        elif pkg_name in aws_packages:
+            rv[&#34;type&#34;] = PackageTypes.AWSINCLUDED
+
+        elif pkg_name in pip_packages:
+            rv[&#34;type&#34;] = PackageTypes.PIP
+            rv[&#34;fp&#34;] = os.path.join(pip_packages.get(pkg_name).location, pkg_name)
+
+        else:
+            if mod:
+                if not mod.__file__:
+                    rv[&#34;type&#34;] = PackageTypes.BUILTIN
+                else:
+                    rv[&#34;type&#34;] = PackageTypes.LOCALPACKAGE
+                    rv[&#34;fp&#34;] = os.path.dirname(mod.__file__)
+            else:
+                print(&#34;BAADDD&#34;)
+
+        dependencies = _recursive_check_for_dependencies(rv)
+
+        rv[&#34;tree&#34;] = dependencies.get(&#34;tree&#34;)
+        rv[&#34;flat&#34;] = dependencies.get(&#34;flat&#34;)
+
+        PACKAGE_CACHE[pkg_name] = rv
+
+        return rv
+
+
+def _recursive_check_for_dependencies(obj):
+
+    if obj.get(&#34;type&#34;) == PackageTypes.BUILTIN or obj.get(&#34;type&#34;) == PackageTypes.STANDARDLIB or obj.get(&#34;type&#34;) == PackageTypes.AWSINCLUDED:
+        return obj
+
+    if obj.get(&#34;type&#34;) == PackageTypes.PIP:
+        item = PKG_NAME_TO_PIP_PKG.get(obj.get(&#34;pkg_name&#34;))
+
+        rv = {}
+        rv[&#39;flat&#39;] = set([obj.get(&#39;pkg_name&#39;)])
+        rv[&#39;tree&#39;] = []
+
+        for req in item.requires():
+            tmp = _recursive_create_package_info(req.key)
+
+            rv[&#34;tree&#34;].append(tmp)
+            if tmp.get(&#34;flat&#34;):
+                rv[&#39;flat&#39;] = rv[&#34;flat&#34;].union(tmp.get(&#34;flat&#34;))
+
+        return rv
+
+    if obj.get(&#34;type&#34;) == PackageTypes.LOCALPACKAGE:
+        items = _get_local_package_dependencies(obj)
+        print(items)
+        rv = {}
+        rv[&#39;flat&#39;] = set([obj.get(&#39;pkg_name&#39;)])
+        rv[&#39;tree&#39;] = []
+
+        for req in items:
+            tmp = _recursive_create_package_info(req)
+
+            rv[&#34;tree&#34;].append(tmp)
+            if tmp.get(&#34;flat&#34;):
+                rv[&#39;flat&#39;] = rv[&#34;flat&#34;].union(tmp.get(&#34;flat&#34;))
+
+        return rv
+
+    return obj
+
+
+    
+def _get_local_package_dependencies(pkg):
+    # This is the hardest case of dependencies to handle
+    # This is if the developer imports a local python module they created or got without pip
+    # This module can depend on other packages (local,pip,etc)
+    # The only way to get this dependency tree is to parse each file for import statements :upsidedownsmile: 
+
+    pkg_names = cdev_parser.parse_folder_for_dependencies(pkg.get(&#34;fp&#34;))
+    return pkg_names
+
+
+
+def _load_standard_library_information(version=&#34;3_6&#34;):
+    FILE_LOC = os.path.join(os.path.dirname(__file__), &#34;standard_library_names&#34;, f&#34;python_{version}&#34;)
+
+    if not os.path.isfile(FILE_LOC):
+        # TODO throw error
+        raise FileNotFoundError
+        
+    with open(FILE_LOC) as fh:
+        return set(fh.read().splitlines())
+
+
+def _load_aws_packages(version=&#34;3_6&#34;):
+    return set([&#34;boto3&#34;, &#34;botocore&#34;])
+
+
+def _load_pip_packages():
+    return PKG_NAME_TO_PIP_PKG
+    </code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="cdev.mapper.fs_manager.package_mananger.create_package_info"><code class="name flex">
+<span>def <span class="ident">create_package_info</span></span>(<span>pkg_name)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def create_package_info(pkg_name):
+    # RV :  {
+    #   pkg_name: pkg_name,
+    #   type: ENUM(&#34;builtin&#34;, &#34;standardlib&#34;, &#34;pip&#34;, &#34;localpackage&#34;, &#34;awsincluded&#34;)
+    #   ?Dependencies: SET({&lt;objs&gt;}),
+    #   ?AsList: [{objs}],
+    #   ?fp: path_to_dir
+    # }
+    pkg_info =  _recursive_create_package_info(pkg_name)
+    #print(pkg_info)
+    return pkg_info</code></pre>
+</details>
+</dd>
+<dt id="cdev.mapper.fs_manager.package_mananger.create_zip_archive"><code class="name flex">
+<span>def <span class="ident">create_zip_archive</span></span>(<span>pkgs, layername)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def create_zip_archive(pkgs, layername):
+    print(layername)
+    BASE_LOCATION = os.path.join(CDEV_SETTINGS.get(&#34;CDEV_INTERMEDIATE_FOLDER_LOCATION&#34;), &#34;layers&#34;)
+
+    zip_file_location = os.path.join(BASE_LOCATION,&#34;layer_&#34;+layername+&#34;.zip&#34;)
+
+    with ZipFile(zip_file_location, &#39;w&#39;) as zipfile:
+        for pkg in pkgs:
+            pkg_info = PACKAGE_CACHE.get(pkg)
+
+            if not pkg_info:
+                print(&#34;CANT FIND INFORMATION&#34;)
+
+            for dirname, subdirs, files in os.walk(pkg_info.get(&#34;fp&#34;)):
+                zip_dir_name = os.path.normpath( os.path.join(&#39;python&#39;, pkg ,os.path.relpath(dirname ,pkg_info.get(&#39;fp&#39;) )) )
+
+                for filename in files:
+                    zipfile.write(os.path.join(dirname, filename), os.path.join(zip_dir_name, filename))
+
+    return zip_file_location</code></pre>
+</details>
+</dd>
+<dt id="cdev.mapper.fs_manager.package_mananger.get_all_package_info"><code class="name flex">
+<span>def <span class="ident">get_all_package_info</span></span>(<span>pkg_names)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_all_package_info(pkg_names): 
+    # Take in a list/set of all top level pkgs a function uses and return the set of ALL pkgs that are needed for its layers
+    rv = set()
+
+    for pkg_name in pkg_names:
+        rv = rv.union(get_package_info(pkg_name))
+
+    return sorted(rv)</code></pre>
+</details>
+</dd>
+<dt id="cdev.mapper.fs_manager.package_mananger.get_package_info"><code class="name flex">
+<span>def <span class="ident">get_package_info</span></span>(<span>pkg_name)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_package_info(pkg_name):
+    info =  create_package_info(pkg_name)
+
+    if info.get(&#34;flat&#34;):
+        return info.get(&#34;flat&#34;)
+
+    return set()</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cdev.mapper.fs_manager.package_mananger.PackageTypes"><code class="flex name class">
+<span>class <span class="ident">PackageTypes</span></span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class PackageTypes:
+    BUILTIN = &#34;builtin&#34;
+    STANDARDLIB = &#34;standardlib&#34;
+    PIP = &#34;pip&#34;
+    LOCALPACKAGE = &#34;localpackage&#34;
+    AWSINCLUDED = &#34;awsincluded&#34;</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="cdev.mapper.fs_manager.package_mananger.PackageTypes.AWSINCLUDED"><code class="name">var <span class="ident">AWSINCLUDED</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cdev.mapper.fs_manager.package_mananger.PackageTypes.BUILTIN"><code class="name">var <span class="ident">BUILTIN</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cdev.mapper.fs_manager.package_mananger.PackageTypes.LOCALPACKAGE"><code class="name">var <span class="ident">LOCALPACKAGE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cdev.mapper.fs_manager.package_mananger.PackageTypes.PIP"><code class="name">var <span class="ident">PIP</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cdev.mapper.fs_manager.package_mananger.PackageTypes.STANDARDLIB"><code class="name">var <span class="ident">STANDARDLIB</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<img class='logo-img' src="/images/Logo.svg" alt="site">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a class="sidebar" title="cdev.mapper.fs_manager" href="index.html">cdev.mapper.fs_manager</a></code></li>
+</ul>
+</li>
+<li><h3><a class='nav-header' href="#header-functions">Functions</a></h3>
+<ul >
+<li><code><a class="sidebar" title="cdev.mapper.fs_manager.package_mananger.create_package_info" href="#cdev.mapper.fs_manager.package_mananger.create_package_info">create_package_info</a></code></li>
+<li><code><a class="sidebar" title="cdev.mapper.fs_manager.package_mananger.create_zip_archive" href="#cdev.mapper.fs_manager.package_mananger.create_zip_archive">create_zip_archive</a></code></li>
+<li><code><a class="sidebar" title="cdev.mapper.fs_manager.package_mananger.get_all_package_info" href="#cdev.mapper.fs_manager.package_mananger.get_all_package_info">get_all_package_info</a></code></li>
+<li><code><a class="sidebar" title="cdev.mapper.fs_manager.package_mananger.get_package_info" href="#cdev.mapper.fs_manager.package_mananger.get_package_info">get_package_info</a></code></li>
+</ul>
+</li>
+<li><h3><a class='nav-header' href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a class="sidebar" title="cdev.mapper.fs_manager.package_mananger.PackageTypes" href="#cdev.mapper.fs_manager.package_mananger.PackageTypes">PackageTypes</a></code></h4>
+<ul >
+<li><code><a class="sidebar" title="cdev.mapper.fs_manager.package_mananger.PackageTypes.AWSINCLUDED" href="#cdev.mapper.fs_manager.package_mananger.PackageTypes.AWSINCLUDED">AWSINCLUDED</a></code></li>
+<li><code><a class="sidebar" title="cdev.mapper.fs_manager.package_mananger.PackageTypes.BUILTIN" href="#cdev.mapper.fs_manager.package_mananger.PackageTypes.BUILTIN">BUILTIN</a></code></li>
+<li><code><a class="sidebar" title="cdev.mapper.fs_manager.package_mananger.PackageTypes.LOCALPACKAGE" href="#cdev.mapper.fs_manager.package_mananger.PackageTypes.LOCALPACKAGE">LOCALPACKAGE</a></code></li>
+<li><code><a class="sidebar" title="cdev.mapper.fs_manager.package_mananger.PackageTypes.PIP" href="#cdev.mapper.fs_manager.package_mananger.PackageTypes.PIP">PIP</a></code></li>
+<li><code><a class="sidebar" title="cdev.mapper.fs_manager.package_mananger.PackageTypes.STANDARDLIB" href="#cdev.mapper.fs_manager.package_mananger.PackageTypes.STANDARDLIB">STANDARDLIB</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>
