@@ -91,9 +91,6 @@ def handle_dynamodb_deployment(resource_diff: Resource_State_Difference) -> bool
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
             print("NOT SUPPORTED DYNAMODB UPDATES")
             return False
-        elif resource_diff.action_type == Action_Type.UPDATE_NAME:
-            print("NOT SUPPORTED DYNAMODB UPDATES")
-            return False
         elif resource_diff.action_type == Action_Type.DELETE:
             delete_table(resource_diff.previous_resource.hash, resource_diff.previous_resource)
             return True

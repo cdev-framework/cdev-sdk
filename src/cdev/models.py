@@ -135,6 +135,10 @@ class Rendered_Component(BaseModel):
     a fast way of checking if we need to update descandants when a resource is updated 
     """
 
+    
+    def get_parent_resources(self):
+        return self.all_parent_resources
+
 
 
 class Rendered_State(BaseModel):

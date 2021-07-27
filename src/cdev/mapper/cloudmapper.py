@@ -1,4 +1,5 @@
 from typing import List
+from cdev.mapper.backend.aws import aws_iam
 
 
 from cdev.models import Action_Type, Resource_State_Difference
@@ -45,13 +46,21 @@ class DefaultMapper(CloudMapper):
 def dynamodb_replace_output(resource):
     return resource
 
+def tmp(diff: Resource_State_Difference):
+    return True
+
+def tmp2(resource):
+    return resource
+
 
 RESOURCE_TO_HANDLER_FUNCTION = {
     "cdev::aws::lambda_function": aws_lambda.handle_aws_lambda_deployment,
-    "cdev::aws::dynamodb": aws_dynamodb.handle_dynamodb_deployment
+    "cdev::aws::dynamodb": aws_dynamodb.handle_dynamodb_deployment,
+    "cdev::aws::iam::policy": aws_iam.handle_aws_iam_policy_deployment
 }
 
 RESOURCE_TO_OUTPUT_RENDERER = {
     "cdev::aws::lambda_function": aws_lambda.lambda_replace_output,
-    "cdev::aws::dynamodb": dynamodb_replace_output
+    "cdev::aws::dynamodb": dynamodb_replace_output,
+    "cdev::aws::iam::policy": tmp2
 }

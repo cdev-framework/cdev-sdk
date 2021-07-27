@@ -204,6 +204,4 @@ class aws_lambda_function(Rendered_Resource):
 
         extra='ignore'
 
-    def get_parent_resources(self):
-        return self.parent_resources
 
