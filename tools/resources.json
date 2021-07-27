@@ -1,0 +1,26 @@
+{
+    "resources": [
+        {
+            "service": "iam",
+            "name": "policy",
+            "folder": "2010-05-08",
+            "create": "CreatePolicy",
+            "remove": "DeletePolicy",
+            "update": "CreatePolicyVersion"
+        },
+        {
+            "service": "dynamodb",
+            "name": "table",
+            "folder": "2012-08-10",
+            "create": {
+                "action": "CreateTable",
+                "waits": "TableExists"
+            },
+            "update": "UpdateTable",
+            "remove": {
+                "action": "DeleteTable",
+                "waits": "TableNotExists"
+            }
+        }
+    ]
+}
