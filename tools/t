@@ -1,0 +1,175 @@
+import typing
+from pydantic.main import BaseModel
+from enum import Enum
+from typing import List
+
+
+from ...constructs import Cdev_Resource
+from ...models import Cloud_Output, Rendered_Resource
+from ...utils import hasher
+
+
+
+
+class ScalarAttributeType(str, Enum): 
+
+    S = "S"
+    N = "N"
+    B = "B"
+
+
+class AttributeDefinition(BaseModel):
+
+    AttributeName: {'type': 'string', 'max': 255, 'min': 1}
+
+    AttributeType: AttributeType
+
+
+
+
+class KeyType(str, Enum): 
+
+    HASH = "HASH"
+    RANGE = "RANGE"
+
+
+class KeySchemaElement(BaseModel):
+
+    AttributeName: {'type': 'string', 'max': 255, 'min': 1}
+
+    KeyType: KeyType
+
+
+
+
+class ProjectionType(str, Enum): 
+
+    ALL = "ALL"
+    KEYS_ONLY = "KEYS_ONLY"
+    INCLUDE = "INCLUDE"
+
+
+
+class Projection(BaseModel):
+
+    ProjectionType: ProjectionType
+
+    NonKeyAttributes: List[NonKeyAttributeName]
+
+
+
+class LocalSecondaryIndex(BaseModel):
+
+    IndexName: {'type': 'string', 'max': 255, 'min': 3, 'pattern': '[a-zA-Z0-9_.-]+'}
+
+    KeySchema: List[KeySchemaElement]
+
+    Projection: Projection
+
+
+
+class ProvisionedThroughput(BaseModel):
+
+    ReadCapacityUnits: {'type': 'long', 'min': 1}
+
+    WriteCapacityUnits: {'type': 'long', 'min': 1}
+
+
+
+class GlobalSecondaryIndex(BaseModel):
+
+    IndexName: {'type': 'string', 'max': 255, 'min': 3, 'pattern': '[a-zA-Z0-9_.-]+'}
+
+    KeySchema: List[KeySchemaElement]
+
+    Projection: Projection
+
+    ProvisionedThroughput: ProvisionedThroughput
+
+
+
+class BillingMode(str, Enum): 
+
+    PROVISIONED = "PROVISIONED"
+    PAY_PER_REQUEST = "PAY_PER_REQUEST"
+
+
+class StreamViewType(str, Enum): 
+
+    NEW_IMAGE = "NEW_IMAGE"
+    OLD_IMAGE = "OLD_IMAGE"
+    NEW_AND_OLD_IMAGES = "NEW_AND_OLD_IMAGES"
+    KEYS_ONLY = "KEYS_ONLY"
+
+
+class StreamSpecification(BaseModel):
+
+    StreamEnabled: bool
+
+    StreamViewType: StreamViewType
+
+
+
+class SSEType(str, Enum): 
+
+    AES256 = "AES256"
+    KMS = "KMS"
+
+
+
+class SSESpecification(BaseModel):
+
+    Enabled: bool
+
+    SSEType: SSEType
+
+    KMSMasterKeyId: {'type': 'string'}
+
+
+
+
+
+class Tag(BaseModel):
+
+    Key: {'type': 'string', 'max': 128, 'min': 1}
+
+    Value: {'type': 'string', 'max': 256, 'min': 0}
+
+
+
+class CreateTableInput(BaseModel):
+
+    AttributeDefinitions: List[AttributeDefinition]
+
+    TableName: {'type': 'string', 'max': 255, 'min': 3, 'pattern': '[a-zA-Z0-9_.-]+'}
+
+    KeySchema: List[KeySchemaElement]
+
+    LocalSecondaryIndexes: List[LocalSecondaryIndex]
+
+    GlobalSecondaryIndexes: List[GlobalSecondaryIndex]
+
+    BillingMode: BillingMode
+
+    ProvisionedThroughput: ProvisionedThroughput
+
+    StreamSpecification: StreamSpecification
+
+    SSESpecification: SSESpecification
+
+    Tags: List[Tag]
+
+
+
+
+
+--------
+def create_table
+--------
+--------
+def delete_table
+--------
+--------
+def update_table
+--------
+

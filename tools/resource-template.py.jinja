@@ -1,5 +1,61 @@
+import typing
+from pydantic.main import BaseModel
+from enum import Enum
+from typing import List
+
+
+from ...constructs import Cdev_Resource
+from ...models import Cloud_Output, Rendered_Resource
+from ...utils import hasher
+
+{% macro render_flatstruct(struct) %}
+class {{struct.get("name")}}(BaseModel):
+
+{% for attribute_name, val in struct.get("attributes").items() %}
+    {% if val.get("type") == "string"%}
+    {{attribute_name}}: {{val}}
+
+    {% elif val.get("type") == "boolean"%}
+    {{attribute_name}}: bool
+
+    {% elif val.get("type") == "list"%}
+    {{attribute_name}}: List[{{val.get("val_type")}}]
+
+    {% elif val.get("type") == "enum"%}
+    {{attribute_name}}: {{attribute_name}}
+
+    {% elif val.get("type") == "structure"%}
+    {{attribute_name}}: {{attribute_name}}
+
+    {% elif val.get("type") == "long"%}
+    {{attribute_name}}: {{val}}
+
+    {%else%}
+    {{attribute_name}}; {{val}}
+    Bad
+
+    {% endif %}
+{% endfor %}
+
+{% endmacro %}
 
 
 {% for item in var %}
-print({{item}})
+{% if var.get(item).get("type") == "string"   %}
+    {% if "enum" in var.get(item)%}
+class {{item}}(str, Enum): 
+
+    {% for enum_val in var.get(item).get("enum") %}
+    {{enum_val}} = "{{enum_val}}"
+    {% endfor %}
+
+    {% endif %}
+
+{% else %}
+    {% if var.get(item).get("type") == "structure" %}
+{{render_flatstruct(flatten_structure(item,var.get(item),  var))}}
+    {% endif %}
+{% endif %}
 {% endfor %}
+
+
