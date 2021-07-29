@@ -20,7 +20,7 @@ class ScalarAttributeType(str, Enum):
 
 class AttributeDefinition(BaseModel):
 
-    AttributeName: {'type': 'string', 'max': 255, 'min': 1}
+    AttributeName: str
 
     AttributeType: AttributeType
 
@@ -35,7 +35,7 @@ class KeyType(str, Enum):
 
 class KeySchemaElement(BaseModel):
 
-    AttributeName: {'type': 'string', 'max': 255, 'min': 1}
+    AttributeName: str
 
     KeyType: KeyType
 
@@ -60,7 +60,7 @@ class Projection(BaseModel):
 
 class LocalSecondaryIndex(BaseModel):
 
-    IndexName: {'type': 'string', 'max': 255, 'min': 3, 'pattern': '[a-zA-Z0-9_.-]+'}
+    IndexName: str
 
     KeySchema: List[KeySchemaElement]
 
@@ -78,7 +78,7 @@ class ProvisionedThroughput(BaseModel):
 
 class GlobalSecondaryIndex(BaseModel):
 
-    IndexName: {'type': 'string', 'max': 255, 'min': 3, 'pattern': '[a-zA-Z0-9_.-]+'}
+    IndexName: str
 
     KeySchema: List[KeySchemaElement]
 
@@ -123,7 +123,7 @@ class SSESpecification(BaseModel):
 
     SSEType: SSEType
 
-    KMSMasterKeyId: {'type': 'string'}
+    KMSMasterKeyId: str
 
 
 
@@ -131,9 +131,9 @@ class SSESpecification(BaseModel):
 
 class Tag(BaseModel):
 
-    Key: {'type': 'string', 'max': 128, 'min': 1}
+    Key: str
 
-    Value: {'type': 'string', 'max': 256, 'min': 0}
+    Value: str
 
 
 
@@ -141,7 +141,7 @@ class CreateTableInput(BaseModel):
 
     AttributeDefinitions: List[AttributeDefinition]
 
-    TableName: {'type': 'string', 'max': 255, 'min': 3, 'pattern': '[a-zA-Z0-9_.-]+'}
+    TableName: str
 
     KeySchema: List[KeySchemaElement]
 
@@ -161,15 +161,4 @@ class CreateTableInput(BaseModel):
 
 
 
-
-
---------
-def create_table
---------
---------
-def delete_table
---------
---------
-def update_table
---------
 
