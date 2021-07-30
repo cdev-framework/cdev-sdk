@@ -11,3 +11,29 @@ from .{{service}}_models import *
 
 
 
+class DynamoDBTable(Cdev_Resource):
+
+
+    def __init__(self,name: str, ) -> None:
+
+        
+        super().__init__(name)
+        self.{{pythonify_symbol(attribute.get('param_name'))}}: {{pythonify_symbol(attribute.get('param_name'))}},
+        self.hash = hasher.hash_list()
+
+    def render(self):
+        data = {
+            "ruuid": "cdev::aws::dynamodb",
+            "name": self.name,
+            "hash": self.hash,
+            {% for attribute in resource.get("attributes")%}
+            "{{pythonify_symbol(attribute.get('param_name'))}}": self.{{pythonify_symbol(attribute.get('param_name'))}},
+            {% endfor %}
+        }
+
+        filtered_data = {k:v for k,v in data.items() if v}
+        
+        return dynamo_db_table(**filtered_data)
+
+    def from_output(self, key: {{outputname}}) -> Cloud_Output:
+        return Cloud_Output(**{"resource": {{ruuid}}, "key": key})

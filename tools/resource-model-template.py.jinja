@@ -1,8 +1,8 @@
 from pydantic.main import BaseModel
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Dict 
 
-from ...models import Cloud_Output, Rendered_Resource
+from ...models import Rendered_Resource
 
 {% macro render_flatstruct(struct) -%}
 class {{struct.get("name")}}(BaseModel):
@@ -53,8 +53,16 @@ class {{item}}(str, Enum):
     {% endif -%}
 {% endif %}
 {% endfor %}
-{% for resource in resources %}
 
+{% for output in output_models%}
+class {{output.get("name")}}(str, Enum):
+    {% for attribute in output.get("attributes")%}
+    {{attribute}} = "{{attribute}}"
+    {% endfor %}
+
+
+{% endfor %}
+{% for resource in resources %}
 class {{resource.get("resource_name")}}(Rendered_Resource):
     {% for attribute in resource.get("attributes")%}
     {% if attribute.get("type") == "string"%}
@@ -78,6 +86,9 @@ class {{resource.get("resource_name")}}(Rendered_Resource):
     {% elif attribute.get("type") == "integer"%}
     {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}int{{"]" if not attribute.get("isrequired") else ""}}
 
+    {% elif attribute.get("type") == "map"%}
+    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Dict[{{attribute.get('key_type')}},{{attribute.get('val_type')}}]{{"]" if not attribute.get("isrequired") else ""}}
+
     {%else%}
     {{pythonify_symbol(attribute.get("param_name"))}}; {{attribute}}
     Bad
@@ -85,12 +96,20 @@ class {{resource.get("resource_name")}}(Rendered_Resource):
     {% endfor %}
 
     def __init__(__pydantic_self__, name: str, ruuid: str, hash:str, {{ resource.get("as_params") }} ) -> None:
-        super().__init__(**{
+        data = {
             "ruuid": ruuid,
             "name": name,
             "hash": hash,
             {% for attribute in resource.get("attributes")%}
             "{{pythonify_symbol(attribute.get('param_name'))}}": {{pythonify_symbol(attribute.get('param_name'))}},
             {% endfor %}
-        })
+        }
+
+        filtered_data = {k:v for k,v in data.items() if v}
+        
+        super().__init__(**filtered_data)
+
+    class Config:
+        extra='ignore'
+
 {% endfor %}

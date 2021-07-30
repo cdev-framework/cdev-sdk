@@ -1,8 +1,8 @@
 from pydantic.main import BaseModel
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Dict 
 
-from ...models import Cloud_Output, Rendered_Resource
+from ...models import Rendered_Resource
 
 
 class ScalarAttributeType(str, Enum): 
@@ -214,7 +214,31 @@ class ReplicationGroupUpdate(BaseModel):
 
 
 
-class Table(Rendered_Resource):
+class table_output(str, Enum):
+    AttributeDefinitions = "AttributeDefinitions"
+    TableName = "TableName"
+    KeySchema = "KeySchema"
+    TableStatus = "TableStatus"
+    CreationDateTime = "CreationDateTime"
+    ProvisionedThroughput = "ProvisionedThroughput"
+    TableSizeBytes = "TableSizeBytes"
+    ItemCount = "ItemCount"
+    TableArn = "TableArn"
+    TableId = "TableId"
+    BillingModeSummary = "BillingModeSummary"
+    LocalSecondaryIndexes = "LocalSecondaryIndexes"
+    GlobalSecondaryIndexes = "GlobalSecondaryIndexes"
+    StreamSpecification = "StreamSpecification"
+    LatestStreamLabel = "LatestStreamLabel"
+    LatestStreamArn = "LatestStreamArn"
+    GlobalTableVersion = "GlobalTableVersion"
+    Replicas = "Replicas"
+    RestoreSummary = "RestoreSummary"
+    SSEDescription = "SSEDescription"
+    ArchivalSummary = "ArchivalSummary"
+
+
+class table_model(Rendered_Resource):
     AttributeDefinitions: List[AttributeDefinition]
 
     TableName: str
@@ -237,7 +261,7 @@ class Table(Rendered_Resource):
 
 
     def __init__(__pydantic_self__, name: str, ruuid: str, hash:str, AttributeDefinitions: List[AttributeDefinition], TableName: str, KeySchema: List[KeySchemaElement], LocalSecondaryIndexes: List[LocalSecondaryIndex]=None, GlobalSecondaryIndexes: List[GlobalSecondaryIndex]=None, BillingMode: BillingMode=None, ProvisionedThroughput: ProvisionedThroughput=None, StreamSpecification: StreamSpecification=None, SSESpecification: SSESpecification=None, Tags: List[Tag]=None ) -> None:
-        super().__init__(**{
+        data = {
             "ruuid": ruuid,
             "name": name,
             "hash": hash,
@@ -251,4 +275,12 @@ class Table(Rendered_Resource):
             "StreamSpecification": StreamSpecification,
             "SSESpecification": SSESpecification,
             "Tags": Tags,
-        })
+        }
+
+        filtered_data = {k:v for k,v in data.items() if v}
+        
+        super().__init__(**filtered_data)
+
+    class Config:
+        extra='ignore'
+

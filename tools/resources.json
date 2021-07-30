@@ -5,14 +5,14 @@
             "folder": "2010-05-08",
             "resources": [
                 {
-                    "name": "Policy",
+                    "name": "policy",
                     "ruuid": "cdev::aws::iam::policy",
                     "create": "CreatePolicy",
                     "remove": "DeletePolicy",
                     "update": "CreatePolicyVersion"
                 },
                 {
-                    "name": "Role",
+                    "name": "role",
                     "ruuid": "cdev::aws::iam::policy",
                     "create": "CreateRole",
                     "remove": "DeleteRole",
@@ -25,7 +25,7 @@
             "folder": "2012-08-10",
             "resources": [
                 {
-                    "name": "Table",
+                    "name": "table",
                     "ruuid": "cdev::aws::dynamodb::table",
                     "create": {
                         "action": "CreateTable",
@@ -44,11 +44,36 @@
             "folder": "2006-03-01",
             "resources": [
                 {
-                    "name": "Bucket",
+                    "name": "bucket",
                     "ruuid": "cdev::aws::s3::bucket",
                     "create": "CreateBucket",
                     "update": "ListObjects",
                     "remove": "DeleteBucket"
+                }
+            ]
+        },
+        {
+            "service": "sqs",
+            "folder": "2012-11-05",
+            "resources": [
+                {
+                    "name": "queue",
+                    "ruuid": "cdev::aws::sqs::queue",
+                    "create": "CreateQueue",
+                    "remove": "DeleteQueue"
+                }
+            ]
+        },
+        {
+            "service": "apigatewayv2",
+            "folder": "2018-11-29",
+            "resources": [
+                {
+                    "name": "api",
+                    "ruuid": "cdev::aws::apigatewayv2::api",
+                    "create": "CreateApi",
+                    "update": "UpdateApi",
+                    "remove": "DeleteApi"
                 }
             ]
         }

@@ -1,8 +1,8 @@
 from pydantic.main import BaseModel
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Dict 
 
-from ...models import Cloud_Output, Rendered_Resource
+from ...models import Rendered_Resource
 
 class BucketCannedACL(str, Enum): 
 
@@ -94,7 +94,11 @@ class RequestPayer(str, Enum):
 
 
 
-class Bucket(Rendered_Resource):
+class bucket_output(str, Enum):
+    Location = "Location"
+
+
+class bucket_model(Rendered_Resource):
     ACL: Optional[BucketCannedACL] 
 
     Bucket: str
@@ -115,7 +119,7 @@ class Bucket(Rendered_Resource):
 
 
     def __init__(__pydantic_self__, name: str, ruuid: str, hash:str, Bucket: str, ACL: BucketCannedACL=None, CreateBucketConfiguration: CreateBucketConfiguration=None, GrantFullControl: str=None, GrantRead: str=None, GrantReadACP: str=None, GrantWrite: str=None, GrantWriteACP: str=None, ObjectLockEnabledForBucket: bool=None ) -> None:
-        super().__init__(**{
+        data = {
             "ruuid": ruuid,
             "name": name,
             "hash": hash,
@@ -128,4 +132,12 @@ class Bucket(Rendered_Resource):
             "GrantWrite": GrantWrite,
             "GrantWriteACP": GrantWriteACP,
             "ObjectLockEnabledForBucket": ObjectLockEnabledForBucket,
-        })
+        }
+
+        filtered_data = {k:v for k,v in data.items() if v}
+        
+        super().__init__(**filtered_data)
+
+    class Config:
+        extra='ignore'
+

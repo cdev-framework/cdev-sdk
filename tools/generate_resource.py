@@ -20,6 +20,7 @@ TO_PYTHON_TYPES = {
 }
 
 
+
 def camel_to_snake(name):
   new_name = pattern.sub('_', name).lower()
   return new_name
@@ -46,7 +47,14 @@ def _find_all_dependent_shapes(shape_name, all_needed_shapes, botoinfo, include_
         val = botoinfo.get("shapes").get(shape_name).get("member")
         all_needed_shapes.update(_find_all_dependent_shapes(val.get("shape"), all_needed_shapes, botoinfo, True))
 
+    elif "map" == botoinfo.get("shapes").get(shape_name).get("type"):
+        key_val = botoinfo.get("shapes").get(shape_name).get("key")
+        all_needed_shapes.update(_find_all_dependent_shapes(key_val.get("shape"), all_needed_shapes, botoinfo, True))
+        value_val = botoinfo.get("shapes").get(shape_name).get("value")
+        all_needed_shapes.update(_find_all_dependent_shapes(value_val.get("shape"), all_needed_shapes, botoinfo, True))
+
     if include_this:
+        #print(f'{shape_name} -> {botoinfo.get("shapes").get(shape_name)}')
         all_needed_shapes[shape_name] = botoinfo.get("shapes").get(shape_name)
 
     return all_needed_shapes
@@ -77,6 +85,27 @@ def flatten_structure(name, structure, shape_info) -> dict:
             else:
                 original_val = shape_info.get(shape_info.get(s_name).get("member").get("shape")).get("type")
                 rv["attributes"][member_name] = {"type": "list",  "val_type": TO_PYTHON_TYPES.get(original_val)}
+
+        elif shape_info.get(s_name).get("type") == "map":
+            print(f"{member_name}:: {s_name}" )
+
+            key_type = ""
+            val_type = ""
+            key_shape = shape_info.get(s_name).get("key").get("shape")
+            val_shape = shape_info.get(s_name).get("value").get("shape")
+
+
+            if shape_info.get(key_shape).get("type") == "structure":
+                key_type = key_shape
+            else:
+                key_type = TO_PYTHON_TYPES.get(shape_info.get(key_shape).get("type"))
+
+            if shape_info.get(val_shape).get("type") == "structure":
+                val_type = val_shape
+            else:
+                val_type = TO_PYTHON_TYPES.get(shape_info.get(val_shape).get("type"))
+
+            rv["attributes"][member_name] = {"type": "map",  "val_type": val_type, "key_type": key_type }
 
         elif shape_info.get(s_name).get("type") == "string" and 'enum' in shape_info.get(s_name):
             rv["attributes"][member_name] = {"type": "enum", "name": s_name}
@@ -111,12 +140,16 @@ def flatten_attributes_to_params(attributes: list):
             final_string = f"{final_string}, {attribute.get('param_name')}: {attribute.get('name')}{'=None' if not attribute.get('isrequired') else ''}"
         if attribute.get("type") == "boolean":
             final_string = f"{final_string}, {attribute.get('param_name')}: bool{'=None' if not attribute.get('isrequired') else ''}"
+        if attribute.get("type") == "map":
+            final_string = f"{final_string}, {attribute.get('param_name')}: Dict[{attribute.get('key_type')}, {attribute.get('val_type')}]{'=None' if not attribute.get('isrequired') else ''}"
 
     return final_string[2:]
 
 def create_attributes_for_rendered_resource_from_create_info(info, botoinfo):
     actual_shape = botoinfo.get("shapes").get(info.get("input").get("shape"))
+    
     flattened_info = flatten_structure(info.get("name"), actual_shape, botoinfo.get("shapes"))
+    #print(flattened_info)
     final_attributes = []
 
     for k,v in flattened_info.get("attributes").items():
@@ -129,16 +162,26 @@ def create_attributes_for_rendered_resource_from_create_info(info, botoinfo):
 
 def create_output_attributes_from_create_info(info, botoinfo):
 
-    actual_shape_name = [k for k in botoinfo.get("shapes").get(info.get("output").get("shape")).get("members")][0]
+    
+    members = botoinfo.get("shapes").get(info.get("output").get("shape")).get("members")
+
+    if len(members.keys())== 1:
+        key = [k for k in members][0]
+        actual_shape_name = members.get(key).get("shape")
+    else:
+        actual_shape_name = info.get("output").get("shape")
+
+
+    #print(actual_shape_name)
     actual_shape =  botoinfo.get("shapes").get(actual_shape_name)
     final_attributes = []
-
+     
 
     if actual_shape.get("type") == "structure":
         for k in actual_shape.get("members"):
             final_attributes.append(k)
     elif actual_shape.get("type") == "string":
-        final_attributes.append(actual_shape_name)
+        final_attributes.append(key)
     else:
         print(f"UNSUPPORTED TYPE IN create_output_attributes_from_create_info: type {actual_shape.get('type')}")
 
@@ -172,12 +215,18 @@ def render_resources():
 
         shapes = {}
         all_resource_info = []
+        output_models = []
 
         for value in service.get("resources"):
+
             function_key_to_function = {}
             
             for key in FUNCTION_KEYS:
                 function_info = value.get(key)
+                if not function_info:
+                    print("HERE")
+                    continue
+
                 if isinstance(function_info,str):
                     function_value = botoinfo.get("operations").get(function_info)
                 elif isinstance(function_info, dict):
@@ -197,8 +246,10 @@ def render_resources():
                     
                     output_attributes = create_output_attributes_from_create_info(function_value, botoinfo)
                     print(output_attributes)
-                    
-                    resource_info = {"resource_name": value.get("name"), "attributes": resource_attributes, "as_params": flatten_attributes_to_params(resource_attributes)}
+                    output_model_info = {"name": f'{value.get("name")}_output', "attributes": output_attributes}
+                    output_models.append(output_model_info)
+
+                    resource_info = {"resource_name": f'{value.get("name")}_model', "attributes": resource_attributes, "as_params": flatten_attributes_to_params(resource_attributes)}
                     all_resource_info.append(resource_info)
                     
                     
@@ -207,7 +258,8 @@ def render_resources():
         final_info = {
             "var": shapes,
             "resources": all_resource_info,
-            "service": value.get('service')
+            "service": value.get('service'),
+            "output_models": output_models 
         }
     
         template1 = env.get_template("resource-model-template.py.jinja")
