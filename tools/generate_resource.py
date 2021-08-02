@@ -5,6 +5,7 @@ import pprint
 import re
 from sortedcontainers import SortedList
 from sortedcontainers.sortedlist import SortedListWithKey
+from markdownify import markdownify
 
 pp = pprint.PrettyPrinter()
 
@@ -100,7 +101,13 @@ def flatten_structure(name, structure, shape_info) -> dict:
 
             if shape_info.get(key_shape).get("type") == "structure":
                 key_type = key_shape
+            elif shape_info.get(key_shape).get("type") == "enum":
+                key_type = key_shape
+                print("HERHJBEKRbf fa")
+            elif shape_info.get(key_shape).get("type") == "string" and 'enum' in shape_info.get(key_shape):
+                key_type = key_shape
             else:
+                
                 key_type = TO_PYTHON_TYPES.get(shape_info.get(key_shape).get("type"))
 
             if shape_info.get(val_shape).get("type") == "structure":
@@ -151,6 +158,16 @@ def flatten_attributes_to_params(attributes: list):
 
     return final_string[2:]
 
+def flatten_attributes_to_list_input(attributes: list):
+    final_string = ""
+
+    sorted_attributes = SortedListWithKey(attributes, lambda x: not x.get("isrequired"))
+
+    for attribute in sorted_attributes:
+        final_string = f"{final_string}, self.{attribute.get('param_name')}"
+
+    return f"[{final_string[2:]}]"
+
 def create_attributes_for_rendered_resource_from_create_info(info, botoinfo):
     actual_shape = botoinfo.get("shapes").get(info.get("input").get("shape"))
     
@@ -188,7 +205,7 @@ def create_output_attributes_from_create_info(info, botoinfo):
             
             final_attributes.append({"label": k, "documentation": actual_shape.get("members").get(k).get("documentation")})
     elif actual_shape.get("type") == "string":
-        final_attributes.append({"label": key, "documentation": "st"})
+        final_attributes.append({"label": key, "documentation": actual_shape.get("documentation")})
     else:
         print(f"UNSUPPORTED TYPE IN create_output_attributes_from_create_info: type {actual_shape.get('type')}")
 
@@ -204,6 +221,7 @@ env = Environment(
 )
 env.globals['flatten_structure'] = flatten_structure
 env.globals['pythonify_symbol'] = pythonify_symbol
+env.globals['markdownify'] = markdownify
 
 
 with open(os.path.join(".","resources.json")) as fh:
@@ -253,10 +271,19 @@ def render_resources():
                     
                     output_attributes = create_output_attributes_from_create_info(function_value, botoinfo)
                     #print(output_attributes)
-                    output_model_info = {"name": f'{value.get("name")}_output', "attributes": output_attributes, 'documentation': function_value.get('documentation') }
+                    output_model_info = {"name": f'{value.get("name").lower()}_output', "attributes": output_attributes, 'documentation': function_value.get('documentation') }
                     output_models.append(output_model_info)
 
-                    resource_info = {"resource_name": f'{value.get("name")}_model', "attributes": resource_attributes, "as_params": flatten_attributes_to_params(resource_attributes), "documentation": function_value.get('documentation')}
+                    resource_info = {
+                                "resource_name": f'{value.get("name")}', 
+                                "attributes": resource_attributes, 
+                                "as_params": flatten_attributes_to_params(resource_attributes), 
+                                "as_input": flatten_attributes_to_list_input(resource_attributes),
+                                "documentation": function_value.get('documentation'),
+                                "outputname": f'{value.get("name")}_output',
+                                "ruuid": value.get("ruuid")
+                            }
+
                     all_resource_info.append(resource_info)
                     
                     
@@ -265,15 +292,21 @@ def render_resources():
         final_info = {
             "var": shapes,
             "resources": all_resource_info,
-            "service": value.get('service'),
-            "output_models": output_models 
+            "service": service.get('service'),
+            "output_models": output_models,
+            
         }
     
         template1 = env.get_template("resource-model-template.py.jinja")
         rendered_template1 = template1.render(**final_info)
         with open(os.path.join(".","output",f"{service.get('service')}_models.py"), "w") as fh:
             fh.write(rendered_template1)
-        
+
+
+        template2 = env.get_template("resource-template.py.jinja")
+        rendered_template2 = template2.render(**final_info)
+        with open(os.path.join(".","output",f"{service.get('service')}.py"), "w") as fh:
+            fh.write(rendered_template2)
 
 
 

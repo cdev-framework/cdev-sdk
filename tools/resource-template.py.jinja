@@ -10,20 +10,32 @@ from ...utils import hasher
 from .{{service}}_models import *
 
 
+{% for resource in resources%}
+class {{resource.get("resource_name")}}(Cdev_Resource):
+    {%if resource.get('documentation')%}
+    """
+    {{markdownify(resource.get('documentation'))}}
+    """
+    {%endif%}
 
-class DynamoDBTable(Cdev_Resource):
-
-
-    def __init__(self,name: str, ) -> None:
-
-        
+    def __init__(self,name: str, {{ resource.get("as_params") }}):
+        ""
         super().__init__(name)
-        self.{{pythonify_symbol(attribute.get('param_name'))}}: {{pythonify_symbol(attribute.get('param_name'))}},
-        self.hash = hasher.hash_list()
 
-    def render(self):
+        {% for attribute in resource.get("attributes")%}
+        self.{{pythonify_symbol(attribute.get("param_name"))}} = {{pythonify_symbol(attribute.get("param_name"))}}
+        {% if attribute.get('documentation')%}
+        """
+        {{markdownify(attribute.get('documentation'))}}
+        """
+        {% endif %}
+
+        {% endfor %}
+        self.hash = hasher.hash_list({{resource.get("as_input")}})
+
+    def render(self) -> {{resource.get("resource_name").lower()}}_model:
         data = {
-            "ruuid": "cdev::aws::dynamodb",
+            "ruuid": "{{resource.get('ruuid')}}",
             "name": self.name,
             "hash": self.hash,
             {% for attribute in resource.get("attributes")%}
@@ -33,7 +45,10 @@ class DynamoDBTable(Cdev_Resource):
 
         filtered_data = {k:v for k,v in data.items() if v}
         
-        return dynamo_db_table(**filtered_data)
+        return {{resource.get("resource_name").lower()}}_model(**filtered_data)
 
-    def from_output(self, key: {{outputname}}) -> Cloud_Output:
-        return Cloud_Output(**{"resource": {{ruuid}}, "key": key})
+    def from_output(self, key: {{resource.get("outputname").lower()}}) -> Cloud_Output:
+        return Cloud_Output(**{"resource": f"{{resource.get('ruuid')}}::{self.hash}", "key": key})
+
+
+{%endfor%}

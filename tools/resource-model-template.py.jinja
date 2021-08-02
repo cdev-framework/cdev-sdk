@@ -2,13 +2,16 @@ from pydantic.main import BaseModel
 from enum import Enum
 from typing import List, Optional, Dict 
 
-from ...models import Rendered_Resource
+from ...models import Cloud_Output, Rendered_Resource
 
 {% macro render_flatstruct(struct) -%}
 class {{struct.get("name")}}(BaseModel):
+    {%if struct.get('documentation')%}
     """
-    {{struct.get('documentation')}}
+    {{markdownify(struct.get('documentation').strip())}}
     """
+    {%endif%}
+
 
 {% for attribute_name, val in struct.get("attributes").items() %}
     {% if val.get("type") == "string"%}
@@ -31,7 +34,7 @@ class {{struct.get("name")}}(BaseModel):
     {% endif %}
     {% if val.get('documentation')%}
     """
-    {{val.get('documentation')}}
+    {{markdownify(val.get('documentation').strip())}}
     """
     {% endif %}
 
@@ -42,13 +45,16 @@ class {{struct.get("name")}}(BaseModel):
 {% if var.get(item).get("type") == "string" %}
 {% if "enum" in var.get(item)%}
 class {{item}}(str, Enum): 
+    {%if var.get(item).get('documentation')%}
     """
-    {{var.get(item).get('documentation')}}
+    {{markdownify(var.get(item).get('documentation').strip())}}
     """
+    {%endif%}
+
 
     {% for enum_val in var.get(item).get("enum") %}
     {{pythonify_symbol(enum_val)}} = '{{enum_val}}'
-
+    
     {% endfor %}
     {% endif %}
 
@@ -61,25 +67,32 @@ class {{item}}(str, Enum):
 
 {% for output in output_models%}
 class {{output.get("name")}}(str, Enum):
+    {%if output.get('documentation')%}
     """
-    {{output.get('documentation')}}
+    {{markdownify(output.get('documentation').strip())}}
     """
+    {%endif%}
 
     {% for attribute in output.get("attributes")%}
     {{attribute.get('label')}} = "{{attribute.get('label')}}"
+    {% if attribute.get('documentation')%}
     """
-    {{attribute.get('documentation')}}
+    {{markdownify(attribute.get('documentation').strip())}}
     """
+    {% endif %}
 
     {% endfor %}
 
 
 {% endfor %}
 {% for resource in resources %}
-class {{resource.get("resource_name")}}(Rendered_Resource):
+class {{resource.get("resource_name").lower()}}_model(Rendered_Resource):
+    {%if resource.get('documentation')%}
     """
-    {{resource.get('documentation')}}
+    {{markdownify(resource.get('documentation').strip())}}
     """
+    {%endif%}
+
 
     {% for attribute in resource.get("attributes")%}
     {% if attribute.get("type") == "string"%}
@@ -104,7 +117,7 @@ class {{resource.get("resource_name")}}(Rendered_Resource):
     {% endif %}
     {% if attribute.get('documentation')%}
     """
-    {{attribute.get('documentation')}}
+    {{markdownify(attribute.get('documentation').strip())}}
     """
     {% endif %}
 
