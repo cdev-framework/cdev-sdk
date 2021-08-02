@@ -74,6 +74,20 @@
                     "create": "CreateApi",
                     "update": "UpdateApi",
                     "remove": "DeleteApi"
+                },
+                {
+                    "name": "route",
+                    "ruuid": "cdev::aws::apigatewayv2::route",
+                    "create": "CreateRoute",
+                    "update": "UpdateRoute",
+                    "remove": "DeleteRoute"
+                },
+                {
+                    "name": "integration",
+                    "ruuid": "cdev::aws::apigatewayv2::integration",
+                    "create": "CreateIntegration",
+                    "update": "UpdateIntegration",
+                    "remove": "DeleteIntegration"
                 }
             ]
         }

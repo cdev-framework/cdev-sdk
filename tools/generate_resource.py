@@ -65,7 +65,7 @@ def flatten_structure(name, structure, shape_info) -> dict:
     rv["name"] = name 
     rv["required"] = structure.get("required")
     rv["attributes"] = {}
-
+    rv["documentation"] = structure.get("documentation")
 
 
     for member_name in structure.get("members"):
@@ -77,17 +77,20 @@ def flatten_structure(name, structure, shape_info) -> dict:
 
         if shape_info.get(s_name).get("type") == "structure":
             rv["attributes"][member_name] = {"type": "structure", "name": s_name}
+            rv["attributes"][member_name]['documentation'] = structure.get("members").get(member_name).get("documentation")
         elif shape_info.get(s_name).get("type") == "list":
 
             if shape_info.get(shape_info.get(s_name).get("member").get("shape")).get("type") == "structure":
 
                 rv["attributes"][member_name] = {"type": "list",  "val_type": shape_info.get(s_name).get("member").get("shape")}
+                rv["attributes"][member_name]['documentation'] = shape_info.get(shape_info.get(s_name).get("member").get("shape")).get("documentation")
             else:
                 original_val = shape_info.get(shape_info.get(s_name).get("member").get("shape")).get("type")
                 rv["attributes"][member_name] = {"type": "list",  "val_type": TO_PYTHON_TYPES.get(original_val)}
+                rv["attributes"][member_name]['documentation'] = shape_info.get(shape_info.get(s_name).get("member").get("shape")).get("documentation")
 
         elif shape_info.get(s_name).get("type") == "map":
-            print(f"{member_name}:: {s_name}" )
+            #print(f"{member_name}:: {s_name}" )
 
             key_type = ""
             val_type = ""
@@ -106,11 +109,14 @@ def flatten_structure(name, structure, shape_info) -> dict:
                 val_type = TO_PYTHON_TYPES.get(shape_info.get(val_shape).get("type"))
 
             rv["attributes"][member_name] = {"type": "map",  "val_type": val_type, "key_type": key_type }
+            rv["attributes"][member_name]['documentation'] = structure.get("members").get(member_name).get("documentation")
 
         elif shape_info.get(s_name).get("type") == "string" and 'enum' in shape_info.get(s_name):
             rv["attributes"][member_name] = {"type": "enum", "name": s_name}
+            rv["attributes"][member_name]['documentation'] = structure.get("members").get(member_name).get("documentation")
         else:
             rv["attributes"][member_name] = shape_info.get(s_name)
+            rv["attributes"][member_name]['documentation'] = structure.get("members").get(member_name).get("documentation")
 
     return rv
 
@@ -179,9 +185,10 @@ def create_output_attributes_from_create_info(info, botoinfo):
 
     if actual_shape.get("type") == "structure":
         for k in actual_shape.get("members"):
-            final_attributes.append(k)
+            
+            final_attributes.append({"label": k, "documentation": actual_shape.get("members").get(k).get("documentation")})
     elif actual_shape.get("type") == "string":
-        final_attributes.append(key)
+        final_attributes.append({"label": key, "documentation": "st"})
     else:
         print(f"UNSUPPORTED TYPE IN create_output_attributes_from_create_info: type {actual_shape.get('type')}")
 
@@ -245,11 +252,11 @@ def render_resources():
                     resource_attributes = create_attributes_for_rendered_resource_from_create_info(function_value, botoinfo)
                     
                     output_attributes = create_output_attributes_from_create_info(function_value, botoinfo)
-                    print(output_attributes)
-                    output_model_info = {"name": f'{value.get("name")}_output', "attributes": output_attributes}
+                    #print(output_attributes)
+                    output_model_info = {"name": f'{value.get("name")}_output', "attributes": output_attributes, 'documentation': function_value.get('documentation') }
                     output_models.append(output_model_info)
 
-                    resource_info = {"resource_name": f'{value.get("name")}_model', "attributes": resource_attributes, "as_params": flatten_attributes_to_params(resource_attributes)}
+                    resource_info = {"resource_name": f'{value.get("name")}_model', "attributes": resource_attributes, "as_params": flatten_attributes_to_params(resource_attributes), "documentation": function_value.get('documentation')}
                     all_resource_info.append(resource_info)
                     
                     

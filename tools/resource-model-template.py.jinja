@@ -6,33 +6,35 @@ from ...models import Rendered_Resource
 
 {% macro render_flatstruct(struct) -%}
 class {{struct.get("name")}}(BaseModel):
+    """
+    {{struct.get('documentation')}}
+    """
 
 {% for attribute_name, val in struct.get("attributes").items() %}
     {% if val.get("type") == "string"%}
     {{pythonify_symbol(attribute_name)}}: str
-
     {% elif val.get("type") == "boolean"%}
     {{pythonify_symbol(attribute_name)}}: bool
-
     {% elif val.get("type") == "list"%}
     {{pythonify_symbol(attribute_name)}}: List[{{val.get("val_type")}}]
-
     {% elif val.get("type") == "enum"%}
     {{pythonify_symbol(attribute_name)}}: {{val.get("name")}} 
-
     {% elif val.get("type") == "structure"%}
     {{pythonify_symbol(attribute_name)}}: {{val.get("name")}} 
-
     {% elif val.get("type") == "long"%}
     {{pythonify_symbol(attribute_name)}}: int
-
     {% elif val.get("type") == "integer"%}
     {{pythonify_symbol(attribute_name)}}: int
-
     {%else%}
     {{pythonify_symbol(attribute_name)}}; {{val}}
     Bad
     {% endif %}
+    {% if val.get('documentation')%}
+    """
+    {{val.get('documentation')}}
+    """
+    {% endif %}
+
 {% endfor %}
 {% endmacro -%}
 
@@ -40,6 +42,9 @@ class {{struct.get("name")}}(BaseModel):
 {% if var.get(item).get("type") == "string" %}
 {% if "enum" in var.get(item)%}
 class {{item}}(str, Enum): 
+    """
+    {{var.get(item).get('documentation')}}
+    """
 
     {% for enum_val in var.get(item).get("enum") %}
     {{pythonify_symbol(enum_val)}} = '{{enum_val}}'
@@ -56,46 +61,59 @@ class {{item}}(str, Enum):
 
 {% for output in output_models%}
 class {{output.get("name")}}(str, Enum):
+    """
+    {{output.get('documentation')}}
+    """
+
     {% for attribute in output.get("attributes")%}
-    {{attribute}} = "{{attribute}}"
+    {{attribute.get('label')}} = "{{attribute.get('label')}}"
+    """
+    {{attribute.get('documentation')}}
+    """
+
     {% endfor %}
 
 
 {% endfor %}
 {% for resource in resources %}
 class {{resource.get("resource_name")}}(Rendered_Resource):
+    """
+    {{resource.get('documentation')}}
+    """
+
     {% for attribute in resource.get("attributes")%}
     {% if attribute.get("type") == "string"%}
     {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}str{{"]" if not attribute.get("isrequired") else ""}}
-
     {% elif attribute.get("type") == "boolean"%}
     {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}bool{{"]" if not attribute.get("isrequired") else ""}}
-
     {% elif attribute.get("type") == "list"%}
     {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}List[{{attribute.get("val_type")}}]{{"]" if not attribute.get("isrequired") else ""}}
-
     {% elif attribute.get("type") == "enum"%}
     {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}{{attribute.get("name")}}{{"]" if not attribute.get("isrequired") else ""}} 
-
     {% elif attribute.get("type") == "structure"%}
     {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}{{attribute.get("name")}}{{"]" if not attribute.get("isrequired") else ""}} 
-
     {% elif attribute.get("type") == "long"%}
     {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}int{{"]" if not attribute.get("isrequired") else ""}}
-
     {% elif attribute.get("type") == "integer"%}
     {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}int{{"]" if not attribute.get("isrequired") else ""}}
-
     {% elif attribute.get("type") == "map"%}
     {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Dict[{{attribute.get('key_type')}},{{attribute.get('val_type')}}]{{"]" if not attribute.get("isrequired") else ""}}
-
     {%else%}
     {{pythonify_symbol(attribute.get("param_name"))}}; {{attribute}}
     Bad
     {% endif %}
+    {% if attribute.get('documentation')%}
+    """
+    {{attribute.get('documentation')}}
+    """
+    {% endif %}
+
     {% endfor %}
 
     def __init__(__pydantic_self__, name: str, ruuid: str, hash:str, {{ resource.get("as_params") }} ) -> None:
+        """
+        Create Model from input
+        """
         data = {
             "ruuid": ruuid,
             "name": name,
@@ -111,5 +129,6 @@ class {{resource.get("resource_name")}}(Rendered_Resource):
 
     class Config:
         extra='ignore'
+
 
 {% endfor %}
