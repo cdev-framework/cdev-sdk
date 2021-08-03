@@ -10,9 +10,9 @@ from cdev.resources.aws.dynamodb import DynamoDBTable, DynamoDBTable_Output
 from cdev.models import Resource_State_Difference, Action_Type
 from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
 
-from . import aws_client
+from .aws_client import run_client_function, get_boto_client, monitor_status
 
-client = aws_client.get_boto_client("dynamodb")
+client = get_boto_client("dynamodb")
 
 
 def create_table(identifier: str,resource: DynamoDBTable) -> bool:
@@ -31,30 +31,37 @@ def delete_table(identifier: str,resource: DynamoDBTable) -> bool:
 
 def _create_table(resource: DynamoDBTable) -> Dict[DynamoDBTable_Output, str]:
     try:
-        response = client.create_table(
-            AttributeDefinitions=[x.dict() for x in resource.AttributeDefinitions],
-            TableName=resource.TableName,
-            KeySchema=[x.dict() for x in resource.KeySchema],
-            ProvisionedThroughput={
-                'ReadCapacityUnits': 5,
-                'WriteCapacityUnits': 5
+        #response = client.create_table(
+        #    AttributeDefinitions=[x.dict() for x in resource.AttributeDefinitions],
+        #    TableName=resource.TableName,
+        #    KeySchema=[x.dict() for x in resource.KeySchema],
+        #    ProvisionedThroughput={
+        #        'ReadCapacityUnits': 5,
+        #        'WriteCapacityUnits': 5
+        #    }
+        #)
+        args = {
+                "AttributeDefinitions": [x.dict() for x in resource.AttributeDefinitions],
+                "TableName": resource.TableName,
+                "KeySchema": [x.dict() for x in resource.KeySchema],
+                "ProvisionedThroughput": {
+                    'ReadCapacityUnits': 5,
+                    'WriteCapacityUnits': 5
             }
-        )
+        }
+        wait = {
+            "name": "table_exists",
+            "args": {
+                "TableName": resource.TableName
+            }
+        }
+        response = run_client_function("dynamodb", "create_table", args, wait)
         print(f"AWS RESPONSE -> {response}")
-
-        if response.get("ResponseMetadata").get("HTTPStatusCode") == 200:
-            rv = aws_client.monitor_status(client.describe_table, {"TableName": resource.TableName},
-                                    response.get("TableDescription").get("TableStatus"), ["Table", "TableStatus"])
-            
-            if rv.get("Table").get("TableStatus") == "ACTIVE":
-                return {
+        
+        return {
                     DynamoDBTable_Output.TableName: resource.TableName,
-                    DynamoDBTable_Output.TableArn: rv.get("Table").get("TableArn")
-                }
-            else:
-                return None
-        else:
-            return None
+                    DynamoDBTable_Output.TableArn: "123"
+        }
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
@@ -63,20 +70,15 @@ def _create_table(resource: DynamoDBTable) -> Dict[DynamoDBTable_Output, str]:
 
 def _delete_table(resource: DynamoDBTable) -> bool:
     try:
-        response = client.delete_table(
-            TableName=resource.TableName
-        )
-        print(f"AWS RESPONSE -> {response}")
+        wait = {
+            "name": "table_not_exists",
+            "args": {
+                "TableName": resource.TableName
+            }
+        }
+        response = run_client_function("dynamodb", "delete_table", {"TableName": resource.TableName}, wait)
 
-        if response.get("ResponseMetadata").get("HTTPStatusCode") == 200:
-            rv = aws_client.monitor_status(client.describe_table, {"TableName": resource.TableName},
-                                    response.get("TableDescription").get("TableStatus"), ["Table", "TableStatus"])
-            
-            if rv:
-                print(rv)
-                return True
-            else:
-                return None
+        return response
 
     except botocore.exceptions.ClientError as e:
         print(e.response)

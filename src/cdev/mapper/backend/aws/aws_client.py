@@ -65,7 +65,31 @@ def monitor_status(func: Callable, params: dict, previous_val, lookup_keys: List
 
     return None
 
-        
+
+def run_client_function(service: str, function_name: str, args: dict, wait: dict = None):
+    rendered_client = _get_boto_client(service)
+
+    method = getattr(rendered_client, function_name)
+
+    if method:
+        rv = method(**args)
+
+    if wait:
+        waiter = rendered_client.get_waiter(wait.get("name"))
+        final_args = {
+            "WaiterConfig":
+                {
+                    'Delay': 5,
+                    'MaxAttempts': 20
+                }
+        }
+        final_args.update( wait.get("args") )
+        print(f"WAITING {wait.get('name')}")
+        waiter.wait(**final_args)
+
+    return rv
+    
+
 
 def _recursive_find_key(d: dict, keys: List):
     if len(keys) == 0:
