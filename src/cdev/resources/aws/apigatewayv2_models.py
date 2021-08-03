@@ -58,6 +58,19 @@ class Cors(BaseModel):
     """
 
 
+    def __init__(self, AllowCredentials: bool, AllowHeaders: List[str], AllowMethods: List[str], AllowOrigins: List[str], ExposeHeaders: List[str], MaxAge: int ):
+        "My doc string"
+        super().__init__(**{
+            "AllowCredentials": AllowCredentials,
+            "AllowHeaders": AllowHeaders,
+            "AllowMethods": AllowMethods,
+            "AllowOrigins": AllowOrigins,
+            "ExposeHeaders": ExposeHeaders,
+            "MaxAge": MaxAge,
+        })        
+
+
+
 
 
 
@@ -107,6 +120,14 @@ class ParameterConstraints(BaseModel):
 
 
     """
+
+
+    def __init__(self, Required: bool ):
+        "My doc string"
+        super().__init__(**{
+            "Required": Required,
+        })        
+
 
 
 
@@ -186,6 +207,14 @@ class TlsConfigInput(BaseModel):
 
 
     """
+
+
+    def __init__(self, ServerNameToVerify: str ):
+        "My doc string"
+        super().__init__(**{
+            "ServerNameToVerify": ServerNameToVerify,
+        })        
+
 
 
 
@@ -668,10 +697,15 @@ class api_model(Rendered_Resource):
     """
 
 
-    def filter_out_extra(self) -> dict:
-        NEEDED_ATTRIBUTES = set([self.Name, self.ProtocolType, self.ApiKeySelectionExpression, self.CorsConfiguration, self.CredentialsArn, self.Description, self.DisableSchemaValidation, self.DisableExecuteApiEndpoint, self.RouteKey, self.RouteSelectionExpression, self.Tags, self.Target, self.Version])
+    def filter_to_create(self) -> dict:
+        NEEDED_ATTRIBUTES = set(['Name', 'ProtocolType', 'ApiKeySelectionExpression', 'CorsConfiguration', 'CredentialsArn', 'Description', 'DisableSchemaValidation', 'DisableExecuteApiEndpoint', 'RouteKey', 'RouteSelectionExpression', 'Tags', 'Target', 'Version'])
 
-        return {k:v for k,v in self.dict() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+
+    def filter_to_remove(self) -> dict:
+        NEEDED_ATTRIBUTES = set(['Name', 'ProtocolType', 'ApiKeySelectionExpression', 'CorsConfiguration', 'CredentialsArn', 'Description', 'DisableSchemaValidation', 'DisableExecuteApiEndpoint', 'RouteKey', 'RouteSelectionExpression', 'Tags', 'Target', 'Version'])
+
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     class Config:
         extra='ignore'
@@ -746,10 +780,15 @@ class route_model(Rendered_Resource):
     """
 
 
-    def filter_out_extra(self) -> dict:
-        NEEDED_ATTRIBUTES = set([self.ApiId, self.RouteKey, self.ApiKeyRequired, self.AuthorizationScopes, self.AuthorizationType, self.AuthorizerId, self.ModelSelectionExpression, self.OperationName, self.RequestModels, self.RequestParameters, self.RouteResponseSelectionExpression, self.Target])
+    def filter_to_create(self) -> dict:
+        NEEDED_ATTRIBUTES = set(['ApiId', 'RouteKey', 'ApiKeyRequired', 'AuthorizationScopes', 'AuthorizationType', 'AuthorizerId', 'ModelSelectionExpression', 'OperationName', 'RequestModels', 'RequestParameters', 'RouteResponseSelectionExpression', 'Target'])
 
-        return {k:v for k,v in self.dict() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+
+    def filter_to_remove(self) -> dict:
+        NEEDED_ATTRIBUTES = set(['ApiId', 'RouteKey', 'ApiKeyRequired', 'AuthorizationScopes', 'AuthorizationType', 'AuthorizerId', 'ModelSelectionExpression', 'OperationName', 'RequestModels', 'RequestParameters', 'RouteResponseSelectionExpression', 'Target'])
+
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     class Config:
         extra='ignore'
@@ -889,10 +928,15 @@ class integration_model(Rendered_Resource):
     """
 
 
-    def filter_out_extra(self) -> dict:
-        NEEDED_ATTRIBUTES = set([self.ApiId, self.IntegrationType, self.ConnectionId, self.ConnectionType, self.ContentHandlingStrategy, self.CredentialsArn, self.Description, self.IntegrationMethod, self.IntegrationSubtype, self.IntegrationUri, self.PassthroughBehavior, self.PayloadFormatVersion, self.RequestParameters, self.RequestTemplates, self.ResponseParameters, self.TemplateSelectionExpression, self.TimeoutInMillis, self.TlsConfig])
+    def filter_to_create(self) -> dict:
+        NEEDED_ATTRIBUTES = set(['ApiId', 'IntegrationType', 'ConnectionId', 'ConnectionType', 'ContentHandlingStrategy', 'CredentialsArn', 'Description', 'IntegrationMethod', 'IntegrationSubtype', 'IntegrationUri', 'PassthroughBehavior', 'PayloadFormatVersion', 'RequestParameters', 'RequestTemplates', 'ResponseParameters', 'TemplateSelectionExpression', 'TimeoutInMillis', 'TlsConfig'])
 
-        return {k:v for k,v in self.dict() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+
+    def filter_to_remove(self) -> dict:
+        NEEDED_ATTRIBUTES = set(['ApiId', 'IntegrationType', 'ConnectionId', 'ConnectionType', 'ContentHandlingStrategy', 'CredentialsArn', 'Description', 'IntegrationMethod', 'IntegrationSubtype', 'IntegrationUri', 'PassthroughBehavior', 'PayloadFormatVersion', 'RequestParameters', 'RequestTemplates', 'ResponseParameters', 'TemplateSelectionExpression', 'TimeoutInMillis', 'TlsConfig'])
+
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     class Config:
         extra='ignore'

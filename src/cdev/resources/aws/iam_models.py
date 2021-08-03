@@ -35,6 +35,15 @@ class Tag(BaseModel):
     """
 
 
+    def __init__(self, Key: str, Value: str ):
+        "My doc string"
+        super().__init__(**{
+            "Key": Key,
+            "Value": Value,
+        })        
+
+
+
 
 
 
@@ -300,10 +309,15 @@ class policy_model(Rendered_Resource):
     """
 
 
-    def filter_out_extra(self) -> dict:
-        NEEDED_ATTRIBUTES = set([self.PolicyName, self.PolicyDocument, self.Path, self.Description, self.Tags])
+    def filter_to_create(self) -> dict:
+        NEEDED_ATTRIBUTES = set(['PolicyName', 'PolicyDocument', 'Path', 'Description', 'Tags'])
 
-        return {k:v for k,v in self.dict() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+
+    def filter_to_remove(self) -> dict:
+        NEEDED_ATTRIBUTES = set(['PolicyName', 'PolicyDocument', 'Path', 'Description', 'Tags'])
+
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     class Config:
         extra='ignore'
@@ -377,10 +391,15 @@ class role_model(Rendered_Resource):
     """
 
 
-    def filter_out_extra(self) -> dict:
-        NEEDED_ATTRIBUTES = set([self.RoleName, self.AssumeRolePolicyDocument, self.Path, self.Description, self.MaxSessionDuration, self.PermissionsBoundary, self.Tags])
+    def filter_to_create(self) -> dict:
+        NEEDED_ATTRIBUTES = set(['RoleName', 'AssumeRolePolicyDocument', 'Path', 'Description', 'MaxSessionDuration', 'PermissionsBoundary', 'Tags'])
 
-        return {k:v for k,v in self.dict() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+
+    def filter_to_remove(self) -> dict:
+        NEEDED_ATTRIBUTES = set(['RoleName', 'AssumeRolePolicyDocument', 'Path', 'Description', 'MaxSessionDuration', 'PermissionsBoundary', 'Tags'])
+
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     class Config:
         extra='ignore'

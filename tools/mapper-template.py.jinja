@@ -1,0 +1,95 @@
+
+
+import time
+import re
+from typing import Dict
+import botocore
+import json
+
+from cdev.resources.aws.{{service}}_models import *
+from cdev.models import Resource_State_Difference, Action_Type
+from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
+
+from .aws_client import run_client_function, get_boto_client, monitor_status
+
+
+{% for resource_info in resources%}
+################################################
+##########
+##########     {{resource_info.get('resource_name')}}
+##########
+################################################
+
+
+{% for verb in verbs %}
+def {{verb}}_{{resource_info.get('resource_name')}}(identifier: str, resource: {{resource_info.get('model_name')}}) -> bool:
+    try:
+        {%if verb == 'create'%}
+        rv = _create_{{resource_info.get('resource_name')}}(resource)
+        if rv:
+            cdev_cloud_mapper.add_cloud_resource(identifier, resource)
+            cdev_cloud_mapper.update_output_value(identifier, rv)
+
+        {%elif verb == 'remove'%}
+        _remove_{{resource_info.get('resource_name')}}(resource)
+
+        cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
+        cdev_cloud_mapper.remove_identifier(identifier)
+
+        {%endif%}
+        return True
+
+    except Exception as e:
+        print(e)
+        return False
+
+{%endfor%}
+{%for low_level_info in resource_info.get("low_level_info")%}
+
+# Low level function to call actual clieant call and return response
+def _{{low_level_info.get("verb")}}_{{resource_info.get('resource_name')}}(resource: {{resource_info.get('model_name')}}){{low_level_info.get('output_type')}}:
+    try:
+
+        args = resource.filter_to_{{low_level_info.get("verb")}}()
+
+        {% if 'wait' in low_level_info %}
+        wait = {
+            "name": "table_exists",
+            "args": {
+                "TableName": resource.TableName
+            }
+        }
+
+        response = run_client_function('{{service}}', '{{function_name}}', args, wait)
+        {%else%}
+        response = run_client_function('{{service}}', '{{low_level_info.get("function_name")}}', args)
+        {%endif%}
+
+        
+        print(f"AWS RESPONSE -> {response}")
+        
+        return response
+
+    except botocore.exceptions.ClientError as e:
+        print(e.response)
+        return None
+
+{%endfor%}
+
+def handle_{{resource_info.get('resource_name')}}_deployment(resource_diff: Resource_State_Difference) -> bool:
+    try:
+        if resource_diff.action_type == Action_Type.CREATE:
+
+            return create_{{resource_info.get('resource_name')}}(resource_diff.new_resource.hash, resource_diff.new_resource)
+        elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
+
+            return True
+        elif resource_diff.action_type == Action_Type.DELETE:
+            
+            return remove_{{resource_info.get('resource_name')}}(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+    except Exception as e:
+        print(e)
+        return False
+
+{%endfor%}

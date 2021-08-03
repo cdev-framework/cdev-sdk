@@ -13,7 +13,7 @@
                 },
                 {
                     "name": "Role",
-                    "ruuid": "cdev::aws::iam::policy",
+                    "ruuid": "cdev::aws::iam::role",
                     "create": "CreateRole",
                     "remove": "DeleteRole",
                     "update": "UpdateRole"

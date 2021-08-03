@@ -201,7 +201,7 @@ class Role(Cdev_Resource):
 
     def render(self) -> role_model:
         data = {
-            "ruuid": "cdev::aws::iam::policy",
+            "ruuid": "cdev::aws::iam::role",
             "name": self.name,
             "hash": self.hash,
             "Path": self.Path,
@@ -218,6 +218,6 @@ class Role(Cdev_Resource):
         return role_model(**filtered_data)
 
     def from_output(self, key: role_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"cdev::aws::iam::policy::{self.hash}", "key": key})
+        return Cloud_Output(**{"resource": f"cdev::aws::iam::role::{self.hash}", "key": key})
 
 

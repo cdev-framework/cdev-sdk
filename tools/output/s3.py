@@ -178,3 +178,7 @@ class Bucket(Cdev_Resource):
         return Cloud_Output(**{"resource": f"cdev::aws::s3::bucket::{self.hash}", "key": key})
 
 
+
+class s3_object(BaseModel):
+    S3Bucket: str
+    S3Key: str

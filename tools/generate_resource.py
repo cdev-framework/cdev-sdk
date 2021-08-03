@@ -133,6 +133,34 @@ def flatten_list(name, list_obj) -> dict:
     rv["type"] = list_obj.get("member").get("shape")
 
 
+def flatten_structure_to_params(attributes: dict):
+    final_string = ""
+
+
+    for attribute_name in attributes:
+        attribute = attributes.get(attribute_name)
+        if attribute.get("type") == "structure":
+            final_string = f"{final_string}, {attribute_name}: {attribute.get('name')}"
+        if attribute.get("type") == "list":
+            final_string = f"{final_string}, {attribute_name}: List[{attribute.get('val_type')}]"
+        if attribute.get("type") == "string":
+            final_string = f"{final_string}, {attribute_name}: str"
+        if attribute.get("type") == "integer":
+            final_string = f"{final_string}, {attribute_name}: int"
+        if attribute.get("type") == "int":
+            final_string = f"{final_string}, {attribute_name}: int"
+        if attribute.get("type") == "long":
+            final_string = f"{final_string}, {attribute_name}: int"
+        if attribute.get("type") == "enum":
+            final_string = f"{final_string}, {attribute_name}: {attribute.get('name')}"
+        if attribute.get("type") == "boolean":
+            final_string = f"{final_string}, {attribute_name}: bool"
+        if attribute.get("type") == "map":
+            final_string = f"{final_string}, {attribute_name}: Dict"
+
+    return final_string[2:]
+
+
 def flatten_attributes_to_params(attributes: list):
     final_string = ""
 
@@ -173,7 +201,7 @@ def flatten_attributes_to_list(attributes: list):
     sorted_attributes = SortedListWithKey(attributes, lambda x: not x.get("isrequired"))
 
     for attribute in sorted_attributes:
-        final_string = f"{final_string}, {attribute.get('param_name')}"
+        final_string = final_string + ", '" +  attribute.get('param_name') + "'"
 
     return f"[{final_string[2:]}]"
 
@@ -221,6 +249,47 @@ def create_output_attributes_from_create_info(info, botoinfo):
     return final_attributes
 
 
+def generate_mapper_resources(service):
+    rv = []
+
+    for resource in service.get("resources"):
+        t = {}
+        low_level = []
+        t['resource_name'] = resource.get("name").lower()
+        t['model_name'] = resource.get("name").lower()+"_model"
+
+        if resource.get("create"):
+            t2 = {}
+            t2['verb'] = 'create'
+            t2['output_type'] = f' -> {resource.get("name").lower()}_output'
+            if type(resource.get("create")) == str:
+                t2['function_name'] = camel_to_snake(resource.get("create"))
+            else:
+                t2['function_name'] = camel_to_snake(resource.get("create").get("action"))
+                #t2['wait'] = camel_to_snake(resource.get("create").get("waits"))
+            low_level.append(t2)
+
+        if resource.get("remove"):
+            t3 = {}
+            t3['verb'] = 'remove'
+            t3['output_type'] = f''
+            if type(resource.get("remove")) == str:
+                t3['function_name'] = camel_to_snake(resource.get("remove"))
+            else:
+                t3['function_name'] = camel_to_snake(resource.get("remove").get("action"))
+                #t2['wait'] = camel_to_snake(resource.get("create").get("waits"))
+
+            low_level.append(t3)
+
+        t['low_level_info'] = low_level
+
+        rv.append(t)
+
+    return rv
+
+    
+
+
 
 env = Environment(
     loader=FileSystemLoader(os.path.join(".")),
@@ -231,6 +300,7 @@ env = Environment(
 env.globals['flatten_structure'] = flatten_structure
 env.globals['pythonify_symbol'] = pythonify_symbol
 env.globals['markdownify'] = markdownify
+env.globals['flatten_structure_to_params'] = flatten_structure_to_params
 
 
 with open(os.path.join(".","resources.json")) as fh:
@@ -269,7 +339,7 @@ def render_resources():
                 function_key_to_function[key] = function_value
                 #print(function_value)
 
-                tmp_func_names = [{"funcname":camel_to_snake(function_key_to_function.get(key).get("name"))} for key in function_key_to_function]
+                
 
                 shapes.update(_find_all_dependent_shapes(function_value.get("input").get("shape"), {}, botoinfo, False))
 
@@ -291,6 +361,7 @@ def render_resources():
                                 "documentation": function_value.get('documentation'),
                                 "outputname": f'{value.get("name")}_output',
                                 "ruuid": value.get("ruuid"),
+                                "as_list": flatten_attributes_to_list(resource_attributes)
                             }
 
                     all_resource_info.append(resource_info)
@@ -316,6 +387,18 @@ def render_resources():
         rendered_template2 = template2.render(**final_info)
         with open(os.path.join(".","output",f"{service.get('service')}.py"), "w") as fh:
             fh.write(rendered_template2)
+
+        
+        mapper_data = {
+            "verbs": ['create', "remove"],
+            "resources": generate_mapper_resources(service),
+            "service": service.get('service')
+        }
+
+        template3 = env.get_template("mapper-template.py.jinja")
+        rendered_template3 = template3.render(**mapper_data)
+        with open(os.path.join(".","output", "mappers",f"{service.get('service')}.py"), "w") as fh:
+            fh.write(rendered_template3)
 
 
 

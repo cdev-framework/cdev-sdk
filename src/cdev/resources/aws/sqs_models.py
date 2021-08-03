@@ -152,7 +152,8 @@ class queue_model(Rendered_Resource):
   Cross-account permissions don't apply to this action. For more information, see [Grant cross-account permissions to a role and a user name](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-customer-managed-policy-examples.html#grant-cross-account-permissions-to-role-and-user-name) in the *Amazon SQS Developer Guide*.
     
     """
-    
+
+
     QueueName: str
     """
     The name of the new queue. The following limits apply to this name:
@@ -291,10 +292,15 @@ class queue_model(Rendered_Resource):
     """
 
 
-    def filter_out_extra(self) -> dict:
-        NEEDED_ATTRIBUTES = set([self.QueueName, self.Attributes, self.tags])
+    def filter_to_create(self) -> dict:
+        NEEDED_ATTRIBUTES = set(['QueueName', 'Attributes', 'tags'])
 
-        return {k:v for k,v in self.dict() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+
+    def filter_to_remove(self) -> dict:
+        NEEDED_ATTRIBUTES = set(['QueueName', 'Attributes', 'tags'])
+
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     class Config:
         extra='ignore'

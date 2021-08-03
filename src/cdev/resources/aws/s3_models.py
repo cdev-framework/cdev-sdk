@@ -87,6 +87,14 @@ class CreateBucketConfiguration(BaseModel):
     """
 
 
+    def __init__(self, LocationConstraint: BucketLocationConstraint ):
+        "My doc string"
+        super().__init__(**{
+            "LocationConstraint": LocationConstraint,
+        })        
+
+
+
 
 
 
@@ -317,10 +325,15 @@ class bucket_model(Rendered_Resource):
     """
 
 
-    def filter_out_extra(self) -> dict:
-        NEEDED_ATTRIBUTES = set([self.Bucket, self.ACL, self.CreateBucketConfiguration, self.GrantFullControl, self.GrantRead, self.GrantReadACP, self.GrantWrite, self.GrantWriteACP, self.ObjectLockEnabledForBucket])
+    def filter_to_create(self) -> dict:
+        NEEDED_ATTRIBUTES = set(['Bucket', 'ACL', 'CreateBucketConfiguration', 'GrantFullControl', 'GrantRead', 'GrantReadACP', 'GrantWrite', 'GrantWriteACP', 'ObjectLockEnabledForBucket'])
 
-        return {k:v for k,v in self.dict() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+
+    def filter_to_remove(self) -> dict:
+        NEEDED_ATTRIBUTES = set(['Bucket', 'ACL', 'CreateBucketConfiguration', 'GrantFullControl', 'GrantRead', 'GrantReadACP', 'GrantWrite', 'GrantWriteACP', 'ObjectLockEnabledForBucket'])
+
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     class Config:
         extra='ignore'

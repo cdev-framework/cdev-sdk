@@ -1,6 +1,4 @@
 from typing import List
-from cdev.mapper.backend.aws import aws_iam
-
 
 from cdev.models import Action_Type, Resource_State_Difference
 from cdev.constructs import CloudMapper
@@ -8,7 +6,7 @@ from cdev.settings import SETTINGS
 
 from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
 
-from .backend.aws import aws_lambda, aws_dynamodb
+from .backend.aws import aws_lambda, dynamodb, iam, s3, sqs, apigatewayv2
 
 
 class DefaultMapper(CloudMapper):
@@ -55,12 +53,18 @@ def tmp2(resource):
 
 RESOURCE_TO_HANDLER_FUNCTION = {
     "cdev::aws::lambda_function": aws_lambda.handle_aws_lambda_deployment,
-    "cdev::aws::dynamodb": aws_dynamodb.handle_dynamodb_deployment,
-    "cdev::aws::iam::policy": aws_iam.handle_aws_iam_policy_deployment
+    "cdev::aws::dynamodb::table": dynamodb.handle_table_deployment,
+    "cdev::aws::iam::policy": iam.handle_policy_deployment,
+    "cdev::aws::iam::role": iam.handle_role_deployment,
+    "cdev::aws::s3::bucket": s3.handle_bucket_deployment,
+    "cdev::aws::sqs::queue": sqs.handle_queue_deployment,
+    "cdev::aws::apigatewayv2::api": apigatewayv2.handle_api_deployment,
+    "cdev::aws::apigatewayv2::route": apigatewayv2.handle_route_deployment,
+    "cdev::aws::apigatewayv2::integration": apigatewayv2.handle_integration_deployment
 }
 
 RESOURCE_TO_OUTPUT_RENDERER = {
     "cdev::aws::lambda_function": aws_lambda.lambda_replace_output,
-    "cdev::aws::dynamodb": dynamodb_replace_output,
+    "cdev::aws::dynamodb::table": dynamodb_replace_output,
     "cdev::aws::iam::policy": tmp2
 }

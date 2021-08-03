@@ -1,58 +1,16 @@
 from pydantic.main import BaseModel
 from enum import Enum
-from typing import List, Optional, Dict 
+from typing import List, Optional
 
+
+from ...constructs import Cdev_Resource
 from ...models import Cloud_Output, Rendered_Resource
+from ...utils import hasher
+
+from .sqs_models import *
 
 
-class QueueAttributeName(str, Enum): 
-
-
-    All = 'All'
-    
-    Policy = 'Policy'
-    
-    VisibilityTimeout = 'VisibilityTimeout'
-    
-    MaximumMessageSize = 'MaximumMessageSize'
-    
-    MessageRetentionPeriod = 'MessageRetentionPeriod'
-    
-    ApproximateNumberOfMessages = 'ApproximateNumberOfMessages'
-    
-    ApproximateNumberOfMessagesNotVisible = 'ApproximateNumberOfMessagesNotVisible'
-    
-    CreatedTimestamp = 'CreatedTimestamp'
-    
-    LastModifiedTimestamp = 'LastModifiedTimestamp'
-    
-    QueueArn = 'QueueArn'
-    
-    ApproximateNumberOfMessagesDelayed = 'ApproximateNumberOfMessagesDelayed'
-    
-    DelaySeconds = 'DelaySeconds'
-    
-    ReceiveMessageWaitTimeSeconds = 'ReceiveMessageWaitTimeSeconds'
-    
-    RedrivePolicy = 'RedrivePolicy'
-    
-    FifoQueue = 'FifoQueue'
-    
-    ContentBasedDeduplication = 'ContentBasedDeduplication'
-    
-    KmsMasterKeyId = 'KmsMasterKeyId'
-    
-    KmsDataKeyReusePeriodSeconds = 'KmsDataKeyReusePeriodSeconds'
-    
-    DeduplicationScope = 'DeduplicationScope'
-    
-    FifoThroughputLimit = 'FifoThroughputLimit'
-    
-
-
-
-
-class queue_output(str, Enum):
+class Queue(Cdev_Resource):
     """
     Creates a new standard or FIFO queue. You can pass one or more attributes in the request. Keep the following in mind:
 
@@ -92,9 +50,13 @@ class queue_output(str, Enum):
  
     """
 
-    QueueUrl = "QueueUrl"
-    """
-    The name of the new queue. The following limits apply to this name:
+    def __init__(self,name: str, QueueName: str, Attributes: Dict[QueueAttributeName, str]=None, tags: Dict[str, str]=None):
+        ""
+        super().__init__(name)
+
+        self.QueueName = QueueName
+        """
+        The name of the new queue. The following limits apply to this name:
 
  * A queue name can have up to 80 characters.
 
@@ -109,71 +71,11 @@ class queue_output(str, Enum):
  Queue URLs and names are case-sensitive.
 
 
-    """
+        """
 
-
-
-class queue_model(Rendered_Resource):
-    """
-
-    Creates a new standard or FIFO queue. You can pass one or more attributes in the request. Keep the following in mind:
-
- * If you don't specify the `FifoQueue` attribute, Amazon SQS creates a standard queue.
-
-  You can't change the queue type after you create it and you can't convert an existing standard queue into a FIFO queue. You must either create a new FIFO queue for your application or delete your existing standard queue and recreate it as a FIFO queue. For more information, see [Moving From a Standard Queue to a FIFO Queue](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/FIFO-queues.html#FIFO-queues-moving) in the *Amazon SQS Developer Guide*. 
-
- 
-* If you don't provide a value for an attribute, the queue is created with the default value for the attribute.
-
-
-* If you delete a queue, you must wait at least 60 seconds before creating a queue with the same name.
-
-
-
- To successfully create a new queue, you must provide a queue name that adheres to the [limits related to queues](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/limits-queues.html) and is unique within the scope of your queues.
-
-  After you create a queue, you must wait at least one second after the queue is created to be able to use the queue.
-
-  To get the queue URL, use the  `GetQueueUrl`  action.  `GetQueueUrl`  requires only the `QueueName` parameter. be aware of existing queue names:
-
- * If you provide the name of an existing queue along with the exact names and values of all the queue's attributes, `CreateQueue` returns the queue URL for the existing queue.
-
-
-* If the queue name, attribute names, or attribute values don't match an existing queue, `CreateQueue` returns an error.
-
-
-
- Some actions take lists of parameters. These lists are specified using the `param.n` notation. Values of `n` are integers starting from 1. For example, a parameter list with two elements looks like this:
-
-  `&AttributeName.1=first` 
-
-  `&AttributeName.2=second` 
-
-  Cross-account permissions don't apply to this action. For more information, see [Grant cross-account permissions to a role and a user name](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-customer-managed-policy-examples.html#grant-cross-account-permissions-to-role-and-user-name) in the *Amazon SQS Developer Guide*.
-    
-    """
-
-
-    QueueName: str
-    """
-    The name of the new queue. The following limits apply to this name:
-
- * A queue name can have up to 80 characters.
-
-
-* Valid values: alphanumeric characters, hyphens (`-`), and underscores (`_`).
-
-
-* A FIFO queue name must end with the `.fifo` suffix.
-
-
-
- Queue URLs and names are case-sensitive.
-    """
-
-    Attributes: Optional[Dict[QueueAttributeName,str]]
-    """
-    A map of attributes with their corresponding values.
+        self.Attributes = Attributes
+        """
+        A map of attributes with their corresponding values.
 
  The following lists the names, descriptions, and values of the special request parameters that the `CreateQueue` action uses:
 
@@ -263,11 +165,13 @@ class queue_model(Rendered_Resource):
  If you set these attributes to anything other than the values shown for enabling high throughput, normal throughput is in effect and deduplication occurs as specified.
 
  For information on throughput quotas, see [Quotas related to messages](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html) in the *Amazon SQS Developer Guide*.
-    """
 
-    tags: Optional[Dict[str,str]]
-    """
-    Add cost allocation tags to the specified Amazon SQS queue. For an overview, see [Tagging Your Amazon SQS Queues](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-queue-tags.html) in the *Amazon SQS Developer Guide*.
+
+        """
+
+        self.tags = tags
+        """
+        Add cost allocation tags to the specified Amazon SQS queue. For an overview, see [Tagging Your Amazon SQS Queues](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-queue-tags.html) in the *Amazon SQS Developer Guide*.
 
  When you use queue tags, keep the following guidelines in mind:
 
@@ -289,20 +193,27 @@ class queue_model(Rendered_Resource):
   To be able to tag a queue on creation, you must have the `sqs:CreateQueue` and `sqs:TagQueue` permissions.
 
  Cross-account permissions don't apply to this action. For more information, see [Grant cross-account permissions to a role and a user name](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-customer-managed-policy-examples.html#grant-cross-account-permissions-to-role-and-user-name) in the *Amazon SQS Developer Guide*.
-    """
 
+ 
+        """
 
-    def filter_to_create(self) -> dict:
-        NEEDED_ATTRIBUTES = set(['QueueName', 'Attributes', 'tags'])
+        self.hash = hasher.hash_list([self.QueueName, self.Attributes, self.tags])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+    def render(self) -> queue_model:
+        data = {
+            "ruuid": "cdev::aws::sqs::queue",
+            "name": self.name,
+            "hash": self.hash,
+            "QueueName": self.QueueName,
+            "Attributes": self.Attributes,
+            "tags": self.tags,
+        }
 
-    def filter_to_remove(self) -> dict:
-        NEEDED_ATTRIBUTES = set(['QueueName', 'Attributes', 'tags'])
+        filtered_data = {k:v for k,v in data.items() if v}
+        
+        return queue_model(**filtered_data)
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
-
-    class Config:
-        extra='ignore'
+    def from_output(self, key: queue_output) -> Cloud_Output:
+        return Cloud_Output(**{"resource": f"cdev::aws::sqs::queue::{self.hash}", "key": key})
 
 

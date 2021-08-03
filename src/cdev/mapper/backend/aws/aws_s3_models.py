@@ -9,4 +9,3 @@ class put_object_event(BaseModel):
     Filename: str
     Bucket: str
     Key: str
-

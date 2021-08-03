@@ -12,7 +12,8 @@ that will be used to track changes throughout the system.
 
 
 def hash_list(val: List[str]) -> str:
-    return hash_string("".join(val))
+    
+    return hash_string("".join([str(x) for x in val]))
 
 
 def hash_string(val: str) -> str:

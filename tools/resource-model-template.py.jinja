@@ -39,6 +39,16 @@ class {{struct.get("name")}}(BaseModel):
     {% endif %}
 
 {% endfor %}
+
+    def __init__(self, {{flatten_structure_to_params(struct.get("attributes"))}} ):
+        "My doc string"
+        super().__init__(**{
+            {%for attribute_name in struct.get("attributes") %}
+            "{{attribute_name}}": {{attribute_name}},
+            {%endfor%}
+        })        
+
+
 {% endmacro -%}
 
 {% for item in var %}
@@ -125,10 +135,15 @@ class {{resource.get("resource_name").lower()}}_model(Rendered_Resource):
 
     {% endfor %}
 
-    def filter_out_extra(self) -> dict:
-        NEEDED_ATTRIBUTES = set({{resource.get("as_input")}})
+    def filter_to_create(self) -> dict:
+        NEEDED_ATTRIBUTES = set({{resource.get("as_list")}})
 
-        return {k:v for k,v in self.dict() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+
+    def filter_to_remove(self) -> dict:
+        NEEDED_ATTRIBUTES = set({{resource.get("as_list")}})
+
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     class Config:
         extra='ignore'
