@@ -22,7 +22,7 @@ from .aws_client import run_client_function, get_boto_client, monitor_status
 
 def create_api(identifier: str, resource: api_model) -> bool:
     try:
-        rv = _create_api(resource)
+        rv = _create_api(identifier, resource)
         if rv:
             cdev_cloud_mapper.add_cloud_resource(identifier, resource)
             cdev_cloud_mapper.update_output_value(identifier, rv)
@@ -35,7 +35,7 @@ def create_api(identifier: str, resource: api_model) -> bool:
 
 def remove_api(identifier: str, resource: api_model) -> bool:
     try:
-        _remove_api(resource)
+        _remove_api(identifier, resource)
 
         cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
         cdev_cloud_mapper.remove_identifier(identifier)
@@ -48,17 +48,16 @@ def remove_api(identifier: str, resource: api_model) -> bool:
 
 
 # Low level function to call actual clieant call and return response
-def _create_api(resource: api_model) -> api_output:
+def _create_api(identifier: str, resource: api_model) -> api_output:
     try:
 
-        args = resource.filter_to_create()
+        args = api_model(**resource.dict()).filter_to_create(identifier)
 
         response = run_client_function('apigatewayv2', 'create_api', args)
 
-        
-        print(f"AWS RESPONSE -> {response}")
-        
-        return response
+        rv = response
+        print(rv)
+        return rv
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
@@ -66,17 +65,16 @@ def _create_api(resource: api_model) -> api_output:
 
 
 # Low level function to call actual clieant call and return response
-def _remove_api(resource: api_model):
+def _remove_api(identifier: str, resource: api_model):
     try:
 
-        args = resource.filter_to_remove()
+        args = api_model(**resource.dict()).filter_to_remove(identifier)
 
         response = run_client_function('apigatewayv2', 'delete_api', args)
 
-        
-        print(f"AWS RESPONSE -> {response}")
-        
-        return response
+        rv = response
+        print(rv)
+        return rv
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
@@ -108,7 +106,7 @@ def handle_api_deployment(resource_diff: Resource_State_Difference) -> bool:
 
 def create_route(identifier: str, resource: route_model) -> bool:
     try:
-        rv = _create_route(resource)
+        rv = _create_route(identifier, resource)
         if rv:
             cdev_cloud_mapper.add_cloud_resource(identifier, resource)
             cdev_cloud_mapper.update_output_value(identifier, rv)
@@ -121,7 +119,7 @@ def create_route(identifier: str, resource: route_model) -> bool:
 
 def remove_route(identifier: str, resource: route_model) -> bool:
     try:
-        _remove_route(resource)
+        _remove_route(identifier, resource)
 
         cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
         cdev_cloud_mapper.remove_identifier(identifier)
@@ -134,17 +132,16 @@ def remove_route(identifier: str, resource: route_model) -> bool:
 
 
 # Low level function to call actual clieant call and return response
-def _create_route(resource: route_model) -> route_output:
+def _create_route(identifier: str, resource: route_model) -> route_output:
     try:
 
-        args = resource.filter_to_create()
+        args = route_model(**resource.dict()).filter_to_create(identifier)
 
         response = run_client_function('apigatewayv2', 'create_route', args)
 
-        
-        print(f"AWS RESPONSE -> {response}")
-        
-        return response
+        rv = response
+        print(rv)
+        return rv
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
@@ -152,17 +149,16 @@ def _create_route(resource: route_model) -> route_output:
 
 
 # Low level function to call actual clieant call and return response
-def _remove_route(resource: route_model):
+def _remove_route(identifier: str, resource: route_model):
     try:
 
-        args = resource.filter_to_remove()
+        args = route_model(**resource.dict()).filter_to_remove(identifier)
 
         response = run_client_function('apigatewayv2', 'delete_route', args)
 
-        
-        print(f"AWS RESPONSE -> {response}")
-        
-        return response
+        rv = response
+        print(rv)
+        return rv
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
@@ -194,7 +190,7 @@ def handle_route_deployment(resource_diff: Resource_State_Difference) -> bool:
 
 def create_integration(identifier: str, resource: integration_model) -> bool:
     try:
-        rv = _create_integration(resource)
+        rv = _create_integration(identifier, resource)
         if rv:
             cdev_cloud_mapper.add_cloud_resource(identifier, resource)
             cdev_cloud_mapper.update_output_value(identifier, rv)
@@ -207,7 +203,7 @@ def create_integration(identifier: str, resource: integration_model) -> bool:
 
 def remove_integration(identifier: str, resource: integration_model) -> bool:
     try:
-        _remove_integration(resource)
+        _remove_integration(identifier, resource)
 
         cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
         cdev_cloud_mapper.remove_identifier(identifier)
@@ -220,17 +216,16 @@ def remove_integration(identifier: str, resource: integration_model) -> bool:
 
 
 # Low level function to call actual clieant call and return response
-def _create_integration(resource: integration_model) -> integration_output:
+def _create_integration(identifier: str, resource: integration_model) -> integration_output:
     try:
 
-        args = resource.filter_to_create()
+        args = integration_model(**resource.dict()).filter_to_create(identifier)
 
         response = run_client_function('apigatewayv2', 'create_integration', args)
 
-        
-        print(f"AWS RESPONSE -> {response}")
-        
-        return response
+        rv = response
+        print(rv)
+        return rv
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
@@ -238,17 +233,16 @@ def _create_integration(resource: integration_model) -> integration_output:
 
 
 # Low level function to call actual clieant call and return response
-def _remove_integration(resource: integration_model):
+def _remove_integration(identifier: str, resource: integration_model):
     try:
 
-        args = resource.filter_to_remove()
+        args = integration_model(**resource.dict()).filter_to_remove(identifier)
 
         response = run_client_function('apigatewayv2', 'delete_integration', args)
 
-        
-        print(f"AWS RESPONSE -> {response}")
-        
-        return response
+        rv = response
+        print(rv)
+        return rv
 
     except botocore.exceptions.ClientError as e:
         print(e.response)

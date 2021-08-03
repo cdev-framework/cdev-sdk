@@ -4,7 +4,7 @@ import boto3
 
 from cdev import settings as cdev_settings
 
-AVAILABLE_SERVICES = set(["lambda", "s3", "dynamodb", "iam"])
+AVAILABLE_SERVICES = set(["lambda", "s3", "dynamodb", "iam", "apigatewayv2", "sqs"])
 
 
 def _get_boto_client(service_name, credentials=None, profile_name=None):
@@ -68,7 +68,6 @@ def monitor_status(func: Callable, params: dict, previous_val, lookup_keys: List
 
 def run_client_function(service: str, function_name: str, args: dict, wait: dict = None):
     rendered_client = _get_boto_client(service)
-
     method = getattr(rendered_client, function_name)
 
     if method:

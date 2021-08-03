@@ -4,6 +4,8 @@ from typing import List, Optional, Dict
 
 from ...models import Cloud_Output, Rendered_Resource
 
+from ...backend import cloud_mapper_manager
+
 {% macro render_flatstruct(struct) -%}
 class {{struct.get("name")}}(BaseModel):
     {%if struct.get('documentation')%}
@@ -135,15 +137,14 @@ class {{resource.get("resource_name").lower()}}_model(Rendered_Resource):
 
     {% endfor %}
 
-    def filter_to_create(self) -> dict:
+    def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set({{resource.get("as_list")}})
 
         return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
-    def filter_to_remove(self) -> dict:
-        NEEDED_ATTRIBUTES = set({{resource.get("as_list")}})
-
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+    def filter_to_remove(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set({{resource.get("remove_attributes")}})
+        return {k:cloud_mapper_manager.get_output_value(identifier, k) for k in NEEDED_ATTRIBUTES }
 
     class Config:
         extra='ignore'

@@ -22,7 +22,7 @@ from .aws_client import run_client_function, get_boto_client, monitor_status
 
 def create_bucket(identifier: str, resource: bucket_model) -> bool:
     try:
-        rv = _create_bucket(resource)
+        rv = _create_bucket(identifier, resource)
         if rv:
             cdev_cloud_mapper.add_cloud_resource(identifier, resource)
             cdev_cloud_mapper.update_output_value(identifier, rv)
@@ -35,7 +35,7 @@ def create_bucket(identifier: str, resource: bucket_model) -> bool:
 
 def remove_bucket(identifier: str, resource: bucket_model) -> bool:
     try:
-        _remove_bucket(resource)
+        _remove_bucket(identifier, resource)
 
         cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
         cdev_cloud_mapper.remove_identifier(identifier)
@@ -48,17 +48,16 @@ def remove_bucket(identifier: str, resource: bucket_model) -> bool:
 
 
 # Low level function to call actual clieant call and return response
-def _create_bucket(resource: bucket_model) -> bucket_output:
+def _create_bucket(identifier: str, resource: bucket_model) -> bucket_output:
     try:
 
-        args = resource.filter_to_create()
+        args = bucket_model(**resource.dict()).filter_to_create(identifier)
 
         response = run_client_function('s3', 'create_bucket', args)
 
-        
-        print(f"AWS RESPONSE -> {response}")
-        
-        return response
+        rv = response
+        print(rv)
+        return rv
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
@@ -66,17 +65,16 @@ def _create_bucket(resource: bucket_model) -> bucket_output:
 
 
 # Low level function to call actual clieant call and return response
-def _remove_bucket(resource: bucket_model):
+def _remove_bucket(identifier: str, resource: bucket_model):
     try:
 
-        args = resource.filter_to_remove()
+        args = bucket_model(**resource.dict()).filter_to_remove(identifier)
 
         response = run_client_function('s3', 'delete_bucket', args)
 
-        
-        print(f"AWS RESPONSE -> {response}")
-        
-        return response
+        rv = response
+        print(rv)
+        return rv
 
     except botocore.exceptions.ClientError as e:
         print(e.response)

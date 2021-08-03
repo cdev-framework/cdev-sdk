@@ -249,7 +249,7 @@ def create_output_attributes_from_create_info(info, botoinfo):
     return final_attributes
 
 
-def generate_mapper_resources(service):
+def generate_mapper_resources(service, botoinfo):
     rv = []
 
     for resource in service.get("resources"):
@@ -263,10 +263,23 @@ def generate_mapper_resources(service):
             t2['verb'] = 'create'
             t2['output_type'] = f' -> {resource.get("name").lower()}_output'
             if type(resource.get("create")) == str:
-                t2['function_name'] = camel_to_snake(resource.get("create"))
+                raw_fuct_name = resource.get("create")
+                t2['function_name'] = camel_to_snake(raw_fuct_name)
             else:
-                t2['function_name'] = camel_to_snake(resource.get("create").get("action"))
+                raw_fuct_name = resource.get("create").get("action")
+                t2['function_name'] = camel_to_snake(raw_fuct_name)
                 #t2['wait'] = camel_to_snake(resource.get("create").get("waits"))
+
+            output_shape = botoinfo.get("operations").get(raw_fuct_name).get("output").get("shape")
+
+            if len(botoinfo.get('shapes').get(output_shape).get("members").keys())  == 1:
+                val = list(botoinfo.get('shapes').get(output_shape).get("members").keys())[0]
+
+                if botoinfo.get('shapes').get(val):
+                    if botoinfo.get('shapes').get(val).get("type") == "structure":
+                        t2['output_key'] = val
+
+            
             low_level.append(t2)
 
         if resource.get("remove"):
@@ -288,6 +301,8 @@ def generate_mapper_resources(service):
     return rv
 
     
+def create_remove_attributes(function_info, botoinfo):
+    return [k for k in botoinfo.get("shapes").get(function_info.get("shape")).get("members")]
 
 
 
@@ -305,6 +320,7 @@ env.globals['flatten_structure_to_params'] = flatten_structure_to_params
 
 with open(os.path.join(".","resources.json")) as fh:
     needed_resource_data = json.load(fh)
+
 
 
 
@@ -353,19 +369,24 @@ def render_resources():
                     output_model_info = {"name": f'{value.get("name").lower()}_output', "attributes": output_attributes, 'documentation': function_value.get('documentation') }
                     output_models.append(output_model_info)
 
-                    resource_info = {
-                                "resource_name": f'{value.get("name")}', 
-                                "attributes": resource_attributes, 
-                                "as_params": flatten_attributes_to_params(resource_attributes), 
-                                "as_input": flatten_attributes_to_list_input(resource_attributes),
-                                "documentation": function_value.get('documentation'),
-                                "outputname": f'{value.get("name")}_output',
-                                "ruuid": value.get("ruuid"),
-                                "as_list": flatten_attributes_to_list(resource_attributes)
-                            }
+                if key == 'remove':
+                    remove_attributes = create_remove_attributes(function_value.get("input"), botoinfo)
+                    pass
 
-                    all_resource_info.append(resource_info)
-                    
+            resource_info = {
+                        "resource_name": f'{value.get("name")}', 
+                        "attributes": resource_attributes, 
+                        "as_params": flatten_attributes_to_params(resource_attributes), 
+                        "as_input": flatten_attributes_to_list_input(resource_attributes),
+                        "documentation": function_value.get('documentation'),
+                        "outputname": f'{value.get("name")}_output',
+                        "ruuid": value.get("ruuid"),
+                        "as_list": flatten_attributes_to_list(resource_attributes),
+                        "remove_attributes": remove_attributes
+                    }
+
+            all_resource_info.append(resource_info)
+                
                     
 
         
@@ -391,7 +412,7 @@ def render_resources():
         
         mapper_data = {
             "verbs": ['create', "remove"],
-            "resources": generate_mapper_resources(service),
+            "resources": generate_mapper_resources(service, botoinfo),
             "service": service.get('service')
         }
 

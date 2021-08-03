@@ -94,16 +94,13 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
                 if namespace in mapper_namespace:
                     # Have the assigned mapper render any output variables before passing to deployer
                     output_rendered_resource = mapper_namespace[namespace].render_resource_outputs(resource_diff)
-                    print(1)
                     # Deploy the resource
                     # TODO catch some errors
                     did_deploy = mapper_namespace[namespace].deploy_resource(output_rendered_resource)
-                    print(2)
                     #did_deploy = True
                     if did_deploy:
                         # Update the resource state to reflect that we successfully deployed the cloud resources
                         resource_state_manager.write_resource_difference(component_name,resource_diff)
-                    print(3)
                 else:
                     print("REALLY BAD")
 

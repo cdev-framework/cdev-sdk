@@ -25,13 +25,13 @@ from .aws_client import run_client_function, get_boto_client, monitor_status
 def {{verb}}_{{resource_info.get('resource_name')}}(identifier: str, resource: {{resource_info.get('model_name')}}) -> bool:
     try:
         {%if verb == 'create'%}
-        rv = _create_{{resource_info.get('resource_name')}}(resource)
+        rv = _create_{{resource_info.get('resource_name')}}(identifier, resource)
         if rv:
             cdev_cloud_mapper.add_cloud_resource(identifier, resource)
             cdev_cloud_mapper.update_output_value(identifier, rv)
 
         {%elif verb == 'remove'%}
-        _remove_{{resource_info.get('resource_name')}}(resource)
+        _remove_{{resource_info.get('resource_name')}}(identifier, resource)
 
         cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
         cdev_cloud_mapper.remove_identifier(identifier)
@@ -47,10 +47,10 @@ def {{verb}}_{{resource_info.get('resource_name')}}(identifier: str, resource: {
 {%for low_level_info in resource_info.get("low_level_info")%}
 
 # Low level function to call actual clieant call and return response
-def _{{low_level_info.get("verb")}}_{{resource_info.get('resource_name')}}(resource: {{resource_info.get('model_name')}}){{low_level_info.get('output_type')}}:
+def _{{low_level_info.get("verb")}}_{{resource_info.get('resource_name')}}(identifier: str, resource: {{resource_info.get('model_name')}}){{low_level_info.get('output_type')}}:
     try:
 
-        args = resource.filter_to_{{low_level_info.get("verb")}}()
+        args = {{resource_info.get('model_name')}}(**resource.dict()).filter_to_{{low_level_info.get("verb")}}(identifier)
 
         {% if 'wait' in low_level_info %}
         wait = {
@@ -65,10 +65,13 @@ def _{{low_level_info.get("verb")}}_{{resource_info.get('resource_name')}}(resou
         response = run_client_function('{{service}}', '{{low_level_info.get("function_name")}}', args)
         {%endif%}
 
-        
-        print(f"AWS RESPONSE -> {response}")
-        
-        return response
+        {% if 'output_key' in low_level_info%}
+        rv = response.get('{{low_level_info.get("output_key")}}')
+        {% else%}
+        rv = response
+        {% endif %}
+        print(rv)
+        return rv
 
     except botocore.exceptions.ClientError as e:
         print(e.response)

@@ -66,5 +66,11 @@ RESOURCE_TO_HANDLER_FUNCTION = {
 RESOURCE_TO_OUTPUT_RENDERER = {
     "cdev::aws::lambda_function": aws_lambda.lambda_replace_output,
     "cdev::aws::dynamodb::table": dynamodb_replace_output,
-    "cdev::aws::iam::policy": tmp2
+    "cdev::aws::iam::policy": tmp2,
+    "cdev::aws::iam::role": tmp2,
+    "cdev::aws::s3::bucket": tmp2,
+    "cdev::aws::sqs::queue": tmp2,
+    "cdev::aws::apigatewayv2::api": tmp2,
+    "cdev::aws::apigatewayv2::route": tmp2,
+    "cdev::aws::apigatewayv2::integration": tmp2,
 }

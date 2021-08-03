@@ -12,7 +12,7 @@ from .apigatewayv2_models import *
 
 class Api(Cdev_Resource):
     """
-    Creates an Api resource.
+    Updates an Api resource.
 
 
     """
@@ -144,7 +144,7 @@ class Api(Cdev_Resource):
 
 class Route(Cdev_Resource):
     """
-    Creates a Route for an API.
+    Updates a Route.
 
 
     """
@@ -268,7 +268,7 @@ class Route(Cdev_Resource):
 
 class Integration(Cdev_Resource):
     """
-    Creates an Integration.
+    Updates an Integration.
 
 
     """

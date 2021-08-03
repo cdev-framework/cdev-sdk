@@ -4,6 +4,8 @@ from typing import List, Optional, Dict
 
 from ...models import Cloud_Output, Rendered_Resource
 
+from ...backend import cloud_mapper_manager
+
 
 class ScalarAttributeType(str, Enum): 
 
@@ -1154,13 +1156,24 @@ class table_output(str, Enum):
 class table_model(Rendered_Resource):
     """
 
-    The `CreateTable` operation adds a new table to your account. In an AWS account, table names must be unique within each Region. That is, you can have two tables with same name if you create the tables in different Regions.
+    Modifies the provisioned throughput settings, global secondary indexes, or DynamoDB Streams settings for a given table.
 
-  `CreateTable` is an asynchronous operation. Upon receiving a `CreateTable` request, DynamoDB immediately returns a response with a `TableStatus` of `CREATING`. After the table is created, DynamoDB sets the `TableStatus` to `ACTIVE`. You can perform read and write operations only on an `ACTIVE` table. 
+ You can only perform one of the following operations at once:
 
- You can optionally define secondary indexes on the new table, as part of the `CreateTable` operation. If you want to create multiple tables with secondary indexes on them, you must create the tables sequentially. Only one table with secondary indexes can be in the `CREATING` state at any given time.
+ * Modify the provisioned throughput settings of the table.
 
- You can use the `DescribeTable` action to check the table status.
+
+* Enable or disable DynamoDB Streams on the table.
+
+
+* Remove a global secondary index from the table.
+
+
+* Create a new global secondary index on the table. After the index begins backfilling, you can use `UpdateTable` to perform other operations.
+
+
+
+  `UpdateTable` is an asynchronous operation; while it is executing, the table status changes from `ACTIVE` to `UPDATING`. While it is `UPDATING`, you cannot issue another `UpdateTable` request. When the table returns to the `ACTIVE` state, the `UpdateTable` operation is complete.
     
     """
 
@@ -1250,15 +1263,14 @@ class table_model(Rendered_Resource):
     """
 
 
-    def filter_to_create(self) -> dict:
+    def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['AttributeDefinitions', 'TableName', 'KeySchema', 'LocalSecondaryIndexes', 'GlobalSecondaryIndexes', 'BillingMode', 'ProvisionedThroughput', 'StreamSpecification', 'SSESpecification', 'Tags'])
 
         return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
-    def filter_to_remove(self) -> dict:
-        NEEDED_ATTRIBUTES = set(['AttributeDefinitions', 'TableName', 'KeySchema', 'LocalSecondaryIndexes', 'GlobalSecondaryIndexes', 'BillingMode', 'ProvisionedThroughput', 'StreamSpecification', 'SSESpecification', 'Tags'])
-
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+    def filter_to_remove(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['TableName'])
+        return {k:cloud_mapper_manager.get_output_value(identifier, k) for k in NEEDED_ATTRIBUTES }
 
     class Config:
         extra='ignore'

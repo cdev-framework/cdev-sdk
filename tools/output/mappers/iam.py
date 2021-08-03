@@ -22,7 +22,7 @@ from .aws_client import run_client_function, get_boto_client, monitor_status
 
 def create_policy(identifier: str, resource: policy_model) -> bool:
     try:
-        rv = _create_policy(resource)
+        rv = _create_policy(identifier, resource)
         if rv:
             cdev_cloud_mapper.add_cloud_resource(identifier, resource)
             cdev_cloud_mapper.update_output_value(identifier, rv)
@@ -35,7 +35,7 @@ def create_policy(identifier: str, resource: policy_model) -> bool:
 
 def remove_policy(identifier: str, resource: policy_model) -> bool:
     try:
-        _remove_policy(resource)
+        _remove_policy(identifier, resource)
 
         cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
         cdev_cloud_mapper.remove_identifier(identifier)
@@ -48,17 +48,16 @@ def remove_policy(identifier: str, resource: policy_model) -> bool:
 
 
 # Low level function to call actual clieant call and return response
-def _create_policy(resource: policy_model) -> policy_output:
+def _create_policy(identifier: str, resource: policy_model) -> policy_output:
     try:
 
-        args = resource.filter_to_create()
+        args = policy_model(**resource.dict()).filter_to_create(identifier)
 
         response = run_client_function('iam', 'create_policy', args)
 
-        
-        print(f"AWS RESPONSE -> {response}")
-        
-        return response
+        rv = response.get('Policy')
+        print(rv)
+        return rv
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
@@ -66,17 +65,16 @@ def _create_policy(resource: policy_model) -> policy_output:
 
 
 # Low level function to call actual clieant call and return response
-def _remove_policy(resource: policy_model):
+def _remove_policy(identifier: str, resource: policy_model):
     try:
 
-        args = resource.filter_to_remove()
+        args = policy_model(**resource.dict()).filter_to_remove(identifier)
 
         response = run_client_function('iam', 'delete_policy', args)
 
-        
-        print(f"AWS RESPONSE -> {response}")
-        
-        return response
+        rv = response
+        print(rv)
+        return rv
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
@@ -108,7 +106,7 @@ def handle_policy_deployment(resource_diff: Resource_State_Difference) -> bool:
 
 def create_role(identifier: str, resource: role_model) -> bool:
     try:
-        rv = _create_role(resource)
+        rv = _create_role(identifier, resource)
         if rv:
             cdev_cloud_mapper.add_cloud_resource(identifier, resource)
             cdev_cloud_mapper.update_output_value(identifier, rv)
@@ -121,7 +119,7 @@ def create_role(identifier: str, resource: role_model) -> bool:
 
 def remove_role(identifier: str, resource: role_model) -> bool:
     try:
-        _remove_role(resource)
+        _remove_role(identifier, resource)
 
         cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
         cdev_cloud_mapper.remove_identifier(identifier)
@@ -134,17 +132,16 @@ def remove_role(identifier: str, resource: role_model) -> bool:
 
 
 # Low level function to call actual clieant call and return response
-def _create_role(resource: role_model) -> role_output:
+def _create_role(identifier: str, resource: role_model) -> role_output:
     try:
 
-        args = resource.filter_to_create()
+        args = role_model(**resource.dict()).filter_to_create(identifier)
 
         response = run_client_function('iam', 'create_role', args)
 
-        
-        print(f"AWS RESPONSE -> {response}")
-        
-        return response
+        rv = response.get('Role')
+        print(rv)
+        return rv
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
@@ -152,17 +149,16 @@ def _create_role(resource: role_model) -> role_output:
 
 
 # Low level function to call actual clieant call and return response
-def _remove_role(resource: role_model):
+def _remove_role(identifier: str, resource: role_model):
     try:
 
-        args = resource.filter_to_remove()
+        args = role_model(**resource.dict()).filter_to_remove(identifier)
 
         response = run_client_function('iam', 'delete_role', args)
 
-        
-        print(f"AWS RESPONSE -> {response}")
-        
-        return response
+        rv = response
+        print(rv)
+        return rv
 
     except botocore.exceptions.ClientError as e:
         print(e.response)

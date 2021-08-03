@@ -12,38 +12,13 @@ from .sqs_models import *
 
 class Queue(Cdev_Resource):
     """
-    Creates a new standard or FIFO queue. You can pass one or more attributes in the request. Keep the following in mind:
+    Deletes the queue specified by the `QueueUrl`, regardless of the queue's contents.
 
- * If you don't specify the `FifoQueue` attribute, Amazon SQS creates a standard queue.
+  Be careful with the `DeleteQueue` action: When you delete a queue, any messages in the queue are no longer available. 
 
-  You can't change the queue type after you create it and you can't convert an existing standard queue into a FIFO queue. You must either create a new FIFO queue for your application or delete your existing standard queue and recreate it as a FIFO queue. For more information, see [Moving From a Standard Queue to a FIFO Queue](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/FIFO-queues.html#FIFO-queues-moving) in the *Amazon SQS Developer Guide*. 
+  When you delete a queue, the deletion process takes up to 60 seconds. Requests you send involving that queue during the 60 seconds might succeed. For example, a  `SendMessage`  request might succeed, but after 60 seconds the queue and the message you sent no longer exist.
 
- 
-* If you don't provide a value for an attribute, the queue is created with the default value for the attribute.
-
-
-* If you delete a queue, you must wait at least 60 seconds before creating a queue with the same name.
-
-
-
- To successfully create a new queue, you must provide a queue name that adheres to the [limits related to queues](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/limits-queues.html) and is unique within the scope of your queues.
-
-  After you create a queue, you must wait at least one second after the queue is created to be able to use the queue.
-
-  To get the queue URL, use the  `GetQueueUrl`  action.  `GetQueueUrl`  requires only the `QueueName` parameter. be aware of existing queue names:
-
- * If you provide the name of an existing queue along with the exact names and values of all the queue's attributes, `CreateQueue` returns the queue URL for the existing queue.
-
-
-* If the queue name, attribute names, or attribute values don't match an existing queue, `CreateQueue` returns an error.
-
-
-
- Some actions take lists of parameters. These lists are specified using the `param.n` notation. Values of `n` are integers starting from 1. For example, a parameter list with two elements looks like this:
-
-  `&AttributeName.1=first` 
-
-  `&AttributeName.2=second` 
+ When you delete a queue, you must wait at least 60 seconds before creating a queue with the same name.
 
   Cross-account permissions don't apply to this action. For more information, see [Grant cross-account permissions to a role and a user name](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-customer-managed-policy-examples.html#grant-cross-account-permissions-to-role-and-user-name) in the *Amazon SQS Developer Guide*.
 

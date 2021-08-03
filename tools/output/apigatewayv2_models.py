@@ -4,6 +4,8 @@ from typing import List, Optional, Dict
 
 from ...models import Cloud_Output, Rendered_Resource
 
+from ...backend import cloud_mapper_manager
+
 
 
 
@@ -626,7 +628,7 @@ class integration_output(str, Enum):
 class api_model(Rendered_Resource):
     """
 
-    Creates an Api resource.
+    Updates an Api resource.
     
     """
 
@@ -697,15 +699,14 @@ class api_model(Rendered_Resource):
     """
 
 
-    def filter_to_create(self) -> dict:
+    def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['Name', 'ProtocolType', 'ApiKeySelectionExpression', 'CorsConfiguration', 'CredentialsArn', 'Description', 'DisableSchemaValidation', 'DisableExecuteApiEndpoint', 'RouteKey', 'RouteSelectionExpression', 'Tags', 'Target', 'Version'])
 
         return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
-    def filter_to_remove(self) -> dict:
-        NEEDED_ATTRIBUTES = set(['Name', 'ProtocolType', 'ApiKeySelectionExpression', 'CorsConfiguration', 'CredentialsArn', 'Description', 'DisableSchemaValidation', 'DisableExecuteApiEndpoint', 'RouteKey', 'RouteSelectionExpression', 'Tags', 'Target', 'Version'])
-
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+    def filter_to_remove(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['ApiId'])
+        return {k:cloud_mapper_manager.get_output_value(identifier, k) for k in NEEDED_ATTRIBUTES }
 
     class Config:
         extra='ignore'
@@ -714,7 +715,7 @@ class api_model(Rendered_Resource):
 class route_model(Rendered_Resource):
     """
 
-    Creates a Route for an API.
+    Updates a Route.
     
     """
 
@@ -780,15 +781,14 @@ class route_model(Rendered_Resource):
     """
 
 
-    def filter_to_create(self) -> dict:
+    def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'RouteKey', 'ApiKeyRequired', 'AuthorizationScopes', 'AuthorizationType', 'AuthorizerId', 'ModelSelectionExpression', 'OperationName', 'RequestModels', 'RequestParameters', 'RouteResponseSelectionExpression', 'Target'])
 
         return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
-    def filter_to_remove(self) -> dict:
-        NEEDED_ATTRIBUTES = set(['ApiId', 'RouteKey', 'ApiKeyRequired', 'AuthorizationScopes', 'AuthorizationType', 'AuthorizerId', 'ModelSelectionExpression', 'OperationName', 'RequestModels', 'RequestParameters', 'RouteResponseSelectionExpression', 'Target'])
-
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+    def filter_to_remove(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['ApiId', 'RouteId'])
+        return {k:cloud_mapper_manager.get_output_value(identifier, k) for k in NEEDED_ATTRIBUTES }
 
     class Config:
         extra='ignore'
@@ -797,7 +797,7 @@ class route_model(Rendered_Resource):
 class integration_model(Rendered_Resource):
     """
 
-    Creates an Integration.
+    Updates an Integration.
     
     """
 
@@ -928,15 +928,14 @@ class integration_model(Rendered_Resource):
     """
 
 
-    def filter_to_create(self) -> dict:
+    def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'IntegrationType', 'ConnectionId', 'ConnectionType', 'ContentHandlingStrategy', 'CredentialsArn', 'Description', 'IntegrationMethod', 'IntegrationSubtype', 'IntegrationUri', 'PassthroughBehavior', 'PayloadFormatVersion', 'RequestParameters', 'RequestTemplates', 'ResponseParameters', 'TemplateSelectionExpression', 'TimeoutInMillis', 'TlsConfig'])
 
         return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
-    def filter_to_remove(self) -> dict:
-        NEEDED_ATTRIBUTES = set(['ApiId', 'IntegrationType', 'ConnectionId', 'ConnectionType', 'ContentHandlingStrategy', 'CredentialsArn', 'Description', 'IntegrationMethod', 'IntegrationSubtype', 'IntegrationUri', 'PassthroughBehavior', 'PayloadFormatVersion', 'RequestParameters', 'RequestTemplates', 'ResponseParameters', 'TemplateSelectionExpression', 'TimeoutInMillis', 'TlsConfig'])
-
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+    def filter_to_remove(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['ApiId', 'IntegrationId'])
+        return {k:cloud_mapper_manager.get_output_value(identifier, k) for k in NEEDED_ATTRIBUTES }
 
     class Config:
         extra='ignore'
