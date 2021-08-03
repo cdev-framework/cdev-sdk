@@ -89,7 +89,9 @@ class {{output.get("name")}}(str, Enum):
 class {{resource.get("resource_name").lower()}}_model(Rendered_Resource):
     {%if resource.get('documentation')%}
     """
-    {{markdownify(resource.get('documentation').strip())}}
+
+    {{markdownify(resource.get('documentation')).strip()}}
+    
     """
     {%endif%}
 
@@ -117,28 +119,16 @@ class {{resource.get("resource_name").lower()}}_model(Rendered_Resource):
     {% endif %}
     {% if attribute.get('documentation')%}
     """
-    {{markdownify(attribute.get('documentation').strip())}}
+    {{markdownify(attribute.get('documentation')).strip()}}
     """
     {% endif %}
 
     {% endfor %}
 
-    def __init__(__pydantic_self__, name: str, ruuid: str, hash:str, {{ resource.get("as_params") }} ) -> None:
-        """
-        Create Model from input
-        """
-        data = {
-            "ruuid": ruuid,
-            "name": name,
-            "hash": hash,
-            {% for attribute in resource.get("attributes")%}
-            "{{pythonify_symbol(attribute.get('param_name'))}}": {{pythonify_symbol(attribute.get('param_name'))}},
-            {% endfor %}
-        }
+    def filter_out_extra(self) -> dict:
+        NEEDED_ATTRIBUTES = set({{resource.get("as_input")}})
 
-        filtered_data = {k:v for k,v in data.items() if v}
-        
-        super().__init__(**filtered_data)
+        return {k:v for k,v in self.dict() if k in NEEDED_ATTRIBUTES}
 
     class Config:
         extra='ignore'

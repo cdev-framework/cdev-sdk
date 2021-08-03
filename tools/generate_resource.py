@@ -103,7 +103,6 @@ def flatten_structure(name, structure, shape_info) -> dict:
                 key_type = key_shape
             elif shape_info.get(key_shape).get("type") == "enum":
                 key_type = key_shape
-                print("HERHJBEKRbf fa")
             elif shape_info.get(key_shape).get("type") == "string" and 'enum' in shape_info.get(key_shape):
                 key_type = key_shape
             else:
@@ -165,6 +164,16 @@ def flatten_attributes_to_list_input(attributes: list):
 
     for attribute in sorted_attributes:
         final_string = f"{final_string}, self.{attribute.get('param_name')}"
+
+    return f"[{final_string[2:]}]"
+
+def flatten_attributes_to_list(attributes: list):
+    final_string = ""
+
+    sorted_attributes = SortedListWithKey(attributes, lambda x: not x.get("isrequired"))
+
+    for attribute in sorted_attributes:
+        final_string = f"{final_string}, {attribute.get('param_name')}"
 
     return f"[{final_string[2:]}]"
 
@@ -281,7 +290,7 @@ def render_resources():
                                 "as_input": flatten_attributes_to_list_input(resource_attributes),
                                 "documentation": function_value.get('documentation'),
                                 "outputname": f'{value.get("name")}_output',
-                                "ruuid": value.get("ruuid")
+                                "ruuid": value.get("ruuid"),
                             }
 
                     all_resource_info.append(resource_info)
