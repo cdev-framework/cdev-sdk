@@ -8,7 +8,10 @@
                     "name": "Policy",
                     "ruuid": "cdev::aws::iam::policy",
                     "create": "CreatePolicy",
-                    "remove": "DeletePolicy",
+                    "remove": {
+                        "action": "DeletePolicy",
+                        "overrides": {"PolicyArn": "Arn"}
+                    },
                     "update": "CreatePolicyVersion"
                 },
                 {

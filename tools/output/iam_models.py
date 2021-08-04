@@ -315,8 +315,8 @@ class policy_model(Rendered_Resource):
         return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     def filter_to_remove(self, identifier) -> dict:
-        NEEDED_ATTRIBUTES = set(['PolicyArn'])
-        return {k:cloud_mapper_manager.get_output_value(identifier, k) for k in NEEDED_ATTRIBUTES }
+        NEEDED_ATTRIBUTES = set([('PolicyArn', 'Arn')])
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
 
     class Config:
         extra='ignore'
@@ -397,7 +397,7 @@ class role_model(Rendered_Resource):
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['RoleName'])
-        return {k:cloud_mapper_manager.get_output_value(identifier, k) for k in NEEDED_ATTRIBUTES }
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
 
     class Config:
         extra='ignore'

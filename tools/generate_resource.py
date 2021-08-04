@@ -301,8 +301,10 @@ def generate_mapper_resources(service, botoinfo):
     return rv
 
     
-def create_remove_attributes(function_info, botoinfo):
-    return [k for k in botoinfo.get("shapes").get(function_info.get("shape")).get("members")]
+def create_remove_attributes(function_info, botoinfo, overrides):
+    return [k if k not in overrides else (k,overrides.get(k)) for k in botoinfo.get("shapes").get(function_info.get("shape")).get("members")]
+
+
 
 
 
@@ -349,8 +351,13 @@ def render_resources():
 
                 if isinstance(function_info,str):
                     function_value = botoinfo.get("operations").get(function_info)
+                    overrides = {}
                 elif isinstance(function_info, dict):
                     function_value = botoinfo.get("operations").get(function_info.get("action"))
+                    if "overrides" in function_info:
+                        overrides = function_info.get("overrides")
+                    else:
+                        overrides = {}
 
                 function_key_to_function[key] = function_value
                 #print(function_value)
@@ -370,7 +377,9 @@ def render_resources():
                     output_models.append(output_model_info)
 
                 if key == 'remove':
-                    remove_attributes = create_remove_attributes(function_value.get("input"), botoinfo)
+
+
+                    remove_attributes = create_remove_attributes(function_value.get("input"), botoinfo, overrides)
                     pass
 
             resource_info = {
