@@ -176,12 +176,12 @@ class aws_lambda_function(Rendered_Resource):
     def __init__(__pydantic_self__, FunctionName: str, Configuration: lambda_function_configuration, FPath: FilePath, src_code_hash: str, config_hash: str,**kwargs) -> None:
         parents = set()
 
-        if isinstance(Configuration.Role, Cloud_Output):
-            parents.add(Configuration.Role.resource)
-
-        for _,value in Configuration.Environment.Variables.items():
-            if isinstance(value, Cloud_Output):
-                parents.add(value.resource)
+        #if isinstance(Configuration.Role, Cloud_Output):
+        #    parents.add(Configuration.Role.resource)
+#
+        #for _,value in Configuration.Environment.Variables.items():
+        #    if isinstance(value, Cloud_Output):
+        #        parents.add(value.resource)
 
         if kwargs:
             kwargs.update(**{

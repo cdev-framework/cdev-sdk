@@ -139,7 +139,7 @@ class Api(Cdev_Resource):
         return api_model(**filtered_data)
 
     def from_output(self, key: api_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::api::{self.hash}", "key": key})
+        return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::api::{self.hash}", "key": key, "type": "cdev_output"})
 
 
 class Route(Cdev_Resource):
@@ -263,7 +263,7 @@ class Route(Cdev_Resource):
         return route_model(**filtered_data)
 
     def from_output(self, key: route_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::route::{self.hash}", "key": key})
+        return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::route::{self.hash}", "key": key, "type": "cdev_output"})
 
 
 class Integration(Cdev_Resource):
@@ -470,6 +470,6 @@ class Integration(Cdev_Resource):
         return integration_model(**filtered_data)
 
     def from_output(self, key: integration_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::integration::{self.hash}", "key": key})
+        return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::integration::{self.hash}", "key": key, "type": "cdev_output"})
 
 

@@ -43,6 +43,7 @@ def create_lambda_function(identifier: str, lambda_resource: aws_lambda_function
     keyname = filename[:-3] + f"-{lambda_resource.hash}" + ".zip"
     function_name = lambda_resource.FunctionName
 
+
     base_config = { k:v for (k,v) in lambda_resource.Configuration.dict().items() if v }
 
 
@@ -233,18 +234,3 @@ def handle_aws_lambda_deployment(resource_diff: Resource_State_Difference) -> bo
     return True
 
 
-def lambda_replace_output(resource: aws_lambda_function) -> aws_lambda_function:
-    if isinstance(resource.Configuration.Role, Cloud_Output):
-        resource.Configuration.Role = "arn:aws:iam::369004794337:role/test-lambda-role"
-
-    resource.Configuration.Environment.Variables = {k:_wrap_get_cloud_output(v) for (k,v) in resource.Configuration.Environment.Variables.items()}
-
-    return resource
-
-def _wrap_get_cloud_output(val: Union[Cloud_Output, str]) -> str:
-    if isinstance(val, str):
-        return val
-
-    identifier = val.resource.split("::")[-1]
-    
-    return cdev_cloud_mapper.get_output_value(identifier, val.key)

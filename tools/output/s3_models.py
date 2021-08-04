@@ -1,6 +1,6 @@
 from pydantic.main import BaseModel
 from enum import Enum
-from typing import List, Optional, Dict 
+from typing import List, Optional, Dict, Union
 
 from ...models import Cloud_Output, Rendered_Resource
 
@@ -81,7 +81,7 @@ class CreateBucketConfiguration(BaseModel):
     """
 
 
-    LocationConstraint: BucketLocationConstraint 
+    LocationConstraint: Union[BucketLocationConstraint, Cloud_Output]
     """
     Specifies the Region where the bucket will be created. If you don't specify a Region, the bucket is created in the US East (N. Virginia) Region (us-east-1).
 
@@ -232,49 +232,49 @@ class bucket_model(Rendered_Resource):
     """
 
 
-    ACL: Optional[BucketCannedACL] 
+    ACL: Optional[Union[BucketCannedACL, Cloud_Output]] 
     """
     The canned ACL to apply to the bucket.
     """
 
-    Bucket: str
+    Bucket: Union[str, Cloud_Output]
     """
     The name of the bucket to create.
     """
 
-    CreateBucketConfiguration: Optional[CreateBucketConfiguration] 
+    CreateBucketConfiguration: Optional[Union[CreateBucketConfiguration, Cloud_Output]] 
     """
     The configuration information for the bucket.
     """
 
-    GrantFullControl: Optional[str]
+    GrantFullControl: Optional[Union[str, Cloud_Output]]
     """
     Allows grantee the read, write, read ACP, and write ACP permissions on the bucket.
     """
 
-    GrantRead: Optional[str]
+    GrantRead: Optional[Union[str, Cloud_Output]]
     """
     Allows grantee to list the objects in the bucket.
     """
 
-    GrantReadACP: Optional[str]
+    GrantReadACP: Optional[Union[str, Cloud_Output]]
     """
     Allows grantee to read the bucket ACL.
     """
 
-    GrantWrite: Optional[str]
+    GrantWrite: Optional[Union[str, Cloud_Output]]
     """
     Allows grantee to create new objects in the bucket.
 
  For the bucket and object owners of existing objects, also allows deletions and overwrites of those objects.
     """
 
-    GrantWriteACP: Optional[str]
+    GrantWriteACP: Optional[Union[str, Cloud_Output]]
     """
     Allows grantee to write the ACL for the applicable bucket.
     """
 
-    ObjectLockEnabledForBucket: Optional[bool]
+    ObjectLockEnabledForBucket: Optional[Union[bool, Cloud_Output]]
     """
     Specifies whether you want S3 Object Lock to be enabled for the new bucket.
     """

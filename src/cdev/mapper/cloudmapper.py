@@ -16,7 +16,7 @@ class DefaultMapper(CloudMapper):
     ---------------------------------
     """
     def __init__(self) -> None:
-        super().__init__(RESOURCE_TO_HANDLER_FUNCTION,RESOURCE_TO_OUTPUT_RENDERER)
+        super().__init__(RESOURCE_TO_HANDLER_FUNCTION)
 
     def get_namespaces(self) -> List[str]:
         return ["cdev"]
@@ -36,19 +36,53 @@ class DefaultMapper(CloudMapper):
 
     def render_resource_outputs(self, resource_diff)-> Resource_State_Difference:
         if resource_diff.new_resource:
-            resource_diff.new_resource = self.get_resource_to_output_renderer()[resource_diff.new_resource.ruuid](resource_diff.new_resource)
-        
+
+            replaced_output = replace_output(resource_diff.new_resource.dict())
+           
+            resource_diff.new_resource = type(resource_diff.new_resource).parse_obj(replaced_output)
         return resource_diff
 
 
-def dynamodb_replace_output(resource):
-    return resource
 
-def tmp(diff: Resource_State_Difference):
-    return True
 
-def tmp2(resource):
-    return resource
+def replace_output(obj) -> dict:
+
+    rv = _recursive_replace_output(obj)
+
+    return rv
+
+
+def _recursive_replace_output(obj) -> dict:
+    rv = dict()
+
+    if isinstance(obj, dict): 
+        for k,v in obj.items():
+            if isinstance(v, dict):
+                if "type" in v and v.get("type") == 'cdev_output':
+                  
+                    identifier = v.get('resource').split("::")[-1]
+                    rv[k] = cdev_cloud_mapper.get_output_value(identifier, v.get("key"))
+
+                else:
+                    rv[k] = _recursive_replace_output(v)
+
+            elif isinstance(v, list):
+                rv[k] = [_recursive_replace_output(x) for x in v]
+
+            else:
+                rv[k] = v
+
+        return rv
+
+    elif isinstance(obj, list):
+        return [_recursive_replace_output(x) for x in obj]
+
+    else:
+        return obj
+
+    
+
+
 
 
 RESOURCE_TO_HANDLER_FUNCTION = {
@@ -63,14 +97,3 @@ RESOURCE_TO_HANDLER_FUNCTION = {
     "cdev::aws::apigatewayv2::integration": apigatewayv2.handle_integration_deployment
 }
 
-RESOURCE_TO_OUTPUT_RENDERER = {
-    "cdev::aws::lambda_function": aws_lambda.lambda_replace_output,
-    "cdev::aws::dynamodb::table": dynamodb_replace_output,
-    "cdev::aws::iam::policy": tmp2,
-    "cdev::aws::iam::role": tmp2,
-    "cdev::aws::s3::bucket": tmp2,
-    "cdev::aws::sqs::queue": tmp2,
-    "cdev::aws::apigatewayv2::api": tmp2,
-    "cdev::aws::apigatewayv2::route": tmp2,
-    "cdev::aws::apigatewayv2::integration": tmp2,
-}

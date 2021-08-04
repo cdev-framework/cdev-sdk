@@ -48,7 +48,7 @@ class {{resource.get("resource_name")}}(Cdev_Resource):
         return {{resource.get("resource_name").lower()}}_model(**filtered_data)
 
     def from_output(self, key: {{resource.get("outputname").lower()}}) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"{{resource.get('ruuid')}}::{self.hash}", "key": key})
+        return Cloud_Output(**{"resource": f"{{resource.get('ruuid')}}::{self.hash}", "key": key, "type": "cdev_output"})
 
 
 {%endfor%}

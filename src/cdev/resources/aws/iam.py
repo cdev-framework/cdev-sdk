@@ -108,7 +108,7 @@ class Policy(Cdev_Resource):
         return policy_model(**filtered_data)
 
     def from_output(self, key: policy_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"cdev::aws::iam::policy::{self.hash}", "key": key})
+        return Cloud_Output(**{"resource": f"cdev::aws::iam::policy::{self.hash}", "key": key, "type": "cdev_output"})
 
 
 class Role(Cdev_Resource):
@@ -216,6 +216,6 @@ class Role(Cdev_Resource):
         return role_model(**filtered_data)
 
     def from_output(self, key: role_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"cdev::aws::iam::role::{self.hash}", "key": key})
+        return Cloud_Output(**{"resource": f"cdev::aws::iam::role::{self.hash}", "key": key, "type": "cdev_output"})
 
 

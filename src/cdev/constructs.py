@@ -45,9 +45,8 @@ class CloudMapper():
     """
     A Cloud Mapper is the construct responsible for directly interacting with the Cloud Provider and managing resource state. 
     """
-    def __init__(self, resource_to_handler: Dict[str, Callable], resource_to_output_renderer: Dict[str, Callable] ) -> None:
+    def __init__(self, resource_to_handler: Dict[str, Callable]) -> None:
         self.resource_to_handler = resource_to_handler
-        self.resource_to_output_renderer = resource_to_output_renderer
         pass
 
     def get_namespaces(self) -> List[str]:
@@ -61,9 +60,6 @@ class CloudMapper():
 
     def get_resource_to_handler(self) -> Dict[str, Callable]:
         return self.resource_to_handler
-
-    def get_resource_to_output_renderer(self) -> Dict[str, Callable]:
-        return self.resource_to_output_renderer
 
     def render_resource_outputs(self, resource_diff: Resource_State_Difference) -> Resource_State_Difference:
         return resource_diff

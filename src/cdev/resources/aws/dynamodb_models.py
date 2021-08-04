@@ -1,6 +1,6 @@
 from pydantic.main import BaseModel
 from enum import Enum
-from typing import List, Optional, Dict 
+from typing import List, Optional, Dict, Union
 
 from ...models import Cloud_Output, Rendered_Resource
 
@@ -25,14 +25,14 @@ class AttributeDefinition(BaseModel):
     """
 
 
-    AttributeName: str
+    AttributeName: Union[str, Cloud_Output]
     """
     A name for the attribute.
 
 
     """
 
-    AttributeType: ScalarAttributeType 
+    AttributeType: Union[ScalarAttributeType, Cloud_Output]
     """
     The data type for the attribute, where:
 
@@ -79,14 +79,14 @@ class KeySchemaElement(BaseModel):
     """
 
 
-    AttributeName: str
+    AttributeName: Union[str, Cloud_Output]
     """
     The name of a key attribute.
 
 
     """
 
-    KeyType: KeyType 
+    KeyType: Union[KeyType, Cloud_Output]
     """
     The role that this key attribute will assume:
 
@@ -134,7 +134,7 @@ class Projection(BaseModel):
     """
 
 
-    ProjectionType: ProjectionType 
+    ProjectionType: Union[ProjectionType, Cloud_Output]
     """
     The set of attributes that are projected into the index:
 
@@ -150,7 +150,7 @@ class Projection(BaseModel):
 
     """
 
-    NonKeyAttributes: List[str]
+    NonKeyAttributes: Union[List[str], Cloud_Output]
 
 
     def __init__(self, ProjectionType: ProjectionType, NonKeyAttributes: List[str] ):
@@ -170,14 +170,14 @@ class LocalSecondaryIndex(BaseModel):
     """
 
 
-    IndexName: str
+    IndexName: Union[str, Cloud_Output]
     """
     The name of the local secondary index. The name must be unique among all other indexes on this table.
 
 
     """
 
-    KeySchema: List[KeySchemaElement]
+    KeySchema: Union[List[KeySchemaElement], Cloud_Output]
     """
     Represents *a single element* of a key schema. A key schema specifies the attributes that make up the primary key of a table, or the key attributes of an index.
 
@@ -188,7 +188,7 @@ class LocalSecondaryIndex(BaseModel):
 
     """
 
-    Projection: Projection 
+    Projection: Union[Projection, Cloud_Output] 
     """
     Represents attributes that are copied (projected) from the table into the local secondary index. These are in addition to the primary key attributes and index key attributes, which are automatically projected. 
 
@@ -216,7 +216,7 @@ class ProvisionedThroughput(BaseModel):
     """
 
 
-    ReadCapacityUnits: int
+    ReadCapacityUnits: Union[int, Cloud_Output]
     """
     The maximum number of writes consumed per second before DynamoDB returns a `ThrottlingException`. For more information, see [Specifying Read and Write Requirements](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithTables.html#ProvisionedThroughput) in the *Amazon DynamoDB Developer Guide*.
 
@@ -225,7 +225,7 @@ class ProvisionedThroughput(BaseModel):
 
     """
 
-    WriteCapacityUnits: int
+    WriteCapacityUnits: Union[int, Cloud_Output]
     """
     The maximum number of writes consumed per second before DynamoDB returns a `ThrottlingException`. For more information, see [Specifying Read and Write Requirements](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithTables.html#ProvisionedThroughput) in the *Amazon DynamoDB Developer Guide*.
 
@@ -252,14 +252,14 @@ class GlobalSecondaryIndex(BaseModel):
     """
 
 
-    IndexName: str
+    IndexName: Union[str, Cloud_Output]
     """
     The name of the global secondary index. The name must be unique among all other indexes on this table.
 
 
     """
 
-    KeySchema: List[KeySchemaElement]
+    KeySchema: Union[List[KeySchemaElement], Cloud_Output]
     """
     Represents *a single element* of a key schema. A key schema specifies the attributes that make up the primary key of a table, or the key attributes of an index.
 
@@ -270,14 +270,14 @@ class GlobalSecondaryIndex(BaseModel):
 
     """
 
-    Projection: Projection 
+    Projection: Union[Projection, Cloud_Output] 
     """
     Represents attributes that are copied (projected) from the table into the global secondary index. These are in addition to the primary key attributes and index key attributes, which are automatically projected. 
 
 
     """
 
-    ProvisionedThroughput: ProvisionedThroughput 
+    ProvisionedThroughput: Union[ProvisionedThroughput, Cloud_Output] 
     """
     Represents the provisioned throughput settings for the specified global secondary index.
 
@@ -326,14 +326,14 @@ class StreamSpecification(BaseModel):
     """
 
 
-    StreamEnabled: bool
+    StreamEnabled: Union[bool, Cloud_Output]
     """
     Indicates whether DynamoDB Streams is enabled (true) or disabled (false) on the table.
 
 
     """
 
-    StreamViewType: StreamViewType 
+    StreamViewType: Union[StreamViewType, Cloud_Output]
     """
      When an item in the table is modified, `StreamViewType` determines what information is written to the stream for this table. Valid values for `StreamViewType` are:
 
@@ -379,14 +379,14 @@ class SSESpecification(BaseModel):
     """
 
 
-    Enabled: bool
+    Enabled: Union[bool, Cloud_Output]
     """
     Indicates whether server-side encryption is done using an AWS managed CMK or an AWS owned CMK. If enabled (true), server-side encryption type is set to `KMS` and an AWS managed CMK is used (AWS KMS charges apply). If disabled (false) or not specified, server-side encryption is set to AWS owned CMK.
 
 
     """
 
-    SSEType: SSEType 
+    SSEType: Union[SSEType, Cloud_Output]
     """
     Server-side encryption type. The only supported value is:
 
@@ -396,7 +396,7 @@ class SSESpecification(BaseModel):
 
     """
 
-    KMSMasterKeyId: str
+    KMSMasterKeyId: Union[str, Cloud_Output]
     """
     The AWS KMS customer master key (CMK) that should be used for the AWS KMS encryption. To specify a CMK, use its key ID, Amazon Resource Name (ARN), alias name, or alias ARN. Note that you should only provide this parameter if the key is different from the default DynamoDB customer master key alias/aws/dynamodb.
 
@@ -428,14 +428,14 @@ class Tag(BaseModel):
     """
 
 
-    Key: str
+    Key: Union[str, Cloud_Output]
     """
     The key of the tag. Tag keys are case sensitive. Each DynamoDB table can only have up to one tag with the same key. If you try to add an existing tag (same key), the existing tag value will be updated to the new value. 
 
 
     """
 
-    Value: str
+    Value: Union[str, Cloud_Output]
     """
     The value of the tag. Tag values are case-sensitive and can be null.
 
@@ -460,14 +460,14 @@ class UpdateGlobalSecondaryIndexAction(BaseModel):
     """
 
 
-    IndexName: str
+    IndexName: Union[str, Cloud_Output]
     """
     The name of the global secondary index to be updated.
 
 
     """
 
-    ProvisionedThroughput: ProvisionedThroughput 
+    ProvisionedThroughput: Union[ProvisionedThroughput, Cloud_Output] 
     """
     Represents the provisioned throughput settings for the specified global secondary index.
 
@@ -494,14 +494,14 @@ class CreateGlobalSecondaryIndexAction(BaseModel):
     """
 
 
-    IndexName: str
+    IndexName: Union[str, Cloud_Output]
     """
     The name of the global secondary index to be created.
 
 
     """
 
-    KeySchema: List[KeySchemaElement]
+    KeySchema: Union[List[KeySchemaElement], Cloud_Output]
     """
     Represents *a single element* of a key schema. A key schema specifies the attributes that make up the primary key of a table, or the key attributes of an index.
 
@@ -512,14 +512,14 @@ class CreateGlobalSecondaryIndexAction(BaseModel):
 
     """
 
-    Projection: Projection 
+    Projection: Union[Projection, Cloud_Output] 
     """
     Represents attributes that are copied (projected) from the table into an index. These are in addition to the primary key attributes and index key attributes, which are automatically projected.
 
 
     """
 
-    ProvisionedThroughput: ProvisionedThroughput 
+    ProvisionedThroughput: Union[ProvisionedThroughput, Cloud_Output] 
     """
     Represents the provisioned throughput settings for the specified global secondary index.
 
@@ -548,7 +548,7 @@ class DeleteGlobalSecondaryIndexAction(BaseModel):
     """
 
 
-    IndexName: str
+    IndexName: Union[str, Cloud_Output]
     """
     The name of the global secondary index to be deleted.
 
@@ -581,14 +581,14 @@ class GlobalSecondaryIndexUpdate(BaseModel):
     """
 
 
-    Update: UpdateGlobalSecondaryIndexAction 
+    Update: Union[UpdateGlobalSecondaryIndexAction, Cloud_Output] 
     """
     The name of an existing global secondary index, along with new provisioned throughput settings to be applied to that index.
 
 
     """
 
-    Create: CreateGlobalSecondaryIndexAction 
+    Create: Union[CreateGlobalSecondaryIndexAction, Cloud_Output] 
     """
     The parameters required for creating a global secondary index on an existing table:
 
@@ -610,7 +610,7 @@ class GlobalSecondaryIndexUpdate(BaseModel):
 
     """
 
-    Delete: DeleteGlobalSecondaryIndexAction 
+    Delete: Union[DeleteGlobalSecondaryIndexAction, Cloud_Output] 
     """
     The name of an existing global secondary index to be removed.
 
@@ -637,7 +637,7 @@ class ProvisionedThroughputOverride(BaseModel):
     """
 
 
-    ReadCapacityUnits: int
+    ReadCapacityUnits: Union[int, Cloud_Output]
     """
     Replica-specific read capacity units. If not specified, uses the source table's read capacity settings.
 
@@ -661,14 +661,14 @@ class ReplicaGlobalSecondaryIndex(BaseModel):
     """
 
 
-    IndexName: str
+    IndexName: Union[str, Cloud_Output]
     """
     The name of the global secondary index.
 
 
     """
 
-    ProvisionedThroughputOverride: ProvisionedThroughputOverride 
+    ProvisionedThroughputOverride: Union[ProvisionedThroughputOverride, Cloud_Output] 
     """
     Replica table GSI-specific provisioned throughput. If not specified, uses the source table GSI's read capacity settings.
 
@@ -693,28 +693,28 @@ class CreateReplicationGroupMemberAction(BaseModel):
     """
 
 
-    RegionName: str
+    RegionName: Union[str, Cloud_Output]
     """
     The Region where the new replica will be created.
 
 
     """
 
-    KMSMasterKeyId: str
+    KMSMasterKeyId: Union[str, Cloud_Output]
     """
     The AWS KMS customer master key (CMK) that should be used for AWS KMS encryption in the new replica. To specify a CMK, use its key ID, Amazon Resource Name (ARN), alias name, or alias ARN. Note that you should only provide this parameter if the key is different from the default DynamoDB KMS master key alias/aws/dynamodb.
 
 
     """
 
-    ProvisionedThroughputOverride: ProvisionedThroughputOverride 
+    ProvisionedThroughputOverride: Union[ProvisionedThroughputOverride, Cloud_Output] 
     """
     Replica-specific provisioned throughput. If not specified, uses the source table's provisioned throughput settings.
 
 
     """
 
-    GlobalSecondaryIndexes: List[ReplicaGlobalSecondaryIndex]
+    GlobalSecondaryIndexes: Union[List[ReplicaGlobalSecondaryIndex], Cloud_Output]
     """
     Represents the properties of a replica global secondary index.
 
@@ -741,28 +741,28 @@ class UpdateReplicationGroupMemberAction(BaseModel):
     """
 
 
-    RegionName: str
+    RegionName: Union[str, Cloud_Output]
     """
     The Region where the replica exists.
 
 
     """
 
-    KMSMasterKeyId: str
+    KMSMasterKeyId: Union[str, Cloud_Output]
     """
     The AWS KMS customer master key (CMK) of the replica that should be used for AWS KMS encryption. To specify a CMK, use its key ID, Amazon Resource Name (ARN), alias name, or alias ARN. Note that you should only provide this parameter if the key is different from the default DynamoDB KMS master key alias/aws/dynamodb.
 
 
     """
 
-    ProvisionedThroughputOverride: ProvisionedThroughputOverride 
+    ProvisionedThroughputOverride: Union[ProvisionedThroughputOverride, Cloud_Output] 
     """
     Replica-specific provisioned throughput. If not specified, uses the source table's provisioned throughput settings.
 
 
     """
 
-    GlobalSecondaryIndexes: List[ReplicaGlobalSecondaryIndex]
+    GlobalSecondaryIndexes: Union[List[ReplicaGlobalSecondaryIndex], Cloud_Output]
     """
     Represents the properties of a replica global secondary index.
 
@@ -789,7 +789,7 @@ class DeleteReplicationGroupMemberAction(BaseModel):
     """
 
 
-    RegionName: str
+    RegionName: Union[str, Cloud_Output]
     """
     The Region where the replica exists.
 
@@ -822,21 +822,21 @@ class ReplicationGroupUpdate(BaseModel):
     """
 
 
-    Create: CreateReplicationGroupMemberAction 
+    Create: Union[CreateReplicationGroupMemberAction, Cloud_Output] 
     """
     The parameters required for creating a replica for the table.
 
 
     """
 
-    Update: UpdateReplicationGroupMemberAction 
+    Update: Union[UpdateReplicationGroupMemberAction, Cloud_Output] 
     """
     The parameters required for updating a replica for the table.
 
 
     """
 
-    Delete: DeleteReplicationGroupMemberAction 
+    Delete: Union[DeleteReplicationGroupMemberAction, Cloud_Output] 
     """
     The parameters required for deleting a replica for the table.
 
@@ -1178,17 +1178,17 @@ class table_model(Rendered_Resource):
     """
 
 
-    AttributeDefinitions: List[AttributeDefinition]
+    AttributeDefinitions: Union[List[AttributeDefinition], Cloud_Output]
     """
     Represents an attribute for describing the key schema for the table and indexes.
     """
 
-    TableName: str
+    TableName: Union[str, Cloud_Output]
     """
     The name of the table to create.
     """
 
-    KeySchema: List[KeySchemaElement]
+    KeySchema: Union[List[KeySchemaElement], Cloud_Output]
     """
     Represents *a single element* of a key schema. A key schema specifies the attributes that make up the primary key of a table, or the key attributes of an index.
 
@@ -1197,17 +1197,17 @@ class table_model(Rendered_Resource):
  A `KeySchemaElement` must be a scalar, top-level attribute (not a nested attribute). The data type must be one of String, Number, or Binary. The attribute cannot be nested within a List or a Map.
     """
 
-    LocalSecondaryIndexes: Optional[List[LocalSecondaryIndex]]
+    LocalSecondaryIndexes: Optional[Union[List[LocalSecondaryIndex], Cloud_Output]]
     """
     Represents the properties of a local secondary index.
     """
 
-    GlobalSecondaryIndexes: Optional[List[GlobalSecondaryIndex]]
+    GlobalSecondaryIndexes: Optional[Union[List[GlobalSecondaryIndex], Cloud_Output]]
     """
     Represents the properties of a global secondary index.
     """
 
-    BillingMode: Optional[BillingMode] 
+    BillingMode: Optional[Union[BillingMode, Cloud_Output]] 
     """
     Controls how you are charged for read and write throughput and how you manage capacity. This setting can be changed later.
 
@@ -1217,7 +1217,7 @@ class table_model(Rendered_Resource):
 *  `PAY_PER_REQUEST` - We recommend using `PAY_PER_REQUEST` for unpredictable workloads. `PAY_PER_REQUEST` sets the billing mode to [On-Demand Mode](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadWriteCapacityMode.html#HowItWorks.OnDemand).
     """
 
-    ProvisionedThroughput: Optional[ProvisionedThroughput] 
+    ProvisionedThroughput: Optional[Union[ProvisionedThroughput, Cloud_Output]] 
     """
     Represents the provisioned throughput settings for a specified table or index. The settings can be modified using the `UpdateTable` operation.
 
@@ -1226,7 +1226,7 @@ class table_model(Rendered_Resource):
  For current minimum and maximum provisioned throughput values, see [Service, Account, and Table Quotas](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Limits.html) in the *Amazon DynamoDB Developer Guide*.
     """
 
-    StreamSpecification: Optional[StreamSpecification] 
+    StreamSpecification: Optional[Union[StreamSpecification, Cloud_Output]] 
     """
     The settings for DynamoDB Streams on the table. These settings consist of:
 
@@ -1248,12 +1248,12 @@ class table_model(Rendered_Resource):
 	+  `NEW_AND_OLD_IMAGES` - Both the new and the old item images of the item are written to the stream.
     """
 
-    SSESpecification: Optional[SSESpecification] 
+    SSESpecification: Optional[Union[SSESpecification, Cloud_Output]] 
     """
     Represents the settings used to enable server-side encryption.
     """
 
-    Tags: Optional[List[Tag]]
+    Tags: Optional[Union[List[Tag], Cloud_Output]]
     """
     Describes a tag. A tag is a key-value pair. You can add up to 50 tags to a single DynamoDB table. 
 

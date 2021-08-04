@@ -1,6 +1,6 @@
 from pydantic.main import BaseModel
 from enum import Enum
-from typing import List, Optional, Dict 
+from typing import List, Optional, Dict, Union
 
 from ...models import Cloud_Output, Rendered_Resource
 
@@ -17,42 +17,42 @@ class Cors(BaseModel):
     """
 
 
-    AllowCredentials: bool
+    AllowCredentials: Union[bool, Cloud_Output]
     """
     Specifies whether credentials are included in the CORS request. Supported only for HTTP APIs.
 
 
     """
 
-    AllowHeaders: List[str]
+    AllowHeaders: Union[List[str], Cloud_Output]
     """
     The API identifier.
 
 
     """
 
-    AllowMethods: List[str]
+    AllowMethods: Union[List[str], Cloud_Output]
     """
     Specifies the format of the payload sent to an integration. Required for HTTP APIs.
 
 
     """
 
-    AllowOrigins: List[str]
+    AllowOrigins: Union[List[str], Cloud_Output]
     """
     The API identifier.
 
 
     """
 
-    ExposeHeaders: List[str]
+    ExposeHeaders: Union[List[str], Cloud_Output]
     """
     The API identifier.
 
 
     """
 
-    MaxAge: int
+    MaxAge: Union[int, Cloud_Output]
     """
     The number of seconds that the browser should cache preflight request results. Supported only for HTTP APIs.
 
@@ -116,7 +116,7 @@ class ParameterConstraints(BaseModel):
     """
 
 
-    Required: bool
+    Required: Union[bool, Cloud_Output]
     """
     Whether or not the parameter is required.
 
@@ -203,7 +203,7 @@ class TlsConfigInput(BaseModel):
     """
 
 
-    ServerNameToVerify: str
+    ServerNameToVerify: Union[str, Cloud_Output]
     """
     If you specify a server name, API Gateway uses it to verify the hostname on the integration's certificate. The server name is also included in the TLS handshake to support Server Name Indication (SNI) or virtual hosting.
 
@@ -633,67 +633,67 @@ class api_model(Rendered_Resource):
     """
 
 
-    ApiKeySelectionExpression: Optional[str]
+    ApiKeySelectionExpression: Optional[Union[str, Cloud_Output]]
     """
     The route selection expression for the API. For HTTP APIs, the routeSelectionExpression must be ${request.method} ${request.path}. If not provided, this will be the default for HTTP APIs. This property is required for WebSocket APIs.
     """
 
-    CorsConfiguration: Optional[Cors] 
+    CorsConfiguration: Optional[Union[Cors, Cloud_Output]] 
     """
     A CORS configuration. Supported only for HTTP APIs. See [Configuring CORS](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-cors.html) for more information.
     """
 
-    CredentialsArn: Optional[str]
+    CredentialsArn: Optional[Union[str, Cloud_Output]]
     """
     This property is part of quick create. It specifies the credentials required for the integration, if any. For a Lambda integration, three options are available. To specify an IAM Role for API Gateway to assume, use the role's Amazon Resource Name (ARN). To require that the caller's identity be passed through from the request, specify arn:aws:iam::*:user/*. To use resource-based permissions on supported AWS services, specify null. Currently, this property is not used for HTTP integrations. Supported only for HTTP APIs.
     """
 
-    Description: Optional[str]
+    Description: Optional[Union[str, Cloud_Output]]
     """
     The description of the API.
     """
 
-    DisableSchemaValidation: Optional[bool]
+    DisableSchemaValidation: Optional[Union[bool, Cloud_Output]]
     """
     Specifies whether clients can invoke your API by using the default execute-api endpoint. By default, clients can invoke your API with the default https://{api\_id}.execute-api.{region}.amazonaws.com endpoint. To require that clients use a custom domain name to invoke your API, disable the default endpoint.
     """
 
-    DisableExecuteApiEndpoint: Optional[bool]
+    DisableExecuteApiEndpoint: Optional[Union[bool, Cloud_Output]]
     """
     Specifies whether clients can invoke your API by using the default execute-api endpoint. By default, clients can invoke your API with the default https://{api\_id}.execute-api.{region}.amazonaws.com endpoint. To require that clients use a custom domain name to invoke your API, disable the default endpoint.
     """
 
-    Name: str
+    Name: Union[str, Cloud_Output]
     """
     The name of the API.
     """
 
-    ProtocolType: ProtocolType 
+    ProtocolType: Union[ProtocolType, Cloud_Output] 
     """
     The API protocol.
     """
 
-    RouteKey: Optional[str]
+    RouteKey: Optional[Union[str, Cloud_Output]]
     """
     This property is part of quick create. If you don't specify a routeKey, a default route of $default is created. The $default route acts as a catch-all for any request made to your API, for a particular stage. The $default route key can't be modified. You can add routes after creating the API, and you can update the route keys of additional routes. Supported only for HTTP APIs.
     """
 
-    RouteSelectionExpression: Optional[str]
+    RouteSelectionExpression: Optional[Union[str, Cloud_Output]]
     """
     The route selection expression for the API. For HTTP APIs, the routeSelectionExpression must be ${request.method} ${request.path}. If not provided, this will be the default for HTTP APIs. This property is required for WebSocket APIs.
     """
 
-    Tags: Optional[Dict[str,str]]
+    Tags: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     The collection of tags. Each tag element is associated with a given resource.
     """
 
-    Target: Optional[str]
+    Target: Optional[Union[str, Cloud_Output]]
     """
     This property is part of quick create. Quick create produces an API with an integration, a default catch-all route, and a default stage which is configured to automatically deploy changes. For HTTP integrations, specify a fully qualified URL. For Lambda integrations, specify a function ARN. The type of the integration will be HTTP\_PROXY or AWS\_PROXY, respectively. Supported only for HTTP APIs.
     """
 
-    Version: Optional[str]
+    Version: Optional[Union[str, Cloud_Output]]
     """
     A version identifier for the API.
     """
@@ -720,62 +720,62 @@ class route_model(Rendered_Resource):
     """
 
 
-    ApiId: str
+    ApiId: Union[str, Cloud_Output]
     """
     The API identifier.
     """
 
-    ApiKeyRequired: Optional[bool]
+    ApiKeyRequired: Optional[Union[bool, Cloud_Output]]
     """
     Specifies whether an API key is required for the route. Supported only for WebSocket APIs.
     """
 
-    AuthorizationScopes: Optional[List[str]]
+    AuthorizationScopes: Optional[Union[List[str], Cloud_Output]]
     """
     A version identifier for the API.
     """
 
-    AuthorizationType: Optional[AuthorizationType] 
+    AuthorizationType: Optional[Union[AuthorizationType, Cloud_Output]] 
     """
     The authorization type for the route. For WebSocket APIs, valid values are NONE for open access, AWS\_IAM for using AWS IAM permissions, and CUSTOM for using a Lambda authorizer For HTTP APIs, valid values are NONE for open access, JWT for using JSON Web Tokens, AWS\_IAM for using AWS IAM permissions, and CUSTOM for using a Lambda authorizer.
     """
 
-    AuthorizerId: Optional[str]
+    AuthorizerId: Optional[Union[str, Cloud_Output]]
     """
     The identifier of the Authorizer resource to be associated with this route. The authorizer identifier is generated by API Gateway when you created the authorizer.
     """
 
-    ModelSelectionExpression: Optional[str]
+    ModelSelectionExpression: Optional[Union[str, Cloud_Output]]
     """
     The route response selection expression for the route. Supported only for WebSocket APIs.
     """
 
-    OperationName: Optional[str]
+    OperationName: Optional[Union[str, Cloud_Output]]
     """
     The operation name for the route.
     """
 
-    RequestModels: Optional[Dict[str,str]]
+    RequestModels: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     The request models for the route. Supported only for WebSocket APIs.
     """
 
-    RequestParameters: Optional[Dict[str,ParameterConstraints]]
+    RequestParameters: Optional[Union[Dict[str,ParameterConstraints], Cloud_Output]]
     """
     The request parameters for the route. Supported only for WebSocket APIs.
     """
 
-    RouteKey: str
+    RouteKey: Union[str, Cloud_Output]
     """
     The route key for the route.
     """
 
-    RouteResponseSelectionExpression: Optional[str]
+    RouteResponseSelectionExpression: Optional[Union[str, Cloud_Output]]
     """
     The route response selection expression for the route. Supported only for WebSocket APIs.
     """
 
-    Target: Optional[str]
+    Target: Optional[Union[str, Cloud_Output]]
     """
     The target for the route.
     """
@@ -802,22 +802,22 @@ class integration_model(Rendered_Resource):
     """
 
 
-    ApiId: str
+    ApiId: Union[str, Cloud_Output]
     """
     The API identifier.
     """
 
-    ConnectionId: Optional[str]
+    ConnectionId: Optional[Union[str, Cloud_Output]]
     """
     The ID of the VPC link for a private integration. Supported only for HTTP APIs.
     """
 
-    ConnectionType: Optional[ConnectionType] 
+    ConnectionType: Optional[Union[ConnectionType, Cloud_Output]] 
     """
     The type of the network connection to the integration endpoint. Specify INTERNET for connections through the public routable internet or VPC\_LINK for private connections between API Gateway and resources in a VPC. The default value is INTERNET.
     """
 
-    ContentHandlingStrategy: Optional[ContentHandlingStrategy] 
+    ContentHandlingStrategy: Optional[Union[ContentHandlingStrategy, Cloud_Output]] 
     """
     Supported only for WebSocket APIs. Specifies how to handle response payload content type conversions. Supported values are CONVERT\_TO\_BINARY and CONVERT\_TO\_TEXT, with the following behaviors:
 
@@ -828,27 +828,27 @@ class integration_model(Rendered_Resource):
  If this property is not defined, the response payload will be passed through from the integration response to the route response or method response without modification.
     """
 
-    CredentialsArn: Optional[str]
+    CredentialsArn: Optional[Union[str, Cloud_Output]]
     """
     Specifies the credentials required for the integration, if any. For AWS integrations, three options are available. To specify an IAM Role for API Gateway to assume, use the role's Amazon Resource Name (ARN). To require that the caller's identity be passed through from the request, specify the string arn:aws:iam::*:user/*. To use resource-based permissions on supported AWS services, specify null.
     """
 
-    Description: Optional[str]
+    Description: Optional[Union[str, Cloud_Output]]
     """
     The description of the integration.
     """
 
-    IntegrationMethod: Optional[str]
+    IntegrationMethod: Optional[Union[str, Cloud_Output]]
     """
     Specifies the format of the payload sent to an integration. Required for HTTP APIs.
     """
 
-    IntegrationSubtype: Optional[str]
+    IntegrationSubtype: Optional[Union[str, Cloud_Output]]
     """
     Supported only for HTTP API AWS\_PROXY integrations. Specifies the AWS service action to invoke. To learn more, see [Integration subtype reference](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-aws-services-reference.html).
     """
 
-    IntegrationType: IntegrationType 
+    IntegrationType: Union[IntegrationType, Cloud_Output] 
     """
     The integration type of an integration. One of the following:
 
@@ -863,7 +863,7 @@ class integration_model(Rendered_Resource):
  MOCK: for integrating the route or method request with API Gateway as a "loopback" endpoint without invoking any backend. Supported only for WebSocket APIs.
     """
 
-    IntegrationUri: Optional[str]
+    IntegrationUri: Optional[Union[str, Cloud_Output]]
     """
     For a Lambda integration, specify the URI of a Lambda function.
 
@@ -872,7 +872,7 @@ class integration_model(Rendered_Resource):
  For an HTTP API private integration, specify the ARN of an Application Load Balancer listener, Network Load Balancer listener, or AWS Cloud Map service. If you specify the ARN of an AWS Cloud Map service, API Gateway uses DiscoverInstances to identify resources. You can use query parameters to target specific resources. To learn more, see [DiscoverInstances](https://docs.aws.amazon.com/cloud-map/latest/api/API_DiscoverInstances.html). For private integrations, all resources must be owned by the same AWS account.
     """
 
-    PassthroughBehavior: Optional[PassthroughBehavior] 
+    PassthroughBehavior: Optional[Union[PassthroughBehavior, Cloud_Output]] 
     """
     Specifies the pass-through behavior for incoming requests based on the Content-Type header in the request, and the available mapping templates specified as the requestTemplates property on the Integration resource. There are three valid values: WHEN\_NO\_MATCH, WHEN\_NO\_TEMPLATES, and NEVER. Supported only for WebSocket APIs.
 
@@ -883,12 +883,12 @@ class integration_model(Rendered_Resource):
  WHEN\_NO\_TEMPLATES allows pass-through when the integration has no content types mapped to templates. However, if there is at least one content type defined, unmapped content types will be rejected with the same HTTP 415 Unsupported Media Type response.
     """
 
-    PayloadFormatVersion: Optional[str]
+    PayloadFormatVersion: Optional[Union[str, Cloud_Output]]
     """
     Specifies the format of the payload sent to an integration. Required for HTTP APIs.
     """
 
-    RequestParameters: Optional[Dict[str,str]]
+    RequestParameters: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     For WebSocket APIs, a key-value map specifying request parameters that are passed from the method request to the backend. The key is an integration request parameter name and the associated value is a method request parameter value or static value that must be enclosed within single quotes and pre-encoded as required by the backend. The method request parameter value must match the pattern of method.request.{location}.{name}
  , where 
@@ -902,27 +902,27 @@ class integration_model(Rendered_Resource):
  For HTTP API integrations without a specified integrationSubtype request parameters are a key-value map specifying how to transform HTTP requests before sending them to the backend. The key should follow the pattern <action>:<header|querystring|path>.<location> where action can be append, overwrite or remove. For values, you can provide static values, or map request data, stage variables, or context variables that are evaluated at runtime. To learn more, see [Transforming API requests and responses](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-parameter-mapping.html).
     """
 
-    RequestTemplates: Optional[Dict[str,str]]
+    RequestTemplates: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     Represents a map of Velocity templates that are applied on the request payload based on the value of the Content-Type header sent by the client. The content type value is the key in this map, and the template (as a String) is the value. Supported only for WebSocket APIs.
     """
 
-    ResponseParameters: Optional[Dict[str,None]]
+    ResponseParameters: Optional[Union[Dict[str,None], Cloud_Output]]
     """
     Supported only for HTTP APIs. You use response parameters to transform the HTTP response from a backend integration before returning the response to clients. Specify a key-value map from a selection key to response parameters. The selection key must be a valid HTTP status code within the range of 200-599. Response parameters are a key-value map. The key must match pattern <action>:<header>.<location> or overwrite.statuscode. The action can be append, overwrite or remove. The value can be a static value, or map to response data, stage variables, or context variables that are evaluated at runtime. To learn more, see [Transforming API requests and responses](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-parameter-mapping.html).
     """
 
-    TemplateSelectionExpression: Optional[str]
+    TemplateSelectionExpression: Optional[Union[str, Cloud_Output]]
     """
     The template selection expression for the integration.
     """
 
-    TimeoutInMillis: Optional[int]
+    TimeoutInMillis: Optional[Union[int, Cloud_Output]]
     """
     Custom timeout between 50 and 29,000 milliseconds for WebSocket APIs and between 50 and 30,000 milliseconds for HTTP APIs. The default timeout is 29 seconds for WebSocket APIs and 30 seconds for HTTP APIs.
     """
 
-    TlsConfig: Optional[TlsConfigInput] 
+    TlsConfig: Optional[Union[TlsConfigInput, Cloud_Output]] 
     """
     The TLS configuration for a private integration. If you specify a TLS configuration, private integration traffic uses the HTTPS protocol. Supported only for HTTP APIs.
     """

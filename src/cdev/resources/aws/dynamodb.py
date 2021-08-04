@@ -166,6 +166,6 @@ class Table(Cdev_Resource):
         return table_model(**filtered_data)
 
     def from_output(self, key: table_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"cdev::aws::dynamodb::table::{self.hash}", "key": key})
+        return Cloud_Output(**{"resource": f"cdev::aws::dynamodb::table::{self.hash}", "key": key, "type": "cdev_output"})
 
 

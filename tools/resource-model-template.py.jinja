@@ -1,6 +1,6 @@
 from pydantic.main import BaseModel
 from enum import Enum
-from typing import List, Optional, Dict 
+from typing import List, Optional, Dict, Union
 
 from ...models import Cloud_Output, Rendered_Resource
 
@@ -17,19 +17,19 @@ class {{struct.get("name")}}(BaseModel):
 
 {% for attribute_name, val in struct.get("attributes").items() %}
     {% if val.get("type") == "string"%}
-    {{pythonify_symbol(attribute_name)}}: str
+    {{pythonify_symbol(attribute_name)}}: Union[str, Cloud_Output]
     {% elif val.get("type") == "boolean"%}
-    {{pythonify_symbol(attribute_name)}}: bool
+    {{pythonify_symbol(attribute_name)}}: Union[bool, Cloud_Output]
     {% elif val.get("type") == "list"%}
-    {{pythonify_symbol(attribute_name)}}: List[{{val.get("val_type")}}]
+    {{pythonify_symbol(attribute_name)}}: Union[List[{{val.get("val_type")}}], Cloud_Output]
     {% elif val.get("type") == "enum"%}
-    {{pythonify_symbol(attribute_name)}}: {{val.get("name")}} 
+    {{pythonify_symbol(attribute_name)}}: Union[{{val.get("name")}}, Cloud_Output]
     {% elif val.get("type") == "structure"%}
-    {{pythonify_symbol(attribute_name)}}: {{val.get("name")}} 
+    {{pythonify_symbol(attribute_name)}}: Union[{{val.get("name")}}, Cloud_Output] 
     {% elif val.get("type") == "long"%}
-    {{pythonify_symbol(attribute_name)}}: int
+    {{pythonify_symbol(attribute_name)}}: Union[int, Cloud_Output]
     {% elif val.get("type") == "integer"%}
-    {{pythonify_symbol(attribute_name)}}: int
+    {{pythonify_symbol(attribute_name)}}: Union[int, Cloud_Output]
     {%else%}
     {{pythonify_symbol(attribute_name)}}; {{val}}
     Bad
@@ -110,21 +110,21 @@ class {{resource.get("resource_name").lower()}}_model(Rendered_Resource):
 
     {% for attribute in resource.get("attributes")%}
     {% if attribute.get("type") == "string"%}
-    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}str{{"]" if not attribute.get("isrequired") else ""}}
+    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Union[str, Cloud_Output]{{"]" if not attribute.get("isrequired") else ""}}
     {% elif attribute.get("type") == "boolean"%}
-    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}bool{{"]" if not attribute.get("isrequired") else ""}}
+    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Union[bool, Cloud_Output]{{"]" if not attribute.get("isrequired") else ""}}
     {% elif attribute.get("type") == "list"%}
-    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}List[{{attribute.get("val_type")}}]{{"]" if not attribute.get("isrequired") else ""}}
+    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Union[List[{{attribute.get("val_type")}}], Cloud_Output]{{"]" if not attribute.get("isrequired") else ""}}
     {% elif attribute.get("type") == "enum"%}
-    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}{{attribute.get("name")}}{{"]" if not attribute.get("isrequired") else ""}} 
+    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Union[{{attribute.get("name")}}, Cloud_Output]{{"]" if not attribute.get("isrequired") else ""}} 
     {% elif attribute.get("type") == "structure"%}
-    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}{{attribute.get("name")}}{{"]" if not attribute.get("isrequired") else ""}} 
+    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Union[{{attribute.get("name")}}, Cloud_Output]{{"]" if not attribute.get("isrequired") else ""}} 
     {% elif attribute.get("type") == "long"%}
-    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}int{{"]" if not attribute.get("isrequired") else ""}}
+    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Union[int, Cloud_Output]{{"]" if not attribute.get("isrequired") else ""}}
     {% elif attribute.get("type") == "integer"%}
-    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}int{{"]" if not attribute.get("isrequired") else ""}}
+    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Union[int, Cloud_Output]{{"]" if not attribute.get("isrequired") else ""}}
     {% elif attribute.get("type") == "map"%}
-    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Dict[{{attribute.get('key_type')}},{{attribute.get('val_type')}}]{{"]" if not attribute.get("isrequired") else ""}}
+    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Union[Dict[{{attribute.get('key_type')}},{{attribute.get('val_type')}}], Cloud_Output]{{"]" if not attribute.get("isrequired") else ""}}
     {%else%}
     {{pythonify_symbol(attribute.get("param_name"))}}; {{attribute}}
     Bad

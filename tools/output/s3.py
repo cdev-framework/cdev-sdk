@@ -128,6 +128,9 @@ class Bucket(Cdev_Resource):
         return bucket_model(**filtered_data)
 
     def from_output(self, key: bucket_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"cdev::aws::s3::bucket::{self.hash}", "key": key})
+        return Cloud_Output(**{"resource": f"cdev::aws::s3::bucket::{self.hash}", "key": key, "type": "cdev_output"})
 
 
+class s3_object(BaseModel):
+    S3Bucket: str
+    S3Key: str

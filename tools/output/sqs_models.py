@@ -1,6 +1,6 @@
 from pydantic.main import BaseModel
 from enum import Enum
-from typing import List, Optional, Dict 
+from typing import List, Optional, Dict, Union
 
 from ...models import Cloud_Output, Rendered_Resource
 
@@ -131,7 +131,7 @@ class queue_model(Rendered_Resource):
     """
 
 
-    QueueName: str
+    QueueName: Union[str, Cloud_Output]
     """
     The name of the new queue. The following limits apply to this name:
 
@@ -148,7 +148,7 @@ class queue_model(Rendered_Resource):
  Queue URLs and names are case-sensitive.
     """
 
-    Attributes: Optional[Dict[QueueAttributeName,str]]
+    Attributes: Optional[Union[Dict[QueueAttributeName,str], Cloud_Output]]
     """
     A map of attributes with their corresponding values.
 
@@ -242,7 +242,7 @@ class queue_model(Rendered_Resource):
  For information on throughput quotas, see [Quotas related to messages](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html) in the *Amazon SQS Developer Guide*.
     """
 
-    tags: Optional[Dict[str,str]]
+    tags: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     Add cost allocation tags to the specified Amazon SQS queue. For an overview, see [Tagging Your Amazon SQS Queues](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-queue-tags.html) in the *Amazon SQS Developer Guide*.
 

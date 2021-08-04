@@ -3,8 +3,10 @@ from typing import (
 )
 
 from enum import Enum
+from typing_extensions import Literal
 
 from pydantic import BaseModel
+from pydantic.types import constr
 
 
 class Rendered_Resource(BaseModel):
@@ -80,6 +82,8 @@ class Cloud_Output(BaseModel):
     """
     The key to lookup the output value by (ex: arn)
     """
+
+    type: Literal["cdev_output"]
         
     def __str__(self) -> str:
         return f"{self.resource}$${self.key}"

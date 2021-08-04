@@ -1,6 +1,6 @@
 from pydantic.main import BaseModel
 from enum import Enum
-from typing import List, Optional, Dict 
+from typing import List, Optional, Dict, Union
 
 from ...models import Cloud_Output, Rendered_Resource
 
@@ -20,14 +20,14 @@ class Tag(BaseModel):
     """
 
 
-    Key: str
+    Key: Union[str, Cloud_Output]
     """
     The key name that can be used to look up or retrieve the associated value. For example, `Department` or `Cost Center` are common choices.
 
 
     """
 
-    Value: str
+    Value: Union[str, Cloud_Output]
     """
     The value associated with this tag. For example, tags with a key name of `Department` could have values such as `Human Resources`, `Accounting`, and `Support`. Tags with a key name of `Cost Center` might have values that consist of the number associated with the different cost centers in your company. Typically, many resources have tags with the same key name but with different values.
 
@@ -255,14 +255,14 @@ class policy_model(Rendered_Resource):
     """
 
 
-    PolicyName: str
+    PolicyName: Union[str, Cloud_Output]
     """
     The friendly name of the policy.
 
  IAM user, group, role, and policy names must be unique within the account. Names are not distinguished by case. For example, you cannot create resources named both "MyResource" and "myresource".
     """
 
-    Path: Optional[str]
+    Path: Optional[Union[str, Cloud_Output]]
     """
     The path for the policy.
 
@@ -273,7 +273,7 @@ class policy_model(Rendered_Resource):
  This parameter allows (through its [regex pattern](http://wikipedia.org/wiki/regex)) a string of characters consisting of either a forward slash (/) by itself or a string that must begin and end with forward slashes. In addition, it can contain any ASCII character from the ! (`\u0021`) through the DEL character (`\u007F`), including most punctuation characters, digits, and upper and lowercased letters.
     """
 
-    PolicyDocument: str
+    PolicyDocument: Union[str, Cloud_Output]
     """
     The JSON policy document that you want to use as the content for the new policy.
 
@@ -294,7 +294,7 @@ class policy_model(Rendered_Resource):
 * The special characters tab (`\u0009`), line feed (`\u000A`), and carriage return (`\u000D`)
     """
 
-    Description: Optional[str]
+    Description: Optional[Union[str, Cloud_Output]]
     """
     A friendly description of the policy.
 
@@ -303,7 +303,7 @@ class policy_model(Rendered_Resource):
  The policy description is immutable. After a value is assigned, it cannot be changed.
     """
 
-    Tags: Optional[List[Tag]]
+    Tags: Optional[Union[List[Tag], Cloud_Output]]
     """
     A structure that represents user-provided metadata that can be associated with an IAM resource. For more information about tagging, see [Tagging IAM resources](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_tags.html) in the *IAM User Guide*.
     """
@@ -330,7 +330,7 @@ class role_model(Rendered_Resource):
     """
 
 
-    Path: Optional[str]
+    Path: Optional[Union[str, Cloud_Output]]
     """
     The path to the role. For more information about paths, see [IAM Identifiers](https://docs.aws.amazon.com/IAM/latest/UserGuide/Using_Identifiers.html) in the *IAM User Guide*.
 
@@ -339,14 +339,14 @@ class role_model(Rendered_Resource):
  This parameter allows (through its [regex pattern](http://wikipedia.org/wiki/regex)) a string of characters consisting of either a forward slash (/) by itself or a string that must begin and end with forward slashes. In addition, it can contain any ASCII character from the ! (`\u0021`) through the DEL character (`\u007F`), including most punctuation characters, digits, and upper and lowercased letters.
     """
 
-    RoleName: str
+    RoleName: Union[str, Cloud_Output]
     """
     The name of the role to create.
 
  IAM user, group, role, and policy names must be unique within the account. Names are not distinguished by case. For example, you cannot create resources named both "MyResource" and "myresource".
     """
 
-    AssumeRolePolicyDocument: str
+    AssumeRolePolicyDocument: Union[str, Cloud_Output]
     """
     The trust relationship policy document that grants an entity permission to assume the role.
 
@@ -367,24 +367,24 @@ class role_model(Rendered_Resource):
   Upon success, the response includes the same trust policy in JSON format.
     """
 
-    Description: Optional[str]
+    Description: Optional[Union[str, Cloud_Output]]
     """
     A description of the role.
     """
 
-    MaxSessionDuration: Optional[int]
+    MaxSessionDuration: Optional[Union[int, Cloud_Output]]
     """
     The maximum session duration (in seconds) that you want to set for the specified role. If you do not specify a value for this setting, the default maximum of one hour is applied. This setting can have a value from 1 hour to 12 hours.
 
  Anyone who assumes the role from the or API can use the `DurationSeconds` API parameter or the `duration-seconds` CLI parameter to request a longer session. The `MaxSessionDuration` setting determines the maximum duration that can be requested using the `DurationSeconds` parameter. If users don't specify a value for the `DurationSeconds` parameter, their security credentials are valid for one hour by default. This applies when you use the `AssumeRole*` API operations or the `assume-role*` CLI operations but does not apply when you use those operations to create a console URL. For more information, see [Using IAM roles](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use.html) in the *IAM User Guide*.
     """
 
-    PermissionsBoundary: Optional[str]
+    PermissionsBoundary: Optional[Union[str, Cloud_Output]]
     """
     The ARN of the policy that is used to set the permissions boundary for the role.
     """
 
-    Tags: Optional[List[Tag]]
+    Tags: Optional[Union[List[Tag], Cloud_Output]]
     """
     A structure that represents user-provided metadata that can be associated with an IAM resource. For more information about tagging, see [Tagging IAM resources](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_tags.html) in the *IAM User Guide*.
     """
