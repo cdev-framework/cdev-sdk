@@ -31,7 +31,7 @@ def create_bucket(identifier: str, resource: bucket_model) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 def remove_bucket(identifier: str, resource: bucket_model) -> bool:
     try:
@@ -44,7 +44,7 @@ def remove_bucket(identifier: str, resource: bucket_model) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 
 # Low level function to call actual clieant call and return response
@@ -61,7 +61,7 @@ def _create_bucket(identifier: str, resource: bucket_model) -> bucket_output:
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
-        return None
+        raise Exception("COULD NOT DEPLOY")
 
 
 # Low level function to call actual clieant call and return response
@@ -78,7 +78,7 @@ def _remove_bucket(identifier: str, resource: bucket_model):
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
-        return None
+        raise Exception("COULD NOT DEPLOY")
 
 
 def handle_bucket_deployment(resource_diff: Resource_State_Difference) -> bool:
@@ -95,5 +95,5 @@ def handle_bucket_deployment(resource_diff: Resource_State_Difference) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 

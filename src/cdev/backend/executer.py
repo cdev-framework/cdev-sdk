@@ -101,6 +101,8 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
                     if did_deploy:
                         # Update the resource state to reflect that we successfully deployed the cloud resources
                         resource_state_manager.write_resource_difference(component_name,resource_diff)
+                    else:
+                        print(f"COULD NOT COMPLETE {resource_diff}")
                 else:
                     print("REALLY BAD")
 

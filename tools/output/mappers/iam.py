@@ -31,7 +31,7 @@ def create_policy(identifier: str, resource: policy_model) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 def remove_policy(identifier: str, resource: policy_model) -> bool:
     try:
@@ -44,7 +44,7 @@ def remove_policy(identifier: str, resource: policy_model) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 
 # Low level function to call actual clieant call and return response
@@ -61,7 +61,7 @@ def _create_policy(identifier: str, resource: policy_model) -> policy_output:
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
-        return None
+        raise Exception("COULD NOT DEPLOY")
 
 
 # Low level function to call actual clieant call and return response
@@ -78,7 +78,7 @@ def _remove_policy(identifier: str, resource: policy_model):
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
-        return None
+        raise Exception("COULD NOT DEPLOY")
 
 
 def handle_policy_deployment(resource_diff: Resource_State_Difference) -> bool:
@@ -95,7 +95,7 @@ def handle_policy_deployment(resource_diff: Resource_State_Difference) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 ################################################
 ##########
@@ -115,7 +115,7 @@ def create_role(identifier: str, resource: role_model) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 def remove_role(identifier: str, resource: role_model) -> bool:
     try:
@@ -128,7 +128,7 @@ def remove_role(identifier: str, resource: role_model) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 
 # Low level function to call actual clieant call and return response
@@ -145,7 +145,7 @@ def _create_role(identifier: str, resource: role_model) -> role_output:
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
-        return None
+        raise Exception("COULD NOT DEPLOY")
 
 
 # Low level function to call actual clieant call and return response
@@ -162,7 +162,7 @@ def _remove_role(identifier: str, resource: role_model):
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
-        return None
+        raise Exception("COULD NOT DEPLOY")
 
 
 def handle_role_deployment(resource_diff: Resource_State_Difference) -> bool:
@@ -179,5 +179,5 @@ def handle_role_deployment(resource_diff: Resource_State_Difference) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 

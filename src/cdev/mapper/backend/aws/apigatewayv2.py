@@ -31,7 +31,7 @@ def create_api(identifier: str, resource: api_model) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 def remove_api(identifier: str, resource: api_model) -> bool:
     try:
@@ -44,7 +44,7 @@ def remove_api(identifier: str, resource: api_model) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 
 # Low level function to call actual clieant call and return response
@@ -61,7 +61,7 @@ def _create_api(identifier: str, resource: api_model) -> api_output:
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
-        return None
+        raise Exception("COULD NOT DEPLOY")
 
 
 # Low level function to call actual clieant call and return response
@@ -78,7 +78,7 @@ def _remove_api(identifier: str, resource: api_model):
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
-        return None
+        raise Exception("COULD NOT DEPLOY")
 
 
 def handle_api_deployment(resource_diff: Resource_State_Difference) -> bool:
@@ -95,7 +95,7 @@ def handle_api_deployment(resource_diff: Resource_State_Difference) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 ################################################
 ##########
@@ -115,7 +115,7 @@ def create_route(identifier: str, resource: route_model) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 def remove_route(identifier: str, resource: route_model) -> bool:
     try:
@@ -128,7 +128,7 @@ def remove_route(identifier: str, resource: route_model) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 
 # Low level function to call actual clieant call and return response
@@ -145,7 +145,7 @@ def _create_route(identifier: str, resource: route_model) -> route_output:
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
-        return None
+        raise Exception("COULD NOT DEPLOY")
 
 
 # Low level function to call actual clieant call and return response
@@ -162,7 +162,7 @@ def _remove_route(identifier: str, resource: route_model):
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
-        return None
+        raise Exception("COULD NOT DEPLOY")
 
 
 def handle_route_deployment(resource_diff: Resource_State_Difference) -> bool:
@@ -179,7 +179,7 @@ def handle_route_deployment(resource_diff: Resource_State_Difference) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 ################################################
 ##########
@@ -199,7 +199,7 @@ def create_integration(identifier: str, resource: integration_model) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 def remove_integration(identifier: str, resource: integration_model) -> bool:
     try:
@@ -212,7 +212,7 @@ def remove_integration(identifier: str, resource: integration_model) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 
 # Low level function to call actual clieant call and return response
@@ -229,7 +229,7 @@ def _create_integration(identifier: str, resource: integration_model) -> integra
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
-        return None
+        raise Exception("COULD NOT DEPLOY")
 
 
 # Low level function to call actual clieant call and return response
@@ -246,7 +246,7 @@ def _remove_integration(identifier: str, resource: integration_model):
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
-        return None
+        raise Exception("COULD NOT DEPLOY")
 
 
 def handle_integration_deployment(resource_diff: Resource_State_Difference) -> bool:
@@ -263,5 +263,5 @@ def handle_integration_deployment(resource_diff: Resource_State_Difference) -> b
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 

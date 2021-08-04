@@ -22,17 +22,24 @@ class DefaultMapper(CloudMapper):
         return ["cdev"]
 
     def deploy_resource(self, resource_diff: Resource_State_Difference) -> bool:
-        if not resource_diff.action_type == Action_Type.DELETE:
-            if not resource_diff.new_resource.ruuid in self.get_resource_to_handler():
-                # TODO throw error
-                print(f"PROVIDER CAN NOT CREATE RESOURCE: {resource_diff.new_resource.ruuid}")
+        try:
+            if not resource_diff.action_type == Action_Type.DELETE:
+                if not resource_diff.new_resource.ruuid in self.get_resource_to_handler():
+                    # TODO throw error
+                    print(f"PROVIDER CAN NOT CREATE RESOURCE: {resource_diff.new_resource.ruuid}")
+                    return False
 
-            self.get_resource_to_handler()[resource_diff.new_resource.ruuid](resource_diff)
+                rv = self.get_resource_to_handler()[resource_diff.new_resource.ruuid](resource_diff)
 
-        else:
-            self.get_resource_to_handler()[resource_diff.previous_resource.ruuid](resource_diff)
+            else:
+                rv = self.get_resource_to_handler()[resource_diff.previous_resource.ruuid](resource_diff)
+            
+            return rv
 
-        return True
+        except Exception as e:
+            print(e)
+            return False
+        
 
     def render_resource_outputs(self, resource_diff)-> Resource_State_Difference:
         if resource_diff.new_resource:

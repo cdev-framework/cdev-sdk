@@ -31,7 +31,7 @@ def create_queue(identifier: str, resource: queue_model) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 def remove_queue(identifier: str, resource: queue_model) -> bool:
     try:
@@ -44,7 +44,7 @@ def remove_queue(identifier: str, resource: queue_model) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 
 # Low level function to call actual clieant call and return response
@@ -61,7 +61,7 @@ def _create_queue(identifier: str, resource: queue_model) -> queue_output:
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
-        return None
+        raise Exception("COULD NOT DEPLOY")
 
 
 # Low level function to call actual clieant call and return response
@@ -78,7 +78,7 @@ def _remove_queue(identifier: str, resource: queue_model):
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
-        return None
+        raise Exception("COULD NOT DEPLOY")
 
 
 def handle_queue_deployment(resource_diff: Resource_State_Difference) -> bool:
@@ -95,5 +95,5 @@ def handle_queue_deployment(resource_diff: Resource_State_Difference) -> bool:
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 

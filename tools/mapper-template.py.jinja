@@ -41,7 +41,7 @@ def {{verb}}_{{resource_info.get('resource_name')}}(identifier: str, resource: {
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 {%endfor%}
 {%for low_level_info in resource_info.get("low_level_info")%}
@@ -75,7 +75,7 @@ def _{{low_level_info.get("verb")}}_{{resource_info.get('resource_name')}}(ident
 
     except botocore.exceptions.ClientError as e:
         print(e.response)
-        return None
+        raise Exception("COULD NOT DEPLOY")
 
 {%endfor%}
 
@@ -93,6 +93,6 @@ def handle_{{resource_info.get('resource_name')}}_deployment(resource_diff: Reso
 
     except Exception as e:
         print(e)
-        return False
+        raise Exception("COULD NOT DEPLOY")
 
 {%endfor%}
