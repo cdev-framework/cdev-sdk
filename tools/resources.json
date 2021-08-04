@@ -50,7 +50,6 @@
                     "name": "Bucket",
                     "ruuid": "cdev::aws::s3::bucket",
                     "create": "CreateBucket",
-                    "update": "ListObjects",
                     "remove": "DeleteBucket"
                 }
             ]
