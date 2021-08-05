@@ -57,6 +57,8 @@ def _create_queue(identifier: str, resource: queue_model) -> queue_output:
 
         rv = response
 
+
+
         print(rv)
 
 
@@ -76,6 +78,8 @@ def _remove_queue(identifier: str, resource: queue_model):
         response = run_client_function('sqs', 'delete_queue', args)
 
         rv = response
+
+
 
         print(rv)
 

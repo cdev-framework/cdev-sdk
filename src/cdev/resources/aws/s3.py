@@ -25,9 +25,9 @@ class Bucket(Cdev_Resource):
 
     """
 
-    def __init__(self,name: str, Bucket: str, ACL: BucketCannedACL=None, CreateBucketConfiguration: CreateBucketConfiguration=None, GrantFullControl: str=None, GrantRead: str=None, GrantReadACP: str=None, GrantWrite: str=None, GrantWriteACP: str=None, ObjectLockEnabledForBucket: bool=None):
+    def __init__(self, cdev_name: str, Bucket: str, ACL: BucketCannedACL=None, CreateBucketConfiguration: CreateBucketConfiguration=None, GrantFullControl: str=None, GrantRead: str=None, GrantReadACP: str=None, GrantWrite: str=None, GrantWriteACP: str=None, ObjectLockEnabledForBucket: bool=None):
         ""
-        super().__init__(name)
+        super().__init__(cdev_name)
 
         self.ACL = ACL
         """

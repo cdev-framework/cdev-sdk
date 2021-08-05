@@ -57,6 +57,8 @@ def _create_table(identifier: str, resource: table_model) -> table_output:
 
         rv = response.get('TableDescription')
 
+
+
         print(rv)
 
 
@@ -76,6 +78,8 @@ def _remove_table(identifier: str, resource: table_model):
         response = run_client_function('dynamodb', 'delete_table', args)
 
         rv = response
+
+
 
         print(rv)
 

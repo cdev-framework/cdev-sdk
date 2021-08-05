@@ -1,6 +1,6 @@
 from pydantic.main import BaseModel
 from enum import Enum
-from typing import List, Optional, Dict, Union
+from typing import List, Optional, Dict, Union, Dict
 
 from ...models import Cloud_Output, Rendered_Resource
 

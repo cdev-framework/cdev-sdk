@@ -57,6 +57,8 @@ def _create_bucket(identifier: str, resource: bucket_model) -> bucket_output:
 
         rv = response
 
+
+
         print(rv)
 
 
@@ -76,6 +78,8 @@ def _remove_bucket(identifier: str, resource: bucket_model):
         response = run_client_function('s3', 'delete_bucket', args)
 
         rv = response
+
+
 
         print(rv)
 

@@ -25,9 +25,9 @@ class Queue(Cdev_Resource):
  
     """
 
-    def __init__(self,name: str, QueueName: str, Attributes: Dict[QueueAttributeName, str]=None, tags: Dict[str, str]=None):
+    def __init__(self, cdev_name: str, QueueName: str, Attributes: Dict[QueueAttributeName, str]=None, tags: Dict[str, str]=None):
         ""
-        super().__init__(name)
+        super().__init__(cdev_name)
 
         self.QueueName = QueueName
         """

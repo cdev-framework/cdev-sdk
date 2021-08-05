@@ -6,6 +6,7 @@ import re
 from sortedcontainers import SortedList
 from sortedcontainers.sortedlist import SortedListWithKey
 from markdownify import markdownify
+import keyword
 
 pp = pprint.PrettyPrinter()
 
@@ -27,7 +28,13 @@ def camel_to_snake(name):
   return new_name
 
 def pythonify_symbol(s: str):
-    return s.replace("-", "_")
+    if s in keyword.kwlist:
+        rv = s+"x"
+
+    else:
+        rv = s
+
+    return rv.replace("-", "_")
 
 
 def _find_all_dependent_shapes(shape_name, all_needed_shapes, botoinfo, include_this):
@@ -140,25 +147,25 @@ def flatten_structure_to_params(attributes: dict):
     for attribute_name in attributes:
         attribute = attributes.get(attribute_name)
         if attribute.get("type") == "structure":
-            final_string = f"{final_string}, {attribute_name}: {attribute.get('name')}"
+            final_string = f"{final_string}, {pythonify_symbol(attribute_name)}: {attribute.get('name')}"
         if attribute.get("type") == "list":
-            final_string = f"{final_string}, {attribute_name}: List[{attribute.get('val_type')}]"
+            final_string = f"{final_string}, {pythonify_symbol(attribute_name)}: List[{attribute.get('val_type')}]"
         if attribute.get("type") == "string":
-            final_string = f"{final_string}, {attribute_name}: str"
+            final_string = f"{final_string}, {pythonify_symbol(attribute_name)}: str"
         if attribute.get("type") == "integer":
-            final_string = f"{final_string}, {attribute_name}: int"
+            final_string = f"{final_string}, {pythonify_symbol(attribute_name)}: int"
         if attribute.get("type") == "double":
-            final_string = f"{final_string}, {attribute_name}: int"
+            final_string = f"{final_string}, {pythonify_symbol(attribute_name)}: int"
         if attribute.get("type") == "int":
-            final_string = f"{final_string}, {attribute_name}: int"
+            final_string = f"{final_string}, {pythonify_symbol(attribute_name)}: int"
         if attribute.get("type") == "long":
-            final_string = f"{final_string}, {attribute_name}: int"
+            final_string = f"{final_string}, {pythonify_symbol(attribute_name)}: int"
         if attribute.get("type") == "enum":
-            final_string = f"{final_string}, {attribute_name}: {attribute.get('name')}"
+            final_string = f"{final_string}, {pythonify_symbol(attribute_name)}: {attribute.get('name')}"
         if attribute.get("type") == "boolean":
-            final_string = f"{final_string}, {attribute_name}: bool"
+            final_string = f"{final_string}, {pythonify_symbol(attribute_name)}: bool"
         if attribute.get("type") == "map":
-            final_string = f"{final_string}, {attribute_name}: Dict"
+            final_string = f"{final_string}, {pythonify_symbol(attribute_name)}: Dict"
 
     return final_string[2:]
 
@@ -275,7 +282,11 @@ def generate_mapper_resources(service, botoinfo):
                 #t2['wait'] = camel_to_snake(resource.get("create").get("waits"))
                 if 'additional_info' in resource.get("create"):
                     t2["additional_info"] = resource.get("create").get("additional_info")
-                print(t2)
+                
+                if 'extra_info' in resource.get("create"):
+                    t2["extra_info"] = resource.get("create").get("extra_info")
+                    pass
+
 
             output_shape = botoinfo.get("operations").get(raw_fuct_name).get("output").get("shape")
 
@@ -351,6 +362,7 @@ def render_resources():
             function_key_to_function = {}
             
             for key in FUNCTION_KEYS:
+                extra_output_info = []
                 function_info = value.get(key)
                 if not function_info:
                     print("HERE")
@@ -366,8 +378,14 @@ def render_resources():
                     else:
                         overrides = {}
 
+                    if "extra_info" in function_info:
+                        extra_output_info = []
+                        for extra_key in function_info.get('extra_info').get("all_keys"):
+                            extra_output_info.append({'label' : extra_key})
+
+
+
                 function_key_to_function[key] = function_value
-                #print(function_value)
 
                 
 
@@ -379,6 +397,11 @@ def render_resources():
                     resource_attributes = create_attributes_for_rendered_resource_from_create_info(function_value, botoinfo)
                     
                     output_attributes = create_output_attributes_from_create_info(function_value, botoinfo)
+
+                    if extra_output_info:
+
+                        output_attributes.extend(extra_output_info)
+
                     #print(output_attributes)
                     output_model_info = {"name": f'{value.get("name").lower()}_output', "attributes": output_attributes, 'documentation': function_value.get('documentation') }
                     output_models.append(output_model_info)

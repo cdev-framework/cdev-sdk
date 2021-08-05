@@ -21,9 +21,9 @@ class Policy(Cdev_Resource):
 
     """
 
-    def __init__(self,name: str, PolicyName: str, PolicyDocument: str, Path: str=None, Description: str=None, Tags: List[Tag]=None):
+    def __init__(self, cdev_name: str, PolicyName: str, PolicyDocument: str, Path: str=None, Description: str=None, Tags: List[Tag]=None):
         ""
-        super().__init__(name)
+        super().__init__(cdev_name)
 
         self.PolicyName = PolicyName
         """
@@ -121,9 +121,9 @@ class Role(Cdev_Resource):
 
     """
 
-    def __init__(self,name: str, RoleName: str, AssumeRolePolicyDocument: str, Path: str=None, Description: str=None, MaxSessionDuration: int=None, PermissionsBoundary: str=None, Tags: List[Tag]=None):
+    def __init__(self, cdev_name: str, RoleName: str, AssumeRolePolicyDocument: str, Path: str=None, Description: str=None, MaxSessionDuration: int=None, PermissionsBoundary: str=None, Tags: List[Tag]=None):
         ""
-        super().__init__(name)
+        super().__init__(cdev_name)
 
         self.Path = Path
         """

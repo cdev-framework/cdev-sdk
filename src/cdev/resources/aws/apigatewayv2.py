@@ -17,9 +17,9 @@ class Api(Cdev_Resource):
 
     """
 
-    def __init__(self,name: str, Name: str, ProtocolType: ProtocolType, ApiKeySelectionExpression: str=None, CorsConfiguration: Cors=None, CredentialsArn: str=None, Description: str=None, DisableSchemaValidation: bool=None, DisableExecuteApiEndpoint: bool=None, RouteKey: str=None, RouteSelectionExpression: str=None, Tags: Dict[str, str]=None, Target: str=None, Version: str=None):
+    def __init__(self, cdev_name: str, Name: str, ProtocolType: ProtocolType, ApiKeySelectionExpression: str=None, CorsConfiguration: Cors=None, CredentialsArn: str=None, Description: str=None, DisableSchemaValidation: bool=None, DisableExecuteApiEndpoint: bool=None, RouteKey: str=None, RouteSelectionExpression: str=None, Tags: Dict[str, str]=None, Target: str=None, Version: str=None):
         ""
-        super().__init__(name)
+        super().__init__(cdev_name)
 
         self.ApiKeySelectionExpression = ApiKeySelectionExpression
         """
@@ -152,9 +152,9 @@ class Route(Cdev_Resource):
 
     """
 
-    def __init__(self,name: str, ApiId: str, RouteKey: str, ApiKeyRequired: bool=None, AuthorizationScopes: List[str]=None, AuthorizationType: AuthorizationType=None, AuthorizerId: str=None, ModelSelectionExpression: str=None, OperationName: str=None, RequestModels: Dict[str, str]=None, RequestParameters: Dict[str, ParameterConstraints]=None, RouteResponseSelectionExpression: str=None, Target: str=None):
+    def __init__(self, cdev_name: str, ApiId: str, RouteKey: str, ApiKeyRequired: bool=None, AuthorizationScopes: List[str]=None, AuthorizationType: AuthorizationType=None, AuthorizerId: str=None, ModelSelectionExpression: str=None, OperationName: str=None, RequestModels: Dict[str, str]=None, RequestParameters: Dict[str, ParameterConstraints]=None, RouteResponseSelectionExpression: str=None, Target: str=None):
         ""
-        super().__init__(name)
+        super().__init__(cdev_name)
 
         self.ApiId = ApiId
         """
@@ -279,9 +279,9 @@ class Integration(Cdev_Resource):
 
     """
 
-    def __init__(self,name: str, ApiId: str, IntegrationType: IntegrationType, ConnectionId: str=None, ConnectionType: ConnectionType=None, ContentHandlingStrategy: ContentHandlingStrategy=None, CredentialsArn: str=None, Description: str=None, IntegrationMethod: str=None, IntegrationSubtype: str=None, IntegrationUri: str=None, PassthroughBehavior: PassthroughBehavior=None, PayloadFormatVersion: str=None, RequestParameters: Dict[str, str]=None, RequestTemplates: Dict[str, str]=None, ResponseParameters: Dict[str, None]=None, TemplateSelectionExpression: str=None, TimeoutInMillis: int=None, TlsConfig: TlsConfigInput=None):
+    def __init__(self, cdev_name: str, ApiId: str, IntegrationType: IntegrationType, ConnectionId: str=None, ConnectionType: ConnectionType=None, ContentHandlingStrategy: ContentHandlingStrategy=None, CredentialsArn: str=None, Description: str=None, IntegrationMethod: str=None, IntegrationSubtype: str=None, IntegrationUri: str=None, PassthroughBehavior: PassthroughBehavior=None, PayloadFormatVersion: str=None, RequestParameters: Dict[str, str]=None, RequestTemplates: Dict[str, str]=None, ResponseParameters: Dict[str, None]=None, TemplateSelectionExpression: str=None, TimeoutInMillis: int=None, TlsConfig: TlsConfigInput=None):
         ""
-        super().__init__(name)
+        super().__init__(cdev_name)
 
         self.ApiId = ApiId
         """
@@ -489,9 +489,9 @@ class Stage(Cdev_Resource):
 
     """
 
-    def __init__(self,name: str, ApiId: str, StageName: str, AccessLogSettings: AccessLogSettings=None, AutoDeploy: bool=None, ClientCertificateId: str=None, DefaultRouteSettings: RouteSettings=None, DeploymentId: str=None, Description: str=None, RouteSettings: Dict[str, RouteSettings]=None, StageVariables: Dict[str, str]=None, Tags: Dict[str, str]=None):
+    def __init__(self, cdev_name: str, ApiId: str, StageName: str, AccessLogSettings: AccessLogSettings=None, AutoDeploy: bool=None, ClientCertificateId: str=None, DefaultRouteSettings: RouteSettings=None, DeploymentId: str=None, Description: str=None, RouteSettings: Dict[str, RouteSettings]=None, StageVariables: Dict[str, str]=None, Tags: Dict[str, str]=None):
         ""
-        super().__init__(name)
+        super().__init__(cdev_name)
 
         self.AccessLogSettings = AccessLogSettings
         """
@@ -608,9 +608,9 @@ class Deployment(Cdev_Resource):
 
     """
 
-    def __init__(self,name: str, ApiId: str, Description: str=None, StageName: str=None):
+    def __init__(self, cdev_name: str, ApiId: str, Description: str=None, StageName: str=None):
         ""
-        super().__init__(name)
+        super().__init__(cdev_name)
 
         self.ApiId = ApiId
         """

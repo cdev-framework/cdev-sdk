@@ -34,9 +34,9 @@ class Table(Cdev_Resource):
 
     """
 
-    def __init__(self,name: str, AttributeDefinitions: List[AttributeDefinition], TableName: str, KeySchema: List[KeySchemaElement], LocalSecondaryIndexes: List[LocalSecondaryIndex]=None, GlobalSecondaryIndexes: List[GlobalSecondaryIndex]=None, BillingMode: BillingMode=None, ProvisionedThroughput: ProvisionedThroughput=None, StreamSpecification: StreamSpecification=None, SSESpecification: SSESpecification=None, Tags: List[Tag]=None):
+    def __init__(self, cdev_name: str, AttributeDefinitions: List[AttributeDefinition], TableName: str, KeySchema: List[KeySchemaElement], LocalSecondaryIndexes: List[LocalSecondaryIndex]=None, GlobalSecondaryIndexes: List[GlobalSecondaryIndex]=None, BillingMode: BillingMode=None, ProvisionedThroughput: ProvisionedThroughput=None, StreamSpecification: StreamSpecification=None, SSESpecification: SSESpecification=None, Tags: List[Tag]=None):
         ""
-        super().__init__(name)
+        super().__init__(cdev_name)
 
         self.AttributeDefinitions = AttributeDefinitions
         """

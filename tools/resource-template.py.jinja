@@ -18,9 +18,9 @@ class {{resource.get("resource_name")}}(Cdev_Resource):
     """
     {%endif%}
 
-    def __init__(self,name: str, {{ resource.get("as_params") }}):
+    def __init__(self, cdev_name: str, {{ resource.get("as_params") }}):
         ""
-        super().__init__(name)
+        super().__init__(cdev_name)
 
         {% for attribute in resource.get("attributes")%}
         self.{{pythonify_symbol(attribute.get("param_name"))}} = {{pythonify_symbol(attribute.get("param_name"))}}

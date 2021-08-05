@@ -57,6 +57,8 @@ def _create_policy(identifier: str, resource: policy_model) -> policy_output:
 
         rv = response.get('Policy')
 
+
+
         print(rv)
 
 
@@ -76,6 +78,8 @@ def _remove_policy(identifier: str, resource: policy_model):
         response = run_client_function('iam', 'delete_policy', args)
 
         rv = response
+
+
 
         print(rv)
 
@@ -147,6 +151,8 @@ def _create_role(identifier: str, resource: role_model) -> role_output:
 
         rv = response.get('Role')
 
+
+
         print(rv)
 
 
@@ -166,6 +172,8 @@ def _remove_role(identifier: str, resource: role_model):
         response = run_client_function('iam', 'delete_role', args)
 
         rv = response
+
+
 
         print(rv)
 

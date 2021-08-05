@@ -77,6 +77,21 @@ def _{{low_level_info.get("verb")}}_{{resource_info.get('resource_name')}}(ident
             if additional in args:
                 rv[additional] = args.get(additional)
         {% endif %}
+
+        {%if 'extra_info' in low_level_info%}
+        extra_info_needs = {{low_level_info.get('extra_info').get("needs")}}
+        extra_info_call_args_keys = {{low_level_info.get('extra_info').get("arg_keys")}}
+        extra_info_call_args = {extra_info_call_args_keys.get(k):v for k,v in rv.items() if k in extra_info_call_args_keys}
+
+        extra_info = run_client_function('apigateway', "{{low_level_info.get('extra_info').get('function_name')}}", extra_info_call_args)
+
+        for extra_info_need in extra_info_needs:
+            if 'transform' in extra_info_need:
+                rv[extra_info_need.get('final_name')] = extra_info_need.get('transform')(extra_info.get(extra_info_need.get('key')))
+            else:
+                rv[extra_info_need.get('final_name')] = extra_info.get(extra_info_need.get('key'))
+        {%endif%}
+
         print(rv)
 
 

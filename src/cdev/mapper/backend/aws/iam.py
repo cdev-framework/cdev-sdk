@@ -56,7 +56,10 @@ def _create_policy(identifier: str, resource: policy_model) -> policy_output:
         response = run_client_function('iam', 'create_policy', args)
 
         rv = response.get('Policy')
+
         print(rv)
+
+
         return rv
 
     except botocore.exceptions.ClientError as e:
@@ -73,7 +76,10 @@ def _remove_policy(identifier: str, resource: policy_model):
         response = run_client_function('iam', 'delete_policy', args)
 
         rv = response
+
         print(rv)
+
+
         return rv
 
     except botocore.exceptions.ClientError as e:
@@ -140,7 +146,10 @@ def _create_role(identifier: str, resource: role_model) -> role_output:
         response = run_client_function('iam', 'create_role', args)
 
         rv = response.get('Role')
+
         print(rv)
+
+
         return rv
 
     except botocore.exceptions.ClientError as e:
@@ -157,7 +166,10 @@ def _remove_role(identifier: str, resource: role_model):
         response = run_client_function('iam', 'delete_role', args)
 
         rv = response
+
         print(rv)
+
+
         return rv
 
     except botocore.exceptions.ClientError as e:

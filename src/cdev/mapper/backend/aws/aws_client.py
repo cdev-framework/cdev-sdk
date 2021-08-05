@@ -4,7 +4,7 @@ import boto3
 
 from cdev import settings as cdev_settings
 
-AVAILABLE_SERVICES = set(["lambda", "s3", "dynamodb", "iam", "apigatewayv2", "sqs"])
+AVAILABLE_SERVICES = set(["lambda", "s3", "dynamodb", "iam", "apigatewayv2", "sqs", "apigateway"])
 
 
 def _get_boto_client(service_name, credentials=None, profile_name=None):
