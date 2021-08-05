@@ -219,6 +219,110 @@ class TlsConfigInput(BaseModel):
 
 
 
+class AccessLogSettings(BaseModel):
+    """
+    Settings for logging access in a stage.
+
+
+    """
+
+
+    DestinationArn: Union[str, Cloud_Output]
+    """
+    The ARN of the CloudWatch Logs log group to receive access logs.
+
+
+    """
+
+    Format: Union[str, Cloud_Output]
+    """
+    A single line format of the access logs of data, as specified by selected $context variables. The format must include at least $context.requestId.
+
+
+    """
+
+
+    def __init__(self, DestinationArn: str, Format: str ):
+        "My doc string"
+        super().__init__(**{
+            "DestinationArn": DestinationArn,
+            "Format": Format,
+        })        
+
+
+
+class LoggingLevel(str, Enum): 
+    """
+    The logging level.
+
+
+    """
+
+
+    ERROR = 'ERROR'
+    
+    INFO = 'INFO'
+    
+    OFF = 'OFF'
+    
+
+class RouteSettings(BaseModel):
+    """
+    Represents a collection of route settings.
+
+
+    """
+
+
+    DataTraceEnabled: Union[bool, Cloud_Output]
+    """
+    Specifies whether detailed metrics are enabled.
+
+
+    """
+
+    DetailedMetricsEnabled: Union[bool, Cloud_Output]
+    """
+    Specifies whether detailed metrics are enabled.
+
+
+    """
+
+    LoggingLevel: Union[LoggingLevel, Cloud_Output]
+    """
+    Specifies the logging level for this route: INFO, ERROR, or OFF. This property affects the log entries pushed to Amazon CloudWatch Logs. Supported only for WebSocket APIs.
+
+
+    """
+
+    ThrottlingBurstLimit: Union[int, Cloud_Output]
+    """
+    Specifies the throttling burst limit.
+
+
+    """
+
+    ThrottlingRateLimit: Union[int, Cloud_Output]
+    """
+    Specifies the throttling rate limit.
+
+
+    """
+
+
+    def __init__(self, DataTraceEnabled: bool, DetailedMetricsEnabled: bool, LoggingLevel: LoggingLevel, ThrottlingBurstLimit: int, ThrottlingRateLimit: int ):
+        "My doc string"
+        super().__init__(**{
+            "DataTraceEnabled": DataTraceEnabled,
+            "DetailedMetricsEnabled": DetailedMetricsEnabled,
+            "LoggingLevel": LoggingLevel,
+            "ThrottlingBurstLimit": ThrottlingBurstLimit,
+            "ThrottlingRateLimit": ThrottlingRateLimit,
+        })        
+
+
+
+
 
 class api_output(str, Enum):
     """
@@ -625,6 +729,164 @@ class integration_output(str, Enum):
 
 
 
+class stage_output(str, Enum):
+    """
+    Creates a Stage for an API.
+
+
+    """
+
+    AccessLogSettings = "AccessLogSettings"
+    """
+    Settings for logging access in this stage.
+
+
+    """
+
+    ApiGatewayManaged = "ApiGatewayManaged"
+    """
+    Specifies whether a stage is managed by API Gateway. If you created an API using quick create, the $default stage is managed by API Gateway. You can't modify the $default stage.
+
+
+    """
+
+    AutoDeploy = "AutoDeploy"
+    """
+    Specifies whether updates to an API automatically trigger a new deployment. The default value is false.
+
+
+    """
+
+    ClientCertificateId = "ClientCertificateId"
+    """
+    The identifier of a client certificate for a Stage. Supported only for WebSocket APIs.
+
+
+    """
+
+    CreatedDate = "CreatedDate"
+    """
+    The timestamp when the stage was created.
+
+
+    """
+
+    DefaultRouteSettings = "DefaultRouteSettings"
+    """
+    Default route settings for the stage.
+
+
+    """
+
+    DeploymentId = "DeploymentId"
+    """
+    The identifier of the Deployment that the Stage is associated with. Can't be updated if autoDeploy is enabled.
+
+
+    """
+
+    Description = "Description"
+    """
+    The description of the stage.
+
+
+    """
+
+    LastDeploymentStatusMessage = "LastDeploymentStatusMessage"
+    """
+    Describes the status of the last deployment of a stage. Supported only for stages with autoDeploy enabled.
+
+
+    """
+
+    LastUpdatedDate = "LastUpdatedDate"
+    """
+    The timestamp when the stage was last updated.
+
+
+    """
+
+    RouteSettings = "RouteSettings"
+    """
+    Route settings for the stage, by routeKey.
+
+
+    """
+
+    StageName = "StageName"
+    """
+    The name of the stage.
+
+
+    """
+
+    StageVariables = "StageVariables"
+    """
+    A map that defines the stage variables for a stage resource. Variable names can have alphanumeric and underscore characters, and the values must match [A-Za-z0-9-.\_~:/?#&=,]+.
+
+
+    """
+
+    Tags = "Tags"
+    """
+    The collection of tags. Each tag element is associated with a given resource.
+
+
+    """
+
+
+
+class deployment_output(str, Enum):
+    """
+    Creates a Deployment for an API.
+
+
+    """
+
+    AutoDeployed = "AutoDeployed"
+    """
+    Specifies whether a deployment was automatically released.
+
+
+    """
+
+    CreatedDate = "CreatedDate"
+    """
+    The date and time when the Deployment resource was created.
+
+
+    """
+
+    DeploymentId = "DeploymentId"
+    """
+    The identifier for the deployment.
+
+
+    """
+
+    DeploymentStatus = "DeploymentStatus"
+    """
+    The status of the deployment: PENDING, FAILED, or SUCCEEDED.
+
+
+    """
+
+    DeploymentStatusMessage = "DeploymentStatusMessage"
+    """
+    May contain additional feedback on the status of an API deployment.
+
+
+    """
+
+    Description = "Description"
+    """
+    The description for the deployment.
+
+
+    """
+
+
+
 class api_model(Rendered_Resource):
     """
 
@@ -935,6 +1197,120 @@ class integration_model(Rendered_Resource):
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'IntegrationId'])
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+
+    class Config:
+        extra='ignore'
+
+
+class stage_model(Rendered_Resource):
+    """
+
+    Updates a Stage.
+    
+    """
+
+
+    AccessLogSettings: Optional[Union[AccessLogSettings, Cloud_Output]] 
+    """
+    Settings for logging access in this stage.
+    """
+
+    ApiId: Union[str, Cloud_Output]
+    """
+    The API identifier.
+    """
+
+    AutoDeploy: Optional[Union[bool, Cloud_Output]]
+    """
+    Specifies whether updates to an API automatically trigger a new deployment. The default value is false.
+    """
+
+    ClientCertificateId: Optional[Union[str, Cloud_Output]]
+    """
+    The deployment identifier of the API stage.
+    """
+
+    DefaultRouteSettings: Optional[Union[RouteSettings, Cloud_Output]] 
+    """
+    The default route settings for the stage.
+    """
+
+    DeploymentId: Optional[Union[str, Cloud_Output]]
+    """
+    The deployment identifier of the API stage.
+    """
+
+    Description: Optional[Union[str, Cloud_Output]]
+    """
+    The description for the API stage.
+    """
+
+    RouteSettings: Optional[Union[Dict[str,RouteSettings], Cloud_Output]]
+    """
+    Route settings for the stage, by routeKey.
+    """
+
+    StageName: Union[str, Cloud_Output]
+    """
+    The name of the stage.
+    """
+
+    StageVariables: Optional[Union[Dict[str,str], Cloud_Output]]
+    """
+    A map that defines the stage variables for a Stage. Variable names can have alphanumeric and underscore characters, and the values must match [A-Za-z0-9-.\_~:/?#&=,]+.
+    """
+
+    Tags: Optional[Union[Dict[str,str], Cloud_Output]]
+    """
+    The collection of tags. Each tag element is associated with a given resource.
+    """
+
+
+    def filter_to_create(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['ApiId', 'StageName', 'AccessLogSettings', 'AutoDeploy', 'ClientCertificateId', 'DefaultRouteSettings', 'DeploymentId', 'Description', 'RouteSettings', 'StageVariables', 'Tags'])
+
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+
+    def filter_to_remove(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['ApiId', 'StageName'])
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+
+    class Config:
+        extra='ignore'
+
+
+class deployment_model(Rendered_Resource):
+    """
+
+    Updates a Deployment.
+    
+    """
+
+
+    ApiId: Union[str, Cloud_Output]
+    """
+    The API identifier.
+    """
+
+    Description: Optional[Union[str, Cloud_Output]]
+    """
+    The description for the deployment resource.
+    """
+
+    StageName: Optional[Union[str, Cloud_Output]]
+    """
+    The name of the Stage resource for the Deployment resource to create.
+    """
+
+
+    def filter_to_create(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['ApiId', 'Description', 'StageName'])
+
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+
+    def filter_to_remove(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['ApiId', 'DeploymentId'])
         return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
 
     class Config:

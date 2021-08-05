@@ -1,6 +1,6 @@
 from pydantic.main import BaseModel
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Callable, Any
 
 
 from ...constructs import Cdev_Resource
@@ -188,7 +188,10 @@ class Queue(Cdev_Resource):
         
         return queue_model(**filtered_data)
 
-    def from_output(self, key: queue_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"cdev::aws::sqs::queue::{self.hash}", "key": key, "type": "cdev_output"})
+    def from_output(self, key: queue_output, transformer: Callable[[Any], Any]=None) -> Cloud_Output:
+        if transformer:
+            return Cloud_Output(**{"resource": f"cdev::aws::sqs::queue::{self.hash}", "key": key, "type": "cdev_output", "transformer": transformer})
+        else:
+            return Cloud_Output(**{"resource": f"cdev::aws::sqs::queue::{self.hash}", "key": key, "type": "cdev_output"})
 
 

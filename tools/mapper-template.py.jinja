@@ -70,7 +70,16 @@ def _{{low_level_info.get("verb")}}_{{resource_info.get('resource_name')}}(ident
         {% else%}
         rv = response
         {% endif %}
+
+        {% if 'additional_info' in low_level_info %}
+        ADDITIONAL_OUTPUT={{low_level_info.get("additional_info")}}
+        for additional in ADDITIONAL_OUTPUT:
+            if additional in args:
+                rv[additional] = args.get(additional)
+        {% endif %}
         print(rv)
+
+
         return rv
 
     except botocore.exceptions.ClientError as e:

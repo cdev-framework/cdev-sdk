@@ -56,7 +56,10 @@ def _create_table(identifier: str, resource: table_model) -> table_output:
         response = run_client_function('dynamodb', 'create_table', args)
 
         rv = response.get('TableDescription')
+
         print(rv)
+
+
         return rv
 
     except botocore.exceptions.ClientError as e:
@@ -73,7 +76,10 @@ def _remove_table(identifier: str, resource: table_model):
         response = run_client_function('dynamodb', 'delete_table', args)
 
         rv = response
+
         print(rv)
+
+
         return rv
 
     except botocore.exceptions.ClientError as e:

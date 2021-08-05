@@ -56,7 +56,10 @@ def _create_bucket(identifier: str, resource: bucket_model) -> bucket_output:
         response = run_client_function('s3', 'create_bucket', args)
 
         rv = response
+
         print(rv)
+
+
         return rv
 
     except botocore.exceptions.ClientError as e:
@@ -73,7 +76,10 @@ def _remove_bucket(identifier: str, resource: bucket_model):
         response = run_client_function('s3', 'delete_bucket', args)
 
         rv = response
+
         print(rv)
+
+
         return rv
 
     except botocore.exceptions.ClientError as e:

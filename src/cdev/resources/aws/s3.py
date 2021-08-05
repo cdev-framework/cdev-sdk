@@ -1,6 +1,6 @@
 from pydantic.main import BaseModel
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Callable, Any
 
 
 from ...constructs import Cdev_Resource
@@ -12,25 +12,14 @@ from .s3_models import *
 
 class Bucket(Cdev_Resource):
     """
-    Returns some or all (up to 1,000) of the objects in a bucket. You can use the request parameters as selection criteria to return a subset of the objects in a bucket. A 200 OK response can contain valid or invalid XML. Be sure to design your application to parse the contents of the response and handle it appropriately.
+    Deletes the S3 bucket. All objects (including all object versions and delete markers) in the bucket must be deleted before the bucket itself can be deleted.
 
-  This action has been revised. We recommend that you use the newer version, [ListObjectsV2](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html), when developing applications. For backward compatibility, Amazon S3 continues to support `ListObjects`.
+  **Related Resources** 
 
-  The following operations are related to `ListObjects`:
-
- *  [ListObjectsV2](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html) 
+ *  [CreateBucket](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html) 
 
 
-*  [GetObject](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html) 
-
-
-*  [PutObject](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html) 
-
-
-*  [CreateBucket](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html) 
-
-
-*  [ListBuckets](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListBuckets.html) 
+*  [DeleteObject](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html) 
 
 
 
@@ -127,8 +116,11 @@ class Bucket(Cdev_Resource):
         
         return bucket_model(**filtered_data)
 
-    def from_output(self, key: bucket_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"cdev::aws::s3::bucket::{self.hash}", "key": key, "type": "cdev_output"})
+    def from_output(self, key: bucket_output, transformer: Callable[[Any], Any]=None) -> Cloud_Output:
+        if transformer:
+            return Cloud_Output(**{"resource": f"cdev::aws::s3::bucket::{self.hash}", "key": key, "type": "cdev_output", "transformer": transformer})
+        else:
+            return Cloud_Output(**{"resource": f"cdev::aws::s3::bucket::{self.hash}", "key": key, "type": "cdev_output"})
 
 
 class s3_object(BaseModel):

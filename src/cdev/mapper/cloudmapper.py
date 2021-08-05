@@ -68,7 +68,11 @@ def _recursive_replace_output(obj) -> dict:
                 if "type" in v and v.get("type") == 'cdev_output':
                   
                     identifier = v.get('resource').split("::")[-1]
-                    rv[k] = cdev_cloud_mapper.get_output_value(identifier, v.get("key"))
+
+                    if "transformer" in v:
+                        rv[k] = cdev_cloud_mapper.get_output_value(identifier, v.get("key"), transformer=v.get("transformer"))
+                    else:
+                        rv[k] = cdev_cloud_mapper.get_output_value(identifier, v.get("key"))
 
                 else:
                     rv[k] = _recursive_replace_output(v)
@@ -101,6 +105,8 @@ RESOURCE_TO_HANDLER_FUNCTION = {
     "cdev::aws::sqs::queue": sqs.handle_queue_deployment,
     "cdev::aws::apigatewayv2::api": apigatewayv2.handle_api_deployment,
     "cdev::aws::apigatewayv2::route": apigatewayv2.handle_route_deployment,
-    "cdev::aws::apigatewayv2::integration": apigatewayv2.handle_integration_deployment
+    "cdev::aws::apigatewayv2::integration": apigatewayv2.handle_integration_deployment,
+    "cdev::aws::apigatewayv2::stage": apigatewayv2.handle_stage_deployment,
+    "cdev::aws::apigatewayv2::deployment": apigatewayv2.handle_deployment_deployment
 }
 

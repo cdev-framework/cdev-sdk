@@ -1,4 +1,5 @@
 from os import truncate
+from typing import Any, Callable
 from cdev.backend.models import CloudState
 from . import utils as backend_utils
 
@@ -90,7 +91,7 @@ def remove_cloud_resource(identifier: str, old_resource) -> bool:
     return True
 
 
-def get_output_value(identifier: str, key: str) -> str:
+def get_output_value(identifier: str, key: str, transformer: Callable[[Any], Any]=None) -> str:
     cloud_mapping =  backend_utils.load_cloud_mapping()
 
     if not identifier in cloud_mapping.state:
@@ -101,7 +102,13 @@ def get_output_value(identifier: str, key: str) -> str:
         # TODO throw error
         return None
 
-    return cloud_mapping.state.get(identifier).output.get(key)
+    original_data = cloud_mapping.state.get(identifier).output.get(key)
+
+    if transformer:
+        print(f"original: {original_data}; transformed {transformer(original_data)}")
+        return transformer(original_data)
+
+    return original_data
 
 
 def update_output_value(identifier: str, info: dict) -> bool:

@@ -30,6 +30,8 @@ class {{struct.get("name")}}(BaseModel):
     {{pythonify_symbol(attribute_name)}}: Union[int, Cloud_Output]
     {% elif val.get("type") == "integer"%}
     {{pythonify_symbol(attribute_name)}}: Union[int, Cloud_Output]
+    {% elif val.get("type") == "double"%}
+    {{pythonify_symbol(attribute_name)}}: Union[int, Cloud_Output]
     {%else%}
     {{pythonify_symbol(attribute_name)}}; {{val}}
     Bad

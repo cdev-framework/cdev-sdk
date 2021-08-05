@@ -147,6 +147,8 @@ def flatten_structure_to_params(attributes: dict):
             final_string = f"{final_string}, {attribute_name}: str"
         if attribute.get("type") == "integer":
             final_string = f"{final_string}, {attribute_name}: int"
+        if attribute.get("type") == "double":
+            final_string = f"{final_string}, {attribute_name}: int"
         if attribute.get("type") == "int":
             final_string = f"{final_string}, {attribute_name}: int"
         if attribute.get("type") == "long":
@@ -175,6 +177,8 @@ def flatten_attributes_to_params(attributes: list):
         if attribute.get("type") == "string":
             final_string = f"{final_string}, {attribute.get('param_name')}: str{'=None' if not attribute.get('isrequired') else ''}"
         if attribute.get("type") == "integer":
+            final_string = f"{final_string}, {attribute.get('param_name')}: int{'=None' if not attribute.get('isrequired') else ''}"
+        if attribute.get("type") == "double":
             final_string = f"{final_string}, {attribute.get('param_name')}: int{'=None' if not attribute.get('isrequired') else ''}"
         if attribute.get("type") == "enum":
             final_string = f"{final_string}, {attribute.get('param_name')}: {attribute.get('name')}{'=None' if not attribute.get('isrequired') else ''}"
@@ -269,6 +273,9 @@ def generate_mapper_resources(service, botoinfo):
                 raw_fuct_name = resource.get("create").get("action")
                 t2['function_name'] = camel_to_snake(raw_fuct_name)
                 #t2['wait'] = camel_to_snake(resource.get("create").get("waits"))
+                if 'additional_info' in resource.get("create"):
+                    t2["additional_info"] = resource.get("create").get("additional_info")
+                print(t2)
 
             output_shape = botoinfo.get("operations").get(raw_fuct_name).get("output").get("shape")
 

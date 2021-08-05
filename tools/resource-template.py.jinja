@@ -1,6 +1,6 @@
 from pydantic.main import BaseModel
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Callable, Any
 
 
 from ...constructs import Cdev_Resource
@@ -47,8 +47,11 @@ class {{resource.get("resource_name")}}(Cdev_Resource):
         
         return {{resource.get("resource_name").lower()}}_model(**filtered_data)
 
-    def from_output(self, key: {{resource.get("outputname").lower()}}) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"{{resource.get('ruuid')}}::{self.hash}", "key": key, "type": "cdev_output"})
+    def from_output(self, key: {{resource.get("outputname").lower()}}, transformer: Callable[[Any], Any]=None) -> Cloud_Output:
+        if transformer:
+            return Cloud_Output(**{"resource": f"{{resource.get('ruuid')}}::{self.hash}", "key": key, "type": "cdev_output", "transformer": transformer})
+        else:
+            return Cloud_Output(**{"resource": f"{{resource.get('ruuid')}}::{self.hash}", "key": key, "type": "cdev_output"})
 
 
 {%endfor%}

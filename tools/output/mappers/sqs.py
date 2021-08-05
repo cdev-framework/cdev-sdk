@@ -56,7 +56,10 @@ def _create_queue(identifier: str, resource: queue_model) -> queue_output:
         response = run_client_function('sqs', 'create_queue', args)
 
         rv = response
+
         print(rv)
+
+
         return rv
 
     except botocore.exceptions.ClientError as e:
@@ -73,7 +76,10 @@ def _remove_queue(identifier: str, resource: queue_model):
         response = run_client_function('sqs', 'delete_queue', args)
 
         rv = response
+
         print(rv)
+
+
         return rv
 
     except botocore.exceptions.ClientError as e:

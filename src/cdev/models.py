@@ -1,5 +1,5 @@
 from typing import (
-    Deque, Dict, FrozenSet, List, Optional, Sequence, Set, Tuple, Union
+    Any, Callable, Deque, Dict, FrozenSet, List, Optional, Sequence, Set, Tuple, Union
 )
 
 from enum import Enum
@@ -84,6 +84,8 @@ class Cloud_Output(BaseModel):
     """
 
     type: Literal["cdev_output"]
+
+    transformer: Optional[Callable[[Any], Any]]
         
     def __str__(self) -> str:
         return f"{self.resource}$${self.key}"

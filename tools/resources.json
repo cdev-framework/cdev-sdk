@@ -80,17 +80,44 @@
                 {
                     "name": "Route",
                     "ruuid": "cdev::aws::apigatewayv2::route",
-                    "create": "CreateRoute",
+                    "create": {
+                        "action": "CreateRoute",
+                        "additional_info": ["ApiId"]
+                    },
                     "update": "UpdateRoute",
                     "remove": "DeleteRoute"
                 },
                 {
                     "name": "Integration",
                     "ruuid": "cdev::aws::apigatewayv2::integration",
-                    "create": "CreateIntegration",
+                    "create": {
+                        "action": "CreateIntegration",
+                        "additional_info": ["ApiId"]
+                    },
                     "update": "UpdateIntegration",
                     "remove": "DeleteIntegration"
+                },
+                {
+                    "name": "Stage",
+                    "ruuid": "cdev::aws::apigatewayv2::stage",
+                    "create": {
+                        "action": "CreateStage",
+                        "additional_info": ["ApiId"]
+                    },
+                    "update": "UpdateStage",
+                    "remove": "DeleteStage"
+                },
+                {
+                    "name": "Deployment",
+                    "ruuid": "cdev::aws::apigatewayv2::deployment",
+                    "create": {
+                        "action": "CreateDeployment",
+                        "additional_info": ["ApiId"]
+                    },
+                    "update": "UpdateDeployment",
+                    "remove": "DeleteDeployment"
                 }
+
             ]
         }
     ]

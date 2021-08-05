@@ -1,6 +1,6 @@
 from pydantic.main import BaseModel
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Callable, Any
 
 
 from ...constructs import Cdev_Resource
@@ -138,8 +138,11 @@ class Api(Cdev_Resource):
         
         return api_model(**filtered_data)
 
-    def from_output(self, key: api_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::api::{self.hash}", "key": key, "type": "cdev_output"})
+    def from_output(self, key: api_output, transformer: Callable[[Any], Any]=None) -> Cloud_Output:
+        if transformer:
+            return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::api::{self.hash}", "key": key, "type": "cdev_output", "transformer": transformer})
+        else:
+            return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::api::{self.hash}", "key": key, "type": "cdev_output"})
 
 
 class Route(Cdev_Resource):
@@ -262,8 +265,11 @@ class Route(Cdev_Resource):
         
         return route_model(**filtered_data)
 
-    def from_output(self, key: route_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::route::{self.hash}", "key": key, "type": "cdev_output"})
+    def from_output(self, key: route_output, transformer: Callable[[Any], Any]=None) -> Cloud_Output:
+        if transformer:
+            return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::route::{self.hash}", "key": key, "type": "cdev_output", "transformer": transformer})
+        else:
+            return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::route::{self.hash}", "key": key, "type": "cdev_output"})
 
 
 class Integration(Cdev_Resource):
@@ -469,7 +475,184 @@ class Integration(Cdev_Resource):
         
         return integration_model(**filtered_data)
 
-    def from_output(self, key: integration_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::integration::{self.hash}", "key": key, "type": "cdev_output"})
+    def from_output(self, key: integration_output, transformer: Callable[[Any], Any]=None) -> Cloud_Output:
+        if transformer:
+            return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::integration::{self.hash}", "key": key, "type": "cdev_output", "transformer": transformer})
+        else:
+            return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::integration::{self.hash}", "key": key, "type": "cdev_output"})
+
+
+class Stage(Cdev_Resource):
+    """
+    Updates a Stage.
+
+
+    """
+
+    def __init__(self,name: str, ApiId: str, StageName: str, AccessLogSettings: AccessLogSettings=None, AutoDeploy: bool=None, ClientCertificateId: str=None, DefaultRouteSettings: RouteSettings=None, DeploymentId: str=None, Description: str=None, RouteSettings: Dict[str, RouteSettings]=None, StageVariables: Dict[str, str]=None, Tags: Dict[str, str]=None):
+        ""
+        super().__init__(name)
+
+        self.AccessLogSettings = AccessLogSettings
+        """
+        Settings for logging access in this stage.
+
+
+        """
+
+        self.ApiId = ApiId
+        """
+        The API identifier.
+
+
+        """
+
+        self.AutoDeploy = AutoDeploy
+        """
+        Specifies whether updates to an API automatically trigger a new deployment. The default value is false.
+
+
+        """
+
+        self.ClientCertificateId = ClientCertificateId
+        """
+        The deployment identifier of the API stage.
+
+
+        """
+
+        self.DefaultRouteSettings = DefaultRouteSettings
+        """
+        The default route settings for the stage.
+
+
+        """
+
+        self.DeploymentId = DeploymentId
+        """
+        The deployment identifier of the API stage.
+
+
+        """
+
+        self.Description = Description
+        """
+        The description for the API stage.
+
+
+        """
+
+        self.RouteSettings = RouteSettings
+        """
+        Route settings for the stage, by routeKey.
+
+
+        """
+
+        self.StageName = StageName
+        """
+        The name of the stage.
+
+
+        """
+
+        self.StageVariables = StageVariables
+        """
+        A map that defines the stage variables for a Stage. Variable names can have alphanumeric and underscore characters, and the values must match [A-Za-z0-9-.\_~:/?#&=,]+.
+
+
+        """
+
+        self.Tags = Tags
+        """
+        The collection of tags. Each tag element is associated with a given resource.
+
+
+        """
+
+        self.hash = hasher.hash_list([self.ApiId, self.StageName, self.AccessLogSettings, self.AutoDeploy, self.ClientCertificateId, self.DefaultRouteSettings, self.DeploymentId, self.Description, self.RouteSettings, self.StageVariables, self.Tags])
+
+    def render(self) -> stage_model:
+        data = {
+            "ruuid": "cdev::aws::apigatewayv2::stage",
+            "name": self.name,
+            "hash": self.hash,
+            "AccessLogSettings": self.AccessLogSettings,
+            "ApiId": self.ApiId,
+            "AutoDeploy": self.AutoDeploy,
+            "ClientCertificateId": self.ClientCertificateId,
+            "DefaultRouteSettings": self.DefaultRouteSettings,
+            "DeploymentId": self.DeploymentId,
+            "Description": self.Description,
+            "RouteSettings": self.RouteSettings,
+            "StageName": self.StageName,
+            "StageVariables": self.StageVariables,
+            "Tags": self.Tags,
+        }
+
+        filtered_data = {k:v for k,v in data.items() if v}
+        
+        return stage_model(**filtered_data)
+
+    def from_output(self, key: stage_output, transformer: Callable[[Any], Any]=None) -> Cloud_Output:
+        if transformer:
+            return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::stage::{self.hash}", "key": key, "type": "cdev_output", "transformer": transformer})
+        else:
+            return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::stage::{self.hash}", "key": key, "type": "cdev_output"})
+
+
+class Deployment(Cdev_Resource):
+    """
+    Updates a Deployment.
+
+
+    """
+
+    def __init__(self,name: str, ApiId: str, Description: str=None, StageName: str=None):
+        ""
+        super().__init__(name)
+
+        self.ApiId = ApiId
+        """
+        The API identifier.
+
+
+        """
+
+        self.Description = Description
+        """
+        The description for the deployment resource.
+
+
+        """
+
+        self.StageName = StageName
+        """
+        The name of the Stage resource for the Deployment resource to create.
+
+
+        """
+
+        self.hash = hasher.hash_list([self.ApiId, self.Description, self.StageName])
+
+    def render(self) -> deployment_model:
+        data = {
+            "ruuid": "cdev::aws::apigatewayv2::deployment",
+            "name": self.name,
+            "hash": self.hash,
+            "ApiId": self.ApiId,
+            "Description": self.Description,
+            "StageName": self.StageName,
+        }
+
+        filtered_data = {k:v for k,v in data.items() if v}
+        
+        return deployment_model(**filtered_data)
+
+    def from_output(self, key: deployment_output, transformer: Callable[[Any], Any]=None) -> Cloud_Output:
+        if transformer:
+            return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::deployment::{self.hash}", "key": key, "type": "cdev_output", "transformer": transformer})
+        else:
+            return Cloud_Output(**{"resource": f"cdev::aws::apigatewayv2::deployment::{self.hash}", "key": key, "type": "cdev_output"})
 
 
