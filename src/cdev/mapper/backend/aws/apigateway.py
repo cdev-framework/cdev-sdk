@@ -260,7 +260,7 @@ def _create_integration(identifier: str, resource: integration_model) -> integra
 
         rv = response
 
-        ADDITIONAL_OUTPUT=['restApiId', 'resourceId']
+        ADDITIONAL_OUTPUT=['restApiId', 'resourceId', 'httpMethod']
         for additional in ADDITIONAL_OUTPUT:
             if additional in args:
                 rv[additional] = args.get(additional)
@@ -407,6 +407,202 @@ def handle_stage_deployment(resource_diff: Resource_State_Difference) -> bool:
         elif resource_diff.action_type == Action_Type.DELETE:
             
             return remove_stage(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+    except Exception as e:
+        print(e)
+        raise Exception("COULD NOT DEPLOY")
+
+################################################
+##########
+##########     integrationresponse
+##########
+################################################
+
+
+def create_integrationresponse(identifier: str, resource: integrationresponse_model) -> bool:
+    try:
+        rv = _create_integrationresponse(identifier, resource)
+        if rv:
+            cdev_cloud_mapper.add_cloud_resource(identifier, resource)
+            cdev_cloud_mapper.update_output_value(identifier, rv)
+
+        return True
+
+    except Exception as e:
+        print(e)
+        raise Exception("COULD NOT DEPLOY")
+
+def remove_integrationresponse(identifier: str, resource: integrationresponse_model) -> bool:
+    try:
+        _remove_integrationresponse(identifier, resource)
+
+        cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
+        cdev_cloud_mapper.remove_identifier(identifier)
+
+        return True
+
+    except Exception as e:
+        print(e)
+        raise Exception("COULD NOT DEPLOY")
+
+
+# Low level function to call actual clieant call and return response
+def _create_integrationresponse(identifier: str, resource: integrationresponse_model) -> integrationresponse_output:
+    try:
+        
+        args = integrationresponse_model(**resource.dict()).filter_to_create(identifier)
+        args['selectionPattern'] = ''
+        response = run_client_function('apigateway', 'put_integration_response', args)
+
+        rv = response
+
+        ADDITIONAL_OUTPUT=['restApiId', 'resourceId', 'httpMethod']
+        for additional in ADDITIONAL_OUTPUT:
+            if additional in args:
+                rv[additional] = args.get(additional)
+
+
+        print(rv)
+
+
+        return rv
+
+    except botocore.exceptions.ClientError as e:
+        print(e.response)
+        raise Exception("COULD NOT DEPLOY")
+
+
+# Low level function to call actual clieant call and return response
+def _remove_integrationresponse(identifier: str, resource: integrationresponse_model):
+    try:
+
+        args = integrationresponse_model(**resource.dict()).filter_to_remove(identifier)
+
+        response = run_client_function('apigateway', 'delete_integration_response', args)
+
+        rv = response
+
+
+
+        print(rv)
+
+
+        return rv
+
+    except botocore.exceptions.ClientError as e:
+        print(e.response)
+        raise Exception("COULD NOT DEPLOY")
+
+
+def handle_integrationresponse_deployment(resource_diff: Resource_State_Difference) -> bool:
+    try:
+        if resource_diff.action_type == Action_Type.CREATE:
+
+            return create_integrationresponse(resource_diff.new_resource.hash, resource_diff.new_resource)
+        elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
+
+            return True
+        elif resource_diff.action_type == Action_Type.DELETE:
+            
+            return remove_integrationresponse(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+    except Exception as e:
+        print(e)
+        raise Exception("COULD NOT DEPLOY")
+
+################################################
+##########
+##########     method
+##########
+################################################
+
+
+def create_method(identifier: str, resource: method_model) -> bool:
+    try:
+        rv = _create_method(identifier, resource)
+        if rv:
+            cdev_cloud_mapper.add_cloud_resource(identifier, resource)
+            cdev_cloud_mapper.update_output_value(identifier, rv)
+
+        return True
+
+    except Exception as e:
+        print(e)
+        raise Exception("COULD NOT DEPLOY")
+
+def remove_method(identifier: str, resource: method_model) -> bool:
+    try:
+        _remove_method(identifier, resource)
+
+        cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
+        cdev_cloud_mapper.remove_identifier(identifier)
+
+        return True
+
+    except Exception as e:
+        print(e)
+        raise Exception("COULD NOT DEPLOY")
+
+
+# Low level function to call actual clieant call and return response
+def _create_method(identifier: str, resource: method_model) -> method_output:
+    try:
+
+        args = method_model(**resource.dict()).filter_to_create(identifier)
+
+        response = run_client_function('apigateway', 'put_method', args)
+
+        rv = response
+
+        ADDITIONAL_OUTPUT=['restApiId', 'resourceId']
+        for additional in ADDITIONAL_OUTPUT:
+            if additional in args:
+                rv[additional] = args.get(additional)
+
+
+        print(rv)
+
+
+        return rv
+
+    except botocore.exceptions.ClientError as e:
+        print(e.response)
+        raise Exception("COULD NOT DEPLOY")
+
+
+# Low level function to call actual clieant call and return response
+def _remove_method(identifier: str, resource: method_model):
+    try:
+
+        args = method_model(**resource.dict()).filter_to_remove(identifier)
+
+        response = run_client_function('apigateway', 'delete_method', args)
+
+        rv = response
+
+
+
+        print(rv)
+
+
+        return rv
+
+    except botocore.exceptions.ClientError as e:
+        print(e.response)
+        raise Exception("COULD NOT DEPLOY")
+
+
+def handle_method_deployment(resource_diff: Resource_State_Difference) -> bool:
+    try:
+        if resource_diff.action_type == Action_Type.CREATE:
+
+            return create_method(resource_diff.new_resource.hash, resource_diff.new_resource)
+        elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
+
+            return True
+        elif resource_diff.action_type == Action_Type.DELETE:
+            
+            return remove_method(resource_diff.previous_resource.hash, resource_diff.previous_resource)
 
     except Exception as e:
         print(e)

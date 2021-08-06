@@ -185,22 +185,22 @@ class CacheClusterSize(str, Enum):
 
     """
 
-
-    0.5 = '0.5'
-    
-    1.6 = '1.6'
-    
-    6.1 = '6.1'
-    
-    13.5 = '13.5'
-    
-    28.4 = '28.4'
-    
-    58.2 = '58.2'
-    
-    118 = '118'
-    
-    237 = '237'
+    p = 'p'
+    #0.5 = '0.5'
+    #
+    #1.6 = '1.6'
+    #
+    #6.1 = '6.1'
+    #
+    #13.5 = '13.5'
+    #
+    #28.4 = '28.4'
+    #
+    #58.2 = '58.2'
+    #
+    #118 = '118'
+    #
+    #237 = '237'
     
 
 class CanarySettings(BaseModel):
@@ -248,6 +248,7 @@ class CanarySettings(BaseModel):
             "stageVariableOverrides": stageVariableOverrides,
             "useStageCache": useStageCache,
         })        
+
 
 
 
@@ -743,6 +744,179 @@ class stage_output(str, Enum):
 
 
 
+class integrationresponse_output(str, Enum):
+    """
+    Represents a put integration.
+
+
+    """
+
+    statusCode = "statusCode"
+    """
+    Specifies the status code that is used to map the integration response to an existing MethodResponse.
+
+
+    """
+
+    selectionPattern = "selectionPattern"
+    """
+    Specifies the regular expression (regex) pattern used to choose an integration response based on the response from the back end. For example, if the success response returns nothing and the error response returns some string, you could use the `.+` regex to match error response. However, make sure that the error response does not contain any newline (`\n`) character in such cases. If the back end is an AWS Lambda function, the AWS Lambda function error header is matched. For all other HTTP and AWS back ends, the HTTP status code is matched.
+
+
+    """
+
+    responseParameters = "responseParameters"
+    """
+    A key-value map specifying response parameters that are passed to the method response from the back end. The key is a method response header parameter name and the mapped value is an integration response header value, a static value enclosed within a pair of single quotes, or a JSON expression from the integration response body. The mapping key must match the pattern of `method.response.header.{name}`, where `name` is a valid and unique header name. The mapped non-static value must match the pattern of `integration.response.header.{name}` or `integration.response.body.{JSON-expression}`, where `name` is a valid and unique response header name and `JSON-expression` is a valid JSON expression without the `$` prefix.
+
+
+    """
+
+    responseTemplates = "responseTemplates"
+    """
+    Specifies the templates used to transform the integration response body. Response templates are represented as a key/value map, with a content-type as the key and a template as the value.
+
+
+    """
+
+    contentHandling = "contentHandling"
+    """
+    Specifies how to handle response payload content type conversions. Supported values are `CONVERT_TO_BINARY` and `CONVERT_TO_TEXT`, with the following behaviors:
+
+ * `CONVERT_TO_BINARY`: Converts a response payload from a Base64-encoded string to the corresponding binary blob.
+
+
+* `CONVERT_TO_TEXT`: Converts a response payload from a binary blob to a Base64-encoded string.
+
+
+
+ If this property is not defined, the response payload will be passed through from the integration response to the method response without modification.
+
+
+    """
+
+
+
+class method_output(str, Enum):
+    """
+    Add a method to an existing Resource resource.
+
+
+    """
+
+    httpMethod = "httpMethod"
+    """
+    The method's HTTP verb.
+
+
+    """
+
+    authorizationType = "authorizationType"
+    """
+    The method's authorization type. Valid values are `NONE` for open access, `AWS_IAM` for using AWS IAM permissions, `CUSTOM` for using a custom authorizer, or `COGNITO_USER_POOLS` for using a Cognito user pool.
+
+
+    """
+
+    authorizerId = "authorizerId"
+    """
+    The identifier of an Authorizer to use on this method. The `authorizationType` must be `CUSTOM`.
+
+
+    """
+
+    apiKeyRequired = "apiKeyRequired"
+    """
+    A boolean flag specifying whether a valid ApiKey is required to invoke this method.
+
+
+    """
+
+    requestValidatorId = "requestValidatorId"
+    """
+    The identifier of a RequestValidator for request validation.
+
+
+    """
+
+    operationName = "operationName"
+    """
+    A human-friendly operation identifier for the method. For example, you can assign the `operationName` of `ListPets` for the `GET /pets` method in the `PetStore` example.
+
+
+    """
+
+    requestParameters = "requestParameters"
+    """
+    A key-value map defining required or optional method request parameters that can be accepted by API Gateway. A key is a method request parameter name matching the pattern of `method.request.{location}.{name}`, where `location` is `querystring`, `path`, or `header` and `name` is a valid and unique parameter name. The value associated with the key is a Boolean flag indicating whether the parameter is required (`true`) or optional (`false`). The method request parameter names defined here are available in Integration to be mapped to integration request parameters or templates.
+
+
+    """
+
+    requestModels = "requestModels"
+    """
+    A key-value map specifying data schemas, represented by Model resources, (as the mapped value) of the request payloads of given content types (as the mapping key).
+
+
+    """
+
+    methodResponses = "methodResponses"
+    """
+    Gets a method response associated with a given HTTP status code. 
+
+  The collection of method responses are encapsulated in a key-value map, where the key is a response's HTTP status code and the value is a MethodResponse resource that specifies the response returned to the caller from the back end through the integration response.
+
+ #### Example: Get a 200 OK response of a GET method
+
+ ##### Request
+
+  
+```
+GET /restapis/uojnr9hd57/resources/0cjtch/methods/GET/responses/200 HTTP/1.1 Content-Type: application/json Host: apigateway.us-east-1.amazonaws.com Content-Length: 117 X-Amz-Date: 20160613T215008Z Authorization: AWS4-HMAC-SHA256 Credential={access_key_ID}/20160613/us-east-1/apigateway/aws4_request, SignedHeaders=content-type;host;x-amz-date, Signature={sig4_hash}
+```
+ ##### Response
+
+ The successful response returns a `200 OK` status code and a payload similar to the following:
+
+ 
+```
+{ "_links": { "curies": { "href": "https://docs.aws.amazon.com/apigateway/latest/developerguide/restapi-method-response-{rel}.html", "name": "methodresponse", "templated": true }, "self": { "href": "/restapis/uojnr9hd57/resources/0cjtch/methods/GET/responses/200", "title": "200" }, "methodresponse:delete": { "href": "/restapis/uojnr9hd57/resources/0cjtch/methods/GET/responses/200" }, "methodresponse:update": { "href": "/restapis/uojnr9hd57/resources/0cjtch/methods/GET/responses/200" } }, "responseModels": { "application/json": "Empty" }, "responseParameters": { "method.response.header.operator": false, "method.response.header.operand_2": false, "method.response.header.operand_1": false }, "statusCode": "200" }
+```
+    [AWS CLI](https://docs.aws.amazon.com/cli/latest/reference/apigateway/get-method-response.html) 
+    """
+
+    methodIntegration = "methodIntegration"
+    """
+    Gets the method's integration responsible for passing the client-submitted request to the back end and performing necessary transformations to make the request compliant with the back end.
+
+   #### Example:
+
+ ##### Request
+
+  
+```
+GET /restapis/uojnr9hd57/resources/0cjtch/methods/GET/integration HTTP/1.1 Content-Type: application/json Host: apigateway.us-east-1.amazonaws.com Content-Length: 117 X-Amz-Date: 20160613T213210Z Authorization: AWS4-HMAC-SHA256 Credential={access_key_ID}/20160613/us-east-1/apigateway/aws4_request, SignedHeaders=content-type;host;x-amz-date, Signature={sig4_hash}
+```
+ ##### Response
+
+ The successful response returns a `200 OK` status code and a payload similar to the following:
+
+ 
+```
+{ "_links": { "curies": [ { "href": "https://docs.aws.amazon.com/apigateway/latest/developerguide/restapi-integration-{rel}.html", "name": "integration", "templated": true }, { "href": "https://docs.aws.amazon.com/apigateway/latest/developerguide/restapi-integration-response-{rel}.html", "name": "integrationresponse", "templated": true } ], "self": { "href": "/restapis/uojnr9hd57/resources/0cjtch/methods/GET/integration" }, "integration:delete": { "href": "/restapis/uojnr9hd57/resources/0cjtch/methods/GET/integration" }, "integration:responses": { "href": "/restapis/uojnr9hd57/resources/0cjtch/methods/GET/integration/responses/200", "name": "200", "title": "200" }, "integration:update": { "href": "/restapis/uojnr9hd57/resources/0cjtch/methods/GET/integration" }, "integrationresponse:put": { "href": "/restapis/uojnr9hd57/resources/0cjtch/methods/GET/integration/responses/{status_code}", "templated": true } }, "cacheKeyParameters": [], "cacheNamespace": "0cjtch", "credentials": "arn:aws:iam::123456789012:role/apigAwsProxyRole", "httpMethod": "POST", "passthroughBehavior": "WHEN_NO_MATCH", "requestTemplates": { "application/json": "{\n \"a\": \"$input.params('operand1')\",\n \"b\": \"$input.params('operand2')\", \n \"op\": \"$input.params('operator')\" \n}" }, "type": "AWS", "uri": "arn:aws:apigateway:us-west-2:lambda:path//2015-03-31/functions/arn:aws:lambda:us-west-2:123456789012:function:Calc/invocations", "_embedded": { "integration:responses": { "_links": { "self": { "href": "/restapis/uojnr9hd57/resources/0cjtch/methods/GET/integration/responses/200", "name": "200", "title": "200" }, "integrationresponse:delete": { "href": "/restapis/uojnr9hd57/resources/0cjtch/methods/GET/integration/responses/200" }, "integrationresponse:update": { "href": "/restapis/uojnr9hd57/resources/0cjtch/methods/GET/integration/responses/200" } }, "responseParameters": { "method.response.header.operator": "integration.response.body.op", "method.response.header.operand_2": "integration.response.body.b", "method.response.header.operand_1": "integration.response.body.a" }, "responseTemplates": { "application/json": "#set($res = $input.path('$'))\n{\n \"result\": \"$res.a, $res.b, $res.op => $res.c\",\n \"a\" : \"$res.a\",\n \"b\" : \"$res.b\",\n \"op\" : \"$res.op\",\n \"c\" : \"$res.c\"\n}" }, "selectionPattern": "", "statusCode": "200" } } }
+```
+    [AWS CLI](https://docs.aws.amazon.com/cli/latest/reference/apigateway/get-integration.html) 
+    """
+
+    authorizationScopes = "authorizationScopes"
+    """
+    A list of authorization scopes configured on the method. The scopes are used with a `COGNITO_USER_POOLS` authorizer to authorize the method invocation. The authorization works by matching the method scopes against the scopes parsed from the access token in the incoming request. The method invocation is authorized if any method scopes matches a claimed scope in the access token. Otherwise, the invocation is not authorized. When the method scope is configured, the client must provide an access token instead of an identity token for authorization purposes.
+
+
+    """
+
+
+
 class deployment_output(str, Enum):
     """
     Creates a Deployment resource, which makes a specified RestApi callable over the internet.
@@ -1079,6 +1253,154 @@ class stage_model(Rendered_Resource):
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'stageName'])
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+
+    class Config:
+        extra='ignore'
+
+
+class integrationresponse_model(Rendered_Resource):
+    """
+
+    Represents an update integration response.
+    
+    """
+
+
+    restApiId: Union[str, Cloud_Output]
+    """
+    Specifies the selection pattern of a put integration response.
+    """
+
+    resourceId: Union[str, Cloud_Output]
+    """
+    Specifies the selection pattern of a put integration response.
+    """
+
+    httpMethod: Union[str, Cloud_Output]
+    """
+    Specifies the selection pattern of a put integration response.
+    """
+
+    statusCode: Union[str, Cloud_Output]
+    """
+    [Required] Specifies the status code that is used to map the integration response to an existing MethodResponse.
+    """
+
+    selectionPattern: Optional[Union[str, Cloud_Output]]
+    """
+    Specifies the selection pattern of a put integration response.
+    """
+
+    responseParameters: Optional[Union[Dict[str,str], Cloud_Output]]
+    """
+    A key-value map specifying response parameters that are passed to the method response from the back end. The key is a method response header parameter name and the mapped value is an integration response header value, a static value enclosed within a pair of single quotes, or a JSON expression from the integration response body. The mapping key must match the pattern of `method.response.header.{name}`, where `name` is a valid and unique header name. The mapped non-static value must match the pattern of `integration.response.header.{name}` or `integration.response.body.{JSON-expression}`, where `name` must be a valid and unique response header name and `JSON-expression` a valid JSON expression without the `$` prefix.
+    """
+
+    responseTemplates: Optional[Union[Dict[str,str], Cloud_Output]]
+    """
+    Specifies a put integration response's templates.
+    """
+
+    contentHandling: Optional[Union[ContentHandlingStrategy, Cloud_Output]] 
+    """
+    Specifies how to handle response payload content type conversions. Supported values are `CONVERT_TO_BINARY` and `CONVERT_TO_TEXT`, with the following behaviors:
+
+ * `CONVERT_TO_BINARY`: Converts a response payload from a Base64-encoded string to the corresponding binary blob.
+
+
+* `CONVERT_TO_TEXT`: Converts a response payload from a binary blob to a Base64-encoded string.
+
+
+
+ If this property is not defined, the response payload will be passed through from the integration response to the method response without modification.
+    """
+
+
+    def filter_to_create(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod', 'statusCode', 'selectionPattern', 'responseParameters', 'responseTemplates', 'contentHandling'])
+
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+
+    def filter_to_remove(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod', 'statusCode'])
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+
+    class Config:
+        extra='ignore'
+
+
+class method_model(Rendered_Resource):
+    """
+
+    Updates an existing Method resource.
+    
+    """
+
+
+    restApiId: Union[str, Cloud_Output]
+    """
+    The identifier of a RequestValidator for validating the method request.
+    """
+
+    resourceId: Union[str, Cloud_Output]
+    """
+    The identifier of a RequestValidator for validating the method request.
+    """
+
+    httpMethod: Union[str, Cloud_Output]
+    """
+    The identifier of a RequestValidator for validating the method request.
+    """
+
+    authorizationType: Union[str, Cloud_Output]
+    """
+    The identifier of a RequestValidator for validating the method request.
+    """
+
+    authorizerId: Optional[Union[str, Cloud_Output]]
+    """
+    The identifier of a RequestValidator for validating the method request.
+    """
+
+    apiKeyRequired: Optional[Union[bool, Cloud_Output]]
+    """
+    Specifies whether the method required a valid ApiKey.
+    """
+
+    operationName: Optional[Union[str, Cloud_Output]]
+    """
+    The identifier of a RequestValidator for validating the method request.
+    """
+
+    requestParameters: Optional[Union[Dict[str,bool], Cloud_Output]]
+    """
+    A key-value map defining required or optional method request parameters that can be accepted by API Gateway. A key defines a method request parameter name matching the pattern of `method.request.{location}.{name}`, where `location` is `querystring`, `path`, or `header` and `name` is a valid and unique parameter name. The value associated with the key is a Boolean flag indicating whether the parameter is required (`true`) or optional (`false`). The method request parameter names defined here are available in Integration to be mapped to integration request parameters or body-mapping templates.
+    """
+
+    requestModels: Optional[Union[Dict[str,str], Cloud_Output]]
+    """
+    Specifies the Model resources used for the request's content type. Request models are represented as a key/value map, with a content type as the key and a Model name as the value.
+    """
+
+    requestValidatorId: Optional[Union[str, Cloud_Output]]
+    """
+    The identifier of a RequestValidator for validating the method request.
+    """
+
+    authorizationScopes: Optional[Union[List[str], Cloud_Output]]
+    """
+    The identifier of a RequestValidator for validating the method request.
+    """
+
+
+    def filter_to_create(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod', 'authorizationType', 'authorizerId', 'apiKeyRequired', 'operationName', 'requestParameters', 'requestModels', 'requestValidatorId', 'authorizationScopes'])
+
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+
+    def filter_to_remove(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod'])
         return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
 
     class Config:

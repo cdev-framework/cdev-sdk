@@ -160,7 +160,7 @@
                     "ruuid": "cdev::aws::apigateway::integration",
                     "create": {
                         "action": "PutIntegration",
-                        "additional_info": ["restApiId", "resourceId"]
+                        "additional_info": ["restApiId", "resourceId", "httpMethod"]
                     },
                     "update": "UpdateIntegration",
                     "remove": "DeleteIntegration"
@@ -174,6 +174,26 @@
                     },
                     "update": "UpdateStage",
                     "remove": "DeleteStage"
+                },
+                {
+                    "name": "IntegrationResponse",
+                    "ruuid": "cdev::aws::apigateway::integration_response",
+                    "create": {
+                        "action": "PutIntegrationResponse",
+                        "additional_info": ["restApiId", "resourceId", "httpMethod"]
+                    },
+                    "update": "UpdateIntegrationResponse",
+                    "remove": "DeleteIntegrationResponse"
+                },
+                {
+                    "name": "Method",
+                    "ruuid": "cdev::aws::apigateway::method",
+                    "create": {
+                        "action": "PutMethod",
+                        "additional_info": ["restApiId", "resourceId"]
+                    },
+                    "update": "UpdateMethod",
+                    "remove": "DeleteMethod"
                 },
                 {
                     "name": "Deployment",

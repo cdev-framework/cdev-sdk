@@ -112,6 +112,8 @@ RESOURCE_TO_HANDLER_FUNCTION = {
     "cdev::aws::apigateway::resource":  apigateway.handle_resource_deployment,
     "cdev::aws::apigateway::deployment":  apigateway.handle_deployment_deployment,
     "cdev::aws::apigateway::integration":  apigateway.handle_integration_deployment,
-    "cdev::aws::apigateway::stage":  apigateway.handle_stage_deployment
+    "cdev::aws::apigateway::stage":  apigateway.handle_stage_deployment,
+    "cdev::aws::apigateway::method": apigateway.handle_method_deployment,
+    "cdev::aws::apigateway::integration_response": apigateway.handle_integrationresponse_deployment
 }
 

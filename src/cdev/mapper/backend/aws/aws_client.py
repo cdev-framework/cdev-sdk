@@ -9,8 +9,9 @@ AVAILABLE_SERVICES = set(["lambda", "s3", "dynamodb", "iam", "apigatewayv2", "sq
 
 def _get_boto_client(service_name, credentials=None, profile_name=None):
 
-    if not service_name in AVAILABLE_SERVICES:
-        return None
+    # TODO readd this check after development is finished and we have the full list of services
+    #if not service_name in AVAILABLE_SERVICES:
+    #    return None
 
     if not credentials or not profile_name:
         return boto3.client(service_name)

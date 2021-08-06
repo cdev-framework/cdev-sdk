@@ -466,6 +466,229 @@ class Stage(Cdev_Resource):
             return Cloud_Output(**{"resource": f"cdev::aws::apigateway::stage::{self.hash}", "key": key, "type": "cdev_output"})
 
 
+class IntegrationResponse(Cdev_Resource):
+    """
+    Represents an update integration response.
+
+
+    """
+
+    def __init__(self, cdev_name: str, restApiId: str, resourceId: str, httpMethod: str, statusCode: str, selectionPattern: str=None, responseParameters: Dict[str, str]=None, responseTemplates: Dict[str, str]=None, contentHandling: ContentHandlingStrategy=None):
+        ""
+        super().__init__(cdev_name)
+
+        self.restApiId = restApiId
+        """
+        Specifies the selection pattern of a put integration response.
+
+
+        """
+
+        self.resourceId = resourceId
+        """
+        Specifies the selection pattern of a put integration response.
+
+
+        """
+
+        self.httpMethod = httpMethod
+        """
+        Specifies the selection pattern of a put integration response.
+
+
+        """
+
+        self.statusCode = statusCode
+        """
+        [Required] Specifies the status code that is used to map the integration response to an existing MethodResponse.
+
+
+        """
+
+        self.selectionPattern = selectionPattern
+        """
+        Specifies the selection pattern of a put integration response.
+
+
+        """
+
+        self.responseParameters = responseParameters
+        """
+        A key-value map specifying response parameters that are passed to the method response from the back end. The key is a method response header parameter name and the mapped value is an integration response header value, a static value enclosed within a pair of single quotes, or a JSON expression from the integration response body. The mapping key must match the pattern of `method.response.header.{name}`, where `name` is a valid and unique header name. The mapped non-static value must match the pattern of `integration.response.header.{name}` or `integration.response.body.{JSON-expression}`, where `name` must be a valid and unique response header name and `JSON-expression` a valid JSON expression without the `$` prefix.
+
+
+        """
+
+        self.responseTemplates = responseTemplates
+        """
+        Specifies a put integration response's templates.
+
+
+        """
+
+        self.contentHandling = contentHandling
+        """
+        Specifies how to handle response payload content type conversions. Supported values are `CONVERT_TO_BINARY` and `CONVERT_TO_TEXT`, with the following behaviors:
+
+ * `CONVERT_TO_BINARY`: Converts a response payload from a Base64-encoded string to the corresponding binary blob.
+
+
+* `CONVERT_TO_TEXT`: Converts a response payload from a binary blob to a Base64-encoded string.
+
+
+
+ If this property is not defined, the response payload will be passed through from the integration response to the method response without modification.
+
+
+        """
+
+        self.hash = hasher.hash_list([self.restApiId, self.resourceId, self.httpMethod, self.statusCode, self.selectionPattern, self.responseParameters, self.responseTemplates, self.contentHandling])
+
+    def render(self) -> integrationresponse_model:
+        data = {
+            "ruuid": "cdev::aws::apigateway::integration_response",
+            "name": self.name,
+            "hash": self.hash,
+            "restApiId": self.restApiId,
+            "resourceId": self.resourceId,
+            "httpMethod": self.httpMethod,
+            "statusCode": self.statusCode,
+            "selectionPattern": self.selectionPattern,
+            "responseParameters": self.responseParameters,
+            "responseTemplates": self.responseTemplates,
+            "contentHandling": self.contentHandling,
+        }
+
+        filtered_data = {k:v for k,v in data.items() if v}
+        
+        return integrationresponse_model(**filtered_data)
+
+    def from_output(self, key: integrationresponse_output, transformer: Callable[[Any], Any]=None) -> Cloud_Output:
+        if transformer:
+            return Cloud_Output(**{"resource": f"cdev::aws::apigateway::integration_response::{self.hash}", "key": key, "type": "cdev_output", "transformer": transformer})
+        else:
+            return Cloud_Output(**{"resource": f"cdev::aws::apigateway::integration_response::{self.hash}", "key": key, "type": "cdev_output"})
+
+
+class Method(Cdev_Resource):
+    """
+    Updates an existing Method resource.
+
+
+    """
+
+    def __init__(self, cdev_name: str, restApiId: str, resourceId: str, httpMethod: str, authorizationType: str, authorizerId: str=None, apiKeyRequired: bool=None, operationName: str=None, requestParameters: Dict[str, bool]=None, requestModels: Dict[str, str]=None, requestValidatorId: str=None, authorizationScopes: List[str]=None):
+        ""
+        super().__init__(cdev_name)
+
+        self.restApiId = restApiId
+        """
+        The identifier of a RequestValidator for validating the method request.
+
+
+        """
+
+        self.resourceId = resourceId
+        """
+        The identifier of a RequestValidator for validating the method request.
+
+
+        """
+
+        self.httpMethod = httpMethod
+        """
+        The identifier of a RequestValidator for validating the method request.
+
+
+        """
+
+        self.authorizationType = authorizationType
+        """
+        The identifier of a RequestValidator for validating the method request.
+
+
+        """
+
+        self.authorizerId = authorizerId
+        """
+        The identifier of a RequestValidator for validating the method request.
+
+
+        """
+
+        self.apiKeyRequired = apiKeyRequired
+        """
+        Specifies whether the method required a valid ApiKey.
+
+
+        """
+
+        self.operationName = operationName
+        """
+        The identifier of a RequestValidator for validating the method request.
+
+
+        """
+
+        self.requestParameters = requestParameters
+        """
+        A key-value map defining required or optional method request parameters that can be accepted by API Gateway. A key defines a method request parameter name matching the pattern of `method.request.{location}.{name}`, where `location` is `querystring`, `path`, or `header` and `name` is a valid and unique parameter name. The value associated with the key is a Boolean flag indicating whether the parameter is required (`true`) or optional (`false`). The method request parameter names defined here are available in Integration to be mapped to integration request parameters or body-mapping templates.
+
+
+        """
+
+        self.requestModels = requestModels
+        """
+        Specifies the Model resources used for the request's content type. Request models are represented as a key/value map, with a content type as the key and a Model name as the value.
+
+
+        """
+
+        self.requestValidatorId = requestValidatorId
+        """
+        The identifier of a RequestValidator for validating the method request.
+
+
+        """
+
+        self.authorizationScopes = authorizationScopes
+        """
+        The identifier of a RequestValidator for validating the method request.
+
+
+        """
+
+        self.hash = hasher.hash_list([self.restApiId, self.resourceId, self.httpMethod, self.authorizationType, self.authorizerId, self.apiKeyRequired, self.operationName, self.requestParameters, self.requestModels, self.requestValidatorId, self.authorizationScopes])
+
+    def render(self) -> method_model:
+        data = {
+            "ruuid": "cdev::aws::apigateway::method",
+            "name": self.name,
+            "hash": self.hash,
+            "restApiId": self.restApiId,
+            "resourceId": self.resourceId,
+            "httpMethod": self.httpMethod,
+            "authorizationType": self.authorizationType,
+            "authorizerId": self.authorizerId,
+            "apiKeyRequired": self.apiKeyRequired,
+            "operationName": self.operationName,
+            "requestParameters": self.requestParameters,
+            "requestModels": self.requestModels,
+            "requestValidatorId": self.requestValidatorId,
+            "authorizationScopes": self.authorizationScopes,
+        }
+
+        filtered_data = {k:v for k,v in data.items() if v}
+        
+        return method_model(**filtered_data)
+
+    def from_output(self, key: method_output, transformer: Callable[[Any], Any]=None) -> Cloud_Output:
+        if transformer:
+            return Cloud_Output(**{"resource": f"cdev::aws::apigateway::method::{self.hash}", "key": key, "type": "cdev_output", "transformer": transformer})
+        else:
+            return Cloud_Output(**{"resource": f"cdev::aws::apigateway::method::{self.hash}", "key": key, "type": "cdev_output"})
+
+
 class Deployment(Cdev_Resource):
     """
     Changes information about a Deployment resource.
