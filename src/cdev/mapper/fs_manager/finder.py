@@ -45,6 +45,7 @@ def _find_resources_information_from_file(fp) -> List[Rendered_Resource]:
     rv = []
 
     info = _create_serverless_function_resources(mod, fp)
+
     if info:
         rv.extend(info)
     
@@ -60,7 +61,7 @@ def _find_resources_information_from_file(fp) -> List[Rendered_Resource]:
 
 def _create_serverless_function_resources(mod, fp) -> List[aws_lambda_function]:
     serverless_function_information = _find_serverless_function_information_in_module(mod)
-    
+
     if not serverless_function_information:
         return
 
@@ -81,7 +82,6 @@ def _create_serverless_function_resources(mod, fp) -> List[aws_lambda_function]:
         tmp = handler_to_functionobj.get(parsed_function.name).dict()
         tmp["needed_lines"] = parsed_function.get_line_numbers_serializeable()
         tmp["dependencies"] = list(SortedList(parsed_function.imported_packages))
-        
         function_info.append(parsed_serverless_function_info(**tmp))
 
     # Get the file as a list of lines so that we can get individual lines
@@ -114,14 +114,17 @@ def _create_serverless_function_resources(mod, fp) -> List[aws_lambda_function]:
         final_function_info['Configuration'] = lambda_function_configuration(**function_info_obj.configuration)
         final_function_info['FunctionName'] = function_info_obj.name
 
-
+        final_function_info['permissions'] = function_info_obj.permissions
 
         final_function_info['src_code_hash'] = hasher.hash_file(full_path)
 
         final_function_info['config_hash'] = final_function_info['Configuration'].get_cdev_hash()
 
+        final_function_info['permission_hash'] = hasher.hash_list(function_info_obj.permissions)
+
+
         # Create the total hash
-        final_function_info['hash'] = hasher.hash_list([final_function_info['src_code_hash'], final_function_info['config_hash']])
+        final_function_info['hash'] = hasher.hash_list([final_function_info['src_code_hash'], final_function_info['config_hash'], final_function_info['permission_hash']])
         final_function_info['ruuid'] = "cdev::aws::lambda_function"
         final_function_info['name'] = function_info_obj.name
 
@@ -141,10 +144,10 @@ def _create_serverless_function_resources(mod, fp) -> List[aws_lambda_function]:
         
     
         
-
         as_resource = aws_lambda_function(
             **final_function_info
         )
+
 
         rv.append(as_resource)
 
@@ -179,16 +182,17 @@ def _find_serverless_function_information_in_module(python_module) -> List[pre_p
             info = _convert_to_preparsed_info(func())
             serverless_function_information.append(info)
             
-
     return serverless_function_information
 
 
 def _convert_to_preparsed_info(obj: aws_lambda_function) -> pre_parsed_serverless_function:
+
     return pre_parsed_serverless_function(**{
         "name": obj.name,
         "handler_name":obj.Configuration.Handler,
         "description":obj.Configuration.Description,
-        "configuration": obj.Configuration 
+        "configuration": obj.Configuration,
+        "permissions": obj.permissions
     })
 
 

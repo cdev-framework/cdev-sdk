@@ -1,5 +1,5 @@
 from pathlib import PosixPath, WindowsPath
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Optional
 from pydantic import BaseModel, FilePath, conint
 
 from cdev.models import Rendered_Resource
@@ -10,6 +10,7 @@ class pre_parsed_serverless_function(BaseModel):
     handler_name: str
     description: str
     configuration: dict
+    permissions: Optional[list]
 
     def __init__(__pydantic_self__, name: str, handler_name: str, description: str, configuration: dict, **kwargs) -> None:
         if kwargs:
@@ -62,6 +63,8 @@ class parsed_serverless_function_resource(Rendered_Resource):
     identity_hash: str
 
     metadata_hash: str
+
+    permissions: Optional[List]
 
     class Config:
         json_encoders = {

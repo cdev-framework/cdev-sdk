@@ -211,7 +211,6 @@ def handle_aws_lambda_deployment(resource_diff: Resource_State_Difference) -> bo
 
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
             
-            
             if not resource_diff.new_resource.src_code_hash == resource_diff.previous_resource.src_code_hash:
                 # IF the source code hash is different than redeploy lambda code 
                 upload_lambda_function_code(resource_diff.previous_resource.hash, resource_diff.new_resource)
@@ -222,6 +221,10 @@ def handle_aws_lambda_deployment(resource_diff: Resource_State_Difference) -> bo
             if not resource_diff.new_resource.config_hash == resource_diff.previous_resource.config_hash:
                 update_lambda_function_configuration(resource_diff.new_resource)
                 print("UPDATE_LAMBDA_CONFIG")
+
+            if not resource_diff.new_resource.permission_hash == resource_diff.previous_resource.permission_hash:
+                print(resource_diff.new_resource)
+                print("UPDATE LAMBDA PERMISSIONS")
 
             _replace_old_lambda_object(resource_diff.previous_resource.hash, resource_diff.previous_resource, resource_diff.new_resource)
             cdev_cloud_mapper.reidentify_cloud_resource(resource_diff.previous_resource.hash, resource_diff.new_resource.hash)

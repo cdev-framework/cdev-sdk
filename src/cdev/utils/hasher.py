@@ -12,7 +12,9 @@ that will be used to track changes throughout the system.
 
 
 def hash_list(val: List[str]) -> str:
-    
+    if not val:
+        return "0"
+        
     return hash_string("".join([str(x) for x in val]))
 
 
