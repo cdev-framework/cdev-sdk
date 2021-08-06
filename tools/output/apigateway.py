@@ -689,6 +689,85 @@ class Method(Cdev_Resource):
             return Cloud_Output(**{"resource": f"cdev::aws::apigateway::method::{self.hash}", "key": key, "type": "cdev_output"})
 
 
+class MethodResponse(Cdev_Resource):
+    """
+    Updates an existing MethodResponse resource.
+
+
+    """
+
+    def __init__(self, cdev_name: str, restApiId: str, resourceId: str, httpMethod: str, statusCode: str, responseParameters: Dict[str, bool]=None, responseModels: Dict[str, str]=None):
+        ""
+        super().__init__(cdev_name)
+
+        self.restApiId = restApiId
+        """
+        [Required] The HTTP verb of the Method resource.
+
+
+        """
+
+        self.resourceId = resourceId
+        """
+        [Required] The HTTP verb of the Method resource.
+
+
+        """
+
+        self.httpMethod = httpMethod
+        """
+        [Required] The HTTP verb of the Method resource.
+
+
+        """
+
+        self.statusCode = statusCode
+        """
+        [Required] The method response's status code.
+
+
+        """
+
+        self.responseParameters = responseParameters
+        """
+        A key-value map specifying required or optional response parameters that API Gateway can send back to the caller. A key defines a method response header name and the associated value is a Boolean flag indicating whether the method response parameter is required or not. The method response header names must match the pattern of `method.response.header.{name}`, where `name` is a valid and unique header name. The response parameter names defined here are available in the integration response to be mapped from an integration response header expressed in `integration.response.header.{name}`, a static value enclosed within a pair of single quotes (e.g., `'application/json'`), or a JSON expression from the back-end response payload in the form of `integration.response.body.{JSON-expression}`, where `JSON-expression` is a valid JSON expression without the `$` prefix.)
+
+
+        """
+
+        self.responseModels = responseModels
+        """
+        Specifies the Model resources used for the response's content type. Response models are represented as a key/value map, with a content type as the key and a Model name as the value.
+
+
+        """
+
+        self.hash = hasher.hash_list([self.restApiId, self.resourceId, self.httpMethod, self.statusCode, self.responseParameters, self.responseModels])
+
+    def render(self) -> methodresponse_model:
+        data = {
+            "ruuid": "cdev::aws::apigateway::method_response",
+            "name": self.name,
+            "hash": self.hash,
+            "restApiId": self.restApiId,
+            "resourceId": self.resourceId,
+            "httpMethod": self.httpMethod,
+            "statusCode": self.statusCode,
+            "responseParameters": self.responseParameters,
+            "responseModels": self.responseModels,
+        }
+
+        filtered_data = {k:v for k,v in data.items() if v}
+        
+        return methodresponse_model(**filtered_data)
+
+    def from_output(self, key: methodresponse_output, transformer: Callable[[Any], Any]=None) -> Cloud_Output:
+        if transformer:
+            return Cloud_Output(**{"resource": f"cdev::aws::apigateway::method_response::{self.hash}", "key": key, "type": "cdev_output", "transformer": transformer})
+        else:
+            return Cloud_Output(**{"resource": f"cdev::aws::apigateway::method_response::{self.hash}", "key": key, "type": "cdev_output"})
+
+
 class Deployment(Cdev_Resource):
     """
     Changes information about a Deployment resource.

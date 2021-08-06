@@ -900,60 +900,72 @@ class api_model(Rendered_Resource):
     The route selection expression for the API. For HTTP APIs, the routeSelectionExpression must be ${request.method} ${request.path}. If not provided, this will be the default for HTTP APIs. This property is required for WebSocket APIs.
     """
 
+
     CorsConfiguration: Optional[Union[Cors, Cloud_Output]] 
     """
     A CORS configuration. Supported only for HTTP APIs. See [Configuring CORS](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-cors.html) for more information.
     """
+
 
     CredentialsArn: Optional[Union[str, Cloud_Output]]
     """
     This property is part of quick create. It specifies the credentials required for the integration, if any. For a Lambda integration, three options are available. To specify an IAM Role for API Gateway to assume, use the role's Amazon Resource Name (ARN). To require that the caller's identity be passed through from the request, specify arn:aws:iam::*:user/*. To use resource-based permissions on supported AWS services, specify null. Currently, this property is not used for HTTP integrations. Supported only for HTTP APIs.
     """
 
+
     Description: Optional[Union[str, Cloud_Output]]
     """
     The description of the API.
     """
+
 
     DisableSchemaValidation: Optional[Union[bool, Cloud_Output]]
     """
     Specifies whether clients can invoke your API by using the default execute-api endpoint. By default, clients can invoke your API with the default https://{api\_id}.execute-api.{region}.amazonaws.com endpoint. To require that clients use a custom domain name to invoke your API, disable the default endpoint.
     """
 
+
     DisableExecuteApiEndpoint: Optional[Union[bool, Cloud_Output]]
     """
     Specifies whether clients can invoke your API by using the default execute-api endpoint. By default, clients can invoke your API with the default https://{api\_id}.execute-api.{region}.amazonaws.com endpoint. To require that clients use a custom domain name to invoke your API, disable the default endpoint.
     """
+
 
     Name: Union[str, Cloud_Output]
     """
     The name of the API.
     """
 
+
     ProtocolType: Union[ProtocolType, Cloud_Output] 
     """
     The API protocol.
     """
+
 
     RouteKey: Optional[Union[str, Cloud_Output]]
     """
     This property is part of quick create. If you don't specify a routeKey, a default route of $default is created. The $default route acts as a catch-all for any request made to your API, for a particular stage. The $default route key can't be modified. You can add routes after creating the API, and you can update the route keys of additional routes. Supported only for HTTP APIs.
     """
 
+
     RouteSelectionExpression: Optional[Union[str, Cloud_Output]]
     """
     The route selection expression for the API. For HTTP APIs, the routeSelectionExpression must be ${request.method} ${request.path}. If not provided, this will be the default for HTTP APIs. This property is required for WebSocket APIs.
     """
+
 
     Tags: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     The collection of tags. Each tag element is associated with a given resource.
     """
 
+
     Target: Optional[Union[str, Cloud_Output]]
     """
     This property is part of quick create. Quick create produces an API with an integration, a default catch-all route, and a default stage which is configured to automatically deploy changes. For HTTP integrations, specify a fully qualified URL. For Lambda integrations, specify a function ARN. The type of the integration will be HTTP\_PROXY or AWS\_PROXY, respectively. Supported only for HTTP APIs.
     """
+
 
     Version: Optional[Union[str, Cloud_Output]]
     """
@@ -961,10 +973,11 @@ class api_model(Rendered_Resource):
     """
 
 
+
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['Name', 'ProtocolType', 'ApiKeySelectionExpression', 'CorsConfiguration', 'CredentialsArn', 'Description', 'DisableSchemaValidation', 'DisableExecuteApiEndpoint', 'RouteKey', 'RouteSelectionExpression', 'Tags', 'Target', 'Version'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId'])
@@ -987,55 +1000,66 @@ class route_model(Rendered_Resource):
     The API identifier.
     """
 
+
     ApiKeyRequired: Optional[Union[bool, Cloud_Output]]
     """
     Specifies whether an API key is required for the route. Supported only for WebSocket APIs.
     """
+
 
     AuthorizationScopes: Optional[Union[List[str], Cloud_Output]]
     """
     A version identifier for the API.
     """
 
+
     AuthorizationType: Optional[Union[AuthorizationType, Cloud_Output]] 
     """
     The authorization type for the route. For WebSocket APIs, valid values are NONE for open access, AWS\_IAM for using AWS IAM permissions, and CUSTOM for using a Lambda authorizer For HTTP APIs, valid values are NONE for open access, JWT for using JSON Web Tokens, AWS\_IAM for using AWS IAM permissions, and CUSTOM for using a Lambda authorizer.
     """
+
 
     AuthorizerId: Optional[Union[str, Cloud_Output]]
     """
     The identifier of the Authorizer resource to be associated with this route. The authorizer identifier is generated by API Gateway when you created the authorizer.
     """
 
+
     ModelSelectionExpression: Optional[Union[str, Cloud_Output]]
     """
     The route response selection expression for the route. Supported only for WebSocket APIs.
     """
+
 
     OperationName: Optional[Union[str, Cloud_Output]]
     """
     The operation name for the route.
     """
 
+
     RequestModels: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     The request models for the route. Supported only for WebSocket APIs.
     """
+
 
     RequestParameters: Optional[Union[Dict[str,ParameterConstraints], Cloud_Output]]
     """
     The request parameters for the route. Supported only for WebSocket APIs.
     """
 
+
     RouteKey: Union[str, Cloud_Output]
     """
     The route key for the route.
     """
 
+
     RouteResponseSelectionExpression: Optional[Union[str, Cloud_Output]]
     """
     The route response selection expression for the route. Supported only for WebSocket APIs.
     """
+
 
     Target: Optional[Union[str, Cloud_Output]]
     """
@@ -1043,10 +1067,11 @@ class route_model(Rendered_Resource):
     """
 
 
+
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'RouteKey', 'ApiKeyRequired', 'AuthorizationScopes', 'AuthorizationType', 'AuthorizerId', 'ModelSelectionExpression', 'OperationName', 'RequestModels', 'RequestParameters', 'RouteResponseSelectionExpression', 'Target'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'RouteId'])
@@ -1069,15 +1094,18 @@ class integration_model(Rendered_Resource):
     The API identifier.
     """
 
+
     ConnectionId: Optional[Union[str, Cloud_Output]]
     """
     The ID of the VPC link for a private integration. Supported only for HTTP APIs.
     """
 
+
     ConnectionType: Optional[Union[ConnectionType, Cloud_Output]] 
     """
     The type of the network connection to the integration endpoint. Specify INTERNET for connections through the public routable internet or VPC\_LINK for private connections between API Gateway and resources in a VPC. The default value is INTERNET.
     """
+
 
     ContentHandlingStrategy: Optional[Union[ContentHandlingStrategy, Cloud_Output]] 
     """
@@ -1090,25 +1118,30 @@ class integration_model(Rendered_Resource):
  If this property is not defined, the response payload will be passed through from the integration response to the route response or method response without modification.
     """
 
+
     CredentialsArn: Optional[Union[str, Cloud_Output]]
     """
     Specifies the credentials required for the integration, if any. For AWS integrations, three options are available. To specify an IAM Role for API Gateway to assume, use the role's Amazon Resource Name (ARN). To require that the caller's identity be passed through from the request, specify the string arn:aws:iam::*:user/*. To use resource-based permissions on supported AWS services, specify null.
     """
+
 
     Description: Optional[Union[str, Cloud_Output]]
     """
     The description of the integration.
     """
 
+
     IntegrationMethod: Optional[Union[str, Cloud_Output]]
     """
     Specifies the format of the payload sent to an integration. Required for HTTP APIs.
     """
 
+
     IntegrationSubtype: Optional[Union[str, Cloud_Output]]
     """
     Supported only for HTTP API AWS\_PROXY integrations. Specifies the AWS service action to invoke. To learn more, see [Integration subtype reference](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-aws-services-reference.html).
     """
+
 
     IntegrationType: Union[IntegrationType, Cloud_Output] 
     """
@@ -1125,6 +1158,7 @@ class integration_model(Rendered_Resource):
  MOCK: for integrating the route or method request with API Gateway as a "loopback" endpoint without invoking any backend. Supported only for WebSocket APIs.
     """
 
+
     IntegrationUri: Optional[Union[str, Cloud_Output]]
     """
     For a Lambda integration, specify the URI of a Lambda function.
@@ -1133,6 +1167,7 @@ class integration_model(Rendered_Resource):
 
  For an HTTP API private integration, specify the ARN of an Application Load Balancer listener, Network Load Balancer listener, or AWS Cloud Map service. If you specify the ARN of an AWS Cloud Map service, API Gateway uses DiscoverInstances to identify resources. You can use query parameters to target specific resources. To learn more, see [DiscoverInstances](https://docs.aws.amazon.com/cloud-map/latest/api/API_DiscoverInstances.html). For private integrations, all resources must be owned by the same AWS account.
     """
+
 
     PassthroughBehavior: Optional[Union[PassthroughBehavior, Cloud_Output]] 
     """
@@ -1145,10 +1180,12 @@ class integration_model(Rendered_Resource):
  WHEN\_NO\_TEMPLATES allows pass-through when the integration has no content types mapped to templates. However, if there is at least one content type defined, unmapped content types will be rejected with the same HTTP 415 Unsupported Media Type response.
     """
 
+
     PayloadFormatVersion: Optional[Union[str, Cloud_Output]]
     """
     Specifies the format of the payload sent to an integration. Required for HTTP APIs.
     """
+
 
     RequestParameters: Optional[Union[Dict[str,str], Cloud_Output]]
     """
@@ -1164,25 +1201,30 @@ class integration_model(Rendered_Resource):
  For HTTP API integrations without a specified integrationSubtype request parameters are a key-value map specifying how to transform HTTP requests before sending them to the backend. The key should follow the pattern <action>:<header|querystring|path>.<location> where action can be append, overwrite or remove. For values, you can provide static values, or map request data, stage variables, or context variables that are evaluated at runtime. To learn more, see [Transforming API requests and responses](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-parameter-mapping.html).
     """
 
+
     RequestTemplates: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     Represents a map of Velocity templates that are applied on the request payload based on the value of the Content-Type header sent by the client. The content type value is the key in this map, and the template (as a String) is the value. Supported only for WebSocket APIs.
     """
+
 
     ResponseParameters: Optional[Union[Dict[str,None], Cloud_Output]]
     """
     Supported only for HTTP APIs. You use response parameters to transform the HTTP response from a backend integration before returning the response to clients. Specify a key-value map from a selection key to response parameters. The selection key must be a valid HTTP status code within the range of 200-599. Response parameters are a key-value map. The key must match pattern <action>:<header>.<location> or overwrite.statuscode. The action can be append, overwrite or remove. The value can be a static value, or map to response data, stage variables, or context variables that are evaluated at runtime. To learn more, see [Transforming API requests and responses](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-parameter-mapping.html).
     """
 
+
     TemplateSelectionExpression: Optional[Union[str, Cloud_Output]]
     """
     The template selection expression for the integration.
     """
 
+
     TimeoutInMillis: Optional[Union[int, Cloud_Output]]
     """
     Custom timeout between 50 and 29,000 milliseconds for WebSocket APIs and between 50 and 30,000 milliseconds for HTTP APIs. The default timeout is 29 seconds for WebSocket APIs and 30 seconds for HTTP APIs.
     """
+
 
     TlsConfig: Optional[Union[TlsConfigInput, Cloud_Output]] 
     """
@@ -1190,10 +1232,11 @@ class integration_model(Rendered_Resource):
     """
 
 
+
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'IntegrationType', 'ConnectionId', 'ConnectionType', 'ContentHandlingStrategy', 'CredentialsArn', 'Description', 'IntegrationMethod', 'IntegrationSubtype', 'IntegrationUri', 'PassthroughBehavior', 'PayloadFormatVersion', 'RequestParameters', 'RequestTemplates', 'ResponseParameters', 'TemplateSelectionExpression', 'TimeoutInMillis', 'TlsConfig'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'IntegrationId'])
@@ -1216,50 +1259,60 @@ class stage_model(Rendered_Resource):
     Settings for logging access in this stage.
     """
 
+
     ApiId: Union[str, Cloud_Output]
     """
     The API identifier.
     """
+
 
     AutoDeploy: Optional[Union[bool, Cloud_Output]]
     """
     Specifies whether updates to an API automatically trigger a new deployment. The default value is false.
     """
 
+
     ClientCertificateId: Optional[Union[str, Cloud_Output]]
     """
     The deployment identifier of the API stage.
     """
+
 
     DefaultRouteSettings: Optional[Union[RouteSettings, Cloud_Output]] 
     """
     The default route settings for the stage.
     """
 
+
     DeploymentId: Optional[Union[str, Cloud_Output]]
     """
     The deployment identifier of the API stage.
     """
+
 
     Description: Optional[Union[str, Cloud_Output]]
     """
     The description for the API stage.
     """
 
+
     RouteSettings: Optional[Union[Dict[str,RouteSettings], Cloud_Output]]
     """
     Route settings for the stage, by routeKey.
     """
+
 
     StageName: Union[str, Cloud_Output]
     """
     The name of the stage.
     """
 
+
     StageVariables: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     A map that defines the stage variables for a Stage. Variable names can have alphanumeric and underscore characters, and the values must match [A-Za-z0-9-.\_~:/?#&=,]+.
     """
+
 
     Tags: Optional[Union[Dict[str,str], Cloud_Output]]
     """
@@ -1267,10 +1320,11 @@ class stage_model(Rendered_Resource):
     """
 
 
+
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'StageName', 'AccessLogSettings', 'AutoDeploy', 'ClientCertificateId', 'DefaultRouteSettings', 'DeploymentId', 'Description', 'RouteSettings', 'StageVariables', 'Tags'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'StageName'])
@@ -1293,10 +1347,12 @@ class deployment_model(Rendered_Resource):
     The API identifier.
     """
 
+
     Description: Optional[Union[str, Cloud_Output]]
     """
     The description for the deployment resource.
     """
+
 
     StageName: Optional[Union[str, Cloud_Output]]
     """
@@ -1304,10 +1360,11 @@ class deployment_model(Rendered_Resource):
     """
 
 
+
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'Description', 'StageName'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'DeploymentId'])

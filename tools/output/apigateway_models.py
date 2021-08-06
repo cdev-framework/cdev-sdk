@@ -184,8 +184,8 @@ class CacheClusterSize(str, Enum):
 
 
     """
-
     p = 'p'
+
     #0.5 = '0.5'
     #
     #1.6 = '1.6'
@@ -917,6 +917,36 @@ GET /restapis/uojnr9hd57/resources/0cjtch/methods/GET/integration HTTP/1.1 Conte
 
 
 
+class methodresponse_output(str, Enum):
+    """
+    Adds a MethodResponse to an existing Method resource.
+
+
+    """
+
+    statusCode = "statusCode"
+    """
+    The method response's status code.
+
+
+    """
+
+    responseParameters = "responseParameters"
+    """
+    A key-value map specifying required or optional response parameters that API Gateway can send back to the caller. A key defines a method response header and the value specifies whether the associated method response header is required or not. The expression of the key must match the pattern `method.response.header.{name}`, where `name` is a valid and unique header name. API Gateway passes certain integration response data to the method response headers specified here according to the mapping you prescribe in the API's IntegrationResponse. The integration response data that can be mapped include an integration response header expressed in `integration.response.header.{name}`, a static value enclosed within a pair of single quotes (e.g., `'application/json'`), or a JSON expression from the back-end response payload in the form of `integration.response.body.{JSON-expression}`, where `JSON-expression` is a valid JSON expression without the `$` prefix.)
+
+
+    """
+
+    responseModels = "responseModels"
+    """
+    Specifies the Model resources used for the response's content-type. Response models are represented as a key/value map, with a content-type as the key and a Model name as the value.
+
+
+    """
+
+
+
 class deployment_output(str, Enum):
     """
     Creates a Deployment resource, which makes a specified RestApi callable over the internet.
@@ -967,30 +997,36 @@ class restapi_model(Rendered_Resource):
     A stringified JSON policy document that applies to this RestApi regardless of the caller and Method configuration.
     """
 
+
     description: Optional[Union[str, Cloud_Output]]
     """
     A stringified JSON policy document that applies to this RestApi regardless of the caller and Method configuration.
     """
+
 
     version: Optional[Union[str, Cloud_Output]]
     """
     A stringified JSON policy document that applies to this RestApi regardless of the caller and Method configuration.
     """
 
+
     cloneFrom: Optional[Union[str, Cloud_Output]]
     """
     A stringified JSON policy document that applies to this RestApi regardless of the caller and Method configuration.
     """
+
 
     binaryMediaTypes: Optional[Union[List[str], Cloud_Output]]
     """
     The ID of the RestApi that you want to clone from.
     """
 
+
     minimumCompressionSize: Optional[Union[int, Cloud_Output]]
     """
     A nullable integer that is used to enable compression (with non-negative between 0 and 10485760 (10M) bytes, inclusive) or disable compression (with a null value) on an API. When compression is enabled, compression or decompression is not applied on the payload if the payload size is smaller than this value. Setting it to zero allows compression for any payload size.
     """
+
 
     apiKeySource: Optional[Union[ApiKeySourceType, Cloud_Output]] 
     """
@@ -998,20 +1034,24 @@ class restapi_model(Rendered_Resource):
 * `AUTHORIZER` to read the API key from the `UsageIdentifierKey` from a custom authorizer.
     """
 
+
     endpointConfiguration: Optional[Union[EndpointConfiguration, Cloud_Output]] 
     """
     The endpoint configuration of this RestApi showing the endpoint types of the API.
     """
+
 
     policy: Optional[Union[str, Cloud_Output]]
     """
     A stringified JSON policy document that applies to this RestApi regardless of the caller and Method configuration.
     """
 
+
     tags: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     The key-value map of strings. The valid character set is [a-zA-Z+-=.\_:/]. The tag key can be up to 128 characters and must not start with `aws:`. The tag value can be up to 256 characters.
     """
+
 
     disableExecuteApiEndpoint: Optional[Union[bool, Cloud_Output]]
     """
@@ -1019,10 +1059,11 @@ class restapi_model(Rendered_Resource):
     """
 
 
+
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['name', 'description', 'version', 'cloneFrom', 'binaryMediaTypes', 'minimumCompressionSize', 'apiKeySource', 'endpointConfiguration', 'policy', 'tags', 'disableExecuteApiEndpoint'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set([('restApiId', 'id')])
@@ -1045,10 +1086,12 @@ class resource_model(Rendered_Resource):
     The last path segment for this resource.
     """
 
+
     parentId: Union[str, Cloud_Output]
     """
     The last path segment for this resource.
     """
+
 
     pathPart: Union[str, Cloud_Output]
     """
@@ -1056,10 +1099,11 @@ class resource_model(Rendered_Resource):
     """
 
 
+
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'parentId', 'pathPart'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', ('resourceId', 'id')])
@@ -1082,70 +1126,84 @@ class integration_model(Rendered_Resource):
     Specifies a group of related cached parameters. By default, API Gateway uses the resource ID as the `cacheNamespace`. You can specify the same `cacheNamespace` across resources to return the same cached data for requests to different resources.
     """
 
+
     resourceId: Union[str, Cloud_Output]
     """
     Specifies a group of related cached parameters. By default, API Gateway uses the resource ID as the `cacheNamespace`. You can specify the same `cacheNamespace` across resources to return the same cached data for requests to different resources.
     """
+
 
     httpMethod: Union[str, Cloud_Output]
     """
     Specifies a group of related cached parameters. By default, API Gateway uses the resource ID as the `cacheNamespace`. You can specify the same `cacheNamespace` across resources to return the same cached data for requests to different resources.
     """
 
+
     type: Union[IntegrationType, Cloud_Output] 
     """
     [Required] Specifies a put integration input's type.
     """
+
 
     integrationHttpMethod: Optional[Union[str, Cloud_Output]]
     """
     Specifies a group of related cached parameters. By default, API Gateway uses the resource ID as the `cacheNamespace`. You can specify the same `cacheNamespace` across resources to return the same cached data for requests to different resources.
     """
 
+
     uri: Optional[Union[str, Cloud_Output]]
     """
     Specifies a group of related cached parameters. By default, API Gateway uses the resource ID as the `cacheNamespace`. You can specify the same `cacheNamespace` across resources to return the same cached data for requests to different resources.
     """
+
 
     connectionType: Optional[Union[ConnectionType, Cloud_Output]] 
     """
     The type of the network connection to the integration endpoint. The valid value is `INTERNET` for connections through the public routable internet or `VPC_LINK` for private connections between API Gateway and a network load balancer in a VPC. The default value is `INTERNET`.
     """
 
+
     connectionId: Optional[Union[str, Cloud_Output]]
     """
     Specifies a group of related cached parameters. By default, API Gateway uses the resource ID as the `cacheNamespace`. You can specify the same `cacheNamespace` across resources to return the same cached data for requests to different resources.
     """
+
 
     credentials: Optional[Union[str, Cloud_Output]]
     """
     Specifies a group of related cached parameters. By default, API Gateway uses the resource ID as the `cacheNamespace`. You can specify the same `cacheNamespace` across resources to return the same cached data for requests to different resources.
     """
 
+
     requestParameters: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     A key-value map specifying request parameters that are passed from the method request to the back end. The key is an integration request parameter name and the associated value is a method request parameter value or static value that must be enclosed within single quotes and pre-encoded as required by the back end. The method request parameter value must match the pattern of `method.request.{location}.{name}`, where `location` is `querystring`, `path`, or `header` and `name` must be a valid and unique method request parameter name.
     """
+
 
     requestTemplates: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     Represents a map of Velocity templates that are applied on the request payload based on the value of the Content-Type header sent by the client. The content type value is the key in this map, and the template (as a String) is the value.
     """
 
+
     passthroughBehavior: Optional[Union[str, Cloud_Output]]
     """
     Specifies a group of related cached parameters. By default, API Gateway uses the resource ID as the `cacheNamespace`. You can specify the same `cacheNamespace` across resources to return the same cached data for requests to different resources.
     """
+
 
     cacheNamespace: Optional[Union[str, Cloud_Output]]
     """
     Specifies a group of related cached parameters. By default, API Gateway uses the resource ID as the `cacheNamespace`. You can specify the same `cacheNamespace` across resources to return the same cached data for requests to different resources.
     """
 
+
     cacheKeyParameters: Optional[Union[List[str], Cloud_Output]]
     """
     Specifies a group of related cached parameters. By default, API Gateway uses the resource ID as the `cacheNamespace`. You can specify the same `cacheNamespace` across resources to return the same cached data for requests to different resources.
     """
+
 
     contentHandling: Optional[Union[ContentHandlingStrategy, Cloud_Output]] 
     """
@@ -1161,18 +1219,21 @@ class integration_model(Rendered_Resource):
  If this property is not defined, the request payload will be passed through from the method request to integration request without modification, provided that the `passthroughBehavior` is configured to support payload pass-through.
     """
 
+
     timeoutInMillis: Optional[Union[int, Cloud_Output]]
     """
     Custom timeout between 50 and 29,000 milliseconds. The default value is 29,000 milliseconds or 29 seconds.
     """
 
+
     tlsConfig: Optional[Union[TlsConfig, Cloud_Output]] 
+
 
 
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod', 'type', 'integrationHttpMethod', 'uri', 'connectionType', 'connectionId', 'credentials', 'requestParameters', 'requestTemplates', 'passthroughBehavior', 'cacheNamespace', 'cacheKeyParameters', 'contentHandling', 'timeoutInMillis', 'tlsConfig'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod'])
@@ -1195,50 +1256,60 @@ class stage_model(Rendered_Resource):
     The version of the associated API documentation.
     """
 
+
     stageName: Union[str, Cloud_Output]
     """
     The version of the associated API documentation.
     """
+
 
     deploymentId: Union[str, Cloud_Output]
     """
     The version of the associated API documentation.
     """
 
+
     description: Optional[Union[str, Cloud_Output]]
     """
     The version of the associated API documentation.
     """
+
 
     cacheClusterEnabled: Optional[Union[bool, Cloud_Output]]
     """
     Specifies whether active tracing with X-ray is enabled for the Stage.
     """
 
+
     cacheClusterSize: Optional[Union[CacheClusterSize, Cloud_Output]] 
     """
     The stage's cache cluster size.
     """
+
 
     variables: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     A map that defines the stage variables for the new Stage resource. Variable names can have alphanumeric and underscore characters, and the values must match `[A-Za-z0-9-._~:/?#&=,]+`.
     """
 
+
     documentationVersion: Optional[Union[str, Cloud_Output]]
     """
     The version of the associated API documentation.
     """
+
 
     canarySettings: Optional[Union[CanarySettings, Cloud_Output]] 
     """
     The canary deployment settings of this stage.
     """
 
+
     tracingEnabled: Optional[Union[bool, Cloud_Output]]
     """
     Specifies whether active tracing with X-ray is enabled for the Stage.
     """
+
 
     tags: Optional[Union[Dict[str,str], Cloud_Output]]
     """
@@ -1246,10 +1317,11 @@ class stage_model(Rendered_Resource):
     """
 
 
+
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'stageName', 'deploymentId', 'description', 'cacheClusterEnabled', 'cacheClusterSize', 'variables', 'documentationVersion', 'canarySettings', 'tracingEnabled', 'tags'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'stageName'])
@@ -1272,35 +1344,42 @@ class integrationresponse_model(Rendered_Resource):
     Specifies the selection pattern of a put integration response.
     """
 
+
     resourceId: Union[str, Cloud_Output]
     """
     Specifies the selection pattern of a put integration response.
     """
+
 
     httpMethod: Union[str, Cloud_Output]
     """
     Specifies the selection pattern of a put integration response.
     """
 
+
     statusCode: Union[str, Cloud_Output]
     """
     [Required] Specifies the status code that is used to map the integration response to an existing MethodResponse.
     """
+
 
     selectionPattern: Optional[Union[str, Cloud_Output]]
     """
     Specifies the selection pattern of a put integration response.
     """
 
+
     responseParameters: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     A key-value map specifying response parameters that are passed to the method response from the back end. The key is a method response header parameter name and the mapped value is an integration response header value, a static value enclosed within a pair of single quotes, or a JSON expression from the integration response body. The mapping key must match the pattern of `method.response.header.{name}`, where `name` is a valid and unique header name. The mapped non-static value must match the pattern of `integration.response.header.{name}` or `integration.response.body.{JSON-expression}`, where `name` must be a valid and unique response header name and `JSON-expression` a valid JSON expression without the `$` prefix.
     """
 
+
     responseTemplates: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     Specifies a put integration response's templates.
     """
+
 
     contentHandling: Optional[Union[ContentHandlingStrategy, Cloud_Output]] 
     """
@@ -1317,10 +1396,11 @@ class integrationresponse_model(Rendered_Resource):
     """
 
 
+
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod', 'statusCode', 'selectionPattern', 'responseParameters', 'responseTemplates', 'contentHandling'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod', 'statusCode'])
@@ -1343,50 +1423,60 @@ class method_model(Rendered_Resource):
     The identifier of a RequestValidator for validating the method request.
     """
 
+
     resourceId: Union[str, Cloud_Output]
     """
     The identifier of a RequestValidator for validating the method request.
     """
+
 
     httpMethod: Union[str, Cloud_Output]
     """
     The identifier of a RequestValidator for validating the method request.
     """
 
+
     authorizationType: Union[str, Cloud_Output]
     """
     The identifier of a RequestValidator for validating the method request.
     """
+
 
     authorizerId: Optional[Union[str, Cloud_Output]]
     """
     The identifier of a RequestValidator for validating the method request.
     """
 
+
     apiKeyRequired: Optional[Union[bool, Cloud_Output]]
     """
     Specifies whether the method required a valid ApiKey.
     """
+
 
     operationName: Optional[Union[str, Cloud_Output]]
     """
     The identifier of a RequestValidator for validating the method request.
     """
 
+
     requestParameters: Optional[Union[Dict[str,bool], Cloud_Output]]
     """
     A key-value map defining required or optional method request parameters that can be accepted by API Gateway. A key defines a method request parameter name matching the pattern of `method.request.{location}.{name}`, where `location` is `querystring`, `path`, or `header` and `name` is a valid and unique parameter name. The value associated with the key is a Boolean flag indicating whether the parameter is required (`true`) or optional (`false`). The method request parameter names defined here are available in Integration to be mapped to integration request parameters or body-mapping templates.
     """
+
 
     requestModels: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     Specifies the Model resources used for the request's content type. Request models are represented as a key/value map, with a content type as the key and a Model name as the value.
     """
 
+
     requestValidatorId: Optional[Union[str, Cloud_Output]]
     """
     The identifier of a RequestValidator for validating the method request.
     """
+
 
     authorizationScopes: Optional[Union[List[str], Cloud_Output]]
     """
@@ -1394,13 +1484,72 @@ class method_model(Rendered_Resource):
     """
 
 
+
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod', 'authorizationType', 'authorizerId', 'apiKeyRequired', 'operationName', 'requestParameters', 'requestModels', 'requestValidatorId', 'authorizationScopes'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod'])
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+
+    class Config:
+        extra='ignore'
+
+
+class methodresponse_model(Rendered_Resource):
+    """
+
+    Updates an existing MethodResponse resource.
+    
+    """
+
+
+    restApiId: Union[str, Cloud_Output]
+    """
+    [Required] The HTTP verb of the Method resource.
+    """
+
+
+    resourceId: Union[str, Cloud_Output]
+    """
+    [Required] The HTTP verb of the Method resource.
+    """
+
+
+    httpMethod: Union[str, Cloud_Output]
+    """
+    [Required] The HTTP verb of the Method resource.
+    """
+
+
+    statusCode: Union[str, Cloud_Output]
+    """
+    [Required] The method response's status code.
+    """
+
+
+    responseParameters: Optional[Union[Dict[str,bool], Cloud_Output]]
+    """
+    A key-value map specifying required or optional response parameters that API Gateway can send back to the caller. A key defines a method response header name and the associated value is a Boolean flag indicating whether the method response parameter is required or not. The method response header names must match the pattern of `method.response.header.{name}`, where `name` is a valid and unique header name. The response parameter names defined here are available in the integration response to be mapped from an integration response header expressed in `integration.response.header.{name}`, a static value enclosed within a pair of single quotes (e.g., `'application/json'`), or a JSON expression from the back-end response payload in the form of `integration.response.body.{JSON-expression}`, where `JSON-expression` is a valid JSON expression without the `$` prefix.)
+    """
+
+
+    responseModels: Optional[Union[Dict[str,str], Cloud_Output]]
+    """
+    Specifies the Model resources used for the response's content type. Response models are represented as a key/value map, with a content type as the key and a Model name as the value.
+    """
+
+
+
+    def filter_to_create(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod', 'statusCode', 'responseParameters', 'responseModels'])
+
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
+
+    def filter_to_remove(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod', 'statusCode'])
         return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
 
     class Config:
@@ -1420,40 +1569,48 @@ class deployment_model(Rendered_Resource):
     The description for the Deployment resource to create.
     """
 
+
     stageName: Optional[Union[str, Cloud_Output]]
     """
     The description for the Deployment resource to create.
     """
+
 
     stageDescription: Optional[Union[str, Cloud_Output]]
     """
     The description for the Deployment resource to create.
     """
 
+
     description: Optional[Union[str, Cloud_Output]]
     """
     The description for the Deployment resource to create.
     """
+
 
     cacheClusterEnabled: Optional[Union[bool, Cloud_Output]]
     """
     Specifies whether active tracing with X-ray is enabled for the Stage.
     """
 
+
     cacheClusterSize: Optional[Union[CacheClusterSize, Cloud_Output]] 
     """
     Specifies the cache cluster size for the Stage resource specified in the input, if a cache cluster is enabled.
     """
+
 
     variables: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     A map that defines the stage variables for the Stage resource that is associated with the new deployment. Variable names can have alphanumeric and underscore characters, and the values must match `[A-Za-z0-9-._~:/?#&=,]+`.
     """
 
+
     canarySettings: Optional[Union[DeploymentCanarySettings, Cloud_Output]] 
     """
     The input configuration for the canary deployment when the deployment is a canary release deployment.
     """
+
 
     tracingEnabled: Optional[Union[bool, Cloud_Output]]
     """
@@ -1461,10 +1618,11 @@ class deployment_model(Rendered_Resource):
     """
 
 
+
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'stageName', 'stageDescription', 'description', 'cacheClusterEnabled', 'cacheClusterSize', 'variables', 'canarySettings', 'tracingEnabled'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', ('deploymentId', 'id')])

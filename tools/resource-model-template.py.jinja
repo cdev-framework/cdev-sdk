@@ -139,12 +139,13 @@ class {{resource.get("resource_name").lower()}}_model(Rendered_Resource):
     """
     {% endif %}
 
+
     {% endfor %}
 
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set({{resource.get("as_list")}})
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set({{resource.get("remove_attributes")}})

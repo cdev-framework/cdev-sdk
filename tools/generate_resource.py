@@ -287,6 +287,9 @@ def generate_mapper_resources(service, botoinfo):
                     t2["extra_info"] = resource.get("create").get("extra_info")
                     pass
 
+                if "undocumented_required" in resource.get("create"):
+                    t2['undocumented_required'] = resource.get("create").get("undocumented_required")
+
 
             output_shape = botoinfo.get("operations").get(raw_fuct_name).get("output").get("shape")
 
@@ -358,7 +361,6 @@ def render_resources():
         output_models = []
 
         for value in service.get("resources"):
-
             function_key_to_function = {}
             
             for key in FUNCTION_KEYS:
@@ -406,9 +408,10 @@ def render_resources():
                     output_model_info = {"name": f'{value.get("name").lower()}_output', "attributes": output_attributes, 'documentation': function_value.get('documentation') }
                     output_models.append(output_model_info)
 
+
+
+
                 if key == 'remove':
-
-
                     remove_attributes = create_remove_attributes(function_value.get("input"), botoinfo, overrides)
                     pass
 
@@ -421,9 +424,10 @@ def render_resources():
                         "outputname": f'{value.get("name")}_output',
                         "ruuid": value.get("ruuid"),
                         "as_list": flatten_attributes_to_list(resource_attributes),
-                        "remove_attributes": remove_attributes
+                        "remove_attributes": remove_attributes,
                     }
 
+            
             all_resource_info.append(resource_info)
                 
                     

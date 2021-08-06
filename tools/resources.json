@@ -180,7 +180,8 @@
                     "ruuid": "cdev::aws::apigateway::integration_response",
                     "create": {
                         "action": "PutIntegrationResponse",
-                        "additional_info": ["restApiId", "resourceId", "httpMethod"]
+                        "additional_info": ["restApiId", "resourceId", "httpMethod"],
+                        "undocumented_required": [["selectionPattern", "''"]]
                     },
                     "update": "UpdateIntegrationResponse",
                     "remove": "DeleteIntegrationResponse"
@@ -194,6 +195,16 @@
                     },
                     "update": "UpdateMethod",
                     "remove": "DeleteMethod"
+                },
+                {
+                    "name": "MethodResponse",
+                    "ruuid": "cdev::aws::apigateway::method_response",
+                    "create": {
+                        "action": "PutMethodResponse",
+                        "additional_info": ["restApiId", "resourceId", "httpMethod"]
+                    },
+                    "update": "UpdateMethodResponse",
+                    "remove": "DeleteMethodResponse"
                 },
                 {
                     "name": "Deployment",
