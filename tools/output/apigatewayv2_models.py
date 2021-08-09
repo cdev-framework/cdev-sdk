@@ -977,7 +977,7 @@ class api_model(Rendered_Resource):
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['Name', 'ProtocolType', 'ApiKeySelectionExpression', 'CorsConfiguration', 'CredentialsArn', 'Description', 'DisableSchemaValidation', 'DisableExecuteApiEndpoint', 'RouteKey', 'RouteSelectionExpression', 'Tags', 'Target', 'Version'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId'])
@@ -1071,7 +1071,7 @@ class route_model(Rendered_Resource):
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'RouteKey', 'ApiKeyRequired', 'AuthorizationScopes', 'AuthorizationType', 'AuthorizerId', 'ModelSelectionExpression', 'OperationName', 'RequestModels', 'RequestParameters', 'RouteResponseSelectionExpression', 'Target'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'RouteId'])
@@ -1236,7 +1236,7 @@ class integration_model(Rendered_Resource):
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'IntegrationType', 'ConnectionId', 'ConnectionType', 'ContentHandlingStrategy', 'CredentialsArn', 'Description', 'IntegrationMethod', 'IntegrationSubtype', 'IntegrationUri', 'PassthroughBehavior', 'PayloadFormatVersion', 'RequestParameters', 'RequestTemplates', 'ResponseParameters', 'TemplateSelectionExpression', 'TimeoutInMillis', 'TlsConfig'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'IntegrationId'])
@@ -1324,7 +1324,7 @@ class stage_model(Rendered_Resource):
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'StageName', 'AccessLogSettings', 'AutoDeploy', 'ClientCertificateId', 'DefaultRouteSettings', 'DeploymentId', 'Description', 'RouteSettings', 'StageVariables', 'Tags'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'StageName'])
@@ -1364,7 +1364,7 @@ class deployment_model(Rendered_Resource):
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'Description', 'StageName'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['ApiId', 'DeploymentId'])

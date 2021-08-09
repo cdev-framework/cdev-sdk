@@ -317,7 +317,7 @@ class policy_model(Rendered_Resource):
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['PolicyName', 'PolicyDocument', 'Path', 'Description', 'Tags'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set([('PolicyArn', 'Arn')])
@@ -405,7 +405,7 @@ class role_model(Rendered_Resource):
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['RoleName', 'AssumeRolePolicyDocument', 'Path', 'Description', 'MaxSessionDuration', 'PermissionsBoundary', 'Tags'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['RoleName'])

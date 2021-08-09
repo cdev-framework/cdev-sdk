@@ -79,6 +79,40 @@ def update_lambda_function_configuration(lambda_resource: aws_lambda_function):
         )
     )
 
+def update_lambda_function_permission(previous_lambda_resource: aws_lambda_function, new_lambda_resource: aws_lambda_function):
+
+    previous_statement_ids = set([x.get("StatementId") for x in previous_lambda_resource.permissions]) if previous_lambda_resource.permissions else set()
+    new_statement_ids = set([x.StatementId for x in new_lambda_resource.permissions]) if new_lambda_resource.permissions else set()
+
+    previous_statement_statementid_to_obj = {x.get("StatementId"):x for x in previous_lambda_resource.permissions} if previous_lambda_resource.permissions else {}
+    next_statement_statementid_to_obj = {x.StatementId:x for x in new_lambda_resource.permissions} if new_lambda_resource.permissions else {}
+
+    adds = new_statement_ids.difference(previous_statement_ids)
+    removes = previous_statement_ids.difference(new_statement_ids)
+
+
+    for statement_id in adds:
+        if statement_id in next_statement_statementid_to_obj:
+            print(f"ADD STATEMENT {next_statement_statementid_to_obj.get(statement_id)}")
+            _add_lambda_permission(next_statement_statementid_to_obj.get(statement_id).dict())
+    
+    for statement_id in removes:
+        if statement_id in previous_statement_statementid_to_obj:
+            print(f"REMOVE STATEMENT {previous_statement_statementid_to_obj.get(statement_id)}")
+
+
+def _add_lambda_permission(new_lambda_permission_args: dict):
+    try:
+        args = {k:v for k,v in new_lambda_permission_args.items() if v}
+        response = client.add_permission(**args)
+        print(f"AWS RESPONSE -> {json.dumps(response)}")
+    except botocore.exceptions.ClientError as e:
+        print(e.response)
+        return False
+
+
+    return True
+
 
 def delete_lambda_function(identifier: str, lambda_resource: aws_lambda_function):
 
@@ -224,6 +258,7 @@ def handle_aws_lambda_deployment(resource_diff: Resource_State_Difference) -> bo
 
             if not resource_diff.new_resource.permission_hash == resource_diff.previous_resource.permission_hash:
                 print(resource_diff.new_resource)
+                update_lambda_function_permission(resource_diff.previous_resource, resource_diff.new_resource)
                 print("UPDATE LAMBDA PERMISSIONS")
 
             _replace_old_lambda_object(resource_diff.previous_resource.hash, resource_diff.previous_resource, resource_diff.new_resource)

@@ -1063,7 +1063,7 @@ class restapi_model(Rendered_Resource):
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['name', 'description', 'version', 'cloneFrom', 'binaryMediaTypes', 'minimumCompressionSize', 'apiKeySource', 'endpointConfiguration', 'policy', 'tags', 'disableExecuteApiEndpoint'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set([('restApiId', 'id')])
@@ -1103,7 +1103,7 @@ class resource_model(Rendered_Resource):
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'parentId', 'pathPart'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', ('resourceId', 'id')])
@@ -1233,7 +1233,7 @@ class integration_model(Rendered_Resource):
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod', 'type', 'integrationHttpMethod', 'uri', 'connectionType', 'connectionId', 'credentials', 'requestParameters', 'requestTemplates', 'passthroughBehavior', 'cacheNamespace', 'cacheKeyParameters', 'contentHandling', 'timeoutInMillis', 'tlsConfig'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod'])
@@ -1321,7 +1321,7 @@ class stage_model(Rendered_Resource):
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'stageName', 'deploymentId', 'description', 'cacheClusterEnabled', 'cacheClusterSize', 'variables', 'documentationVersion', 'canarySettings', 'tracingEnabled', 'tags'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'stageName'])
@@ -1400,7 +1400,7 @@ class integrationresponse_model(Rendered_Resource):
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod', 'statusCode', 'selectionPattern', 'responseParameters', 'responseTemplates', 'contentHandling'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod', 'statusCode'])
@@ -1488,7 +1488,7 @@ class method_model(Rendered_Resource):
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod', 'authorizationType', 'authorizerId', 'apiKeyRequired', 'operationName', 'requestParameters', 'requestModels', 'requestValidatorId', 'authorizationScopes'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod'])
@@ -1546,7 +1546,7 @@ class methodresponse_model(Rendered_Resource):
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod', 'statusCode', 'responseParameters', 'responseModels'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod', 'statusCode'])
@@ -1622,7 +1622,7 @@ class deployment_model(Rendered_Resource):
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'stageName', 'stageDescription', 'description', 'cacheClusterEnabled', 'cacheClusterSize', 'variables', 'canarySettings', 'tracingEnabled'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', ('deploymentId', 'id')])

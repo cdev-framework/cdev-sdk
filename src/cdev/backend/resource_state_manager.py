@@ -152,6 +152,8 @@ def _create_resource_diffs(new_resources: List[Rendered_Resource], old_resource:
                 }
             ))
             # POP the seen previous resources as we go so only remaining resources will be deletes
+            print(resource.hash)
+            print(old_hash_to_resource.get(resource.hash))
             old_resource.remove(old_hash_to_resource.get(resource.hash))
 
         elif not resource.hash in old_hash_to_resource and resource.name in old_name_to_resource:

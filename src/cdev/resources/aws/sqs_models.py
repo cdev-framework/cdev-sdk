@@ -148,6 +148,7 @@ class queue_model(Rendered_Resource):
  Queue URLs and names are case-sensitive.
     """
 
+
     Attributes: Optional[Union[Dict[QueueAttributeName,str], Cloud_Output]]
     """
     A map of attributes with their corresponding values.
@@ -242,6 +243,7 @@ class queue_model(Rendered_Resource):
  For information on throughput quotas, see [Quotas related to messages](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html) in the *Amazon SQS Developer Guide*.
     """
 
+
     tags: Optional[Union[Dict[str,str], Cloud_Output]]
     """
     Add cost allocation tags to the specified Amazon SQS queue. For an overview, see [Tagging Your Amazon SQS Queues](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-queue-tags.html) in the *Amazon SQS Developer Guide*.
@@ -267,6 +269,7 @@ class queue_model(Rendered_Resource):
 
  Cross-account permissions don't apply to this action. For more information, see [Grant cross-account permissions to a role and a user name](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-customer-managed-policy-examples.html#grant-cross-account-permissions-to-role-and-user-name) in the *Amazon SQS Developer Guide*.
     """
+
 
 
     def filter_to_create(self, identifier) -> dict:

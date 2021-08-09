@@ -201,30 +201,36 @@ class bucket_model(Rendered_Resource):
     The canned ACL to apply to the bucket.
     """
 
+
     Bucket: Union[str, Cloud_Output]
     """
     The name of the bucket to create.
     """
+
 
     CreateBucketConfiguration: Optional[Union[CreateBucketConfiguration, Cloud_Output]] 
     """
     The configuration information for the bucket.
     """
 
+
     GrantFullControl: Optional[Union[str, Cloud_Output]]
     """
     Allows grantee the read, write, read ACP, and write ACP permissions on the bucket.
     """
+
 
     GrantRead: Optional[Union[str, Cloud_Output]]
     """
     Allows grantee to list the objects in the bucket.
     """
 
+
     GrantReadACP: Optional[Union[str, Cloud_Output]]
     """
     Allows grantee to read the bucket ACL.
     """
+
 
     GrantWrite: Optional[Union[str, Cloud_Output]]
     """
@@ -233,15 +239,18 @@ class bucket_model(Rendered_Resource):
  For the bucket and object owners of existing objects, also allows deletions and overwrites of those objects.
     """
 
+
     GrantWriteACP: Optional[Union[str, Cloud_Output]]
     """
     Allows grantee to write the ACL for the applicable bucket.
     """
 
+
     ObjectLockEnabledForBucket: Optional[Union[bool, Cloud_Output]]
     """
     Specifies whether you want S3 Object Lock to be enabled for the new bucket.
     """
+
 
 
     def filter_to_create(self, identifier) -> dict:

@@ -552,7 +552,7 @@ def _create_method(identifier: str, resource: method_model) -> method_output:
     try:
 
         args = method_model(**resource.dict()).filter_to_create(identifier)
-
+        print(args)
         response = run_client_function('apigateway', 'put_method', args)
 
         rv = response

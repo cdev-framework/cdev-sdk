@@ -1183,10 +1183,12 @@ class table_model(Rendered_Resource):
     Represents an attribute for describing the key schema for the table and indexes.
     """
 
+
     TableName: Union[str, Cloud_Output]
     """
     The name of the table to create.
     """
+
 
     KeySchema: Union[List[KeySchemaElement], Cloud_Output]
     """
@@ -1197,15 +1199,18 @@ class table_model(Rendered_Resource):
  A `KeySchemaElement` must be a scalar, top-level attribute (not a nested attribute). The data type must be one of String, Number, or Binary. The attribute cannot be nested within a List or a Map.
     """
 
+
     LocalSecondaryIndexes: Optional[Union[List[LocalSecondaryIndex], Cloud_Output]]
     """
     Represents the properties of a local secondary index.
     """
 
+
     GlobalSecondaryIndexes: Optional[Union[List[GlobalSecondaryIndex], Cloud_Output]]
     """
     Represents the properties of a global secondary index.
     """
+
 
     BillingMode: Optional[Union[BillingMode, Cloud_Output]] 
     """
@@ -1217,6 +1222,7 @@ class table_model(Rendered_Resource):
 *  `PAY_PER_REQUEST` - We recommend using `PAY_PER_REQUEST` for unpredictable workloads. `PAY_PER_REQUEST` sets the billing mode to [On-Demand Mode](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadWriteCapacityMode.html#HowItWorks.OnDemand).
     """
 
+
     ProvisionedThroughput: Optional[Union[ProvisionedThroughput, Cloud_Output]] 
     """
     Represents the provisioned throughput settings for a specified table or index. The settings can be modified using the `UpdateTable` operation.
@@ -1225,6 +1231,7 @@ class table_model(Rendered_Resource):
 
  For current minimum and maximum provisioned throughput values, see [Service, Account, and Table Quotas](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Limits.html) in the *Amazon DynamoDB Developer Guide*.
     """
+
 
     StreamSpecification: Optional[Union[StreamSpecification, Cloud_Output]] 
     """
@@ -1248,10 +1255,12 @@ class table_model(Rendered_Resource):
 	+  `NEW_AND_OLD_IMAGES` - Both the new and the old item images of the item are written to the stream.
     """
 
+
     SSESpecification: Optional[Union[SSESpecification, Cloud_Output]] 
     """
     Represents the settings used to enable server-side encryption.
     """
+
 
     Tags: Optional[Union[List[Tag], Cloud_Output]]
     """
@@ -1261,6 +1270,7 @@ class table_model(Rendered_Resource):
 
  For an overview on tagging DynamoDB resources, see [Tagging for DynamoDB](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tagging.html) in the *Amazon DynamoDB Developer Guide*.
     """
+
 
 
     def filter_to_create(self, identifier) -> dict:

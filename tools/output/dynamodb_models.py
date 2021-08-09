@@ -1276,7 +1276,7 @@ class table_model(Rendered_Resource):
     def filter_to_create(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['AttributeDefinitions', 'TableName', 'KeySchema', 'LocalSecondaryIndexes', 'GlobalSecondaryIndexes', 'BillingMode', 'ProvisionedThroughput', 'StreamSpecification', 'SSESpecification', 'Tags'])
 
-        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES}
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['TableName'])
