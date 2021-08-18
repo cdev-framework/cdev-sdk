@@ -260,7 +260,7 @@ def _remove_integration(identifier: str, resource: integration_model):
     try:
 
         args = integration_model(**resource.dict()).filter_to_remove(identifier)
-
+        print(args)
         response = run_client_function('apigatewayv2', 'delete_integration', args)
 
         rv = response

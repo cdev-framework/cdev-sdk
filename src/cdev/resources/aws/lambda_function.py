@@ -16,9 +16,13 @@ from .s3 import s3_object
 
 class lambda_function_permission(BaseModel):
     FunctionName: Union[str, Cloud_Output]
+    """The name of the Lambda function, version, or alias."""
     StatementId: Union[str, Cloud_Output]
+    """A statement identifier that differentiates the statement from others in the same policy."""
     Action: Union[str, Cloud_Output]
+    """The action that the principal can use on the function. For example, lambda:InvokeFunction or lambda:GetFunction ."""
     Principal: Union[str, Cloud_Output]
+    """The Amazon Web Services service or account that invokes the function. If you specify a service, use SourceArn or SourceAccount to limit who can invoke the function through that service."""
     SourceArn: Optional[Union[str, Cloud_Output]]
     SourceAccount: Optional[Union[str, Cloud_Output]]
     EventSourceToken: Optional[Union[str, Cloud_Output]]

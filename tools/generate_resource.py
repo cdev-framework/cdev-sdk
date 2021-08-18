@@ -232,7 +232,8 @@ def create_attributes_for_rendered_resource_from_create_info(info, botoinfo):
     return final_attributes
 
 def create_output_attributes_from_create_info(info, botoinfo):
-
+    if not info.get("output"):
+        return []
     
     members = botoinfo.get("shapes").get(info.get("output").get("shape")).get("members")
 
@@ -290,15 +291,15 @@ def generate_mapper_resources(service, botoinfo):
                 if "undocumented_required" in resource.get("create"):
                     t2['undocumented_required'] = resource.get("create").get("undocumented_required")
 
-
-            output_shape = botoinfo.get("operations").get(raw_fuct_name).get("output").get("shape")
-
-            if len(botoinfo.get('shapes').get(output_shape).get("members").keys())  == 1:
-                val = list(botoinfo.get('shapes').get(output_shape).get("members").keys())[0]
-
-                if botoinfo.get('shapes').get(val):
-                    if botoinfo.get('shapes').get(val).get("type") == "structure":
-                        t2['output_key'] = val
+            if botoinfo.get("operations").get(raw_fuct_name).get("output"):
+                output_shape = botoinfo.get("operations").get(raw_fuct_name).get("output").get("shape")
+    
+                if len(botoinfo.get('shapes').get(output_shape).get("members").keys())  == 1:
+                    val = list(botoinfo.get('shapes').get(output_shape).get("members").keys())[0]
+    
+                    if botoinfo.get('shapes').get(val):
+                        if botoinfo.get('shapes').get(val).get("type") == "structure":
+                            t2['output_key'] = val
 
             
             low_level.append(t2)

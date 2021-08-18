@@ -201,3 +201,191 @@ def handle_role_deployment(resource_diff: Resource_State_Difference) -> bool:
         print(e)
         raise Exception("COULD NOT DEPLOY")
 
+################################################
+##########
+##########     managedpolicyroleattachment
+##########
+################################################
+
+
+def create_managedpolicyroleattachment(identifier: str, resource: managedpolicyroleattachment_model) -> bool:
+    try:
+        rv = _create_managedpolicyroleattachment(identifier, resource)
+        if rv:
+            cdev_cloud_mapper.add_cloud_resource(identifier, resource)
+            cdev_cloud_mapper.update_output_value(identifier, rv)
+
+        return True
+
+    except Exception as e:
+        print(e)
+        raise Exception("COULD NOT DEPLOY")
+
+def remove_managedpolicyroleattachment(identifier: str, resource: managedpolicyroleattachment_model) -> bool:
+    try:
+        _remove_managedpolicyroleattachment(identifier, resource)
+
+        cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
+        cdev_cloud_mapper.remove_identifier(identifier)
+
+        return True
+
+    except Exception as e:
+        print(e)
+        raise Exception("COULD NOT DEPLOY")
+
+
+# Low level function to call actual clieant call and return response
+def _create_managedpolicyroleattachment(identifier: str, resource: managedpolicyroleattachment_model) -> managedpolicyroleattachment_output:
+    try:
+
+        args = managedpolicyroleattachment_model(**resource.dict()).filter_to_create(identifier)
+
+        response = run_client_function('iam', 'attach_role_policy', args)
+
+        rv = response
+
+
+
+        print(rv)
+
+
+        return rv
+
+    except botocore.exceptions.ClientError as e:
+        print(e.response)
+        raise Exception("COULD NOT DEPLOY")
+
+
+# Low level function to call actual clieant call and return response
+def _remove_managedpolicyroleattachment(identifier: str, resource: managedpolicyroleattachment_model):
+    try:
+
+        args = managedpolicyroleattachment_model(**resource.dict()).filter_to_remove(identifier)
+
+        response = run_client_function('iam', 'detach_role_policy', args)
+
+        rv = response
+
+
+
+        print(rv)
+
+
+        return rv
+
+    except botocore.exceptions.ClientError as e:
+        print(e.response)
+        raise Exception("COULD NOT DEPLOY")
+
+
+def handle_managedpolicyroleattachment_deployment(resource_diff: Resource_State_Difference) -> bool:
+    try:
+        if resource_diff.action_type == Action_Type.CREATE:
+
+            return create_managedpolicyroleattachment(resource_diff.new_resource.hash, resource_diff.new_resource)
+        elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
+
+            return True
+        elif resource_diff.action_type == Action_Type.DELETE:
+            
+            return remove_managedpolicyroleattachment(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+    except Exception as e:
+        print(e)
+        raise Exception("COULD NOT DEPLOY")
+
+################################################
+##########
+##########     inlinepolicyroleattachment
+##########
+################################################
+
+
+def create_inlinepolicyroleattachment(identifier: str, resource: inlinepolicyroleattachment_model) -> bool:
+    try:
+        rv = _create_inlinepolicyroleattachment(identifier, resource)
+        if rv:
+            cdev_cloud_mapper.add_cloud_resource(identifier, resource)
+            cdev_cloud_mapper.update_output_value(identifier, rv)
+
+        return True
+
+    except Exception as e:
+        print(e)
+        raise Exception("COULD NOT DEPLOY")
+
+def remove_inlinepolicyroleattachment(identifier: str, resource: inlinepolicyroleattachment_model) -> bool:
+    try:
+        _remove_inlinepolicyroleattachment(identifier, resource)
+
+        cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
+        cdev_cloud_mapper.remove_identifier(identifier)
+
+        return True
+
+    except Exception as e:
+        print(e)
+        raise Exception("COULD NOT DEPLOY")
+
+
+# Low level function to call actual clieant call and return response
+def _create_inlinepolicyroleattachment(identifier: str, resource: inlinepolicyroleattachment_model) -> inlinepolicyroleattachment_output:
+    try:
+
+        args = inlinepolicyroleattachment_model(**resource.dict()).filter_to_create(identifier)
+
+        response = run_client_function('iam', 'put_role_policy', args)
+
+        rv = response
+
+
+
+        print(rv)
+
+
+        return rv
+
+    except botocore.exceptions.ClientError as e:
+        print(e.response)
+        raise Exception("COULD NOT DEPLOY")
+
+
+# Low level function to call actual clieant call and return response
+def _remove_inlinepolicyroleattachment(identifier: str, resource: inlinepolicyroleattachment_model):
+    try:
+
+        args = inlinepolicyroleattachment_model(**resource.dict()).filter_to_remove(identifier)
+
+        response = run_client_function('iam', 'delete_role_policy', args)
+
+        rv = response
+
+
+
+        print(rv)
+
+
+        return rv
+
+    except botocore.exceptions.ClientError as e:
+        print(e.response)
+        raise Exception("COULD NOT DEPLOY")
+
+
+def handle_inlinepolicyroleattachment_deployment(resource_diff: Resource_State_Difference) -> bool:
+    try:
+        if resource_diff.action_type == Action_Type.CREATE:
+
+            return create_inlinepolicyroleattachment(resource_diff.new_resource.hash, resource_diff.new_resource)
+        elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
+
+            return True
+        elif resource_diff.action_type == Action_Type.DELETE:
+            
+            return remove_inlinepolicyroleattachment(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+    except Exception as e:
+        print(e)
+        raise Exception("COULD NOT DEPLOY")
+

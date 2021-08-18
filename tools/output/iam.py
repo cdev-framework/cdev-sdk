@@ -225,3 +225,130 @@ class Role(Cdev_Resource):
             return Cloud_Output(**{"resource": f"cdev::aws::iam::role::{self.hash}", "key": key, "type": "cdev_output"})
 
 
+class ManagedPolicyRoleAttachment(Cdev_Resource):
+    """
+    Removes the specified managed policy from the specified role.
+
+ A role can also have inline policies embedded with it. To delete an inline policy, use DeleteRolePolicy. For information about policies, see [Managed policies and inline policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/policies-managed-vs-inline.html) in the *IAM User Guide*.
+
+
+    """
+
+    def __init__(self, cdev_name: str, RoleName: str, PolicyArn: str):
+        ""
+        super().__init__(cdev_name)
+
+        self.RoleName = RoleName
+        """
+        The name (friendly name, not ARN) of the role to attach the policy to.
+
+ This parameter allows (through its [regex pattern](http://wikipedia.org/wiki/regex)) a string of characters consisting of upper and lowercase alphanumeric characters with no spaces. You can also include any of the following characters: \_+=,.@-
+
+
+        """
+
+        self.PolicyArn = PolicyArn
+        """
+        The Amazon Resource Name (ARN) of the IAM policy you want to attach.
+
+ For more information about ARNs, see [Amazon Resource Names (ARNs)](https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html) in the *Amazon Web Services General Reference*.
+
+
+        """
+
+        self.hash = hasher.hash_list([self.RoleName, self.PolicyArn])
+
+    def render(self) -> managedpolicyroleattachment_model:
+        data = {
+            "ruuid": "cdev::aws::iam::managedpolicyroleattachment",
+            "name": self.name,
+            "hash": self.hash,
+            "RoleName": self.RoleName,
+            "PolicyArn": self.PolicyArn,
+        }
+
+        filtered_data = {k:v for k,v in data.items() if v}
+        
+        return managedpolicyroleattachment_model(**filtered_data)
+
+    def from_output(self, key: managedpolicyroleattachment_output, transformer: Callable[[Any], Any]=None) -> Cloud_Output:
+        if transformer:
+            return Cloud_Output(**{"resource": f"cdev::aws::iam::managedpolicyroleattachment::{self.hash}", "key": key, "type": "cdev_output", "transformer": transformer})
+        else:
+            return Cloud_Output(**{"resource": f"cdev::aws::iam::managedpolicyroleattachment::{self.hash}", "key": key, "type": "cdev_output"})
+
+
+class InlinePolicyRoleAttachment(Cdev_Resource):
+    """
+    Deletes the specified inline policy that is embedded in the specified IAM role.
+
+ A role can also have managed policies attached to it. To detach a managed policy from a role, use DetachRolePolicy. For more information about policies, refer to [Managed policies and inline policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/policies-managed-vs-inline.html) in the *IAM User Guide*.
+
+
+    """
+
+    def __init__(self, cdev_name: str, RoleName: str, PolicyName: str, PolicyDocument: str):
+        ""
+        super().__init__(cdev_name)
+
+        self.RoleName = RoleName
+        """
+        The name of the role to associate the policy with.
+
+ This parameter allows (through its [regex pattern](http://wikipedia.org/wiki/regex)) a string of characters consisting of upper and lowercase alphanumeric characters with no spaces. You can also include any of the following characters: \_+=,.@-
+
+
+        """
+
+        self.PolicyName = PolicyName
+        """
+        The name of the policy document.
+
+ This parameter allows (through its [regex pattern](http://wikipedia.org/wiki/regex)) a string of characters consisting of upper and lowercase alphanumeric characters with no spaces. You can also include any of the following characters: \_+=,.@-
+
+
+        """
+
+        self.PolicyDocument = PolicyDocument
+        """
+        The policy document.
+
+ You must provide policies in JSON format in IAM. However, for CloudFormation templates formatted in YAML, you can provide the policy in JSON or YAML format. CloudFormation always converts a YAML policy to JSON format before submitting it to IAM.
+
+ The [regex pattern](http://wikipedia.org/wiki/regex) used to validate this parameter is a string of characters consisting of the following:
+
+ * Any printable ASCII character ranging from the space character (`\u0020`) through the end of the ASCII character range
+
+
+* The printable characters in the Basic Latin and Latin-1 Supplement character set (through `\u00FF`)
+
+
+* The special characters tab (`\u0009`), line feed (`\u000A`), and carriage return (`\u000D`)
+
+
+
+        """
+
+        self.hash = hasher.hash_list([self.RoleName, self.PolicyName, self.PolicyDocument])
+
+    def render(self) -> inlinepolicyroleattachment_model:
+        data = {
+            "ruuid": "cdev::aws::iam::managedpolicyroleattachment",
+            "name": self.name,
+            "hash": self.hash,
+            "RoleName": self.RoleName,
+            "PolicyName": self.PolicyName,
+            "PolicyDocument": self.PolicyDocument,
+        }
+
+        filtered_data = {k:v for k,v in data.items() if v}
+        
+        return inlinepolicyroleattachment_model(**filtered_data)
+
+    def from_output(self, key: inlinepolicyroleattachment_output, transformer: Callable[[Any], Any]=None) -> Cloud_Output:
+        if transformer:
+            return Cloud_Output(**{"resource": f"cdev::aws::iam::managedpolicyroleattachment::{self.hash}", "key": key, "type": "cdev_output", "transformer": transformer})
+        else:
+            return Cloud_Output(**{"resource": f"cdev::aws::iam::managedpolicyroleattachment::{self.hash}", "key": key, "type": "cdev_output"})
+
+

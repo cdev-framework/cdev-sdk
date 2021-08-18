@@ -243,6 +243,38 @@ class role_output(str, Enum):
 
 
 
+class managedpolicyroleattachment_output(str, Enum):
+    """
+    Attaches the specified managed policy to the specified IAM role. When you attach a managed policy to a role, the managed policy becomes part of the role's permission (access) policy.
+
+  You cannot use a managed policy as the role's trust policy. The role's trust policy is created at the same time as the role, using CreateRole. You can update a role's trust policy using UpdateAssumeRolePolicy.
+
+  Use this operation to attach a *managed* policy to a role. To embed an inline policy in a role, use PutRolePolicy. For more information about policies, see [Managed policies and inline policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/policies-managed-vs-inline.html) in the *IAM User Guide*.
+
+ As a best practice, you can validate your IAM policies. To learn more, see [Validating IAM policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_policy-validator.html) in the *IAM User Guide*.
+
+
+    """
+
+
+
+class inlinepolicyroleattachment_output(str, Enum):
+    """
+    Adds or updates an inline policy document that is embedded in the specified IAM role.
+
+ When you embed an inline policy in a role, the inline policy is used as part of the role's access (permissions) policy. The role's trust policy is created at the same time as the role, using CreateRole. You can update a role's trust policy using UpdateAssumeRolePolicy. For more information about IAM roles, see [Using roles to delegate permissions and federate identities](https://docs.aws.amazon.com/IAM/latest/UserGuide/roles-toplevel.html).
+
+ A role can also have a managed policy attached to it. To attach a managed policy to a role, use AttachRolePolicy. To create a new managed policy, use CreatePolicy. For information about policies, see [Managed policies and inline policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/policies-managed-vs-inline.html) in the *IAM User Guide*.
+
+ For information about the maximum number of inline policies that you can embed with a role, see [IAM and STS quotas](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html) in the *IAM User Guide*.
+
+  Because policy documents can be large, you should use POST rather than GET when calling `PutRolePolicy`. For general information about using the Query API with IAM, see [Making query requests](https://docs.aws.amazon.com/IAM/latest/UserGuide/IAM_UsingQueryAPI.html) in the *IAM User Guide*.
+
+ 
+    """
+
+
+
 class policy_model(Rendered_Resource):
     """
 
@@ -409,6 +441,104 @@ class role_model(Rendered_Resource):
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['RoleName'])
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+
+    class Config:
+        extra='ignore'
+
+
+class managedpolicyroleattachment_model(Rendered_Resource):
+    """
+
+    Removes the specified managed policy from the specified role.
+
+ A role can also have inline policies embedded with it. To delete an inline policy, use DeleteRolePolicy. For information about policies, see [Managed policies and inline policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/policies-managed-vs-inline.html) in the *IAM User Guide*.
+    
+    """
+
+
+    RoleName: Union[str, Cloud_Output]
+    """
+    The name (friendly name, not ARN) of the role to attach the policy to.
+
+ This parameter allows (through its [regex pattern](http://wikipedia.org/wiki/regex)) a string of characters consisting of upper and lowercase alphanumeric characters with no spaces. You can also include any of the following characters: \_+=,.@-
+    """
+
+
+    PolicyArn: Union[str, Cloud_Output]
+    """
+    The Amazon Resource Name (ARN) of the IAM policy you want to attach.
+
+ For more information about ARNs, see [Amazon Resource Names (ARNs)](https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html) in the *Amazon Web Services General Reference*.
+    """
+
+
+
+    def filter_to_create(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['RoleName', 'PolicyArn'])
+
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+
+    def filter_to_remove(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['RoleName', 'PolicyArn'])
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+
+    class Config:
+        extra='ignore'
+
+
+class inlinepolicyroleattachment_model(Rendered_Resource):
+    """
+
+    Deletes the specified inline policy that is embedded in the specified IAM role.
+
+ A role can also have managed policies attached to it. To detach a managed policy from a role, use DetachRolePolicy. For more information about policies, refer to [Managed policies and inline policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/policies-managed-vs-inline.html) in the *IAM User Guide*.
+    
+    """
+
+
+    RoleName: Union[str, Cloud_Output]
+    """
+    The name of the role to associate the policy with.
+
+ This parameter allows (through its [regex pattern](http://wikipedia.org/wiki/regex)) a string of characters consisting of upper and lowercase alphanumeric characters with no spaces. You can also include any of the following characters: \_+=,.@-
+    """
+
+
+    PolicyName: Union[str, Cloud_Output]
+    """
+    The name of the policy document.
+
+ This parameter allows (through its [regex pattern](http://wikipedia.org/wiki/regex)) a string of characters consisting of upper and lowercase alphanumeric characters with no spaces. You can also include any of the following characters: \_+=,.@-
+    """
+
+
+    PolicyDocument: Union[str, Cloud_Output]
+    """
+    The policy document.
+
+ You must provide policies in JSON format in IAM. However, for CloudFormation templates formatted in YAML, you can provide the policy in JSON or YAML format. CloudFormation always converts a YAML policy to JSON format before submitting it to IAM.
+
+ The [regex pattern](http://wikipedia.org/wiki/regex) used to validate this parameter is a string of characters consisting of the following:
+
+ * Any printable ASCII character ranging from the space character (`\u0020`) through the end of the ASCII character range
+
+
+* The printable characters in the Basic Latin and Latin-1 Supplement character set (through `\u00FF`)
+
+
+* The special characters tab (`\u0009`), line feed (`\u000A`), and carriage return (`\u000D`)
+    """
+
+
+
+    def filter_to_create(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['RoleName', 'PolicyName', 'PolicyDocument'])
+
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+
+    def filter_to_remove(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['RoleName', 'PolicyName'])
         return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
 
     class Config:

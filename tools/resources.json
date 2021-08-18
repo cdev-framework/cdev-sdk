@@ -20,6 +20,18 @@
                     "create": "CreateRole",
                     "remove": "DeleteRole",
                     "update": "UpdateRole"
+                },
+                {
+                    "name": "ManagedPolicyRoleAttachment",
+                    "ruuid": "cdev::aws::iam::managedpolicyroleattachment",
+                    "create": "AttachRolePolicy",
+                    "remove": "DetachRolePolicy"
+                },
+                {
+                    "name": "InlinePolicyRoleAttachment",
+                    "ruuid": "cdev::aws::iam::managedpolicyroleattachment",
+                    "create": "PutRolePolicy",
+                    "remove": "DeleteRolePolicy"
                 }
             ]
         },
