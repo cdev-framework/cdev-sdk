@@ -5,6 +5,7 @@ Basic available settings
 import os
 import sys
 import logging
+from rich.logging import RichHandler
 
 SETTINGS = {
     
@@ -49,6 +50,11 @@ SETTINGS["LOGGING_INFO"] = {
             "class": "logging.StreamHandler",
             "level": "DEBUG",
             "formatter": "simpleFormatter",
+        },
+        "richHandler": {
+            "class": "rich.logging.RichHandler",
+            "level": "DEBUG",
+            "formatter": "simpleFormatter"
         }
     },
     "loggers":{
@@ -58,13 +64,14 @@ SETTINGS["LOGGING_INFO"] = {
         },
         "frontend": {
             "level": "DEBUG",
-            "handlers": ["fileHandler"],
+            "handlers": ["fileHandler", "richHandler"],
             "propagate": False
         }
     }, 
     "root": {
-        "level": "DEBUG",
+        "level": "ERROR",
         "handlers": ["consoleHandler"]
-    }
+    },
+    "disable_existing_loggers": False
 
 }
