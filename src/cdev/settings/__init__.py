@@ -31,19 +31,22 @@ SETTINGS["S3_ARTIFACTS_BUCKET"] = "cdev-demo-project-artificats"
 SETTINGS["LOGGING_INFO"] = {
     "version": 1,
     "formatters": {
-        "json": {
+        "jsonFormatter": {
             "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
             "format": "%(asctime)s %(name)s %(levelname)s %(message)s"
         },
         "simpleFormatter": {
             "format": "%(asctime)s %(name)s - %(levelname)s: %(message)s"
+        },
+        "richFormatter": {
+            "format": "%(name)s - %(message)s"
         }
     },
     "handlers" : {
         "fileHandler": {
             "class": "logging.FileHandler",
             "level": "DEBUG",
-            "formatter": "json",
+            "formatter": "jsonFormatter",
             "filename": ".cdev/logs/userlogs",
         },
         "consoleHandler": {
@@ -54,7 +57,10 @@ SETTINGS["LOGGING_INFO"] = {
         "richHandler": {
             "class": "rich.logging.RichHandler",
             "level": "DEBUG",
-            "formatter": "simpleFormatter"
+            "formatter": "richFormatter",
+            "markup": True,
+            "show_path": False,
+            "show_time": False
         }
     },
     "loggers":{
@@ -66,7 +72,27 @@ SETTINGS["LOGGING_INFO"] = {
             "level": "DEBUG",
             "handlers": ["fileHandler", "richHandler"],
             "propagate": False
-        }
+        },
+        "backend": {
+            "level": "DEBUG",
+            "handlers": ["fileHandler", "richHandler"],
+            "propagate": False
+        },
+        "mapper": {
+            "level": "DEBUG",
+            "handlers": ["fileHandler", "richHandler"],
+            "propagate": False
+        },
+        "resources": {
+            "level": "DEBUG",
+            "handlers": ["fileHandler", "richHandler"],
+            "propagate": False
+        },
+        "utils": {
+            "level": "DEBUG",
+            "handlers": ["fileHandler", "richHandler"],
+            "propagate": False
+        },
     }, 
     "root": {
         "level": "ERROR",

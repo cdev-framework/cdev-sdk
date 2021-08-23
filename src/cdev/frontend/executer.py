@@ -9,7 +9,7 @@ from cdev.utils import hasher
 from ..constructs import Cdev_Project, Cdev_Component
 from ..models import Rendered_State
 
-from ..logger import get_cdev_logger
+from ..utils.logger import get_cdev_logger
 
 
 """
