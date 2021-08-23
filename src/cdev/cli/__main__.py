@@ -7,8 +7,6 @@ from  .. import commands as commands
 
 from . import output
 
-logging.config.fileConfig(os.path.join(os.path.dirname(__file__), "logging.ini"), disable_existing_loggers=False)
-logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description='cdev cli')
 
@@ -20,7 +18,6 @@ parser.add_argument('command', metavar="<command>", type=str, choices=CDEV_COMMA
 args = parser.parse_args()
 
 if args.command == "plan":
-    logger.info("CALLING PLAN COMMAND")
     commands.plan()
 elif args.command == "deploy":
     commands.deploy()

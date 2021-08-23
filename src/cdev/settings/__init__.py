@@ -3,6 +3,8 @@ Basic available settings
 """
 
 import os
+import sys
+import logging
 
 SETTINGS = {
     
@@ -22,3 +24,47 @@ SETTINGS["CDEV_PROJECT_FILE"] = os.path.join(SETTINGS.get("BASE_PATH"), "cdev_pr
 SETTINGS["COMPONENT_FILE_NAME"] = "cdev_component.py"
 
 SETTINGS["S3_ARTIFACTS_BUCKET"] = "cdev-demo-project-artificats"
+
+
+
+SETTINGS["LOGGING_INFO"] = {
+    "version": 1,
+    "formatters": {
+        "json": {
+            "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "format": "%(asctime)s %(name)s %(levelname)s %(message)s"
+        },
+        "simpleFormatter": {
+            "format": "%(asctime)s %(name)s - %(levelname)s: %(message)s"
+        }
+    },
+    "handlers" : {
+        "fileHandler": {
+            "class": "logging.FileHandler",
+            "level": "DEBUG",
+            "formatter": "json",
+            "filename": ".cdev/logs/userlogs",
+        },
+        "consoleHandler": {
+            "class": "logging.StreamHandler",
+            "level": "DEBUG",
+            "formatter": "simpleFormatter",
+        }
+    },
+    "loggers":{
+        "cli": {
+            "level": "ERROR",
+            "handlers": ["fileHandler"]
+        },
+        "frontend": {
+            "level": "DEBUG",
+            "handlers": ["fileHandler"],
+            "propagate": False
+        }
+    }, 
+    "root": {
+        "level": "DEBUG",
+        "handlers": ["consoleHandler"]
+    }
+
+}
