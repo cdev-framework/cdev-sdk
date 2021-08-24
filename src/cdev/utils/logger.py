@@ -19,48 +19,63 @@ class cdev_logger:
 
     def __init__(self, module_name: str = 'root') -> None:
         logging.config.dictConfig(cdev_settings.get("LOGGING_INFO"))
-        self._logger = logging.getLogger(module_name)
+        self._json_logger = logging.getLogger(module_name)
+        self._simple_logger = logging.getLogger(f"{module_name}_simple")
+        self._rich_logger = logging.getLogger(f"{module_name}_rich")
 
+    
+    def _write_log(self, func_name, original_msg, formatted_msg):
+        # Always write a log to the json file
+        getattr(self._json_logger, func_name)(original_msg)
+
+        if cdev_settings.get("SHOW_LOGS"):
+            # We need to write logs to console
+            # Either write a plain log or rich formatted log to the console
+            if cdev_settings.get("OUTPUT_PLAIN"):
+                getattr(self._simple_logger, func_name)(original_msg)
+            else:
+                getattr(self._rich_logger, func_name)(formatted_msg)
+        
 
     def debug(self, msg):
-        self._logger.info(msg)
+        #self._logger.info(msg)
+        self._write_log("debug", msg, f"[bold blue]{msg}")
 
 
     def info(self, msg):
-        self._logger.info(msg)
+        #if isinstance(msg, str):
+        #    msg = f"[bold blue blink]{msg}"
+        self._write_log("info", msg, f"[bold blue]{msg}")
+        
 
 
     def warning(self, msg):
-        if isinstance(msg, str):
-            msg = f"[bold red blink]{msg}"
-
-        self._logger.warning(msg)
+        #if isinstance(msg, str):
+        #    msg = f"[bold yellow blink]{msg}[/bold yellow blink]"
+        self._write_log("warning", msg, f"[bold yellow blink]{msg}")
 
 
     def error(self, msg):
-        self._logger.error(msg)
+        #if isinstance(msg, str):
+        #    msg = f"[bold red blink]:cross_mark: :cross_mark: :cross_mark: {msg} :cross_mark: :cross_mark: :cross_mark:"
+        self._write_log("error", msg, f"[bold red blink]:cross_mark: :cross_mark: :cross_mark: {msg} :cross_mark: :cross_mark: :cross_mark:")
 
     
     def critical(self, msg):
-        self._logger.critical(msg)
+        self._write_log("critical", msg, f"[bold red blink]:skull: :skull: :skull: {msg} :skull: :skull: :skull:")
 
 
-    def log(self, level: int, msg):
-        self._logger.log(level, msg)
-
-    
     def exception(self, msg):
-        self._logger.exception(msg)
+        self._write_log("exception", msg, msg)
 
 
     
 
 
 def get_cdev_logger(name: str):
-    print(name)
+
 
     top_level_module_name = name.split(".")[1] if len(name.split(".")) > 1 else None
 
-    print(top_level_module_name) 
 
     return cdev_logger(top_level_module_name)

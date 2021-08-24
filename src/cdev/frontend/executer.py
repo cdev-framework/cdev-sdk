@@ -39,7 +39,7 @@ def execute_frontend() -> Rendered_State:
     ALL_COMPONENTS = Cdev_Project.instance().get_components()
 
     project_components_sorted = SortedList(key=lambda x: x.name)
-    log.info({"a" :"b"})
+    #log.info({"a" :"b"})
     # Generate the local states
     for component in ALL_COMPONENTS:
         if isinstance(component, Cdev_Component):

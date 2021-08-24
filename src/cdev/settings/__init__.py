@@ -26,6 +26,8 @@ SETTINGS["COMPONENT_FILE_NAME"] = "cdev_component.py"
 
 SETTINGS["S3_ARTIFACTS_BUCKET"] = "cdev-demo-project-artificats"
 
+SETTINGS["OUTPUT_PLAIN"] = False
+SETTINGS["SHOW_LOGS"] = True
 
 
 SETTINGS["LOGGING_INFO"] = {
@@ -49,7 +51,7 @@ SETTINGS["LOGGING_INFO"] = {
             "formatter": "jsonFormatter",
             "filename": ".cdev/logs/userlogs",
         },
-        "consoleHandler": {
+        "simpleHandler": {
             "class": "logging.StreamHandler",
             "level": "DEBUG",
             "formatter": "simpleFormatter",
@@ -70,33 +72,91 @@ SETTINGS["LOGGING_INFO"] = {
         },
         "frontend": {
             "level": "DEBUG",
-            "handlers": ["fileHandler", "richHandler"],
+            "handlers": ["fileHandler"],
             "propagate": False
         },
         "backend": {
             "level": "DEBUG",
-            "handlers": ["fileHandler", "richHandler"],
+            "handlers": ["fileHandler"],
             "propagate": False
         },
         "mapper": {
             "level": "DEBUG",
-            "handlers": ["fileHandler", "richHandler"],
+            "handlers": ["fileHandler"],
             "propagate": False
         },
         "resources": {
             "level": "DEBUG",
-            "handlers": ["fileHandler", "richHandler"],
+            "handlers": ["fileHandler"],
             "propagate": False
         },
         "utils": {
             "level": "DEBUG",
-            "handlers": ["fileHandler", "richHandler"],
+            "handlers": ["fileHandler"],
+            "propagate": False
+        },
+        "cli_rich": {
+            "level": "ERROR",
+            "handlers": ["richHandler"]
+        },
+        "frontend_rich": {
+            "level": "DEBUG",
+            "handlers": ["richHandler"],
+            "propagate": False
+        },
+        "backend_rich": {
+            "level": "DEBUG",
+            "handlers": ["richHandler"],
+            "propagate": False
+        },
+        "mapper_rich": {
+            "level": "DEBUG",
+            "handlers": ["richHandler"],
+            "propagate": False
+        },
+        "resources_rich": {
+            "level": "DEBUG",
+            "handlers": ["richHandler"],
+            "propagate": False
+        },
+        "utils_simple": {
+            "level": "DEBUG",
+            "handlers": ["simpleHandler"],
+            "propagate": False
+        },
+        "cli_simple": {
+            "level": "ERROR",
+            "handlers": ["simpleHandler"]
+        },
+        "frontend_simple": {
+            "level": "DEBUG",
+            "handlers": ["simpleHandler"],
+            "propagate": False
+        },
+        "backend_simple": {
+            "level": "DEBUG",
+            "handlers": ["simpleHandler"],
+            "propagate": False
+        },
+        "mapper_simple": {
+            "level": "DEBUG",
+            "handlers": ["simpleHandler"],
+            "propagate": False
+        },
+        "resources_simple": {
+            "level": "DEBUG",
+            "handlers": ["simpleHandler"],
+            "propagate": False
+        },
+        "utils_simple": {
+            "level": "DEBUG",
+            "handlers": ["simpleHandler"],
             "propagate": False
         },
     }, 
     "root": {
         "level": "ERROR",
-        "handlers": ["consoleHandler"]
+        "handlers": ["simpleHandler"]
     },
     "disable_existing_loggers": False
 

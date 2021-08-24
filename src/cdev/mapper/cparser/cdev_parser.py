@@ -17,7 +17,11 @@ from cdev.utils import logger as cdev_logger
 log = cdev_logger.get_cdev_logger(__name__)
 
 def parse_functions_from_file(file_loc, include_functions=[], function_manual_includes={}, global_manual_includes=[], remove_top_annotation=False):
-    log.warning("HELLLO")
+    log.info("STEP 1 COMPLETE")
+    
+    log.warning("YOU SHOULD FIX STEP 1")
+    log.error("THIS FAILED")
+    log.critical("THIS IS A CRITICAL BUG")
     try:
         file_information = p_utils.get_file_information(
             file_loc, include_functions, function_manual_includes, global_manual_includes, remove_top_annotation)
@@ -39,6 +43,8 @@ def parse_functions_from_file(file_loc, include_functions=[], function_manual_in
         if ALL_PACKAGES:
             sorted_packages =  SortedList(ALL_PACKAGES)
             parsed_function.needed_imports = sorted_packages
+
+    log.info("STEP 2 COMPLETE")
 
     return file_information
 
