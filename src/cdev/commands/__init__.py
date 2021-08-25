@@ -5,21 +5,28 @@ All the commands available for use
 import os
 
 
-from cdev.frontend import executer as frontend_executer
-from cdev.backend import executer as backend_executer
-from cdev.backend import resource_state_manager
-from cdev.backend import initializer
-from cdev.utils import project
+from ..frontend import executer as frontend_executer
+from ..backend import executer as backend_executer
+from ..backend import resource_state_manager
+from ..backend import initializer
+from ..utils import project
+from ..utils.logger import get_cdev_logger
+
+log = get_cdev_logger(__name__)
 
 
 def plan():
 
+    log.debug(f"Calling `cdev plan`")
     project.initialize_project()
+    log.debug(f"Initialized project")
     rendered_frontend = frontend_executer.execute_frontend()
+    log.debug(f"New rendered frontend -> {rendered_frontend}")
     project_diffs = resource_state_manager.create_project_diffs(rendered_frontend)
-    #print(project_diffs)
-    backend_executer.validate_diffs(project_diffs)
-     
+    log.debug(f"Project differences -> {project_diffs}")
+
+    diffs_valid  = backend_executer.validate_diffs(project_diffs)
+    log.debug(f"Are project diffs valid -> {diffs_valid}")
 
 def deploy():
     project.initialize_project()

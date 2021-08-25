@@ -1,6 +1,7 @@
 from typing import List
 
 from cdev.utils import hasher
+from cdev.utils.exceptions import Cdev_Error
 
 from . import utils as backend_utils
 from . import initializer as backend_initializer
@@ -8,6 +9,8 @@ from . import initializer as backend_initializer
 
 from ..models import Rendered_Component, Rendered_State, Rendered_Resource, Resource_State_Difference, Component_State_Difference, Action_Type
 
+from ..utils.logger import get_cdev_logger
+log = get_cdev_logger(__name__)
 
 
 def create_project_diffs(new_project_state: Rendered_State) -> List[Component_State_Difference]:
@@ -18,19 +21,11 @@ def create_project_diffs(new_project_state: Rendered_State) -> List[Component_St
     rv = []
 
     previous_local_state = backend_utils.load_resource_state()
+    log.info(f"previous local state -> {previous_local_state}")
 
     if not previous_local_state:
-        # Create COMPONENT and ALL RESOURCES
-        for component in new_project_state.rendered_components:
-            rv.append( Component_State_Difference(
-                    **{
-                        "action_type": Action_Type.CREATE,
-                        "previous_component": None,
-                        "new_component": component,
-                        "resource_diffs": _create_resource_diffs(component.rendered_resources,[])
-                    }
-                )
-            )
+        raise Cdev_Error(f"no previous local state. Run `cdev init` to solve issue.")
+
 
     if previous_local_state.rendered_components:
         # build map<hash,resource>
@@ -41,14 +36,14 @@ def create_project_diffs(new_project_state: Rendered_State) -> List[Component_St
         previous_hash_to_component = {}
         previous_name_to_component = {}
 
-
-    #print(previous_hash_to_resource)
+    log.debug(f"previous_hash_to_component -> {previous_hash_to_component}")
+    log.debug(f"previous_name_to_component -> {previous_name_to_component}")
 
     for component in new_project_state.rendered_components:
         
         if not component.hash in previous_hash_to_component and not component.name in previous_name_to_component:
             # Create COMPONENT and ALL RESOURCES
-        
+            log.info(f"CREATE COMPONENT -> {component.name}")
             rv.append( Component_State_Difference(
                     **{
                         "action_type": Action_Type.CREATE,
@@ -60,14 +55,15 @@ def create_project_diffs(new_project_state: Rendered_State) -> List[Component_St
             )
 
         elif component.hash in previous_hash_to_component and component.name in previous_name_to_component:
+            # Since the hash is the same we can infer all the resource hashes are the same
             # Even though the hash has remained same we need to check for name changes in the resources
 
             resource_diffs = _create_resource_diffs(component.rendered_resources, previous_name_to_component.get(component.name).rendered_resources)
             
             if len(resource_diffs)  == 0:
-                print(f"KEEP SAME {previous_hash_to_component.get(component.hash).name}")
+                log.info(f"KEEP SAME {previous_hash_to_component.get(component.hash).name}")
             else:
-                print(f"UPDATE RESOURCE NAME {previous_hash_to_component.get(component.hash).name}")
+                log.info(f"UPDATE RESOURCE NAME {previous_hash_to_component.get(component.hash).name}")
                 rv.append(
                     Component_State_Difference(
                         **{
@@ -83,7 +79,8 @@ def create_project_diffs(new_project_state: Rendered_State) -> List[Component_St
             continue
 
         if component.hash in previous_hash_to_component and not component.name in previous_name_to_component:
-            print(f"UPDATE NAME FROM {previous_hash_to_component.get(component.hash).name} -> {component.name} ")
+            # hash of the component has stayed the same but the user has renamed the component name
+            log.info(f"UPDATE NAME FROM {previous_hash_to_component.get(component.hash).name} -> {component.name}")
             rv.append(
                 Component_State_Difference(
                     **{
@@ -94,11 +91,10 @@ def create_project_diffs(new_project_state: Rendered_State) -> List[Component_St
                     }
                 )
             )
-            # UPDATE NAME
 
         if not component.hash in previous_hash_to_component and component.name in previous_name_to_component:
-            # UPDATE IDENTITY
-            print(f"UPDATE IDENTITY FROM {previous_name_to_component.get(component.name).hash} -> {component.hash} ")
+            # hash of the component has changed but not the name 
+            log.info(f"UPDATE IDENTITY FROM {previous_name_to_component.get(component.name).hash} -> {component.hash} ")
             rv.append(
                 Component_State_Difference(
                     **{
@@ -123,8 +119,7 @@ def create_project_diffs(new_project_state: Rendered_State) -> List[Component_St
 
 
 def _create_resource_diffs(new_resources: List[Rendered_Resource], old_resource: List[Rendered_Resource]) -> List[Resource_State_Difference]:
-
-
+    log.debug(f"calling _create_resource_diff with args (new_resources:{new_resources}, old_resources:{old_resource}")
     if old_resource:
         # build map<hash,resource>
         old_hash_to_resource = {x.hash: x for x in old_resource}
@@ -134,16 +129,19 @@ def _create_resource_diffs(new_resources: List[Rendered_Resource], old_resource:
         old_hash_to_resource = {}
         old_name_to_resource = {}
 
+    log.debug(f"old_hash_to_resource -> {old_hash_to_resource}")
+    log.debug(f"old_name_to_resource -> {old_name_to_resource}")
+
     rv = []
     for resource in new_resources:
         if resource.hash in old_hash_to_resource and resource.name in old_name_to_resource:
-            #print(f"    KEEP SAME {old_hash_to_resource.get(resource.hash).name}")
+            log.info(f"same resource diff {old_hash_to_resource.get(resource.hash).name}")
             # POP the seen previous resources as we go so only remaining resources will be deletess
             old_resource.remove(old_hash_to_resource.get(resource.hash))
             continue
             
         elif resource.hash in old_hash_to_resource and not resource.name in old_name_to_resource:
-            #print(f"    UPDATE NAME FROM {old_hash_to_resource.get(resource.hash).name} -> {resource.name}")
+            print(f"update resource diff {old_hash_to_resource.get(resource.hash)} name {old_hash_to_resource.get(resource.hash).name} -> {resource.name}")
             rv.append(Resource_State_Difference(
                 **{
                     "action_type": Action_Type.UPDATE_NAME,
@@ -152,12 +150,10 @@ def _create_resource_diffs(new_resources: List[Rendered_Resource], old_resource:
                 }
             ))
             # POP the seen previous resources as we go so only remaining resources will be deletes
-            #print(resource.hash)
-            #print(old_hash_to_resource.get(resource.hash))
             old_resource.remove(old_hash_to_resource.get(resource.hash))
 
         elif not resource.hash in old_hash_to_resource and resource.name in old_name_to_resource:
-            #print(f"    UPDATE IDENTITY FROM {old_name_to_resource.get(resource.name).hash} -> {resource.hash}")
+            log.info(f"update resource diff {old_name_to_resource.get(resource.name)} hash {old_name_to_resource.get(resource.name).hash} -> {resource.hash}")
             rv.append(Resource_State_Difference(
                 **{
                     "action_type": Action_Type.UPDATE_IDENTITY,
@@ -169,7 +165,7 @@ def _create_resource_diffs(new_resources: List[Rendered_Resource], old_resource:
             old_resource.remove(old_name_to_resource.get(resource.name))
 
         elif not resource.hash in old_hash_to_resource and not resource.name in old_name_to_resource:
-            #print(f"CREATE {resource}")
+            log.info(f"create resource diff {resource}")
             rv.append(Resource_State_Difference(
                 **{
                     "action_type": Action_Type.CREATE,
@@ -179,7 +175,7 @@ def _create_resource_diffs(new_resources: List[Rendered_Resource], old_resource:
             ))
 
     for resource in old_resource:
-        #print(f"DELETE {resource}")
+        log.info(f"delete resource diff {resource}")
         rv.append(Resource_State_Difference(
                 **{
                     "action_type": Action_Type.DELETE,
@@ -206,8 +202,7 @@ def handle_component_difference(diff: Component_State_Difference):
     """
     
     if not backend_initializer.is_backend_initialized():
-        print("BAD NO BACKEND")
-        return None
+        raise Cdev_Error("NO BACKEND")
 
     current_backend = backend_utils.load_resource_state()
 

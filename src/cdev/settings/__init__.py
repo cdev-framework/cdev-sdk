@@ -7,6 +7,9 @@ import sys
 import logging
 from rich.logging import RichHandler
 
+from rich.traceback import install
+#install(show_locals=False)   
+
 SETTINGS = {
     
 }
@@ -28,6 +31,8 @@ SETTINGS["S3_ARTIFACTS_BUCKET"] = "cdev-demo-project-artificats"
 
 SETTINGS["OUTPUT_PLAIN"] = False
 SETTINGS["SHOW_LOGS"] = True
+
+SETTINGS["CONSOLE_LOG_LEVEL"] = "INFO"
 
 
 SETTINGS["LOGGING_INFO"] = {
@@ -53,22 +58,29 @@ SETTINGS["LOGGING_INFO"] = {
         },
         "simpleHandler": {
             "class": "logging.StreamHandler",
-            "level": "DEBUG",
+            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "formatter": "simpleFormatter",
         },
         "richHandler": {
             "class": "rich.logging.RichHandler",
-            "level": "DEBUG",
+            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "formatter": "richFormatter",
             "markup": True,
             "show_path": False,
-            "show_time": False
+            "show_time": False,
+            "rich_tracebacks": True
         }
     },
     "loggers":{
         "cli": {
-            "level": "ERROR",
-            "handlers": ["fileHandler"]
+            "level": "DEBUG",
+            "handlers": ["fileHandler"],
+            "propagate": False
+        },
+        "commands": {
+            "level": "DEBUG",
+            "handlers": ["fileHandler"],
+            "propagate": False
         },
         "frontend": {
             "level": "DEBUG",
@@ -96,60 +108,72 @@ SETTINGS["LOGGING_INFO"] = {
             "propagate": False
         },
         "cli_rich": {
-            "level": "ERROR",
-            "handlers": ["richHandler"]
+            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
+            "handlers": ["richHandler"],
+            "propagate": False
+        },
+        "commands_rich": {
+            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
+            "handlers": ["richHandler"],
+            "propagate": False
         },
         "frontend_rich": {
-            "level": "DEBUG",
+            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["richHandler"],
             "propagate": False
         },
         "backend_rich": {
-            "level": "DEBUG",
+            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["richHandler"],
             "propagate": False
         },
         "mapper_rich": {
-            "level": "DEBUG",
+            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["richHandler"],
             "propagate": False
         },
         "resources_rich": {
-            "level": "DEBUG",
+            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["richHandler"],
             "propagate": False
         },
-        "utils_simple": {
-            "level": "DEBUG",
+        "utils_rich": {
+            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["simpleHandler"],
             "propagate": False
         },
         "cli_simple": {
-            "level": "ERROR",
-            "handlers": ["simpleHandler"]
+            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
+            "handlers": ["simpleHandler"],
+            "propagate": False
+        },
+        "commands_simple": {
+            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
+            "handlers": ["simpleHandler"],
+            "propagate": False
         },
         "frontend_simple": {
-            "level": "DEBUG",
+            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["simpleHandler"],
             "propagate": False
         },
         "backend_simple": {
-            "level": "DEBUG",
+            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["simpleHandler"],
             "propagate": False
         },
         "mapper_simple": {
-            "level": "DEBUG",
+            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["simpleHandler"],
             "propagate": False
         },
         "resources_simple": {
-            "level": "DEBUG",
+            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["simpleHandler"],
             "propagate": False
         },
         "utils_simple": {
-            "level": "DEBUG",
+            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["simpleHandler"],
             "propagate": False
         },

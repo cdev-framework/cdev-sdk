@@ -41,7 +41,6 @@ def _find_resources_information_from_file(fp) -> List[Rendered_Resource]:
     # When the python file is imported and executed all the Cdev resources are created and registered with the
     # singleton
     mod = importlib.import_module(mod_name)
-
     rv = []
 
     info = _create_serverless_function_resources(mod, fp)

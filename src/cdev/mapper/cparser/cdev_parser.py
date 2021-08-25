@@ -17,11 +17,6 @@ from cdev.utils import logger as cdev_logger
 log = cdev_logger.get_cdev_logger(__name__)
 
 def parse_functions_from_file(file_loc, include_functions=[], function_manual_includes={}, global_manual_includes=[], remove_top_annotation=False):
-    log.info("STEP 1 COMPLETE")
-    
-    log.warning("YOU SHOULD FIX STEP 1")
-    log.error("THIS FAILED")
-    log.critical("THIS IS A CRITICAL BUG")
     try:
         file_information = p_utils.get_file_information(
             file_loc, include_functions, function_manual_includes, global_manual_includes, remove_top_annotation)
