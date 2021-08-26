@@ -8,6 +8,8 @@ from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
 
 from .backend.aws import aws_lambda, dynamodb, iam, s3, sqs, apigatewayv2, apigateway
 
+from .backend.simple import api_deployer
+
 
 class DefaultMapper(CloudMapper):
     """
@@ -114,6 +116,8 @@ RESOURCE_TO_HANDLER_FUNCTION = {
     "cdev::aws::apigateway::integration":  apigateway.handle_integration_deployment,
     "cdev::aws::apigateway::stage":  apigateway.handle_stage_deployment,
     "cdev::aws::apigateway::method": apigateway.handle_method_deployment,
-    "cdev::aws::apigateway::integration_response": apigateway.handle_integrationresponse_deployment
+    "cdev::aws::apigateway::integration_response": apigateway.handle_integrationresponse_deployment,
+
+    "cdev::simple::api": api_deployer.handle_simple_api_deployment
 }
 
