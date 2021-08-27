@@ -1,6 +1,7 @@
 from pydantic.main import BaseModel
 from enum import Enum
 from typing import List, Optional, Dict, Union, Dict
+from pathlib import Path
 
 from ...models import Cloud_Output, Rendered_Resource
 
@@ -73,7 +74,7 @@ class FunctionCode(BaseModel):
     """
 
 
-    ZipFile: Union[bytes, Cloud_Output]
+    ZipFile: Union[bytes, Path, Cloud_Output]
     """
     The base64-encoded contents of the deployment package. Amazon Web Services SDK and Amazon Web Services CLI clients handle the encoding for you.
 
@@ -109,7 +110,7 @@ class FunctionCode(BaseModel):
     """
 
 
-    def __init__(self, ZipFile: bytes, S3Bucket: str, S3Key: str, S3ObjectVersion: str, ImageUri: str ):
+    def __init__(self, ZipFile: Union[bytes, Path], S3Bucket: str, S3Key: str, S3ObjectVersion: str, ImageUri: str ):
         "My doc string"
         super().__init__(**{
             "ZipFile": ZipFile,

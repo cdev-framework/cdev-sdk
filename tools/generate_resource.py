@@ -167,7 +167,7 @@ def flatten_structure_to_params(attributes: dict):
         if attribute.get("type") == "map":
             final_string = f"{final_string}, {pythonify_symbol(attribute_name)}: Dict"
         if attribute.get("type") == "blob":
-            final_string = f"{final_string}, {pythonify_symbol(attribute_name)}: bytes"
+            final_string = f"{final_string}, {pythonify_symbol(attribute_name)}: Union[bytes, Path]"
 
     return final_string[2:]
 
@@ -192,7 +192,7 @@ def flatten_attributes_to_params(attributes: list):
         elif attribute.get("type") == "long":
             final_string = f"{final_string}, {attribute.get('param_name')}: int{'=None' if not attribute.get('isrequired') else ''}"
         elif attribute.get("type") == "blob":
-            final_string = f"{final_string}, {attribute.get('param_name')}: bytes{'=None' if not attribute.get('isrequired') else ''}"
+            final_string = f"{final_string}, {attribute.get('param_name')}: Union[bytes, Path]{'=None' if not attribute.get('isrequired') else ''}"
         elif attribute.get("type") == "timestamp":
             final_string = f"{final_string}, {attribute.get('param_name')}: str{'=None' if not attribute.get('isrequired') else ''}"
         elif attribute.get("type") == "enum":
