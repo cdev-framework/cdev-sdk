@@ -34,7 +34,7 @@ def pythonify_symbol(s: str):
     else:
         rv = s
 
-    return rv.replace("-", "_")
+    return rv.replace("-", "_").replace(".", "_")
 
 
 def _find_all_dependent_shapes(shape_name, all_needed_shapes, botoinfo, include_this):
@@ -166,6 +166,8 @@ def flatten_structure_to_params(attributes: dict):
             final_string = f"{final_string}, {pythonify_symbol(attribute_name)}: bool"
         if attribute.get("type") == "map":
             final_string = f"{final_string}, {pythonify_symbol(attribute_name)}: Dict"
+        if attribute.get("type") == "blob":
+            final_string = f"{final_string}, {pythonify_symbol(attribute_name)}: bytes"
 
     return final_string[2:]
 

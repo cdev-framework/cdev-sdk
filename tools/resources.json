@@ -67,6 +67,18 @@
             ]
         },
         {
+            "service": "lambda",
+            "folder": "2015-03-31",
+            "resources": [
+                {
+                    "name": "LambdaFunction",
+                    "ruuid": "cdev::aws::lambda::function",
+                    "create": "CreateFunction",
+                    "remove": "DeleteFunction"
+                }
+            ]
+        },
+        {
             "service": "sqs",
             "folder": "2012-11-05",
             "resources": [
