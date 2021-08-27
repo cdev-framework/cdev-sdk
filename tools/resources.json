@@ -81,6 +81,12 @@
                     "ruuid": "cdev::aws::lambda::function",
                     "create": "CreateFunction",
                     "remove": "DeleteFunction"
+                },
+                {
+                    "name": "Permission",
+                    "ruuid": "cdev::aws::lambda::permission",
+                    "create": "AddPermission",
+                    "remove": "RemovePermission"
                 }
             ]
         },

@@ -55,12 +55,18 @@ def create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_lam
 
     lambda_deployer._create_lambdafunction("", lambda_model)
 
-    aws_client.run_client_function("lambda", "add_permission", {
+    permission_model = lambda_models.permission_model(**{
+        "ruuid": "",
+        "hash": "",
+        "name": "",
         "FunctionName": resource.name,
         "Action": "lambda:InvokeFunction",
         "Principal": "apigateway.amazonaws.com",
         "StatementId": f"stmt-{resource.name}",
     })
+
+    rv = lambda_deployer._create_permission("", permission_model)
+    log.info(rv)
 
 
     return True

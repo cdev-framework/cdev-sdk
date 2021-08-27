@@ -213,3 +213,120 @@ class LambdaFunction(Cdev_Resource):
             return Cloud_Output(**{"resource": f"cdev::aws::lambda::function::{self.hash}", "key": key, "type": "cdev_output"})
 
 
+class Permission(Cdev_Resource):
+    """
+    Revokes function-use permission from an Amazon Web Services service or another account. You can get the ID of the statement from the output of GetPolicy.
+
+
+    """
+
+    def __init__(self, cdev_name: str, FunctionName: str, StatementId: str, Action: str, Principal: str, SourceArn: str=None, SourceAccount: str=None, EventSourceToken: str=None, Qualifier: str=None, RevisionId: str=None):
+        ""
+        super().__init__(cdev_name)
+
+        self.FunctionName = FunctionName
+        """
+        The name of the Lambda function, version, or alias.
+
+  **Name formats** 
+
+ *  **Function name** - `my-function` (name-only), `my-function:v1` (with alias).
+
+
+*  **Function ARN** - `arn:aws:lambda:us-west-2:123456789012:function:my-function`.
+
+
+*  **Partial ARN** - `123456789012:function:my-function`.
+
+
+
+ You can append a version number or alias to any of the formats. The length constraint applies only to the full ARN. If you specify only the function name, it is limited to 64 characters in length.
+
+
+        """
+
+        self.StatementId = StatementId
+        """
+        A statement identifier that differentiates the statement from others in the same policy.
+
+
+        """
+
+        self.Action = Action
+        """
+        The action that the principal can use on the function. For example, `lambda:InvokeFunction` or `lambda:GetFunction`.
+
+
+        """
+
+        self.Principal = Principal
+        """
+        The Amazon Web Services service or account that invokes the function. If you specify a service, use `SourceArn` or `SourceAccount` to limit who can invoke the function through that service.
+
+
+        """
+
+        self.SourceArn = SourceArn
+        """
+        For Amazon Web Services services, the ARN of the Amazon Web Services resource that invokes the function. For example, an Amazon S3 bucket or Amazon SNS topic.
+
+
+        """
+
+        self.SourceAccount = SourceAccount
+        """
+        For Amazon S3, the ID of the account that owns the resource. Use this together with `SourceArn` to ensure that the resource is owned by the specified account. It is possible for an Amazon S3 bucket to be deleted by its owner and recreated by another account.
+
+
+        """
+
+        self.EventSourceToken = EventSourceToken
+        """
+        For Alexa Smart Home functions, a token that must be supplied by the invoker.
+
+
+        """
+
+        self.Qualifier = Qualifier
+        """
+        Specify a version or alias to add permissions to a published version of the function.
+
+
+        """
+
+        self.RevisionId = RevisionId
+        """
+        Only update the policy if the revision ID matches the ID that's specified. Use this option to avoid modifying a policy that has changed since you last read it.
+
+
+        """
+
+        self.hash = hasher.hash_list([self.FunctionName, self.StatementId, self.Action, self.Principal, self.SourceArn, self.SourceAccount, self.EventSourceToken, self.Qualifier, self.RevisionId])
+
+    def render(self) -> permission_model:
+        data = {
+            "ruuid": "cdev::aws::lambda::permission",
+            "name": self.name,
+            "hash": self.hash,
+            "FunctionName": self.FunctionName,
+            "StatementId": self.StatementId,
+            "Action": self.Action,
+            "Principal": self.Principal,
+            "SourceArn": self.SourceArn,
+            "SourceAccount": self.SourceAccount,
+            "EventSourceToken": self.EventSourceToken,
+            "Qualifier": self.Qualifier,
+            "RevisionId": self.RevisionId,
+        }
+
+        filtered_data = {k:v for k,v in data.items() if v}
+        
+        return permission_model(**filtered_data)
+
+    def from_output(self, key: permission_output, transformer: Callable[[Any], Any]=None) -> Cloud_Output:
+        if transformer:
+            return Cloud_Output(**{"resource": f"cdev::aws::lambda::permission::{self.hash}", "key": key, "type": "cdev_output", "transformer": transformer})
+        else:
+            return Cloud_Output(**{"resource": f"cdev::aws::lambda::permission::{self.hash}", "key": key, "type": "cdev_output"})
+
+

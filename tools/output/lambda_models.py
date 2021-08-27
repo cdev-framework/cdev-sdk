@@ -320,6 +320,13 @@ class ImageConfig(BaseModel):
 
 
 
+
+
+
+
+
+
+
 class lambdafunction_output(str, Enum):
     """
     Creates a Lambda function. To create a function, you need a [deployment package](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-package.html) and an [execution role](https://docs.aws.amazon.com/lambda/latest/dg/intro-permission-model.html#lambda-intro-execution-role). The deployment package is a .zip file archive or container image that contains your function code. The execution role grants the function permission to use Amazon Web Services services, such as Amazon CloudWatch Logs for log streaming and X-Ray for request tracing.
@@ -562,6 +569,26 @@ class lambdafunction_output(str, Enum):
 
 
 
+class permission_output(str, Enum):
+    """
+    Grants an Amazon Web Services service or another account permission to use a function. You can apply the policy at the function level, or specify a qualifier to restrict access to a single version or alias. If you use a qualifier, the invoker must use the full Amazon Resource Name (ARN) of that version or alias to invoke the function.
+
+ To grant permission to another account, specify the account ID as the `Principal`. For Amazon Web Services services, the principal is a domain-style identifier defined by the service, like `s3.amazonaws.com` or `sns.amazonaws.com`. For Amazon Web Services services, you can also specify the ARN of the associated resource as the `SourceArn`. If you grant permission to a service principal without specifying the source, other accounts could potentially configure resources in their account to invoke your Lambda function.
+
+ This action adds a statement to a resource-based permissions policy for the function. For more information about function policies, see [Lambda Function Policies](https://docs.aws.amazon.com/lambda/latest/dg/access-control-resource-based.html). 
+
+
+    """
+
+    Statement = "Statement"
+    """
+    Only update the policy if the revision ID matches the ID that's specified. Use this option to avoid modifying a policy that has changed since you last read it.
+
+
+    """
+
+
+
 class lambdafunction_model(Rendered_Resource):
     """
 
@@ -711,6 +738,96 @@ class lambdafunction_model(Rendered_Resource):
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['FunctionName', 'Qualifier'])
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+
+    class Config:
+        extra='ignore'
+
+
+class permission_model(Rendered_Resource):
+    """
+
+    Revokes function-use permission from an Amazon Web Services service or another account. You can get the ID of the statement from the output of GetPolicy.
+    
+    """
+
+
+    FunctionName: Union[str, Cloud_Output]
+    """
+    The name of the Lambda function, version, or alias.
+
+  **Name formats** 
+
+ *  **Function name** - `my-function` (name-only), `my-function:v1` (with alias).
+
+
+*  **Function ARN** - `arn:aws:lambda:us-west-2:123456789012:function:my-function`.
+
+
+*  **Partial ARN** - `123456789012:function:my-function`.
+
+
+
+ You can append a version number or alias to any of the formats. The length constraint applies only to the full ARN. If you specify only the function name, it is limited to 64 characters in length.
+    """
+
+
+    StatementId: Union[str, Cloud_Output]
+    """
+    A statement identifier that differentiates the statement from others in the same policy.
+    """
+
+
+    Action: Union[str, Cloud_Output]
+    """
+    The action that the principal can use on the function. For example, `lambda:InvokeFunction` or `lambda:GetFunction`.
+    """
+
+
+    Principal: Union[str, Cloud_Output]
+    """
+    The Amazon Web Services service or account that invokes the function. If you specify a service, use `SourceArn` or `SourceAccount` to limit who can invoke the function through that service.
+    """
+
+
+    SourceArn: Optional[Union[str, Cloud_Output]]
+    """
+    For Amazon Web Services services, the ARN of the Amazon Web Services resource that invokes the function. For example, an Amazon S3 bucket or Amazon SNS topic.
+    """
+
+
+    SourceAccount: Optional[Union[str, Cloud_Output]]
+    """
+    For Amazon S3, the ID of the account that owns the resource. Use this together with `SourceArn` to ensure that the resource is owned by the specified account. It is possible for an Amazon S3 bucket to be deleted by its owner and recreated by another account.
+    """
+
+
+    EventSourceToken: Optional[Union[str, Cloud_Output]]
+    """
+    For Alexa Smart Home functions, a token that must be supplied by the invoker.
+    """
+
+
+    Qualifier: Optional[Union[str, Cloud_Output]]
+    """
+    Specify a version or alias to add permissions to a published version of the function.
+    """
+
+
+    RevisionId: Optional[Union[str, Cloud_Output]]
+    """
+    Only update the policy if the revision ID matches the ID that's specified. Use this option to avoid modifying a policy that has changed since you last read it.
+    """
+
+
+
+    def filter_to_create(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['FunctionName', 'StatementId', 'Action', 'Principal', 'SourceArn', 'SourceAccount', 'EventSourceToken', 'Qualifier', 'RevisionId'])
+
+        return {k:v for k,v in self.dict().items() if k in NEEDED_ATTRIBUTES and v}
+
+    def filter_to_remove(self, identifier) -> dict:
+        NEEDED_ATTRIBUTES = set(['FunctionName', 'StatementId', 'Qualifier', 'RevisionId'])
         return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
 
     class Config:
