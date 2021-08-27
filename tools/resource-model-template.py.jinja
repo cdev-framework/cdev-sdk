@@ -1,6 +1,7 @@
 from pydantic.main import BaseModel
 from enum import Enum
 from typing import List, Optional, Dict, Union, Dict
+from pathlib import Path
 
 from ...models import Cloud_Output, Rendered_Resource
 
@@ -35,7 +36,7 @@ class {{struct.get("name")}}(BaseModel):
     {% elif val.get("type") == "map"%}
     {{pythonify_symbol(attribute_name)}}: Dict[{{val.get("key_type")}}, {{val.get("key_type")}}]
     {% elif val.get("type") == "blob"%}
-    {{pythonify_symbol(attribute_name)}}: Union[bytes, Cloud_Output]
+    {{pythonify_symbol(attribute_name)}}: Union[bytes, Path, Cloud_Output]
     {%else%}
     {{pythonify_symbol(attribute_name)}}; {{val}}
     Bad
@@ -134,7 +135,7 @@ class {{resource.get("resource_name").lower()}}_model(Rendered_Resource):
     {% elif attribute.get("type") == "timestamp"%}
     {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Union[str, Cloud_Output]{{"]" if not attribute.get("isrequired") else ""}}
     {% elif attribute.get("type") == "blob"%}
-    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Union[bytes, Cloud_Output]{{"]" if not attribute.get("isrequired") else None}}
+    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Union[bytes, Path, Cloud_Output]{{"]" if not attribute.get("isrequired") else None}}
     {%else%}
     {{pythonify_symbol(attribute.get("param_name"))}}; {{attribute}}
     Bad

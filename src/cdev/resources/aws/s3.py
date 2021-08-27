@@ -1,6 +1,7 @@
 from pydantic.main import BaseModel
 from enum import Enum
 from typing import List, Optional, Callable, Any
+from pathlib import Path
 
 
 from ...constructs import Cdev_Resource
@@ -143,7 +144,11 @@ class Object(Cdev_Resource):
 
     """
 
+<<<<<<< HEAD
     def __init__(self, cdev_name: str, Bucket: str, Key: str, ACL: ObjectCannedACL=None, Body: bytes=None, CacheControl: str=None, ContentDisposition: str=None, ContentEncoding: str=None, ContentLanguage: str=None, ContentLength: int=None, ContentMD5: str=None, ContentType: str=None, Expires: str=None, GrantFullControl: str=None, GrantRead: str=None, GrantReadACP: str=None, GrantWriteACP: str=None, Metadata: Dict[str, str]=None, ServerSideEncryption: ServerSideEncryption=None, StorageClass: StorageClass=None, WebsiteRedirectLocation: str=None, SSECustomerAlgorithm: str=None, SSECustomerKey: str=None, SSECustomerKeyMD5: str=None, SSEKMSKeyId: str=None, SSEKMSEncryptionContext: str=None, BucketKeyEnabled: bool=None, RequestPayer: RequestPayer=None, Tagging: str=None, ObjectLockMode: ObjectLockMode=None, ObjectLockRetainUntilDate: str=None, ObjectLockLegalHoldStatus: ObjectLockLegalHoldStatus=None, ExpectedBucketOwner: str=None):
+=======
+    def __init__(self, cdev_name: str, Bucket: str, Key: str, ACL: ObjectCannedACL=None, Body: Union[bytes, Path]=None, CacheControl: str=None, ContentDisposition: str=None, ContentEncoding: str=None, ContentLanguage: str=None, ContentLength: int=None, ContentMD5: str=None, ContentType: str=None, Expires: str=None, GrantFullControl: str=None, GrantRead: str=None, GrantReadACP: str=None, GrantWriteACP: str=None, Metadata: Dict[str, str]=None, ServerSideEncryption: ServerSideEncryption=None, StorageClass: StorageClass=None, WebsiteRedirectLocation: str=None, SSECustomerAlgorithm: str=None, SSECustomerKey: str=None, SSECustomerKeyMD5: str=None, SSEKMSKeyId: str=None, SSEKMSEncryptionContext: str=None, BucketKeyEnabled: bool=None, RequestPayer: RequestPayer=None, Tagging: str=None, ObjectLockMode: ObjectLockMode=None, ObjectLockRetainUntilDate: str=None, ObjectLockLegalHoldStatus: ObjectLockLegalHoldStatus=None, ExpectedBucketOwner: str=None):
+>>>>>>> cli
         ""
         super().__init__(cdev_name)
 
@@ -444,6 +449,9 @@ class Object(Cdev_Resource):
             return Cloud_Output(**{"resource": f"cdev::aws::s3::object::{self.hash}", "key": key, "type": "cdev_output"})
 
 
+<<<<<<< HEAD
 class s3_object(BaseModel):
     S3Bucket: str
     S3Key: str
+=======
+>>>>>>> cli
