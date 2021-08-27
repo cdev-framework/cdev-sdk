@@ -1,22 +1,26 @@
-import inspect
 import importlib
 import os
 import sys
-from sortedcontainers.sortedlist import SortedKeyList, SortedList
-from typing import List
+from pydantic.types import FilePath
+from sortedcontainers.sortedlist import SortedKeyList
+from typing import Dict, List
 
 
 from cdev.constructs import Cdev_Resource
 from cdev.models import Rendered_Resource
-from cdev.resources.aws.lambda_function import aws_lambda_function, lambda_function_configuration
-from cdev.utils import hasher, paths
+
+from cdev.resources.simple.xlambda import simple_lambda
+
+from cdev.utils import hasher, paths, logger
 
 from ..cparser import cdev_parser as cparser
 
-from  .models import pre_parsed_serverless_function, parsed_serverless_function_info, parsed_serverless_function_resource
+
 
 from . import utils as fs_utils
 from . import writer
+
+log = logger.get_cdev_logger(__name__)
 
 
 ANNOTATION_LABEL = "lambda_function_annotation"
@@ -43,156 +47,84 @@ def _find_resources_information_from_file(fp) -> List[Rendered_Resource]:
     mod = importlib.import_module(mod_name)
     rv = []
 
-    info = _create_serverless_function_resources(mod, fp)
-
-    if info:
-        rv.extend(info)
+    #info = _create_serverless_function_resources(mod, fp)
+#
+    #if info:
+    #    rv.extend(info)
     
+    functions_to_parse = []
+    function_name_to_rendered_resource = {}
 
     for i in dir(mod):
         if isinstance(getattr(mod,i), Cdev_Resource):
             # Find all the Cdev_Resources in the module and render them
             obj = getattr(mod,i)
-            rv.append(obj.render())
+            log.info(f"FOUND {obj} as Cdev_Resource in {mod}")
+
+            if isinstance(obj, simple_lambda):
+                log.info(f"FOUND FUNCTION TO PARSE {obj}")
+                pre_parsed_info = obj.render()
+
+                functions_to_parse.append(pre_parsed_info.configuration.Handler)
+                function_name_to_rendered_resource[pre_parsed_info.configuration.Handler] = pre_parsed_info
+
+            else:
+                rv.append(obj.render())
+
+    log.info(f"FUNCTIONS TO PARSE: {functions_to_parse}")
+    if functions_to_parse:
+        parsed_function_info = _create_serverless_function_resources(fp, functions_to_parse)
+        log.info(parsed_function_info)
+
+        for parsed_function_name in parsed_function_info:
+            if not parsed_function_name in function_name_to_rendered_resource:
+                log.error("ERROR UNKNOWN FUNCTION NAME RETURNED")
+                raise Exception
+
+            tmp = function_name_to_rendered_resource.get(parsed_function_name)
+            tmp.src_code_hash = parsed_function_info.get(parsed_function_name).get("src_code_hash")
+
+            tmp.filepath =  parsed_function_info.get(parsed_function_name).get("file_path")
+            tmp.configuration.Handler = parsed_function_info.get(parsed_function_name).get("Handler")
+
+            tmp.config_hash = tmp.configuration.get_cdev_hash()
+
+
+            tmp.hash = hasher.hash_list([tmp.src_code_hash, tmp.config_hash])
+
+
+            log.info(f"updated to {tmp}")
+            rv.append(tmp)
 
     return rv
 
 
-def _create_serverless_function_resources(mod, fp) -> List[aws_lambda_function]:
-    serverless_function_information = _find_serverless_function_information_in_module(mod)
+def _create_serverless_function_resources(filepath: FilePath, functions_names_to_parse: List[str], manual_includes: Dict = {}, global_includes: List = [] ) -> Dict:
 
-    if not serverless_function_information:
-        return
 
-    include_functions_list = [x.handler_name for x in serverless_function_information]
+    include_functions_list = functions_names_to_parse
     include_functions_set = set(include_functions_list)
 
-    parsed_function_info = cparser.parse_functions_from_file(fp, include_functions=include_functions_list, remove_top_annotation=True)
+    parsed_function_info = cparser.parse_functions_from_file(filepath, include_functions=include_functions_list, remove_top_annotation=True)
 
-    handler_to_functionobj = {}
-    for serverless_func in serverless_function_information:
-
-        if serverless_func.handler_name in include_functions_set:
-            handler_to_functionobj[serverless_func.handler_name] = serverless_func
-
-    function_info = []
-
+    rv = {}
     for parsed_function in parsed_function_info.parsed_functions:
-        tmp = handler_to_functionobj.get(parsed_function.name).dict()
-        tmp["needed_lines"] = parsed_function.get_line_numbers_serializeable()
-        tmp["dependencies"] = list(SortedList(parsed_function.imported_packages))
-        function_info.append(parsed_serverless_function_info(**tmp))
+        log.info(f"{parsed_function.name} -> {parsed_function}")
+        final_info = {}
 
-    # Get the file as a list of lines so that we can get individual lines
-    file_list = fs_utils.get_file_as_list(fp)
-    rv = []
-    for function_info_obj in function_info:
-        # TODO add ability to create the layers and events for this function
-        # For now I don't have an easy way of doing this because I have not implemented
-        # Output objects
-
-        # For each function need to add info about:
-        #   - Parsed Path Location -> path to parsed file loc
-        #   - Source Code Hash     -> hash([line1,line2,....])
-        #   - Dependencies Hash    -> hash([dep1,dep2,...])
-        #   - Identity Hash        -> hash(src_code_hash, dependencies_hash)
-        #   - Total Hash           -> hash(identity_hash, metadata_hash) 
-        #   - Metadata Hash        -> hash(parsed_path)
-
-        # Used keys:
-
-        # Parsed Path
-        final_function_info = {}
-
-        full_path = fs_utils.get_parsed_path(fp, function_info_obj.handler_name)
-        writer.write_intermediate_file(fp, function_info_obj.needed_lines, full_path)
-        final_function_info['FPath'] = paths.get_relative_to_project_path(full_path)
-
-        function_info_obj.configuration["Handler"] = function_info_obj.configuration["Handler"] +"."+ function_info_obj.configuration["Handler"]
-        
-        final_function_info['Configuration'] = lambda_function_configuration(**function_info_obj.configuration)
-        final_function_info['FunctionName'] = function_info_obj.name
-
-        final_function_info['permissions'] = function_info_obj.permissions
-
-        final_function_info['src_code_hash'] = hasher.hash_file(full_path)
-
-        final_function_info['config_hash'] = final_function_info['Configuration'].get_cdev_hash()
-
-        final_function_info['permission_hash'] = hasher.hash_list(function_info_obj.permissions)
+        full_path = fs_utils.get_parsed_path(filepath, parsed_function.name)
+        writer.write_intermediate_file(filepath, parsed_function.get_line_numbers_serializeable(), full_path)
 
 
-        # Create the total hash
-        final_function_info['hash'] = hasher.hash_list([final_function_info['src_code_hash'], final_function_info['config_hash'], final_function_info['permission_hash']])
-        final_function_info['ruuid'] = "cdev::aws::lambda_function"
-        final_function_info['name'] = function_info_obj.name
+        final_info["file_path"] = paths.get_relative_to_project_path(full_path)
+        final_info["Handler"] = parsed_function.name +"."+ parsed_function.name
+        final_info["src_code_hash"] = hasher.hash_file(full_path)
 
-
-        # Hash of dependencies directly used in this function
-        #if function_info.get('dependencies'):
-        #    dependencies_hash = hasher.hash_list(function_info.get('dependencies'))
-        #else:
-        #    dependencies_hash = "0"
-        #
-        #function_info['dependencies_hash'] = dependencies_hash
-
-
-
-
-        ## BASE RENDERED RESOURCE INFORMATION
-        
-    
-        
-        as_resource = aws_lambda_function(
-            **final_function_info
-        )
-
-
-        rv.append(as_resource)
+        rv[parsed_function.name] = final_info
 
     return rv
-
     
 
-
-def _find_serverless_function_information_in_module(python_module) -> List[pre_parsed_serverless_function]:
-    listOfFunctions = inspect.getmembers(python_module, inspect.isfunction)
-    
-    if not listOfFunctions:
-        return
-
-    any_servless_functions = False
-
-    # TODO Expand this to handle other annotation symbols
-    for _name, func in listOfFunctions:
-
-        if func.__qualname__.startswith(ANNOTATION_LABEL+"."):
-            any_servless_functions = True
-
-    if not any_servless_functions:
-        return
-
-
-    serverless_function_information = []
-
-
-    for _name, func in listOfFunctions:
-        if func.__qualname__.startswith(ANNOTATION_LABEL+"."):
-            info = _convert_to_preparsed_info(func())
-            serverless_function_information.append(info)
-            
-    return serverless_function_information
-
-
-def _convert_to_preparsed_info(obj: aws_lambda_function) -> pre_parsed_serverless_function:
-
-    return pre_parsed_serverless_function(**{
-        "name": obj.name,
-        "handler_name":obj.Configuration.Handler,
-        "description":obj.Configuration.Description,
-        "configuration": obj.Configuration,
-        "permissions": obj.permissions
-    })
 
 
 def parse_folder(folder_path, prefix=None) -> List[Rendered_Resource]:
