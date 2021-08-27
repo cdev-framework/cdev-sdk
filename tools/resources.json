@@ -63,6 +63,12 @@
                     "ruuid": "cdev::aws::s3::bucket",
                     "create": "CreateBucket",
                     "remove": "DeleteBucket"
+                },
+                {
+                    "name": "Object",
+                    "ruuid": "cdev::aws::s3::object",
+                    "create": "PutObject",
+                    "remove": "DeleteObject"
                 }
             ]
         },

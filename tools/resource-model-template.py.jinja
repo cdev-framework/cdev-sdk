@@ -131,6 +131,10 @@ class {{resource.get("resource_name").lower()}}_model(Rendered_Resource):
     {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Union[int, Cloud_Output]{{"]" if not attribute.get("isrequired") else ""}}
     {% elif attribute.get("type") == "map"%}
     {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Union[Dict[{{attribute.get('key_type')}},{{attribute.get('val_type')}}], Cloud_Output]{{"]" if not attribute.get("isrequired") else ""}}
+    {% elif attribute.get("type") == "timestamp"%}
+    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Union[str, Cloud_Output]{{"]" if not attribute.get("isrequired") else ""}}
+    {% elif attribute.get("type") == "blob"%}
+    {{pythonify_symbol(attribute.get("param_name"))}}: {{"Optional[" if not attribute.get("isrequired") else ""}}Union[bytes, Cloud_Output]{{"]" if not attribute.get("isrequired") else None}}
     {%else%}
     {{pythonify_symbol(attribute.get("param_name"))}}; {{attribute}}
     Bad

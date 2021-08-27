@@ -34,7 +34,7 @@ def pythonify_symbol(s: str):
     else:
         rv = s
 
-    return rv.replace("-", "_").replace(".", "_")
+    return rv.replace("-", "_").replace(".", "_").replace(":", "_")
 
 
 def _find_all_dependent_shapes(shape_name, all_needed_shapes, botoinfo, include_this):
@@ -181,20 +181,28 @@ def flatten_attributes_to_params(attributes: list):
     for attribute in sorted_attributes:
         if attribute.get("type") == "structure":
             final_string = f"{final_string}, {attribute.get('param_name')}: {attribute.get('name')}{'=None' if not attribute.get('isrequired') else ''}"
-        if attribute.get("type") == "list":
+        elif attribute.get("type") == "list":
             final_string = f"{final_string}, {attribute.get('param_name')}: List[{attribute.get('val_type')}]{'=None' if not attribute.get('isrequired') else ''}"
-        if attribute.get("type") == "string":
+        elif attribute.get("type") == "string":
             final_string = f"{final_string}, {attribute.get('param_name')}: str{'=None' if not attribute.get('isrequired') else ''}"
-        if attribute.get("type") == "integer":
+        elif attribute.get("type") == "integer":
             final_string = f"{final_string}, {attribute.get('param_name')}: int{'=None' if not attribute.get('isrequired') else ''}"
-        if attribute.get("type") == "double":
+        elif attribute.get("type") == "double":
             final_string = f"{final_string}, {attribute.get('param_name')}: int{'=None' if not attribute.get('isrequired') else ''}"
-        if attribute.get("type") == "enum":
+        elif attribute.get("type") == "long":
+            final_string = f"{final_string}, {attribute.get('param_name')}: int{'=None' if not attribute.get('isrequired') else ''}"
+        elif attribute.get("type") == "blob":
+            final_string = f"{final_string}, {attribute.get('param_name')}: bytes{'=None' if not attribute.get('isrequired') else ''}"
+        elif attribute.get("type") == "timestamp":
+            final_string = f"{final_string}, {attribute.get('param_name')}: str{'=None' if not attribute.get('isrequired') else ''}"
+        elif attribute.get("type") == "enum":
             final_string = f"{final_string}, {attribute.get('param_name')}: {attribute.get('name')}{'=None' if not attribute.get('isrequired') else ''}"
-        if attribute.get("type") == "boolean":
+        elif attribute.get("type") == "boolean":
             final_string = f"{final_string}, {attribute.get('param_name')}: bool{'=None' if not attribute.get('isrequired') else ''}"
-        if attribute.get("type") == "map":
+        elif attribute.get("type") == "map":
             final_string = f"{final_string}, {attribute.get('param_name')}: Dict[{attribute.get('key_type')}, {attribute.get('val_type')}]{'=None' if not attribute.get('isrequired') else ''}"
+        else:
+            print(attribute.get("type"))
 
     return final_string[2:]
 
