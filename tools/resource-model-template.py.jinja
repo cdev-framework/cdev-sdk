@@ -34,6 +34,8 @@ class {{struct.get("name")}}(BaseModel):
     {{pythonify_symbol(attribute_name)}}: Union[int, Cloud_Output]
     {% elif val.get("type") == "map"%}
     {{pythonify_symbol(attribute_name)}}: Dict[{{val.get("key_type")}}, {{val.get("key_type")}}]
+    {% elif val.get("type") == "blob"%}
+    {{pythonify_symbol(attribute_name)}}: Union[bytes, Cloud_Output]
     {%else%}
     {{pythonify_symbol(attribute_name)}}; {{val}}
     Bad
