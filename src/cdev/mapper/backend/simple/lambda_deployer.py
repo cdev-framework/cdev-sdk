@@ -19,7 +19,7 @@ def remove_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_lam
     return True
 
 
-def handle_simple_api_deployment(resource_diff: Resource_State_Difference) -> bool:
+def handle_simple_lambda_function_deployment(resource_diff: Resource_State_Difference) -> bool:
     try:
         if resource_diff.action_type == Action_Type.CREATE:
 
