@@ -72,14 +72,6 @@ class FunctionCode(BaseModel):
 
     """
 
-
-    ZipFile: Union[bytes, Cloud_Output]
-    """
-    The base64-encoded contents of the deployment package. Amazon Web Services SDK and Amazon Web Services CLI clients handle the encoding for you.
-
-
-    """
-
     S3Bucket: Union[str, Cloud_Output]
     """
     An Amazon S3 bucket in the same Amazon Web Services Region as your function. The bucket can be in a different Amazon Web Services account.
@@ -94,29 +86,14 @@ class FunctionCode(BaseModel):
 
     """
 
-    S3ObjectVersion: Union[str, Cloud_Output]
-    """
-    For versioned objects, the version of the deployment package object to use.
 
 
-    """
 
-    ImageUri: Union[str, Cloud_Output]
-    """
-    URI of a [container image](https://docs.aws.amazon.com/lambda/latest/dg/lambda-images.html) in the Amazon ECR registry.
-
-
-    """
-
-
-    def __init__(self, ZipFile: bytes, S3Bucket: str, S3Key: str, S3ObjectVersion: str, ImageUri: str ):
+    def __init__(self, S3Bucket: str, S3Key: str, ):
         "My doc string"
         super().__init__(**{
-            "ZipFile": ZipFile,
             "S3Bucket": S3Bucket,
             "S3Key": S3Key,
-            "S3ObjectVersion": S3ObjectVersion,
-            "ImageUri": ImageUri,
         })        
 
 
