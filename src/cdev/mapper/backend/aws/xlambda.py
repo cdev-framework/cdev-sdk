@@ -59,7 +59,7 @@ def _create_lambdafunction(identifier: str, resource: lambdafunction_model) -> l
 
 
 
-        print(rv)
+        #print(rv)
 
 
         return rv

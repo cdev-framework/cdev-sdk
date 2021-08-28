@@ -145,7 +145,7 @@ def _create_lambda_function(create_event: create_aws_lambda_function_event) -> b
     args["FunctionName"] = create_event.FunctionName
     try:
         response = client.create_function(**args)
-        print(f"AWS RESPONSE -> {json.dumps(response)}")
+        #print(f"AWS RESPONSE -> {json.dumps(response)}")
     except botocore.exceptions.ClientError as e:
         print(e.response)
         return False

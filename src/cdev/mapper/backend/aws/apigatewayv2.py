@@ -57,7 +57,7 @@ def _create_api(identifier: str, resource: api_model) -> api_output:
 
         rv = response
 
-        print(rv)
+        #print(rv)
 
 
         return rv

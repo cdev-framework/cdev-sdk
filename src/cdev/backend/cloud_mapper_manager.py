@@ -111,6 +111,20 @@ def get_output_value(identifier: str, key: str, transformer: Callable[[Any], Any
     return original_data
 
 
+def get_output_value_by_name(resource_type: str, name: str, transformer: Callable[[Any], Any]=None) -> str:
+    cloud_mapping =  backend_utils.load_cloud_mapping()
+
+    for resource_id in cloud_mapping.state:
+        for deployed_resource in cloud_mapping.state.get(resource_id).deployed_resources:
+            if deployed_resource.get("ruuid") == resource_type:
+                if deployed_resource.get("api_name") == name:
+                    return cloud_mapping.state.get(resource_id).output
+
+    print(f"COULD NOT FIND type:{resource_type}, {name}")
+    return None
+
+
+
 def update_output_value(identifier: str, info: dict) -> bool:
     cloud_mapping =  backend_utils.load_cloud_mapping()
 
