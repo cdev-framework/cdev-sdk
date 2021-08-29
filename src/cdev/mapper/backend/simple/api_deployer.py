@@ -27,11 +27,29 @@ def create_simple_api(identifier: str, resource: simple_api.simple_api_model) ->
     rv = apigatewayv2_deployer._create_api("", _api_model)
     log.info(rv)
 
+
+
     info = {
+        
         "endpoint": rv.get("ApiEndpoint"),
         "cloud_id": rv.get("ApiId"),
         "endpoints": {}
     }
+
+    _stage_model = apigatewayv2_models.stage_model(**{
+        "ruuid": "",
+        "hash": "",
+        "name": "",
+        "ApiId": info.get('cloud_id'),
+        "AutoDeploy": True,
+        "StageName": "prod"
+    })
+
+    rv2 = apigatewayv2_deployer._create_stage("", _stage_model)
+
+    log.info(rv2)
+
+    info['base_endpoint'] = f"{rv.get('ApiEndpoint')}/{rv2.get('StageName')}"
 
     if resource.routes:
         for route in resource.routes:

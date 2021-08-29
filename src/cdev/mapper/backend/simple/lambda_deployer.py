@@ -10,6 +10,7 @@ from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
 from ..aws import s3 as s3_deployer
 from ..aws import xlambda as lambda_deployer
 from ..aws import apigatewayv2 as apigateway_deployer
+from ..aws import aws_client as raw_aws_client
 
 from ..aws import aws_client
 
@@ -105,10 +106,13 @@ def handle_adding_api_event(event, cloud_function_id):
         if routes.get(route).get("route") == event.config.get("path") and routes.get(route).get("verbs") == event.config.get("verb"):
             log.info(f"FOUND CORRECT ROUTE -> {route}")
             route_id = routes.get(route).get("cloud_id")
+            route_verb = event.config.get("verb")
+            route_path = routes.get(route).get("route")
+
             break
 
     log.info(f"Route ID -> {route_id}")
-
+    log.info(f"Route Integration Method: {route_verb} {route_path}")
     created_integration_model = integration_model(**{
         "ruuid": "",
         "hash": "",
@@ -116,12 +120,27 @@ def handle_adding_api_event(event, cloud_function_id):
         "ApiId": api_id,
         "IntegrationType": IntegrationType.AWS_PROXY,
         "IntegrationUri": cloud_function_id,
-        "PayloadFormatVersion": "2.0"
+        "PayloadFormatVersion": "2.0",
+        "IntegrationMethod": f"{route_verb}"
 
     })
     rv = apigateway_deployer._create_integration("", created_integration_model)
-
     log.info(rv)
+    # Update route to use the integration
+    update_info = {
+        "ApiId": api_id,
+        "RouteId": route_id,
+        "Target": f"integrations/{rv.get('IntegrationId')}"
+    }
+
+    log.info(update_info)
+
+    rv2 = raw_aws_client.run_client_function("apigatewayv2", "update_route", update_info)
+
+    log.info(rv2)
+
+
+    
 
 
 
