@@ -32,7 +32,8 @@ class Api(Cdev_Resource):
 
 
         event = lambda_event(**{
-            "original_resource_id": self.api_name, 
+            "original_resource_name": self.name,
+            "original_resource_type": "cdev::simple::api",
             "event_type" :EventTypes.HTTP_API_ENDPOINT,
             "config": config
             }

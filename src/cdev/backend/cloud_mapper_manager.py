@@ -34,7 +34,6 @@ def add_identifier(identifier) -> bool:
         return False
 
     cloud_mapping.state[identifier] = CloudState(**{
-        "deployed_resources": [],
         "output": {}
     })
 
@@ -115,10 +114,8 @@ def get_output_value_by_name(resource_type: str, name: str, transformer: Callabl
     cloud_mapping =  backend_utils.load_cloud_mapping()
 
     for resource_id in cloud_mapping.state:
-        for deployed_resource in cloud_mapping.state.get(resource_id).deployed_resources:
-            if deployed_resource.get("ruuid") == resource_type:
-                if deployed_resource.get("api_name") == name:
-                    return cloud_mapping.state.get(resource_id).output
+        if cloud_mapping.state.get(resource_id).output.get("cdev_name") == name and cloud_mapping.state.get(resource_id).output.get("ruuid") == resource_type:
+            return cloud_mapping.state.get(resource_id).output
 
     print(f"COULD NOT FIND type:{resource_type}, {name}")
     return None

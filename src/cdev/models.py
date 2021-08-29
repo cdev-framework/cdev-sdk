@@ -137,7 +137,7 @@ class Rendered_Component(BaseModel):
 
     all_parent_resources: Optional[Set[str]]
     """
-    A set of all resource identifications (ruuid:hash) that are a parent resource to some other resource in the component. This set serves as 
+    A set of all resource identifications (ruuid:hash:<hash> or ruuid:name:<name>) that are a parent resource to some other resource in the component. This set serves as 
     a fast way of checking if we need to update descandants when a resource is updated 
     """
 

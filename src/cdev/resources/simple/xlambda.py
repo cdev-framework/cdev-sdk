@@ -22,7 +22,9 @@ class EventTypes(Enum):
 
 
 class Event(BaseModel):
-    original_resource_id: str
+    original_resource_name: str
+
+    original_resource_type: str
 
     event_type: EventTypes
 
@@ -95,8 +97,11 @@ class simple_lambda(Cdev_Resource):
         self.config_hash = configuration.get_cdev_hash()
         self.full_hash = hasher.hash_list([self.src_code_hash, self.config_hash])
 
+        self.parents = [f"{x.original_resource_type};name;{x.original_resource_name}" for x in events]
+
 
     def render(self) -> simple_aws_lambda_function_model:
+       
         return simple_aws_lambda_function_model(**{
             "name": self.name,
             "ruuid": "cdev::simple::lambda_function",
@@ -105,8 +110,10 @@ class simple_lambda(Cdev_Resource):
             "events": self.events,
             "configuration": self.configuration,
             "src_code_hash": self.src_code_hash,
-            "config_hash": self.config_hash
+            "config_hash": self.config_hash,
+            "parent_resources": self.parents
         })
+        
 
     def get_includes(self) -> List[str]:
         return self.includes

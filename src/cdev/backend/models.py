@@ -9,7 +9,6 @@ from pydantic import BaseModel
 
 
 class CloudState(BaseModel):
-    deployed_resources: List[Dict]
     output: Dict
 
 class CloudMapping(BaseModel):

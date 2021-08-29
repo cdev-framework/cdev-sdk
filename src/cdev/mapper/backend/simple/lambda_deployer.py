@@ -24,16 +24,19 @@ BUCKET = SETTINGS.get("S3_ARTIFACTS_BUCKET")
 
 
 def create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_lambda_function_model) -> bool:
-    log.info(resource)
+    log.debug(resource)
 
     keyname = resource.name + f"-{resource.hash}" + ".zip"
 
     original_zipname = resource.configuration.Handler.split(".")[0] + ".zip"
     zip_location = os.path.join(os.path.dirname(os.path.abspath(resource.filepath)), original_zipname )
     
-    log.info(f"KEYNAME {keyname}; ZIPLOCATION {zip_location}; is valid file {os.path.isfile(zip_location)}")
+    log.debug(f"KEYNAME {keyname}; ZIPLOCATION {zip_location}; is valid file {os.path.isfile(zip_location)}")
 
-    final_info = {}
+    final_info = {
+        "ruuid": resource.ruuid,
+        "cdev_name": resource.name,
+    }
 
     # CREATE S3 artifact
     with open(zip_location, "rb") as fh:
@@ -46,7 +49,7 @@ def create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_lam
             "Body": fh.read()
         })
         rv = s3_deployer._create_object("", object_model)
-    log.info(rv)
+    log.debug(rv)
 
     final_info['artifact_bucket'] = BUCKET
     final_info['artifact_key'] = keyname
@@ -70,7 +73,7 @@ def create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_lam
     log.debug(resource.events)
     if resource.events:
         for event in resource.events:
-            log.info(f"Adding event -> {event}")
+            log.debug(f"Adding event -> {event}")
             handle_adding_api_event(event, final_info.get("cloud_id"))
 
 
@@ -86,33 +89,33 @@ def create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_lam
     })
 
     rv = lambda_deployer._create_permission("", permission_model)
-    log.info(rv)
+    log.debug(rv)
 
 
-    cdev_cloud_mapper.add_cloud_resource(identifier, resource)
+    cdev_cloud_mapper.add_identifier(identifier)
     cdev_cloud_mapper.update_output_value(identifier, final_info)
 
     return True
 
 
 def handle_adding_api_event(event, cloud_function_id):
-    api_resource = cdev_cloud_mapper.get_output_value_by_name("cdev::simple::api", event.original_resource_id)
-    log.info(f"FOUND RESOURCE -> {api_resource}")
+    api_resource = cdev_cloud_mapper.get_output_value_by_name("cdev::simple::api", event.original_resource_name)
+    log.debug(f"FOUND RESOURCE -> {api_resource}")
     api_id = api_resource.get("cloud_id")
     routes = api_resource.get("endpoints")
 
     route_id=""
     for route in routes:
         if routes.get(route).get("route") == event.config.get("path") and routes.get(route).get("verbs") == event.config.get("verb"):
-            log.info(f"FOUND CORRECT ROUTE -> {route}")
+            log.debug(f"FOUND CORRECT ROUTE -> {route}")
             route_id = routes.get(route).get("cloud_id")
             route_verb = event.config.get("verb")
             route_path = routes.get(route).get("route")
 
             break
 
-    log.info(f"Route ID -> {route_id}")
-    log.info(f"Route Integration Method: {route_verb} {route_path}")
+    log.debug(f"Route ID -> {route_id}")
+    log.debug(f"Route Integration Method: {route_verb} {route_path}")
     created_integration_model = integration_model(**{
         "ruuid": "",
         "hash": "",
@@ -125,7 +128,7 @@ def handle_adding_api_event(event, cloud_function_id):
 
     })
     rv = apigateway_deployer._create_integration("", created_integration_model)
-    log.info(rv)
+    log.debug(rv)
     # Update route to use the integration
     update_info = {
         "ApiId": api_id,
@@ -133,11 +136,11 @@ def handle_adding_api_event(event, cloud_function_id):
         "Target": f"integrations/{rv.get('IntegrationId')}"
     }
 
-    log.info(update_info)
+    log.debug(update_info)
 
     rv2 = raw_aws_client.run_client_function("apigatewayv2", "update_route", update_info)
 
-    log.info(rv2)
+    log.debug(rv2)
 
 
     

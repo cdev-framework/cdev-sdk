@@ -25,13 +25,13 @@ def create_simple_api(identifier: str, resource: simple_api.simple_api_model) ->
     )
 
     rv = apigatewayv2_deployer._create_api("", _api_model)
-    log.info(rv)
+    log.debug(rv)
 
 
 
     info = {
-        
-        "endpoint": rv.get("ApiEndpoint"),
+        "ruuid": resource.ruuid,
+        "cdev_name": resource.name,
         "cloud_id": rv.get("ApiId"),
         "endpoints": {}
     }
@@ -47,9 +47,9 @@ def create_simple_api(identifier: str, resource: simple_api.simple_api_model) ->
 
     rv2 = apigatewayv2_deployer._create_stage("", _stage_model)
 
-    log.info(rv2)
+    log.debug(rv2)
 
-    info['base_endpoint'] = f"{rv.get('ApiEndpoint')}/{rv2.get('StageName')}"
+    info['endpoint'] = f"{rv.get('ApiEndpoint')}/{rv2.get('StageName')}"
 
     if resource.routes:
         for route in resource.routes:
@@ -66,7 +66,7 @@ def create_simple_api(identifier: str, resource: simple_api.simple_api_model) ->
 
             tmp_rv = apigatewayv2_deployer._create_route("", _route_model)
 
-            log.info(tmp_rv)
+            log.debug(tmp_rv)
 
             route_info = {
                 "cloud_id": tmp_rv.get("RouteId"),
@@ -83,7 +83,7 @@ def create_simple_api(identifier: str, resource: simple_api.simple_api_model) ->
 
 
 
-    cdev_cloud_mapper.add_cloud_resource(identifier, resource)
+    cdev_cloud_mapper.add_identifier(identifier)
     cdev_cloud_mapper.update_output_value(identifier, info)
 
     return True

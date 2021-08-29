@@ -151,7 +151,7 @@ def _create_route(identifier: str, resource: route_model) -> route_output:
         for additional in ADDITIONAL_OUTPUT:
             if additional in args:
                 rv[additional] = args.get(additional)
-        print(rv)
+        #print(rv)
 
 
         return rv
@@ -245,7 +245,7 @@ def _create_integration(identifier: str, resource: integration_model) -> integra
         for additional in ADDITIONAL_OUTPUT:
             if additional in args:
                 rv[additional] = args.get(additional)
-        print(rv)
+        #print(rv)
 
 
         return rv
@@ -339,7 +339,7 @@ def _create_stage(identifier: str, resource: stage_model) -> stage_output:
         for additional in ADDITIONAL_OUTPUT:
             if additional in args:
                 rv[additional] = args.get(additional)
-        print(rv)
+        #print(rv)
 
 
         return rv

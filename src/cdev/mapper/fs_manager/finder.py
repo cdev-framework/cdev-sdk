@@ -67,6 +67,7 @@ def _find_resources_information_from_file(fp) -> List[Rendered_Resource]:
 
                 functions_to_parse.append(pre_parsed_info.configuration.Handler)
                 function_name_to_rendered_resource[pre_parsed_info.configuration.Handler] = pre_parsed_info
+                log.info(f"PREPROCESS {pre_parsed_info}")
 
             else:
                 rv.append(obj.render())
