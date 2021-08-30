@@ -31,6 +31,9 @@ class Event(BaseModel):
     config: Dict
 
 
+    def get_hash(self) -> str:
+        return hasher.hash_list([self.original_resource_name, self.original_resource_type, self.config])
+
 
 
 class lambda_function_configuration_environment(BaseModel):

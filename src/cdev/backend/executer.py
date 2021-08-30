@@ -53,7 +53,7 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
         resource_name_to_resource_diff = {f"{x.new_resource.ruuid};{x.new_resource.name}":x for x in component_diff.resource_diffs if x.new_resource }
         
         # We don't want to reference output of diffs that are deletes so do not include the previous diffs
-        #resource_id_to_resource_diff.update({f"{x.previous_resource.ruuid}::{x.previous_resource.hash}":x for x in component_diff.resource_diffs if not x.new_resource })
+        resource_id_to_resource_diff.update({f"{x.previous_resource.ruuid};{x.previous_resource.hash}":x for x in component_diff.resource_diffs if not x.new_resource })
         
         for resource_diff in component_diff.resource_diffs:
             if resource_diff.new_resource:
@@ -110,8 +110,10 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
             else:
                 # IF no new resource then this is a delete and should be added to the end of the TOPO sort because previous values might depend
                 # on it
+                
                 resource_id = f"{resource_diff.previous_resource.ruuid};{resource_diff.previous_resource.hash}"
                 resource_dag.add_node(resource_id)
+                log.info(f"ADDING {resource_id} AS DELETE")
                 
         
         sorted_resources = []

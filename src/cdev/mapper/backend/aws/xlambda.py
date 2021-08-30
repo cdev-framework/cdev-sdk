@@ -81,7 +81,7 @@ def _remove_lambdafunction(identifier: str, resource: lambdafunction_model):
 
 
 
-        print(rv)
+        #print(rv)
 
 
         return rv

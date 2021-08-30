@@ -3,9 +3,12 @@ from typing import Callable, List
 import boto3
 
 from cdev import settings as cdev_settings
+from cdev.utils import logger
 
 AVAILABLE_SERVICES = set(["lambda", "s3", "dynamodb", "iam", "apigatewayv2", "sqs", "apigateway"])
 
+
+log = logger.get_cdev_logger(__name__)
 
 def _get_boto_client(service_name, credentials=None, profile_name=None):
 
@@ -68,11 +71,14 @@ def monitor_status(func: Callable, params: dict, previous_val, lookup_keys: List
 
 
 def run_client_function(service: str, function_name: str, args: dict, wait: dict = None):
+    args_as_string = f"({service}, {function_name}, {args}, {wait})"
+    log.debug(f"Attempting to call aws -> {args_as_string}")
     rendered_client = _get_boto_client(service)
     method = getattr(rendered_client, function_name)
 
     if method:
         rv = method(**args)
+        log.debug(f"AWS {args_as_string} -> {rv}")
 
     if wait:
         waiter = rendered_client.get_waiter(wait.get("name"))
@@ -84,8 +90,10 @@ def run_client_function(service: str, function_name: str, args: dict, wait: dict
                 }
         }
         final_args.update( wait.get("args") )
-        print(f"WAITING {wait.get('name')}")
+        
+        log.debug(f"Begin wait {args_as_string} -> {final_args}")
         waiter.wait(**final_args)
+        log.debug(f"Finish wait {args_as_string} -> {final_args}")
 
     return rv
     
