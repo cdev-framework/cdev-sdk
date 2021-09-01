@@ -116,6 +116,9 @@ def _upload_s3_code_artifact(resource: simple_lambda.simple_aws_lambda_function_
 
 
 def _remove_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_lambda_function_model) -> bool:
+    # Steps:
+    # Remove and event that is on the function to make sure resources are properly cleaned up
+    # Remove the actual function
     log.debug(f"Attempting to delete {resource}")
     cloud_id = cdev_cloud_mapper.get_output_value(resource.hash, "cloud_id")
     log.debug(f"Current function ARN {cloud_id}")
@@ -143,6 +146,12 @@ def _remove_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
 
 
 def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_function_model,  new_resource: simple_lambda.simple_aws_lambda_function_model) -> bool:
+    # Updates can be of:
+    # Update source code or dependencies
+    # Update configuration
+    # Update events
+    
+    
     updated_info = {
 
     }
@@ -155,7 +164,6 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
                 "Environment": new_resource.configuration.Environment.dict()
             })
         
-        return True
 
     if not previous_resource.src_code_hash == new_resource.src_code_hash:
         log.debug(f"UPDATE SOURCE CODE OF {previous_resource.name}; {previous_resource.src_code_hash} -> {new_resource.src_code_hash}")

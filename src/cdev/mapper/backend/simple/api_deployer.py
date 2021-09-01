@@ -12,7 +12,7 @@ from ..aws import aws_client as raw_aws_client
 log = logger.get_cdev_logger(__name__)
 
 
-def create_simple_api(identifier: str, resource: simple_api.simple_api_model) -> bool:
+def _create_simple_api(identifier: str, resource: simple_api.simple_api_model) -> bool:
 
     # First create the API Gateway V2 resource
 
@@ -80,8 +80,19 @@ def create_simple_api(identifier: str, resource: simple_api.simple_api_model) ->
 
 
 
-def remove_simple_api(identifier: str, resource: simple_api.simple_api_model) -> bool:
-    pass
+def _remove_simple_api(identifier: str, resource: simple_api.simple_api_model) -> bool:
+    
+    api_id = cdev_cloud_mapper.get_output_value(identifier, "cloud_id")
+
+    raw_aws_client.run_client_function("apigatewayv2", "delete_api", {
+        "ApiId": api_id
+    })
+    
+    cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
+    cdev_cloud_mapper.remove_identifier(identifier)
+    log.debug(f"Delete information in resource and cloud state")
+    
+    return True
 
 
 def _create_route(api_id, route) -> str:
@@ -172,13 +183,13 @@ def handle_simple_api_deployment(resource_diff: Resource_State_Difference) -> bo
     try:
         if resource_diff.action_type == Action_Type.CREATE:
 
-            return create_simple_api(resource_diff.new_resource.hash, resource_diff.new_resource)
+            return _create_simple_api(resource_diff.new_resource.hash, resource_diff.new_resource)
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
 
             return _update_simple_api(resource_diff.previous_resource, resource_diff.new_resource)
         elif resource_diff.action_type == Action_Type.DELETE:
             
-            return remove_simple_api(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+            return _remove_simple_api(resource_diff.previous_resource.hash, resource_diff.previous_resource)
 
     except Exception as e:
         print(e)
