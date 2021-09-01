@@ -84,14 +84,13 @@ def _find_resources_information_from_file(fp) -> List[Rendered_Resource]:
 
             tmp = function_name_to_rendered_resource.get(parsed_function_name)
             tmp.src_code_hash = parsed_function_info.get(parsed_function_name).get("src_code_hash")
-
             tmp.filepath =  parsed_function_info.get(parsed_function_name).get("file_path")
             tmp.configuration.Handler = parsed_function_info.get(parsed_function_name).get("Handler")
 
             tmp.config_hash = tmp.configuration.get_cdev_hash()
 
 
-            tmp.hash = hasher.hash_list([tmp.src_code_hash, tmp.config_hash])
+            tmp.hash = hasher.hash_list([tmp.src_code_hash, tmp.config_hash, tmp.events_hash])
 
 
             log.info(f"updated to {tmp}")

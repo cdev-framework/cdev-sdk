@@ -1,5 +1,5 @@
 from os import truncate
-from typing import Any, Callable
+from typing import Any, Callable, Dict
 from cdev.backend.models import CloudState
 from . import utils as backend_utils
 
@@ -90,7 +90,7 @@ def remove_cloud_resource(identifier: str, old_resource) -> bool:
     return True
 
 
-def get_output_value(identifier: str, key: str, transformer: Callable[[Any], Any]=None) -> str:
+def get_output_value(identifier: str, key: str, transformer: Callable[[Any], Any]=None) -> Any:
     cloud_mapping =  backend_utils.load_cloud_mapping()
 
     if not identifier in cloud_mapping.state:
@@ -121,6 +121,17 @@ def get_output_value_by_name(resource_type: str, name: str, transformer: Callabl
     return None
 
 
+def get_output_value_by_hash(identifier: str) -> Dict:
+    cloud_mapping =  backend_utils.load_cloud_mapping()
+
+   
+    if not identifier in cloud_mapping.state:
+        # TODO throw error
+        return None
+
+    return cloud_mapping.state.get(identifier).output
+
+
 
 def update_output_value(identifier: str, info: dict) -> bool:
     cloud_mapping =  backend_utils.load_cloud_mapping()
@@ -133,4 +144,19 @@ def update_output_value(identifier: str, info: dict) -> bool:
 
     backend_utils.write_cloud_mapping(cloud_mapping)
 
+    return True
+
+
+def update_output_by_key(identifier: str, key: str, val: Any) -> bool:
+    
+    full_output = get_output_value_by_hash(identifier)
+
+    if not key in full_output:
+        raise Exception
+
+    full_output[key] = val
+
+    update_output_value(identifier, full_output)
+    
+    
     return True

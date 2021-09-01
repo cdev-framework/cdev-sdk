@@ -77,6 +77,7 @@ class simple_aws_lambda_function_model(Rendered_Resource):
     events: List[Event]
     src_code_hash: str
     config_hash: str
+    events_hash: str
 
     class Config:
         json_encoders = {
@@ -98,8 +99,10 @@ class simple_lambda(Cdev_Resource):
 
         self.src_code_hash = hasher.hash_file(filepath)
         self.config_hash = configuration.get_cdev_hash()
-        self.full_hash = hasher.hash_list([self.src_code_hash, self.config_hash])
-
+        self.events_hash = hasher.hash_list([x.get_hash() for x in events])
+        log.error(self.events_hash)
+        self.full_hash = hasher.hash_list([self.src_code_hash, self.config_hash, self.events_hash])
+        log.error(f"FULL HASH {self.full_hash}")
         self.parents = [f"{x.original_resource_type};name;{x.original_resource_name}" for x in events]
 
 
@@ -114,6 +117,7 @@ class simple_lambda(Cdev_Resource):
             "configuration": self.configuration,
             "src_code_hash": self.src_code_hash,
             "config_hash": self.config_hash,
+            "events_hash": self.events_hash,
             "parent_resources": self.parents
         })
         

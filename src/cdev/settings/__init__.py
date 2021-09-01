@@ -31,6 +31,7 @@ SETTINGS["S3_ARTIFACTS_BUCKET"] = "cdev-demo-project-artificats"
 
 
 SETTINGS["AWS_REGION"] = "us-east-1"
+SETTINGS["AWS_ACCOUNT"] = "369004794337"
 
 
 SETTINGS["OUTPUT_PLAIN"] = False
