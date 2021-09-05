@@ -14,7 +14,7 @@ from . import aws_client
 from .aws_lambda_models import *
 from . import aws_s3, aws_s3_models
 
-client = aws_client.get_boto_client("lambda")
+#client = aws_client.get_boto_client("lambda")
 
 
 def upload_lambda_function_code(identifier: str, lambda_resource: aws_lambda_function):

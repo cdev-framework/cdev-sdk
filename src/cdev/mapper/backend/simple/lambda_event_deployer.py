@@ -161,6 +161,14 @@ def _handle_adding_stream_event(event: simple_lambda.Event, cloud_function_id) -
     stream_arn = rv.get("TableDescription").get("LatestStreamArn")
     log.debug(f"Created Stream with arn: {stream_arn}")
 
+    rv = raw_aws_client.run_client_function("lambda", "create_event_source_mapping", {
+        "EventSourceArn": stream_arn,
+        "FunctionName": cloud_function_id,
+        "Enabled": True,
+        "BatchSize": event.config.get("BatchSize"),
+        "StartingPosition": "LATEST"
+    })
+
 
     return {"stream_arn": stream_arn, "event_type": "table:stream"}
 

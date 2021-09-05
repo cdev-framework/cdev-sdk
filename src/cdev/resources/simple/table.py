@@ -89,14 +89,15 @@ class Table(Cdev_Resource):
             }
         )
 
-    def create_stream(self, view_type: stream_type ) -> lambda_event:
+    def create_stream(self, view_type: stream_type, batch_size: int = 100) -> lambda_event:
         if self._stream:
             print(f"Already created stream on this table. Use `get_stream()` to get the current stream.")
             raise Exception
 
 
         config = {
-            "ViewType": view_type
+            "ViewType": view_type,
+            "BatchSize": batch_size
         }
 
 
