@@ -176,7 +176,7 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
 
 
     if not previous_resource.events_hash == new_resource.events_hash:
-        log.debug(f"UPDATE HASH: {previous_resource.events} -> {new_resource.events}")
+        log.debug(f"UPDATE EVENT HASH: {previous_resource.events} -> {new_resource.events}")
 
         previous_hashes = set([simple_lambda.Event(**x).get_hash() for x in previous_resource.events])
         new_hashes = set([x.get_hash() for x in new_resource.events])
@@ -188,7 +188,7 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
         if not event_output:
             event_output = {}
 
-            
+
         for event in new_resource.events:
             if not event.get_hash() in previous_hashes:
                 create_events.append(event)

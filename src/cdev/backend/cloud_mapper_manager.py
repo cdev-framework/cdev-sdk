@@ -151,9 +151,6 @@ def update_output_by_key(identifier: str, key: str, val: Any) -> bool:
     
     full_output = get_output_value_by_hash(identifier)
 
-    if not key in full_output:
-        raise Exception
-
     full_output[key] = val
 
     update_output_value(identifier, full_output)

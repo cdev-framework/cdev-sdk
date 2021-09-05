@@ -1,5 +1,4 @@
 from typing import Dict
-from cdev.mapper.backend.simple.dynamodb_deployer import handle_simple_table_deployment
 from cdev.resources.aws.apigatewayv2_models import  IntegrationType
 from cdev.utils import logger
 from cdev.resources.simple import xlambda as simple_lambda
@@ -178,6 +177,6 @@ EVENT_TO_HANDLERS = {
     },
     simple_lambda.EventTypes.TABLE_STREAM : {
         "CREATE": _handle_adding_stream_event,
-        "REMOVE": handle_simple_table_deployment
+        "REMOVE": _handle_deleting_stream_event
     }
 }
