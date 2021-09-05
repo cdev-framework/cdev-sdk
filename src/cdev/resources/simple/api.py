@@ -1,6 +1,5 @@
-from pydantic.main import BaseModel
 from enum import Enum
-from typing import Dict, List, Optional, Callable, Any
+from typing import List
 
 
 from ...constructs import Cdev_Resource

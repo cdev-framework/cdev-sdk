@@ -19,6 +19,7 @@ log = logger.get_cdev_logger(__name__)
 
 class EventTypes(Enum):
     HTTP_API_ENDPOINT = "api::endpoint"
+    TABLE_STREAM = "table:stream"
 
 
 class Event(BaseModel):
