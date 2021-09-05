@@ -19,7 +19,7 @@ log = logger.get_cdev_logger(__name__)
 
 class EventTypes(Enum):
     HTTP_API_ENDPOINT = "api::endpoint"
-    TABLE_STREAM = "table:stream"
+    TABLE_STREAM = "table::stream"
 
 
 class Event(BaseModel):
@@ -33,7 +33,9 @@ class Event(BaseModel):
 
 
     def get_hash(self) -> str:
-        return hasher.hash_list([self.original_resource_name, self.original_resource_type, self.config])
+        log.error(SortedDict(self.config))
+        log.error(SortedDict(self.config).__repr__())
+        return hasher.hash_list([self.original_resource_name, self.original_resource_type, SortedDict(self.config)])
 
 
 

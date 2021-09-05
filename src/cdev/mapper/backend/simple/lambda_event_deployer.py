@@ -73,7 +73,7 @@ def _handle_adding_api_event(event, cloud_function_id) -> Dict:
 
     raw_aws_client.run_client_function("lambda", "add_permission", permission_model_args)
 
-    return {"IntegrationId": integration_rv.get("IntegrationId"), "event_type": "api::endpoint", "Stmt_id": stmt_id}
+    return {"UUID": integration_rv.get("IntegrationId"), "event_type": "api::endpoint", "Stmt_id": stmt_id}
 
 
 
@@ -88,7 +88,7 @@ def _handle_deleting_api_event(event: simple_lambda.Event, resource_hash) -> boo
         log.error(f"Could not find info for {event} ({event.get_hash()}) in function ({resource_hash}) output")
         return False
 
-    integration_id = function_event_info.get(event.get_hash()).get("IntegrationId")
+    integration_id = function_event_info.get(event.get_hash()).get("UUID")
     stmt_id = function_event_info.get(event.get_hash()).get("Stmt_id")
     cloud_id = cdev_cloud_mapper.get_output_value(resource_hash, "cloud_id")
 
@@ -169,13 +169,32 @@ def _handle_adding_stream_event(event: simple_lambda.Event, cloud_function_id) -
         "StartingPosition": "LATEST"
     })
 
+    uuid = rv.get("UUID")
 
-    return {"stream_arn": stream_arn, "event_type": "table:stream"}
+
+    return {"stream_arn": stream_arn, "event_type": "table:stream", "UUID": uuid}
 
 
 
 def _handle_deleting_stream_event(event: simple_lambda.Event, resource_hash) -> bool:
-    pass
+    log.debug(f"Attempting to delete {event} from function {resource_hash}")
+    # Go ahead and make sure we have info for this event in the function's output and cloud integration id of this event
+    function_event_info = cdev_cloud_mapper.get_output_value(resource_hash, "events")
+    log.debug(f"Function event info {function_event_info}")
+    log.debug(event)
+    if not event.get_hash() in function_event_info:
+        log.error(f"Could not find info for {event} ({event.get_hash()}) in function ({resource_hash}) output")
+        return False
+
+    uuid = function_event_info.get(event.get_hash()).get("UUID")
+
+    raw_aws_client.run_client_function("lambda", "delete_event_source_mapping", {
+        "UUID": uuid
+    })
+    log.debug(f"Removed Event {uuid} from {resource_hash}")
+
+    return True
+
 
 
 EVENT_TO_HANDLERS = {
