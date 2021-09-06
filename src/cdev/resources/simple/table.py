@@ -96,7 +96,7 @@ class Table(Cdev_Resource):
 
 
         config = {
-            "ViewType": view_type,
+            "ViewType": view_type.value,
             "BatchSize": batch_size
         }
 

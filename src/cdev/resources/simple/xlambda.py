@@ -33,8 +33,6 @@ class Event(BaseModel):
 
 
     def get_hash(self) -> str:
-        log.error(SortedDict(self.config))
-        log.error(SortedDict(self.config).__repr__())
         return hasher.hash_list([self.original_resource_name, self.original_resource_type, SortedDict(self.config)])
 
 

@@ -149,16 +149,35 @@ def _handle_adding_stream_event(event: simple_lambda.Event, cloud_function_id) -
     table_resource = cdev_cloud_mapper.get_output_value_by_name("cdev::simple::table", event.original_resource_name)
     log.debug(f"Found Table info for {event} -> {table_resource}")
 
-
-    rv = raw_aws_client.run_client_function("dynamodb", "update_table", {
-        "TableName": table_resource.get("table_name"),
-        "StreamSpecification": {
-            "StreamEnabled": True,
-            "StreamViewType": event.config.get("ViewType").value
-        }
+    rv = raw_aws_client.run_client_function("dynamodb", "describe_table", {
+        'TableName': table_resource.get("table_name")
     })
 
-    stream_arn = rv.get("TableDescription").get("LatestStreamArn")
+    if not rv.get("Table").get("StreamSpecification"):
+        rv = raw_aws_client.run_client_function("dynamodb", "update_table", {
+            "TableName": table_resource.get("table_name"),
+            "StreamSpecification": {
+                "StreamEnabled": True,
+                "StreamViewType": event.config.get("ViewType")
+            }
+        })
+        table_data = rv.get("TableDescription")
+
+    else:
+        if not rv.get("Table").get("StreamSpecification").get("StreamEnabled"):
+            rv = raw_aws_client.run_client_function("dynamodb", "update_table", {
+            "TableName": table_resource.get("table_name"),
+            "StreamSpecification": {
+                "StreamEnabled": True,
+                "StreamViewType": event.config.get("ViewType")
+            }
+            })
+            table_data = rv.get("TableDescription")
+
+        else:
+            table_data = rv.get("Table") 
+
+    stream_arn = table_data.get("LatestStreamArn")
     log.debug(f"Created Stream with arn: {stream_arn}")
 
     rv = raw_aws_client.run_client_function("lambda", "create_event_source_mapping", {
