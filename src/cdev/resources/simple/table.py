@@ -63,6 +63,12 @@ class simple_table_model(Rendered_Resource):
     keys: List[Dict[str,  str]]
 
 
+class simple_table_output(str, Enum):
+    cloud_id = "cloud_id"
+    table_name = "table_name"
+
+
+
 
 class Table(Cdev_Resource):
 
@@ -77,12 +83,13 @@ class Table(Cdev_Resource):
         self.attributes = [{"AttributeName": x.get("AttributeName"), "AttributeType": x.get("AttributeType").value} for x in attributes]
         self.keys = [{"AttributeName": x.get("AttributeName"), "KeyType": x.get("KeyType").value} for x in keys]
         self._stream = None
+        self.hash = hasher.hash_list([self.table_name, self.attributes, self.keys])
 
     def render(self) -> simple_table_model:
         return simple_table_model(**{
             "ruuid": "cdev::simple::table",
             "name": self.name,
-            "hash": hasher.hash_list([self.table_name, self.attributes, self.keys]),
+            "hash": self.hash ,
             "table_name": self.table_name,
             "attributes": self.attributes,
             "keys": self.keys
@@ -155,7 +162,7 @@ class Table(Cdev_Resource):
         
         return (True,"")
 
+    def from_output(self, key: simple_table_output) -> Cloud_Output:
+        return Cloud_Output(**{"resource": f"cdev::simple::table::{self.hash}", "key": key.value, "type": "cdev_output"})
 
 
-class simple_api_output(str, Enum):
-    cloud_id = "cloud_id"

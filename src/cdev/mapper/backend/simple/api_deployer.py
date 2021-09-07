@@ -16,18 +16,49 @@ def _create_simple_api(identifier: str, resource: simple_api.simple_api_model) -
 
     # First create the API Gateway V2 resource
 
-    _api_model = apigatewayv2_models.api_model(
-        **{
-            "ruuid": "",
-            "hash": "",
-            "name": "",
-            "Name": resource.api_name,
-            "ProtocolType": apigatewayv2_models.ProtocolType.HTTP,
-        }
-    )
+    #_api_model = apigatewayv2_models.api_model(
+    #    **{
+    #        "ruuid": "",
+    #        "hash": "",
+    #        "name": "",
+    #        "Name": resource.api_name,
+    #        "ProtocolType": apigatewayv2_models.ProtocolType.HTTP,
+    #    }
+    #)
+#
+    #rv = apigatewayv2_deployer._create_api("", _api_model)
 
-    rv = apigatewayv2_deployer._create_api("", _api_model)
-    log.debug(rv)
+    base_args =  {
+        "Name": resource.api_name,
+        "ProtocolType": 'HTTP',
+    }
+
+    cors_args = {
+        "CorsConfiguration": {
+            "AllowOrigins": [
+                "*"
+            ],
+            "AllowMethods": [
+                "*"
+            ],
+            "AllowHeaders": [
+                "Content-Type",
+                "X-Amz-Date",
+                "Authorization",
+                "X-Api-Key",
+                "X-Amz-Security-Token",
+                "X-Amz-User-Agent"
+            ]
+        }
+    }
+
+    _ = base_args.update(cors_args) if resource.allow_cors else None
+
+    
+    log.debug(base_args)
+    rv = raw_aws_client.run_client_function("apigatewayv2", "create_api", base_args)
+
+
 
 
 

@@ -12,16 +12,18 @@ from .xlambda import Event as lambda_event, EventTypes
 class simple_api_model(Rendered_Resource):
     api_name: str
     routes: List[lambda_event]
+    allow_cors: bool
 
 
 
 
 class Api(Cdev_Resource):
 
-    def __init__(self, cdev_name: str, api_name: str) -> None:
+    def __init__(self, cdev_name: str, api_name: str, allow_cors: bool) -> None:
         super().__init__(cdev_name)
         self.api_name = api_name
         self._routes = []
+        self.allow_cors = allow_cors
 
 
     def route(self, path: str, verb: str) -> lambda_event:
@@ -47,17 +49,14 @@ class Api(Cdev_Resource):
         return simple_api_model(**{
             "ruuid": "cdev::simple::api",
             "name": self.name,
-            "hash": hasher.hash_list([hasher.hash_list(self._routes), self.api_name]),
+            "hash": hasher.hash_list([hasher.hash_list(self._routes), self.api_name, self.allow_cors]),
             "api_name": self.api_name,
-            "routes": self._routes
+            "routes": self._routes,
+            "allow_cors": self.allow_cors
             }
         )
 
 
-
-
-
 class simple_api_output(str, Enum):
     cloud_id = "cloud_id"
-
     routes = "routes"
