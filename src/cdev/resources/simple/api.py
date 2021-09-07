@@ -15,6 +15,9 @@ class simple_api_model(Rendered_Resource):
     allow_cors: bool
 
 
+class simple_api_output(str, Enum):
+    cloud_id = "cloud_id"
+    routes = "routes"
 
 
 class Api(Cdev_Resource):
@@ -24,6 +27,7 @@ class Api(Cdev_Resource):
         self.api_name = api_name
         self._routes = []
         self.allow_cors = allow_cors
+        self.hash = (hasher.hash_list([hasher.hash_list(self._routes), self.api_name, self.allow_cors]))
 
 
     def route(self, path: str, verb: str) -> lambda_event:
@@ -42,6 +46,8 @@ class Api(Cdev_Resource):
         )
 
         self._routes.append(event)
+
+        self.hash = hasher.hash_list([hasher.hash_list(self._routes), self.api_name, self.allow_cors]) 
         return event
 
     
@@ -49,14 +55,13 @@ class Api(Cdev_Resource):
         return simple_api_model(**{
             "ruuid": "cdev::simple::api",
             "name": self.name,
-            "hash": hasher.hash_list([hasher.hash_list(self._routes), self.api_name, self.allow_cors]),
+            "hash": self.hash,
             "api_name": self.api_name,
             "routes": self._routes,
             "allow_cors": self.allow_cors
             }
         )
 
+    def from_output(self, key: simple_api_output) -> Cloud_Output:
+        return Cloud_Output(**{"resource": f"cdev::simple::api::{self.hash}", "key": key.value, "type": "cdev_output"})
 
-class simple_api_output(str, Enum):
-    cloud_id = "cloud_id"
-    routes = "routes"

@@ -5,7 +5,7 @@ from typing import Dict, List
 from . import resource_state_manager 
 
 from ..constructs import Cdev_Project, CloudMapper
-from ..models import Rendered_State, Component_State_Difference, Action_Type
+from ..models import Rendered_State, Component_State_Difference, Action_Type, Resource_State_Difference
 
 from cdev.utils import logger
 
@@ -41,81 +41,22 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
         resource_state_manager.handle_component_difference(component_diff)
 
         component_name = component_diff.new_component.name
-        # nx graphs work on the element level by using the __hash__ of objects added to the graph, and to avoid making every obj support __hash__
-        # we are using the id of {x.new_resource.ruuid}::{x.new_resource.hash} to identify resources in the graph then use a dict to map back to 
-        # the actual object
-        resource_dag = nx.DiGraph()
+
 
         # build dict from {x.new_resource.ruuid}::{x.new_resource.hash} to resource
         resource_id_to_resource_diff = {f"{x.new_resource.ruuid};{x.new_resource.hash}":x for x in component_diff.resource_diffs if x.new_resource }
+        # We don't want to reference output of diffs that are deletes so do not include the previous diffs
+        #resource_id_to_resource_diff.update({f"{x.previous_resource.ruuid};{x.previous_resource.hash}":x for x in component_diff.resource_diffs if not x.new_resource })
 
         # this is used as the first check in the translation from parent_references by name
         resource_name_to_resource_diff = {f"{x.new_resource.ruuid};{x.new_resource.name}":x for x in component_diff.resource_diffs if x.new_resource }
         
-        # We don't want to reference output of diffs that are deletes so do not include the previous diffs
-        resource_id_to_resource_diff.update({f"{x.previous_resource.ruuid};{x.previous_resource.hash}":x for x in component_diff.resource_diffs if not x.new_resource })
+       
+
+        # Resources need to be ordered such that a resource the depends on the rv from the cloud of another resource is deployed after
+        resource_dag = generate_resource_dag(component_diff.resource_diffs, resource_id_to_resource_diff, resource_name_to_resource_diff)
         
-        for resource_diff in component_diff.resource_diffs:
-            if resource_diff.new_resource:
-                log.info(f"FINDING PARENTS FOR {resource_diff.new_resource.name}")
-                log.info(f"PARENTS {resource_diff.new_resource.parent_resources}")
-                resource_id = f"{resource_diff.new_resource.ruuid};{resource_diff.new_resource.hash}"
-                if resource_diff.new_resource.parent_resources:
-                    # IF the above resource has parent resources then we need to render their output and make sure this deployment
-                    # happens after
-                    resource_dag.add_node(resource_id)
 
-                    for parent_reference in resource_diff.new_resource.parent_resources:
-                        # A parent reference can be either ruuid:hash:<hash> or ruuid:name:<name>
-                        # if the parent is reference by name means we need to look up the current hash of that parent. 
-                        parent_resource_split = parent_reference.split(";")
-
-                        if parent_resource_split[1] == "name":
-                            # do lookup by name to get hash
-                            name_identifier = f"{parent_resource_split[0]};{parent_resource_split[2]}"
-                            if name_identifier in resource_name_to_resource_diff:
-                                parent_resource = resource_name_to_resource_diff.get(name_identifier)
-
-                            else:
-                                # If the parent resource in the current diffs then we are assuming that it is already in the state files from a previous deployment
-                                # This is a weak assumption, but the current way state is stored there is not a terrific way of finding out if this parent resource
-                                # is in the state already from a previous deployment. This error will be caught when doing a look up when trying to deploy the resource.
-                                # This also means this ordering only applies to ordering of diffs to make sure they are deployed correctly.
-                                continue
-                        
-                        else:
-                            hash_identifier = f"{parent_resource_split[0]};{parent_resource_split[2]}"
-
-                            if hash_identifier in resource_id_to_resource_diff:
-                                parent_resource = resource_id_to_resource_diff.get(hash_identifier)
-                            
-                            else:
-                                # If the parent resource in the current diffs then we are assuming that it is already in the state files from a previous deployment
-                                # This is a weak assumption, but the current way state is stored there is not a terrific way of finding out if this parent resource
-                                # is in the state already from a previous deployment. This error will be caught when doing a look up when trying to deploy the resource.
-                                # This also means this ordering only applies to ordering of diffs to make sure they are deployed correctly.
-                                pass
-                        
-
-                        parent_resource_id = f"{parent_resource.new_resource.ruuid};{parent_resource.new_resource.hash}"
-                        log.info(f"PARENT RESOURCE {parent_resource_id} for {resource_diff.new_resource.name}")
-                        # IF the parent is in the diff make this resource a descandant in the DAG
-                        resource_dag.add_node(parent_resource_id)
-                        resource_dag.add_edge(parent_resource_id, resource_id)
-            
-                else:
-                    # IF this resource has no parents then add it as a top level resource in the DAG
-                    resource_dag.add_node(resource_id)
-            
-            else:
-                # IF no new resource then this is a delete and should be added to the end of the TOPO sort because previous values might depend
-                # on it
-                
-                resource_id = f"{resource_diff.previous_resource.ruuid};{resource_diff.previous_resource.hash}"
-                resource_dag.add_node(resource_id)
-                log.info(f"ADDING {resource_id} AS DELETE")
-                
-        
         sorted_resources = []
         resource_dag_list = list(nx.topological_sort(resource_dag))
         for resource_id in resource_dag_list:
@@ -158,3 +99,83 @@ def get_mapper_namespace() -> Dict[str,CloudMapper]:
     # TODO throw error
     return Cdev_Project.instance().get_mapper_namespace()
 
+
+def generate_resource_dag(resource_differences: List[Resource_State_Difference], resource_id_to_resource_diff: Dict[str, Resource_State_Difference], resource_name_to_resource_diff: Dict[str, Resource_State_Difference]) -> nx.DiGraph:
+    # nx graphs work on the element level by using the __hash__ of objects added to the graph, and to avoid making every obj support __hash__
+    # we are using the id of {x.new_resource.ruuid}::{x.new_resource.hash} to identify resources in the graph then use a dict to map back to 
+    # the actual object
+    resource_dag = nx.DiGraph()
+
+
+    for resource_diff in resource_differences:
+        if resource_diff.new_resource:
+            log.info(f"FINDING PARENTS FOR {resource_diff.new_resource.name}")
+            log.info(f"PARENTS {resource_diff.new_resource.parent_resources}")
+            resource_id = f"{resource_diff.new_resource.ruuid};{resource_diff.new_resource.hash}"
+            if resource_diff.new_resource.parent_resources:
+                # IF the above resource has parent resources then we need to render their output and make sure this deployment
+                # happens after
+                resource_dag.add_node(resource_id)
+
+                # A resource can have a parent listed twice via a name and id so need to keep track of the parents we have add already to make sure we don't try to readd
+                seen_parents = set()
+
+                for parent_reference in resource_diff.new_resource.parent_resources:
+                    # A parent reference can be either ruuid:hash:<hash> or ruuid:name:<name>
+                    # if the parent is reference by name means we need to look up the current hash of that parent. 
+                    parent_resource_split = parent_reference.split(";")
+
+                    if parent_resource_split[1] == "name":
+                        # do lookup by name to get hash
+                        name_identifier = f"{parent_resource_split[0]};{parent_resource_split[2]}"
+                        if name_identifier in resource_name_to_resource_diff:
+                            parent_resource = resource_name_to_resource_diff.get(name_identifier)
+
+                        else:
+                            # If the parent resource in the current diffs then we are assuming that it is already in the state files from a previous deployment
+                            # This is a weak assumption, but the current way state is stored there is not a terrific way of finding out if this parent resource
+                            # is in the state already from a previous deployment. This error will be caught when doing a look up when trying to deploy the resource.
+                            # This also means this ordering only applies to ordering of diffs to make sure they are deployed correctly.
+                            continue
+                    
+                    else:
+                        hash_identifier = f"{parent_resource_split[0]};{parent_resource_split[2]}"
+
+                        if hash_identifier in resource_id_to_resource_diff:
+                            parent_resource = resource_id_to_resource_diff.get(hash_identifier)
+                        
+                        else:
+                            # If the parent resource in the current diffs then we are assuming that it is already in the state files from a previous deployment
+                            # This is a weak assumption, but the current way state is stored there is not a terrific way of finding out if this parent resource
+                            # is in the state already from a previous deployment. This error will be caught when doing a look up when trying to deploy the resource.
+                            # This also means this ordering only applies to ordering of diffs to make sure they are deployed correctly.
+                            pass
+                    
+
+
+                    parent_resource_id = f"{parent_resource.new_resource.ruuid};{parent_resource.new_resource.hash}"
+                    
+                    if parent_resource_id in seen_parents:
+                        log.debug(f"Already seen parent {parent_resource_id} for {resource_diff.new_resource.name}; {seen_parents}")
+                        continue
+
+                    log.info(f"PARENT RESOURCE {parent_resource_id} for {resource_diff.new_resource.name}")
+                    # IF the parent is in the diff make this resource a descandant in the DAG
+                    resource_dag.add_node(parent_resource_id)
+                    resource_dag.add_edge(parent_resource_id, resource_id)
+                    seen_parents.add(parent_resource_id)
+        
+            else:
+                # IF this resource has no parents then add it as a top level resource in the DAG
+                resource_dag.add_node(resource_id)
+        
+        else:
+            # IF no new resource then this is a delete and should be added to the end of the TOPO sort because previous values might depend
+            # on it
+            
+            resource_id = f"{resource_diff.previous_resource.ruuid};{resource_diff.previous_resource.hash}"
+            resource_dag.add_node(resource_id)
+            log.info(f"ADDING {resource_id} AS DELETE")
+
+
+    return resource_dag

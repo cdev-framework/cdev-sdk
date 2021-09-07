@@ -13,7 +13,7 @@ import inspect
 import os
 
 from pathlib import PosixPath, WindowsPath
-from cdev.utils import hasher, logger
+from cdev.utils import hasher, logger, parent_resources
 
 log = logger.get_cdev_logger(__name__)
 
@@ -98,13 +98,22 @@ class simple_lambda(Cdev_Resource):
         self.events = events
         self.configuration = configuration
 
+        config_parents = [f"{'::'.join(x.resource.split('::')[:3])};hash;{x.resource.split('::')[-1]}" for x in parent_resources.find_cloud_output(configuration.dict())]
+        
+        log.info(f"CONFIG PARENTS {config_parents}")
+
         self.src_code_hash = hasher.hash_file(filepath)
         self.config_hash = configuration.get_cdev_hash()
         self.events_hash = hasher.hash_list([x.get_hash() for x in events])
-        log.error(self.events_hash)
+
         self.full_hash = hasher.hash_list([self.src_code_hash, self.config_hash, self.events_hash])
-        log.error(f"FULL HASH {self.full_hash}")
-        self.parents = [f"{x.original_resource_type};name;{x.original_resource_name}" for x in events]
+
+        event_parents = [f"{x.original_resource_type};name;{x.original_resource_name}" for x in events]
+        all_parents = []
+        all_parents.extend(event_parents)
+        all_parents.extend(config_parents)
+        self.parents = all_parents
+        log.info(f"ALL PARENTS {self.parents}")
 
 
     def render(self) -> simple_aws_lambda_function_model:
