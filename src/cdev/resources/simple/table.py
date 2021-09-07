@@ -6,7 +6,7 @@ from ...constructs import Cdev_Resource
 from ...models import Cloud_Output, Rendered_Resource
 from ...utils import hasher
 
-from .xlambda import Event as lambda_event, EventTypes, simple_lambda
+from .xlambda import Event as lambda_event, EventTypes, Permission
 
 #log = logger.get_cdev_logger(__name__)
 
@@ -68,9 +68,38 @@ class simple_table_output(str, Enum):
     table_name = "table_name"
 
 
+class TablePermissions():
+
+    def __init__(self, resource_name) -> None:
+    
+        self.READ_TABLE = Permission(
+            actions=["dynamodb:BatchGet*"],
+            resource=f'cdev::simple::table::{resource_name}',
+            effect="Allow"
+        )
+    
+        self.WRITE_TABLE = Permission(
+            actions=["dynamodb:PutItem"],
+            resource=f'cdev::simple::table::{resource_name}',
+            effect="Allow"
+        )
+    
+        self.READ_AND_WRITE_TABLE = Permission(
+            actions=["dynamodb:PutItem", "dynamodb:BatchGet*"],
+            resource=f'cdev::simple::table::{resource_name}',
+            effect="Allow"
+        )
+    
+        self.READ_STREAM = Permission(
+            actions=["dynamodb:Scan"],
+            resource=f'cdev::simple::table::{resource_name}',
+            effect="Allow"
+        )
 
 
 class Table(Cdev_Resource):
+
+    
 
     def __init__(self, cdev_name: str, table_name: str, attributes: List[Dict[str, Union[attribute_type,str]]], keys: List[Dict[str, Union[key_type, str]]]) -> None:
         rv = Table.check_attributes_and_keys(attributes, keys)
@@ -83,6 +112,9 @@ class Table(Cdev_Resource):
         self.attributes = [{"AttributeName": x.get("AttributeName"), "AttributeType": x.get("AttributeType").value} for x in attributes]
         self.keys = [{"AttributeName": x.get("AttributeName"), "KeyType": x.get("KeyType").value} for x in keys]
         self._stream = None
+
+        self.permissions = TablePermissions(table_name)
+
         self.hash = hasher.hash_list([self.table_name, self.attributes, self.keys])
 
     def render(self) -> simple_table_model:
