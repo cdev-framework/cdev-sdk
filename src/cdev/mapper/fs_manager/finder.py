@@ -88,9 +88,10 @@ def _find_resources_information_from_file(fp) -> List[Rendered_Resource]:
             tmp.configuration.Handler = parsed_function_info.get(parsed_function_name).get("Handler")
 
             tmp.config_hash = tmp.configuration.get_cdev_hash()
+            
 
 
-            tmp.hash = hasher.hash_list([tmp.src_code_hash, tmp.config_hash, tmp.events_hash])
+            tmp.hash = hasher.hash_list([tmp.src_code_hash, tmp.config_hash, tmp.events_hash, tmp.permissions_hash])
 
 
             log.info(f"updated to {tmp}")

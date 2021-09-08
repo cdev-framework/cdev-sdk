@@ -1,19 +1,17 @@
+from time import sleep
 from typing import Dict
-from cdev.resources.aws.apigatewayv2_models import integration_model, IntegrationType
+
 from cdev.models import Resource_State_Difference, Action_Type
 from cdev.utils import logger
 from cdev.resources.simple import xlambda as simple_lambda
-from cdev.resources.aws import s3_models, lambda_models
 from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
 
-from ..aws import s3 as s3_deployer
-from ..aws import xlambda as lambda_deployer
-from ..aws import apigatewayv2 as apigateway_deployer
+
 from ..aws import aws_client as raw_aws_client
 
-from ..aws import aws_client
 
 from .lambda_event_deployer import EVENT_TO_HANDLERS
+from .lambda_role_deployer import create_role_with_permissions, delete_role_and_permissions, add_policy, delete_policy
 
 from cdev.settings import SETTINGS
 import os
@@ -26,31 +24,41 @@ BUCKET = SETTINGS.get("S3_ARTIFACTS_BUCKET")
 
 def _create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_lambda_function_model) -> bool:
     # Steps for creating a deployed lambda function
-    # 1. Upload the artifact to S3 as the archive location
-    # 2. Create the function
-    # 3. Create any integrations that are need based on Events passed in
+    # 1. Create IAM Role with needed permissions (note this is first to give aws more time to create the role in all regions and be available for use)
+    # 2. Upload the artifact to S3 as the archive location
+    # 3. Create the function
+    # 4. Create any integrations that are need based on Events passed in
     
     
     log.debug(f"Attempting to create {resource}")
-
-    # Step 1
-    keyname = _upload_s3_code_artifact(resource)
-   
     final_info = {
         "ruuid": resource.ruuid,
         "cdev_name": resource.name,
     }
 
+    # Step 1
+    role_name = f"lambda_{resource.name}"
+    permission_info = create_role_with_permissions(role_name, resource.permissions)
 
+    role_arn = permission_info[0]
+
+    final_info['role_name'] = role_name
+    final_info['role_id'] = role_arn
+    final_info['permissions'] = permission_info[1]
+
+    # Step 2
+    keyname = _upload_s3_code_artifact(resource)
+   
     final_info['artifact_bucket'] = BUCKET
     final_info['artifact_key'] = keyname
 
-    # Step 2
-
+    # Step 3
+    sleep(10)
+    # ughhhh add a retry wrapper because it takes time to generate the IAM roles across all regions so we need to wait a second to create this 
     lambda_function_args = {
         "FunctionName": resource.name,
-        "Runtime": lambda_models.Runtime.python3_7,
-        "Role": "arn:aws:iam::369004794337:role/test-lambda-role",
+        "Runtime": 'python3.7',
+        "Role": role_arn,
         "Handler": resource.configuration.Handler,
         "Code": {"S3Bucket":BUCKET, "S3Key":keyname},
         "Environment": resource.configuration.Environment.dict() if resource.configuration.Environment else {}
@@ -60,7 +68,7 @@ def _create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
 
     final_info['cloud_id'] = lambda_function_rv.get("FunctionArn")
 
-    # Step 3
+    # Step 4
     log.debug(f"lambda events -> {resource.events}")
     if resource.events:
         event_hash_to_output = {}
@@ -133,7 +141,12 @@ def _remove_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
     raw_aws_client.run_client_function("lambda", "delete_function", {"FunctionName": cloud_id})
     log.debug(f"Delete function")
 
-    
+    role_name = cdev_cloud_mapper.get_output_value(resource.hash, "role_name")
+    permissions = cdev_cloud_mapper.get_output_value(resource.hash, "permissions")
+
+    log.debug(f"Attemping to delete role {role_name} and permissions {permissions}")
+    delete_role_and_permissions(role_name, [v for _,v in permissions.items()])
+
     cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
     cdev_cloud_mapper.remove_identifier(identifier)
     log.debug(f"Delete information in resource and cloud state")
@@ -173,6 +186,42 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
             "S3Bucket": BUCKET,
             "Publish": True
         })
+
+    if not previous_resource.permissions_hash == new_resource.permissions_hash:
+        previous_hashes = set([simple_lambda.Permission(**x).get_hash() if "resource" in x else simple_lambda.PermissionArn(**x).get_hash() for x in previous_resource.permissions])
+        new_hashes = set([x.get_hash() for x in new_resource.permissions])
+
+        create_permissions = []
+        remove_permissions = []
+
+
+        for permission in new_resource.permissions:
+            if not permission.get_hash() in previous_hashes:
+                create_permissions.append(permission)
+
+
+        for permission in previous_resource.permissions:
+            previous_resource_permission_hash = simple_lambda.Permission(**permission).get_hash() if "resource" in permission else simple_lambda.PermissionArn(**permission).get_hash()
+            if not previous_resource_permission_hash in new_hashes:
+                remove_permissions.append(permission)
+
+        log.debug(f"New Permissions -> {create_permissions}")
+        log.debug(f"Previous Permissions -> {remove_permissions}")
+
+        permission_output = cdev_cloud_mapper.get_output_value(previous_resource.hash, "permissions")
+        role_name_output = cdev_cloud_mapper.get_output_value(previous_resource.hash, "role_name")
+       
+
+        for permission in create_permissions:
+            rv = add_policy(role_name_output, permission)
+            permission_output[permission.get_hash()] = rv
+
+        for permission in remove_permissions:
+            previous_resource_permission_hash = simple_lambda.Permission(**permission).get_hash() if "resource" in permission else simple_lambda.PermissionArn(**permission).get_hash()
+            delete_policy(role_name_output, permission_output.get(previous_resource_permission_hash))
+            permission_output.pop(previous_resource_permission_hash)
+
+        cdev_cloud_mapper.update_output_by_key(previous_resource.hash, "permissions", permission_output)    
 
 
     if not previous_resource.events_hash == new_resource.events_hash:
