@@ -98,9 +98,6 @@ class TablePermissions():
 
 
 class Table(Cdev_Resource):
-
-    
-
     def __init__(self, cdev_name: str, table_name: str, attributes: List[Dict[str, Union[attribute_type,str]]], keys: List[Dict[str, Union[key_type, str]]]) -> None:
         rv = Table.check_attributes_and_keys(attributes, keys)
         if not rv[0]:
@@ -113,7 +110,7 @@ class Table(Cdev_Resource):
         self.keys = [{"AttributeName": x.get("AttributeName"), "KeyType": x.get("KeyType").value} for x in keys]
         self._stream = None
 
-        self.permissions = TablePermissions(table_name)
+        self.permissions = TablePermissions(cdev_name)
 
         self.hash = hasher.hash_list([self.table_name, self.attributes, self.keys])
 

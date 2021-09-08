@@ -26,6 +26,7 @@ def _create_simple_dynamodb_table(identifier: str, resource: simple_dynamodb_tab
     output_info = {
         "table_name": resource.table_name,
         "cloud_id": rv.get("TableDescription").get("TableArn"), 
+        "arn": rv.get("TableDescription").get("TableArn"), 
         "cdev_name": resource.name,
         "ruuid": "cdev::simple::table"
     }

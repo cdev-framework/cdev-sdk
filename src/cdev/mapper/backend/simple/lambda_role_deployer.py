@@ -2,7 +2,8 @@ import json
 from typing import List, Tuple, Union, Dict
 
 
-from cdev.utils import logger
+from cdev.backend import cloud_mapper_manager
+from cdev.utils import hasher, logger
 from cdev.resources.simple import xlambda as simple_lambda
 
 
@@ -98,7 +99,36 @@ def _create_policy(permission: simple_lambda.Permission) -> str:
     Creates the policy and returns the arn
     """
     log.debug(f"Attempting to create {permission}")
-    return None
+
+    policy = {
+        "Version": "2012-10-17",
+    }
+
+    statement = {
+        "Effect": permission.effect,
+        "Action": permission.actions
+    }
+
+    cdev_resource_name = permission.resource.split("::")[-1]
+    cdev_resource_type = "::".join(permission.resource.split("::")[:-1])
+    
+    resource_info = cloud_mapper_manager.get_output_value_by_name(cdev_resource_type, cdev_resource_name)
+    
+    if not resource_info:
+        raise Exception
+    
+    statement["Resource"] = resource_info.get("arn")
+
+    policy['Statement'] = [statement]
+
+    permission_name = f"{cdev_resource_name}_{hasher.hash_list(permission.actions)}"
+
+    rv = raw_aws_client.run_client_function("iam", "create_policy", {
+        "PolicyName": permission_name,
+        "PolicyDocument": json.dumps(policy)
+    })
+
+    return rv.get("Policy").get('Arn')
 
 
 def _create_role(name: str) -> str:

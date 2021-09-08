@@ -59,13 +59,11 @@ def _create_simple_api(identifier: str, resource: simple_api.simple_api_model) -
     rv = raw_aws_client.run_client_function("apigatewayv2", "create_api", base_args)
 
 
-
-
-
     info = {
         "ruuid": resource.ruuid,
         "cdev_name": resource.name,
         "cloud_id": rv.get("ApiId"),
+        "arn": "",
         "endpoints": {}
     }
 

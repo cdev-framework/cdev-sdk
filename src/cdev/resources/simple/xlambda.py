@@ -41,7 +41,7 @@ class Permission(BaseModel):
     actions: List[str]
     resource: str
     effect: Union[Literal["Allow"], Literal["Deny"]]
-
+    
     def __init__(self, actions: List[str], resource: str, effect: Union[Literal["Allow"], Literal["Deny"]]):
         """
         Create a permission object that can be attached to a lambda function to give it permission to access other resources. 

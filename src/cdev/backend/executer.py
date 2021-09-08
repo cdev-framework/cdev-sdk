@@ -107,8 +107,6 @@ def generate_sorted_resources(component_diff: Component_State_Difference) -> Lis
     all_resource_id_to_resource_diff.update(new_resource_id_to_resource_diff)
     all_resource_id_to_resource_diff.update(previous_resource_id_to_resource_diff)
     
-    
-
 
     for resource_diff in component_diff.resource_diffs:
         if resource_diff.new_resource:
