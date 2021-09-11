@@ -150,7 +150,7 @@ def generate_sorted_resources(component_diff: Component_State_Difference) -> Lis
                             # This is a weak assumption, but the current way state is stored there is not a terrific way of finding out if this parent resource
                             # is in the state already from a previous deployment. This error will be caught when doing a look up when trying to deploy the resource.
                             # This also means this ordering only applies to ordering of diffs to make sure they are deployed correctly.
-                            pass
+                            continue
                     
 
 

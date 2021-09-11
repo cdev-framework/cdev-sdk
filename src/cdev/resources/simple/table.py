@@ -73,25 +73,60 @@ class TablePermissions():
     def __init__(self, resource_name) -> None:
     
         self.READ_TABLE = Permission(
-            actions=["dynamodb:BatchGet*"],
+            actions=[
+                "dynamodb:GetItem",
+                "dynamodb:BatchGetItem",
+                "dynamodb:Scan",
+                "dynamodb:Query",
+                "dynamodb:ConditionCheckItem"
+            ],
             resource=f'cdev::simple::table::{resource_name}',
             effect="Allow"
         )
     
         self.WRITE_TABLE = Permission(
-            actions=["dynamodb:PutItem"],
+            actions=[
+                "dynamodb:BatchGetItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:PutItem",
+                "dynamodb:DescribeTable",
+                "dynamodb:DeleteItem",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:Query",
+                "dynamodb:UpdateItem",
+                "dynamodb:DescribeLimits"
+            ],
             resource=f'cdev::simple::table::{resource_name}',
             effect="Allow"
         )
     
         self.READ_AND_WRITE_TABLE = Permission(
-            actions=["dynamodb:PutItem", "dynamodb:BatchGet*"],
+            actions=[   
+                "dynamodb:BatchGetItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeLimits",
+                "dynamodb:DescribeTable",
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:Query",
+                "dynamodb:Scan",
+                "dynamodb:UpdateItem",
+            ],
             resource=f'cdev::simple::table::{resource_name}',
             effect="Allow"
         )
     
         self.READ_STREAM = Permission(
-            actions=["dynamodb:Scan"],
+            actions=[
+                "DescribeStream",
+                "GetRecords",
+                "GetShardIterator",
+                "ListStreams"
+            ],
             resource=f'cdev::simple::table::{resource_name}',
             effect="Allow"
         )

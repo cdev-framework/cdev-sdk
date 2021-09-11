@@ -21,6 +21,7 @@ log = logger.get_cdev_logger(__name__)
 class EventTypes(Enum):
     HTTP_API_ENDPOINT = "api::endpoint"
     TABLE_STREAM = "table::stream"
+    BUCKET_TRIGGER = "bucket:trigger"
 
 
 class Event(BaseModel):

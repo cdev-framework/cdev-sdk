@@ -68,6 +68,10 @@ def _remove_simple_dynamodb_table(identifier: str, resource: simple_dynamodb_tab
             }
     })
 
+    cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
+    cdev_cloud_mapper.remove_identifier(identifier)
+    log.debug(f"Delete information in resource and cloud state")
+
     return True
 
 
