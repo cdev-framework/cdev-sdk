@@ -90,7 +90,7 @@ class Bucket(Cdev_Resource):
 
     def create_event_trigger(self, event_types: List[Bucket_Event_Types]) -> lambda_event:
         config = {
-            "EventTypes": set([x.value for x in event_types]),
+            "EventTypes": list(set([x.value for x in event_types])),
         }
 
         event = lambda_event(**{

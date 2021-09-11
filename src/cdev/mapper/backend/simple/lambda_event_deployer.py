@@ -7,6 +7,8 @@ from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
 
 from ..aws import aws_client as raw_aws_client
 
+from . import bucket_deployer
+
 
 
 from cdev.settings import SETTINGS
@@ -15,9 +17,9 @@ from cdev.settings import SETTINGS
 log = logger.get_cdev_logger(__name__)
 
 
-#############################################
+##############################################
 ###### API GATEWAY ROUTE EVENTS
-#############################################
+##############################################
 
 def _handle_adding_api_event(event, cloud_function_id) -> Dict:
     log.debug(f"Attempting to create {event} for function {cloud_function_id}")
@@ -140,9 +142,9 @@ def _handle_deleting_api_event(event: simple_lambda.Event, resource_hash) -> boo
     return True
 
 
-###############################################################
+##############################################
 ##### DYNAMODB TABLE STREAM EVENT
-###############################################################
+##############################################
 
 def _handle_adding_stream_event(event: simple_lambda.Event, cloud_function_id) -> Dict:
     log.debug(f"Attempting to create {event} for function {cloud_function_id}")
@@ -191,7 +193,7 @@ def _handle_adding_stream_event(event: simple_lambda.Event, cloud_function_id) -
     uuid = rv.get("UUID")
 
 
-    return {"stream_arn": stream_arn, "event_type": "table:stream", "UUID": uuid}
+    return {"stream_arn": stream_arn, "event_type": "table::stream", "UUID": uuid}
 
 
 
@@ -215,6 +217,66 @@ def _handle_deleting_stream_event(event: simple_lambda.Event, resource_hash) -> 
     return True
 
 
+##############################################
+##### BUCKET EVENT TRIGGER
+##############################################
+
+def _handle_adding_bucket_event(event: simple_lambda.Event, cloud_function_id) -> Dict:
+    log.debug(f"Attempting to create {event} for function {cloud_function_id}")
+    bucket_resource = cdev_cloud_mapper.get_output_value_by_name("cdev::simple::bucket", event.original_resource_name)
+    log.debug(f"Found Bucket info for {event} -> {bucket_resource}")
+    bucket_arn = bucket_resource.get("arn")
+    bucket_name = bucket_resource.get("bucket_name")
+
+
+    # Add permission to lambda to allow s3 to invoke this function
+    stmt_id = f"stmt-{event.original_resource_name}-{bucket_name}"
+    permission_model_args = {
+        "FunctionName": cloud_function_id,
+        "Action": "lambda:InvokeFunction",
+        "Principal": "s3.amazonaws.com",
+        "StatementId": stmt_id,
+        "SourceArn": bucket_arn
+    }
+
+    raw_aws_client.run_client_function("lambda", "add_permission", permission_model_args)
+
+
+    # Add trigger to the bucket... use helper function in the bucket deployer because bucket can send events to sqs and sns also 
+    bucket_event_id = bucket_deployer.add_eventsource(bucket_name, bucket_deployer.event_hander_types.LAMBDA, cloud_function_id, event.config.get("EventTypes"))
+
+    return {"UUID": bucket_event_id, "event_type": "bucket::event", "Stmt_id": stmt_id, "bucket_name": bucket_name}
+
+
+def _handle_deleting_bucket_event(event: simple_lambda.Event, resource_hash) -> bool:
+    log.debug(f"Attempting to delete {event} from function {resource_hash}")
+    
+    # Go ahead and make sure we have info for this event in the function's output and cloud integration id of this event
+    function_event_info = cdev_cloud_mapper.get_output_value(resource_hash, "events")
+    log.debug(f"Function event info {function_event_info}")
+
+    if not event.get_hash() in function_event_info:
+        log.error(f"Could not find info for {event} ({event.get_hash()}) in function ({resource_hash}) output")
+        return False
+
+    bucket_event_id = function_event_info.get(event.get_hash()).get("UUID")
+    bucket_name = function_event_info.get(event.get_hash()).get("bucket_name")
+    stmt_id = function_event_info.get(event.get_hash()).get("Stmt_id")
+    cloud_id = cdev_cloud_mapper.get_output_value(resource_hash, "cloud_id")
+
+    # Delete the permission on the lambda function
+    raw_aws_client.run_client_function("lambda", "remove_permission", {
+        "FunctionName": cloud_id,
+        "StatementId": stmt_id
+    })
+
+
+    bucket_deployer.remove_eventsource(bucket_name, bucket_event_id)
+
+    log.debug(f"Removed Event {event} from {resource_hash}")
+
+    return True
+
 
 EVENT_TO_HANDLERS = {
     simple_lambda.EventTypes.HTTP_API_ENDPOINT : {
@@ -224,5 +286,9 @@ EVENT_TO_HANDLERS = {
     simple_lambda.EventTypes.TABLE_STREAM : {
         "CREATE": _handle_adding_stream_event,
         "REMOVE": _handle_deleting_stream_event
+    },
+    simple_lambda.EventTypes.BUCKET_TRIGGER: {
+        "CREATE": _handle_adding_bucket_event,
+        "REMOVE": _handle_deleting_bucket_event
     }
 }
