@@ -1,5 +1,6 @@
 from typing import Dict
 from cdev.resources.aws.apigatewayv2_models import  IntegrationType
+from cdev.resources.simple.queue import simple_queue_model
 from cdev.utils import logger
 from cdev.resources.simple import xlambda as simple_lambda
 from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
@@ -278,6 +279,52 @@ def _handle_deleting_bucket_event(event: simple_lambda.Event, resource_hash) -> 
     return True
 
 
+##############################################
+##### QUEUE EVENT TRIGGER
+##############################################
+
+
+def _handle_adding_queue_event(event: simple_lambda.Event, cloud_function_id) -> Dict:
+    log.debug(f"Attempting to create {event} for function {cloud_function_id}")
+    queue_resource = cdev_cloud_mapper.get_output_value_by_name("cdev::simple::queue", event.original_resource_name)
+    log.debug(f"Found Table info for {event} -> {queue_resource}")
+
+
+    rv = raw_aws_client.run_client_function("lambda", "create_event_source_mapping", {
+        "EventSourceArn": queue_resource.get("arn"),
+        "FunctionName": cloud_function_id,
+        "Enabled": True,
+        "BatchSize": event.config.get("batch_size"),
+    })
+
+    uuid = rv.get("UUID")
+
+
+    return {"event_type": "queue::trigger", "UUID": uuid}
+
+
+
+def _handle_deleting_queue_event(event: simple_lambda.Event, resource_hash) -> bool:
+    log.debug(f"Attempting to delete {event} from function {resource_hash}")
+    # Go ahead and make sure we have info for this event in the function's output and cloud integration id of this event
+    function_event_info = cdev_cloud_mapper.get_output_value(resource_hash, "events")
+    log.debug(f"Function event info {function_event_info}")
+    log.debug(event)
+    if not event.get_hash() in function_event_info:
+        log.error(f"Could not find info for {event} ({event.get_hash()}) in function ({resource_hash}) output")
+        return False
+
+    uuid = function_event_info.get(event.get_hash()).get("UUID")
+
+    raw_aws_client.run_client_function("lambda", "delete_event_source_mapping", {
+        "UUID": uuid
+    })
+    log.debug(f"Removed Event {uuid} from {resource_hash}")
+
+    return True
+
+
+
 EVENT_TO_HANDLERS = {
     simple_lambda.EventTypes.HTTP_API_ENDPOINT : {
         "CREATE": _handle_adding_api_event,
@@ -290,5 +337,9 @@ EVENT_TO_HANDLERS = {
     simple_lambda.EventTypes.BUCKET_TRIGGER: {
         "CREATE": _handle_adding_bucket_event,
         "REMOVE": _handle_deleting_bucket_event
+    },
+    simple_lambda.EventTypes.QUEUE_TRIGGER : {
+        "CREATE": _handle_adding_queue_event,
+        "REMOVE": _handle_deleting_queue_event
     }
 }

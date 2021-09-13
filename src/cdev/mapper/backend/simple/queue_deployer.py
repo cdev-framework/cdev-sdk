@@ -22,7 +22,7 @@ def _create_simple_queue(identifier: str, resource: simple_queue.simple_queue_mo
 
     
     rv = raw_aws_client.run_client_function("sqs", "create_queue", {
-        "QueueName": resource.queue_name if not resource.fifo else f"{resource.queue_name}.fifo",
+        "QueueName": resource.queue_name,
         "Attributes": attributes
     })
 
@@ -51,11 +51,24 @@ def _create_simple_queue(identifier: str, resource: simple_queue.simple_queue_mo
 
 
 def _update_simple_queue(previous_resource: simple_queue.simple_queue_model, new_resource: simple_queue.simple_queue_model) -> bool:
-    pass
+    _remove_simple_queue(previous_resource.hash, previous_resource)
+    _create_simple_queue(new_resource.hash, new_resource)
+    return True
 
 
 def _remove_simple_queue(identifier: str, resource: simple_queue.simple_queue_model) -> bool:
-    pass
+    queue_url = cdev_cloud_mapper.get_output_value(identifier, "queue_url")
+    
+    raw_aws_client.run_client_function("sqs", "delete_queue", {
+        "QueueUrl": queue_url
+    })
+    
+    cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
+    cdev_cloud_mapper.remove_identifier(identifier)
+    log.debug(f"Delete information in resource and cloud state")
+    return True
+
+
 
 def handle_simple_queue_deployment(resource_diff: Resource_State_Difference) -> bool:
     try:

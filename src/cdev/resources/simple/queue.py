@@ -71,7 +71,7 @@ class Queue(Cdev_Resource):
     def __init__(self, cdev_name: str, queue_name: str, is_fifo: bool = False) -> None:
         
         super().__init__(cdev_name)
-        self.queue_name = queue_name
+        self.queue_name = queue_name if not is_fifo else f"{queue_name}.fifo"
         self.fifo = is_fifo
         self.permissions = QueuePermissions(cdev_name)
 
