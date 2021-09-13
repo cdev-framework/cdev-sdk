@@ -23,6 +23,7 @@ class EventTypes(Enum):
     TABLE_STREAM = "table::stream"
     BUCKET_TRIGGER = "bucket:trigger"
     QUEUE_TRIGGER = "queue::trigger"
+    TOPIC_TRIGGER = "topic::trigger"
 
 
 class Event(BaseModel):
