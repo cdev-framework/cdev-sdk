@@ -22,6 +22,7 @@ class EventTypes(Enum):
     HTTP_API_ENDPOINT = "api::endpoint"
     TABLE_STREAM = "table::stream"
     BUCKET_TRIGGER = "bucket:trigger"
+    QUEUE_TRIGGER = "queue::trigger"
 
 
 class Event(BaseModel):
@@ -133,7 +134,9 @@ class simple_lambda(Cdev_Resource):
         self.permissions = permissions
         self.permissions_hash = hasher.hash_list([x.get_hash for x in permissions])
         permissions_parents = [f"{'::'.join(x.resource.split('::')[:-1])};name;{x.resource.split('::')[-1]}" for x in permissions if isinstance(x, Permission)]
-        
+        self.permissions.append(PermissionArn(**{
+            "arn": "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        }))
 
         self.src_code_hash = hasher.hash_file(filepath)
         self.config_hash = configuration.get_cdev_hash()
