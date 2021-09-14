@@ -18,7 +18,17 @@ class cdev_logger:
     """
 
     def __init__(self, module_name: str = 'root') -> None:
-        logging.config.dictConfig(cdev_settings.get("LOGGING_INFO"))
+        log_info = cdev_settings.get("LOGGING_INFO")
+
+        fp = log_info.get("handlers").get("fileHandler").get("filename")
+        if not os.path.isfile(fp):
+            os.mkdir(os.path.dirname(os.path.dirname(fp)))
+            os.mkdir(os.path.dirname(fp))
+
+            with open(fp, 'a'):
+                os.utime(fp,None)
+        
+        logging.config.dictConfig(log_info)
         self._json_logger = logging.getLogger(module_name)
         self._simple_logger = logging.getLogger(f"{module_name}_simple")
         self._rich_logger = logging.getLogger(f"{module_name}_rich")

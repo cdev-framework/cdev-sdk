@@ -1,12 +1,18 @@
 import importlib
+import json
 import os
 import sys
+from typing import List, Dict
 
+
+from pydantic import BaseModel
+from pydantic.types import FilePath
 
 from cdev.settings import SETTINGS as cdev_settings
 from cdev.mapper.cloudmapper import DefaultMapper
 from cdev.constructs import Cdev_Project
 
+from . import environment as cdev_environment
 
 INTERNAL_FOLDER_NAME = cdev_settings.get("INTERNAL_FOLDER_NAME")
 
@@ -18,6 +24,41 @@ STATE_FOLDER_LOCATION = cdev_settings.get("STATE_FOLDER")
 LOCAL_STATE_LOCATION = cdev_settings.get("LOCAL_STATE_LOCATION")
 
 CDEV_PROJECT_FILE = cdev_settings.get("CDEV_PROJECT_FILE")
+CDEV_ENVIRONMENT_INFO_FILE = cdev_settings.get("CDEV_ENVIRONMENT_INFO_FILE")
+
+
+class project_definition(BaseModel):
+    project_name: str
+    base_dir: str
+    environment_names: List[str]
+
+    def __init__(__pydantic_self__, base_dir: str, project_name: str, environment_names: List[str]) -> None:
+        """
+        Represents the data needed to create a new cdev project:
+        
+        Parameters:
+            project_name: name of the project
+            base_dir: directory that the project will be initialized at. Most likely the current dir.
+            environments: by default all projects come with prod, stage, dev-{user}; user can supply extra
+
+        """
+        
+        super().__init__(**{
+            "project_name": project_name,
+            "base_dir": base_dir,
+            "environment_names": environment_names
+        })
+
+
+
+def create_new_project(project_info: project_definition) -> bool:
+    _initialize_project_structure(project_info.base_dir)
+
+    for environment in project_info.environment_names:
+        cdev_environment.create_environment(environment)
+
+    # TODO set starting environment 
+    cdev_environment.set_current_environment("dev_daniel")
 
 
 def initialize_project() -> None:
@@ -25,13 +66,13 @@ def initialize_project() -> None:
     Cdev_Project.instance().add_mapper(DefaultMapper())
 
 
-
-def initialize_project_structure(folder_path):
+def _initialize_project_structure(folder_path):
     if not os.path.isdir(folder_path):
         raise NotADirectoryError
 
     needed_folders = _get_needed_folder_structure(folder_path)
 
+    
     for dir in needed_folders:
         if not os.path.isdir(dir):
             try:
@@ -42,7 +83,7 @@ def initialize_project_structure(folder_path):
 
 
     needed_files = _get_need_files()
-
+    
     for f in needed_files:
         if os.path.isfile(f):
             continue
@@ -88,15 +129,14 @@ def _get_needed_folder_structure(basepath):
 
     intermediate_base_folder_location = os.path.join(basepath, INTERMEDIATE_FOLDER_NAME)
 
-    intermediate_function_folder_location = os.path.join(basepath, INTERMEDIATE_FUNCTIONS_FOLDER_NAME)
 
     state_folder_location = os.path.join(basepath, STATE_FOLDER_LOCATION)
 
-    return [internal_folder_location, intermediate_base_folder_location, intermediate_function_folder_location, state_folder_location]
+    return [internal_folder_location, intermediate_base_folder_location, state_folder_location]
 
 
 def _get_need_files():
-    return [LOCAL_STATE_LOCATION, CDEV_PROJECT_FILE]
+    return [CDEV_PROJECT_FILE, CDEV_ENVIRONMENT_INFO_FILE]
 
 
 def touch(fname, times=None):
