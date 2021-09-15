@@ -10,7 +10,7 @@ from ..utils import project
 from ..utils.logger import get_cdev_logger
 from ..utils import environment as cdev_environment
 
-from cdev.output import print_plan
+from cdev.output import print_plan, confirm_deployment
 
 log = get_cdev_logger(__name__)
 
@@ -33,6 +33,7 @@ def plan(args):
 
     print_plan(rendered_frontend, project_diffs)
 
+
 def deploy(args):
     from ..frontend import executer as frontend_executer
     from ..backend import executer as backend_executer
@@ -42,8 +43,15 @@ def deploy(args):
     project.initialize_project()
     rendered_frontend = frontend_executer.execute_frontend()
     project_diffs = resource_state_manager.create_project_diffs(rendered_frontend)
-    if backend_executer.validate_diffs(project_diffs):
-        backend_executer.deploy_diffs(project_diffs)
+    if not backend_executer.validate_diffs(project_diffs):
+        raise Exception 
+
+    print_plan(rendered_frontend, project_diffs)
+
+    if not confirm_deployment():
+        raise Exception
+
+    backend_executer.deploy_diffs(project_diffs)
 
     return 
 
