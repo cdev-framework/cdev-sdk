@@ -10,6 +10,8 @@ from ..utils import project
 from ..utils.logger import get_cdev_logger
 from ..utils import environment as cdev_environment
 
+from cdev.output import print_plan
+
 log = get_cdev_logger(__name__)
 
 
@@ -28,6 +30,8 @@ def plan(args):
 
     diffs_valid  = backend_executer.validate_diffs(project_diffs)
     log.debug(f"Are project diffs valid -> {diffs_valid}")
+
+    print_plan(rendered_frontend, project_diffs)
 
 def deploy(args):
     from ..frontend import executer as frontend_executer

@@ -56,8 +56,7 @@ class cdev_logger:
         #if isinstance(msg, str):
         #    msg = f"[bold blue blink]{msg}"
         self._write_log("info", msg, f"[bold blue]{msg}")
-        
-
+    
 
     def warning(self, msg):
         #if isinstance(msg, str):
@@ -83,8 +82,6 @@ class cdev_logger:
 
 
 def get_cdev_logger(name: str):
-
-
     top_level_module_name = name.split(".")[1] if len(name.split(".")) > 1 else None
 
 

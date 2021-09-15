@@ -5,7 +5,7 @@ import os
 
 from  .. import commands as commands
 
-from . import output
+
 
 
 parser = argparse.ArgumentParser(description='cdev cli')
