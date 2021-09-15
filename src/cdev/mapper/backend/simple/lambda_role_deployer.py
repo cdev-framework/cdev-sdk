@@ -3,7 +3,7 @@ from typing import List, Tuple, Union, Dict
 
 
 from cdev.backend import cloud_mapper_manager
-from cdev.utils import hasher, logger
+from cdev.utils import hasher, logger, environment as cdev_environment
 from cdev.resources.simple import xlambda as simple_lambda
 
 
@@ -121,7 +121,7 @@ def _create_policy(permission: simple_lambda.Permission) -> str:
 
     policy['Statement'] = [statement]
 
-    permission_name = f"{cdev_resource_name}_{hasher.hash_list(permission.actions)}"
+    permission_name = f"{cdev_resource_name}_{hasher.hash_list(permission.actions)}_{cdev_environment.get_current_environment_hash()}"
 
     rv = raw_aws_client.run_client_function("iam", "create_policy", {
         "PolicyName": permission_name,

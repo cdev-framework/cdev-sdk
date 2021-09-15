@@ -4,7 +4,7 @@ from typing import List, Dict, Union
 
 from ...constructs import Cdev_Resource
 from ...models import Cloud_Output, Rendered_Resource
-from ...utils import hasher
+from ...utils import hasher, environment as cdev_environment
 
 from .xlambda import Event as lambda_event, EventTypes, Permission
 
@@ -140,7 +140,7 @@ class Table(Cdev_Resource):
             raise Exception
 
         super().__init__(cdev_name)
-        self.table_name = table_name
+        self.table_name = f"{table_name}_{cdev_environment.get_current_environment_hash()}"
         self.attributes = [{"AttributeName": x.get("AttributeName"), "AttributeType": x.get("AttributeType").value} for x in attributes]
         self.keys = [{"AttributeName": x.get("AttributeName"), "KeyType": x.get("KeyType").value} for x in keys]
         self._stream = None

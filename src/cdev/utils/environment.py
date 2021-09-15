@@ -10,13 +10,11 @@ from pydantic.types import FilePath
 from cdev.settings import SETTINGS as cdev_settings
 from cdev.models import CloudMapping, CloudState, Rendered_State
 
+from . import hasher as cdev_hasher
+
 from .logger import get_cdev_logger
 
-
-
 log = get_cdev_logger(__name__)
-
-
 
 
 CDEV_ENVIRONMENT_INFO_FILE = cdev_settings.get("CDEV_ENVIRONMENT_INFO_FILE")
@@ -117,6 +115,15 @@ def get_current_environment() -> str:
 
     return environment_info.current_environment
 
+
+def get_current_environment_hash()-> str:
+    return cdev_hasher.hash_string(get_current_environment())
+
+
+############################################
+##### HELPER FUNCTIONS
+############################################
+
 def _write_environment_info_object(new_environment_info: environment_info) -> bool:
     with open(CDEV_ENVIRONMENT_INFO_FILE, 'w') as fh:
         fh.write(new_environment_info.json(indent=4))
@@ -125,13 +132,13 @@ def _write_environment_info_object(new_environment_info: environment_info) -> bo
 
 
 def _create_resource_state(fp):
-    touch(fp)
+    _touch(fp)
 
 def _create_cloud_mapping(fp):
-    touch(fp)
+    _touch(fp)
 
 
-def touch(fname, times=None):
+def _touch(fname, times=None):
     with open(fname, 'a'):
         os.utime(fname, times)
 

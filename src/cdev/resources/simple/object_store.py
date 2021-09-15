@@ -4,7 +4,7 @@ from typing import List, Dict, Union
 
 from ...constructs import Cdev_Resource
 from ...models import Cloud_Output, Rendered_Resource
-from ...utils import hasher
+from ...utils import hasher, environment as cdev_environment
 
 from .xlambda import Event as lambda_event, EventTypes, Permission
 
@@ -73,7 +73,8 @@ class Bucket(Cdev_Resource):
     def __init__(self, cdev_name: str, bucket_name: str) -> None:
         
         super().__init__(cdev_name)
-        self.bucket_name = bucket_name
+
+        self.bucket_name = f"{bucket_name}_{cdev_environment.get_current_environment_hash()}"
 
         self.permissions = BucketPermissions(cdev_name)
 

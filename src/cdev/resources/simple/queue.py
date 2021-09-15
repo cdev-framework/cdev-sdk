@@ -4,7 +4,7 @@ from typing import List, Dict, Union
 
 from ...constructs import Cdev_Resource
 from ...models import Cloud_Output, Rendered_Resource
-from ...utils import hasher
+from ...utils import hasher, environment as cdev_environment
 
 from .xlambda import Event as lambda_event, EventTypes, Permission
 
@@ -71,7 +71,8 @@ class Queue(Cdev_Resource):
     def __init__(self, cdev_name: str, queue_name: str, is_fifo: bool = False) -> None:
         
         super().__init__(cdev_name)
-        self.queue_name = queue_name if not is_fifo else f"{queue_name}.fifo"
+        
+        self.queue_name = f"{queue_name}_{cdev_environment.get_current_environment_hash()}" if not is_fifo else f"{queue_name}_{cdev_environment.get_current_environment_hash()}.fifo"
         self.fifo = is_fifo
         self.permissions = QueuePermissions(cdev_name)
 

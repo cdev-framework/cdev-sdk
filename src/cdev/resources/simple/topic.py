@@ -4,7 +4,7 @@ from typing import List, Dict, Union
 
 from ...constructs import Cdev_Resource
 from ...models import Cloud_Output, Rendered_Resource
-from ...utils import hasher
+from ...utils import hasher, environment as cdev_environment
 
 from .xlambda import Event as lambda_event, EventTypes, Permission
 
@@ -45,7 +45,7 @@ class Topic(Cdev_Resource):
     def __init__(self, cdev_name: str, topic_name: str, is_fifo: bool = False) -> None:
         
         super().__init__(cdev_name)
-        self.topic_name = topic_name if not is_fifo else f"{topic_name}.fifo"
+        self.topic_name = f"{topic_name}_{cdev_environment.get_current_environment_hash()}" if not is_fifo else f"{topic_name}_{cdev_environment.get_current_environment_hash()}.fifo"
         self.fifo = is_fifo
         self.permissions = TopicPermissions(cdev_name)
 

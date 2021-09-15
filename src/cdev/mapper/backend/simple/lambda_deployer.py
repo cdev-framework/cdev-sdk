@@ -37,7 +37,7 @@ def _create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
     }
 
     # Step 1
-    role_name = f"lambda_{resource.name}"
+    role_name = f"lambda_{resource.function_name}"
     permission_info = create_role_with_permissions(role_name, resource.permissions)
 
     role_arn = permission_info[0]
@@ -53,10 +53,11 @@ def _create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
     final_info['artifact_key'] = keyname
 
     # Step 3
+    # TODO
     sleep(10)
-    # ughhhh add a retry wrapper because it takes time to generate the IAM roles across all regions so we need to wait a second to create this 
+    # ughhhh add a retry wrapper because it takes time to generate the IAM roles across all regions so we need to wait a few seconds to create this 
     lambda_function_args = {
-        "FunctionName": resource.name,
+        "FunctionName": resource.function_name,
         "Runtime": 'python3.7',
         "Role": role_arn,
         "Handler": resource.configuration.Handler,
@@ -94,7 +95,7 @@ def _create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
 
 def _upload_s3_code_artifact(resource: simple_lambda.simple_aws_lambda_function_model) -> str:
     # Takes in a resource and create an s3 artifact that can be use as src code for lambda deployment
-    keyname = resource.name + f"-{resource.hash}" + ".zip"
+    keyname = resource.function_name + f"-{resource.hash}" + ".zip"
     original_zipname = resource.configuration.Handler.split(".")[0] + ".zip"
     zip_location = os.path.join(os.path.dirname(os.path.abspath(resource.filepath)), original_zipname )
     
@@ -165,6 +166,7 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
 
     }
     log.debug(previous_resource)
+    # TODO all configurations
     if not previous_resource.config_hash == new_resource.config_hash:
         if not previous_resource.configuration.get("Environment") == new_resource.configuration.Environment:
             log.debug(f"UPDATE ENVIRONMENT VARIABLES: {previous_resource.configuration.get('Environment')} -> {new_resource.configuration.Environment}")
@@ -173,19 +175,6 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
                 "Environment": new_resource.configuration.Environment.dict()
             })
         
-
-    if not previous_resource.src_code_hash == new_resource.src_code_hash:
-        log.debug(f"UPDATE SOURCE CODE OF {previous_resource.name}; {previous_resource.src_code_hash} -> {new_resource.src_code_hash}")
-        
-        keyname = _upload_s3_code_artifact(new_resource)
-        updated_info['artifact_key'] = keyname
-
-        raw_aws_client.run_client_function("lambda", "update_function_code", {
-            "FunctionName": cdev_cloud_mapper.get_output_value(previous_resource.hash, "cloud_id"),
-            "S3Key": keyname,
-            "S3Bucket": BUCKET,
-            "Publish": True
-        })
 
     if not previous_resource.permissions_hash == new_resource.permissions_hash:
         previous_hashes = set([simple_lambda.Permission(**x).get_hash() if "resource" in x else simple_lambda.PermissionArn(**x).get_hash() for x in previous_resource.permissions])
@@ -223,6 +212,19 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
 
         cdev_cloud_mapper.update_output_by_key(previous_resource.hash, "permissions", permission_output)    
 
+
+    if not previous_resource.src_code_hash == new_resource.src_code_hash:
+        log.debug(f"UPDATE SOURCE CODE OF {previous_resource.name}; {previous_resource.src_code_hash} -> {new_resource.src_code_hash}")
+        
+        keyname = _upload_s3_code_artifact(new_resource)
+        updated_info['artifact_key'] = keyname
+
+        raw_aws_client.run_client_function("lambda", "update_function_code", {
+            "FunctionName": cdev_cloud_mapper.get_output_value(previous_resource.hash, "cloud_id"),
+            "S3Key": keyname,
+            "S3Bucket": BUCKET,
+            "Publish": True
+        })
 
     if not previous_resource.events_hash == new_resource.events_hash:
         log.debug(f"UPDATE EVENT HASH: {previous_resource.events} -> {new_resource.events}")

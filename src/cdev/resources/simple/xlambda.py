@@ -14,7 +14,7 @@ import inspect
 import os
 
 from pathlib import PosixPath, WindowsPath
-from cdev.utils import hasher, logger, parent_resources
+from cdev.utils import hasher, logger, parent_resources, environment as cdev_environment
 
 log = logger.get_cdev_logger(__name__)
 
@@ -102,7 +102,7 @@ class simple_aws_lambda_function_model(Rendered_Resource):
     An aws lambda function
     """
 
-
+    function_name: str
     filepath: str # Don't use FilePath because this will be a relative path and might not always point correctly to a file in all contexts
     configuration: lambda_function_configuration
     events: List[Event]
@@ -122,12 +122,13 @@ class simple_aws_lambda_function_model(Rendered_Resource):
 
 
 class simple_lambda(Cdev_Resource):
-    def __init__(self, cdev_name: str, filepath: str,  events: List[Event]=[], configuration: lambda_function_configuration={}, permissions: List[Union[Permission,PermissionArn]]=[] ,includes: List[str]=[]) -> None:
+    def __init__(self, cdev_name: str, function_name: str ,filepath: str,  events: List[Event]=[], configuration: lambda_function_configuration={}, permissions: List[Union[Permission,PermissionArn]]=[] ,includes: List[str]=[]) -> None:
         super().__init__(cdev_name)
 
         self.filepath = filepath
         self.includes = includes
         self.events = events
+        self.function_name = f"{function_name}_{cdev_environment.get_current_environment_hash()}"
 
         self.configuration = configuration
         config_parents = [f"{'::'.join(x.resource.split('::')[:3])};hash;{x.resource.split('::')[-1]}" for x in parent_resources.find_cloud_output(configuration.dict())]
@@ -143,7 +144,7 @@ class simple_lambda(Cdev_Resource):
         self.config_hash = configuration.get_cdev_hash()
         self.events_hash = hasher.hash_list([x.get_hash() for x in events])
 
-        self.full_hash = hasher.hash_list([self.src_code_hash, self.config_hash, self.events_hash, self.permissions_hash])
+        self.full_hash = hasher.hash_list([self.function_name, self.src_code_hash, self.config_hash, self.events_hash, self.permissions_hash])
 
         event_parents = [f"{x.original_resource_type};name;{x.original_resource_name}" for x in events]
         all_parents = event_parents + config_parents + permissions_parents
@@ -157,6 +158,7 @@ class simple_lambda(Cdev_Resource):
             "name": self.name,
             "ruuid": "cdev::simple::lambda_function",
             "hash": self.full_hash,
+            "function_name": self.function_name,
             "filepath": self.filepath,
             "events": self.events,
             "permissions": self.permissions,
@@ -175,7 +177,7 @@ class simple_lambda(Cdev_Resource):
 
 
 
-def simple_lambda_function_annotation(name, includes: List[str]=[], events: List[Event]=[],  Environment={}, permissions: List[Union[Permission,PermissionArn]]=[]):
+def simple_lambda_function_annotation(name: str, function_name: str, events: List[Event]=[],  Environment={}, permissions: List[Union[Permission,PermissionArn]]=[], includes: List[str]=[]):
     """
     This annotation is used to designate that a function should be deployed on the AWS lambda platform. Functions that are designated
     using this annotation should have a signature that takes two inputs (event,context) to conform to the aws lambda handler signature.
@@ -192,7 +194,7 @@ def simple_lambda_function_annotation(name, includes: List[str]=[], events: List
             for item in inspect.getmembers(func):
                 
                 if item[0] == "__name__":
-                    function_name=item[1]
+                    handler_name=item[1]
                 elif item[0] == "__doc__":
                     description = item[1] if item[1] else ""
                 elif item[0] == "__module__":
@@ -225,7 +227,7 @@ def simple_lambda_function_annotation(name, includes: List[str]=[], events: List
 
         base_config["Environment"] = {"Variables": Environment} if Environment else None
         base_config["Description"] = description
-        base_config["Handler"] = function_name
+        base_config["Handler"] = handler_name
 
 
         final_config = lambda_function_configuration(**base_config)
@@ -234,7 +236,7 @@ def simple_lambda_function_annotation(name, includes: List[str]=[], events: List
 
         full_filepath = os.path.abspath(mod.__file__)
                     
-        return simple_lambda(cdev_name=name, filepath=full_filepath, events=events, configuration=final_config, permissions=permissions ,includes=includes)
+        return simple_lambda(cdev_name=name, function_name=function_name ,filepath=full_filepath, events=events, configuration=final_config, permissions=permissions ,includes=includes)
 
     
    

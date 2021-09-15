@@ -4,7 +4,7 @@ from typing import List
 
 from ...constructs import Cdev_Resource
 from ...models import Cloud_Output, Rendered_Resource
-from ...utils import hasher
+from ...utils import hasher, environment as cdev_environment
 
 from .xlambda import Event as lambda_event, EventTypes
 
@@ -24,7 +24,7 @@ class Api(Cdev_Resource):
 
     def __init__(self, cdev_name: str, api_name: str, allow_cors: bool) -> None:
         super().__init__(cdev_name)
-        self.api_name = api_name
+        self.api_name = f"{api_name}_{cdev_environment.get_current_environment_hash()}"
         self._routes = []
         self.allow_cors = allow_cors
         self.hash = (hasher.hash_list([hasher.hash_list(self._routes), self.api_name, self.allow_cors]))
