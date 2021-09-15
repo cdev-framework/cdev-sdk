@@ -193,3 +193,11 @@ class Component_State_Difference(BaseModel):
         use_enum_values = True
 
 
+class CloudState(BaseModel):
+    output: Dict
+
+class CloudMapping(BaseModel):
+    state: Dict[str,CloudState]
+    """
+    Dictionary from hash of the resource to the Cloud Resources
+    """

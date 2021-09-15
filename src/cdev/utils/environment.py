@@ -8,10 +8,15 @@ from pydantic import BaseModel
 from pydantic.types import FilePath
 
 from cdev.settings import SETTINGS as cdev_settings
+from cdev.models import CloudMapping, CloudState, Rendered_State
 
 from .logger import get_cdev_logger
 
+
+
 log = get_cdev_logger(__name__)
+
+
 
 
 CDEV_ENVIRONMENT_INFO_FILE = cdev_settings.get("CDEV_ENVIRONMENT_INFO_FILE")
@@ -56,6 +61,8 @@ def create_environment(environment_name: str) -> bool:
         "cloud_mapping_fp": CLOUD_MAPPING_PATH,
         "settings": []
     }))
+
+    _initialize_backend_files(RESOURCE_STATE_PATH_FULL, CLOUD_MAPPING_PATH_FULL)
 
     _write_environment_info_object(current_environment)
 
@@ -127,3 +134,26 @@ def _create_cloud_mapping(fp):
 def touch(fname, times=None):
     with open(fname, 'a'):
         os.utime(fname, times)
+
+
+def _initialize_backend_files(resource_state_fp: FilePath, cloud_mapping_fp: FilePath):
+    # NO previous local state so write an empty object to the file then return the object
+    project_state = Rendered_State(**{
+        "rendered_components": None,
+        "hash": "0"
+    })
+
+    cloudmapping = CloudMapping(**{
+        "state": {
+            "0": CloudState(**{
+                "output": {},
+                "deployed_resources": []
+            })
+        }
+    })
+
+    with open(resource_state_fp, "w") as fh:
+        fh.write(project_state.json(indent=4))
+
+    with open(cloud_mapping_fp, "w") as fh:
+        fh.write(cloudmapping.json(indent=4))

@@ -1,6 +1,5 @@
-from os import truncate
 from typing import Any, Callable, Dict
-from cdev.backend.models import CloudState
+from cdev.models import CloudState
 from . import utils as backend_utils
 
 

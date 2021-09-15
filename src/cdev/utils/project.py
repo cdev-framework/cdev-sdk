@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from pydantic.types import FilePath
 
 from cdev.settings import SETTINGS as cdev_settings
-from cdev.mapper.cloudmapper import DefaultMapper
+
 from cdev.constructs import Cdev_Project
 
 from . import environment as cdev_environment
@@ -62,6 +62,7 @@ def create_new_project(project_info: project_definition) -> bool:
 
 
 def initialize_project() -> None:
+    from cdev.mapper.cloudmapper import DefaultMapper
     _import_project_file(_get_cdev_project_file())
     Cdev_Project.instance().add_mapper(DefaultMapper())
 

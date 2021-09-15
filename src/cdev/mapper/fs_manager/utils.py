@@ -5,7 +5,7 @@ from typing import List
 from cdev.settings import SETTINGS as cdev_settings
 from cdev.utils import paths as cdev_paths
 
-BASE_FILES_PATH = cdev_settings.get("CDEV_INTERMEDIATE_FILES_LOCATION")
+BASE_FILES_PATH = cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION")
 
 def get_lines_from_file_list(file_list, function_info) -> List[str]:
     # Get the list of lines from a file based on the function info provided
@@ -65,6 +65,7 @@ def get_parsed_path(original_path, function_name, prefix=None):
     if prefix:
         split_path.insert(0, prefix)
 
+    split_path.insert(0, "functions")
     final_file_dir = _create_path(BASE_FILES_PATH, split_path)
 
     return os.path.join(final_file_dir,function_name+".py")
