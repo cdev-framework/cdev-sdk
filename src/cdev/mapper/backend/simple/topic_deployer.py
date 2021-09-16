@@ -9,6 +9,7 @@ from cdev.utils import hasher, logger
 from cdev.resources.simple import topic as simple_topic
 from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
 from ..aws import aws_client as raw_aws_client
+from cdev.output import print_deployment_step
 
 log = logger.get_cdev_logger(__name__)
 RUUID = simple_topic.RUUID
@@ -27,6 +28,7 @@ def _create_simple_topic(identifier: str, resource: simple_topic.simple_topic_mo
         "Name": resource.topic_name,
         "Attributes": attributes
     })
+    print_deployment_step("CREATE", f"Created topic {resource.name}")
 
     output_info = {
         "topic_name": resource.topic_name,
@@ -53,6 +55,8 @@ def _remove_simple_topic(identifier: str, resource: simple_topic.simple_topic_mo
     raw_aws_client.run_client_function("sns", "delete_topic", {
         "TopicArn": topic_arn
     })
+
+    print_deployment_step("DELETE", f"Removed topic {resource.name}")
     
     cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
     cdev_cloud_mapper.remove_identifier(identifier)

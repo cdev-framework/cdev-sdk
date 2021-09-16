@@ -6,6 +6,7 @@ from cdev.models import Resource_State_Difference, Action_Type
 from cdev.utils import hasher, logger
 from cdev.resources.simple import object_store as simple_object_store
 from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
+from cdev.output import print_deployment_step
 from ..aws import aws_client as raw_aws_client
 
 log = logger.get_cdev_logger(__name__)
@@ -23,6 +24,7 @@ def _create_simple_bucket(identifier: str, resource: simple_object_store.simple_
         "Bucket": resource.bucket_name
     })
     
+    print_deployment_step("CREATE", f"Created bucket {resource.name}")
     
     output_info = {
         "bucket_name": resource.bucket_name,
@@ -48,6 +50,8 @@ def _remove_simple_bucket(identifier: str, resource: simple_object_store.simple_
     raw_aws_client.run_client_function("s3", "delete_bucket", {
         "Bucket": resource.bucket_name
     })
+
+    print_deployment_step("DELETE", f"Removed bucket {resource.name}")
 
     cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
     cdev_cloud_mapper.remove_identifier(identifier)

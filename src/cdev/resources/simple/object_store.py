@@ -74,7 +74,7 @@ class Bucket(Cdev_Resource):
         
         super().__init__(cdev_name)
 
-        self.bucket_name = f"{bucket_name}_{cdev_environment.get_current_environment_hash()}"
+        self.bucket_name = f"{bucket_name}{cdev_environment.get_current_environment_hash()}"
 
         self.permissions = BucketPermissions(cdev_name)
 

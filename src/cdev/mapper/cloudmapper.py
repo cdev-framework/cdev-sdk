@@ -5,7 +5,7 @@ from cdev.constructs import CloudMapper
 from cdev.settings import SETTINGS
 
 from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
-from cdev.output import create_progress, complete_progress
+
 
 from .backend.aws import aws_lambda, dynamodb, iam, s3, sqs, apigatewayv2, apigateway
 

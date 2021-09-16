@@ -7,6 +7,7 @@ from cdev.utils import hasher, logger
 from cdev.resources.simple import queue as simple_queue
 from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
 from ..aws import aws_client as raw_aws_client
+from cdev.output import print_deployment_step
 
 log = logger.get_cdev_logger(__name__)
 RUUID = simple_queue.RUUID
@@ -25,6 +26,8 @@ def _create_simple_queue(identifier: str, resource: simple_queue.simple_queue_mo
         "QueueName": resource.queue_name,
         "Attributes": attributes
     })
+
+    print_deployment_step("CREATE", f"Created queue {resource.name}")
 
     output_info = {
         "queue_name": resource.queue_name,
@@ -62,6 +65,8 @@ def _remove_simple_queue(identifier: str, resource: simple_queue.simple_queue_mo
     raw_aws_client.run_client_function("sqs", "delete_queue", {
         "QueueUrl": queue_url
     })
+
+    print_deployment_step("DELETE", f"Removed queue {resource.name}")
     
     cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
     cdev_cloud_mapper.remove_identifier(identifier)

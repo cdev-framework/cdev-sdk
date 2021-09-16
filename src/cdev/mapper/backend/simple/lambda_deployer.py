@@ -5,6 +5,7 @@ from cdev.models import Resource_State_Difference, Action_Type
 from cdev.utils import logger
 from cdev.resources.simple import xlambda as simple_lambda
 from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
+from cdev.output import print_deployment_step
 
 
 from ..aws import aws_client as raw_aws_client
@@ -28,7 +29,7 @@ def _create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
     # 2. Upload the artifact to S3 as the archive location
     # 3. Create the function
     # 4. Create any integrations that are need based on Events passed in
-    
+    print_deployment_step("CREATE", f"Creating lambda function resources for lambda {resource.name}")
     
     log.debug(f"Attempting to create {resource}")
     final_info = {
@@ -39,6 +40,7 @@ def _create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
     # Step 1
     role_name = f"lambda_{resource.function_name}"
     permission_info = create_role_with_permissions(role_name, resource.permissions)
+    print_deployment_step("CREATE", f"  Create role for lambda function {resource.name}")
 
     role_arn = permission_info[0]
 
@@ -48,12 +50,14 @@ def _create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
 
     # Step 2
     keyname = _upload_s3_code_artifact(resource)
+    print_deployment_step("CREATE", f"  Upload code for lambda function {resource.name}")
    
     final_info['artifact_bucket'] = BUCKET
     final_info['artifact_key'] = keyname
 
     # Step 3
     # TODO
+    print_deployment_step("CREATE", f"  [blink]Waiting for role to finish creating[/blink]")
     sleep(10)
     # ughhhh add a retry wrapper because it takes time to generate the IAM roles across all regions so we need to wait a few seconds to create this 
     lambda_function_args = {
@@ -81,15 +85,17 @@ def _create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
             if not key in EVENT_TO_HANDLERS:
                 raise Exception
 
+            
             output = EVENT_TO_HANDLERS.get(key).get("CREATE")(event, final_info.get("cloud_id"))
             event_hash_to_output[event.get_hash()] = output
+            print_deployment_step("CREATE", f"  Create event {event.event_type.value} {event.original_resource_name} for lambda {resource.name}")
 
         final_info['events'] = event_hash_to_output
 
 
     cdev_cloud_mapper.add_identifier(identifier)
     cdev_cloud_mapper.update_output_value(identifier, final_info)
-
+    print_deployment_step("CREATE", f"  Created lambda function resources for lambda {resource.name}")
     return True
 
 
@@ -124,6 +130,7 @@ def _remove_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
     # Steps:
     # Remove and event that is on the function to make sure resources are properly cleaned up
     # Remove the actual function
+    print_deployment_step("DELETE", f"Removing resources for lambda {resource.name}")
     log.debug(f"Attempting to delete {resource}")
     cloud_id = cdev_cloud_mapper.get_output_value(resource.hash, "cloud_id")
     log.debug(f"Current function ARN {cloud_id}")
@@ -135,11 +142,12 @@ def _remove_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
 
         if not key in EVENT_TO_HANDLERS:
             raise Exception
-
+        
         output = EVENT_TO_HANDLERS.get(key).get("REMOVE")(casted_event, resource.hash)
-
+        print_deployment_step("DELETE", f"  Remove event {casted_event.event_type.value} {casted_event.original_resource_name} for lambda {resource.name}")
 
     raw_aws_client.run_client_function("lambda", "delete_function", {"FunctionName": cloud_id})
+    print_deployment_step("DELETE", f"  Remove lambda function {resource.name}")
     log.debug(f"Delete function")
 
     role_name = cdev_cloud_mapper.get_output_value(resource.hash, "role_name")
@@ -147,11 +155,12 @@ def _remove_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
 
     log.debug(f"Attemping to delete role {role_name} and permissions {permissions}")
     delete_role_and_permissions(role_name, [v for _,v in permissions.items()])
+    print_deployment_step("DELETE", f"  Remove role for lambda function {resource.name}")
 
     cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
     cdev_cloud_mapper.remove_identifier(identifier)
     log.debug(f"Delete information in resource and cloud state")
-    
+    print_deployment_step("DELETE", f"  Removed resources for lambda {resource.name}")
     return True
 
 
@@ -160,8 +169,8 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
     # Update source code or dependencies
     # Update configuration
     # Update events
-    
-    
+    print_deployment_step("UPDATE", f"Updating lambda function {new_resource.name}")
+    did_update_permission = False
     updated_info = {
 
     }
@@ -174,9 +183,12 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
                 "FunctionName": cdev_cloud_mapper.get_output_value(previous_resource.hash, "cloud_id"),
                 "Environment": new_resource.configuration.Environment.dict()
             })
+
+            print_deployment_step("UPDATE", f"  Update environment variabels for lambda function {new_resource.name}")
         
 
     if not previous_resource.permissions_hash == new_resource.permissions_hash:
+        did_update_permission = True
         previous_hashes = set([simple_lambda.Permission(**x).get_hash() if "resource" in x else simple_lambda.PermissionArn(**x).get_hash() for x in previous_resource.permissions])
         new_hashes = set([x.get_hash() for x in new_resource.permissions])
 
@@ -210,7 +222,8 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
             delete_policy(role_name_output, permission_output.get(previous_resource_permission_hash))
             permission_output.pop(previous_resource_permission_hash)
 
-        cdev_cloud_mapper.update_output_by_key(previous_resource.hash, "permissions", permission_output)    
+        cdev_cloud_mapper.update_output_by_key(previous_resource.hash, "permissions", permission_output)
+        print_deployment_step("UPDATE", f"  Update permissions for lambda function {new_resource.name}") 
 
 
     if not previous_resource.src_code_hash == new_resource.src_code_hash:
@@ -225,9 +238,13 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
             "S3Bucket": BUCKET,
             "Publish": True
         })
+        print_deployment_step("UPDATE", f"  Update source code for lambda function {new_resource.name}") 
 
     if not previous_resource.events_hash == new_resource.events_hash:
         log.debug(f"UPDATE EVENT HASH: {previous_resource.events} -> {new_resource.events}")
+        if did_update_permission:
+            print_deployment_step("UPDATE", "   [blink]Wait for new permissions to take effect[blink]")
+            sleep(5)
 
         previous_hashes = set([simple_lambda.Event(**x).get_hash() for x in previous_resource.events])
         new_hashes = set([x.get_hash() for x in new_resource.events])
@@ -261,6 +278,7 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
             output = EVENT_TO_HANDLERS.get(key).get("CREATE")(event, cdev_cloud_mapper.get_output_value(previous_resource.hash, "cloud_id"))
             event_output[event.get_hash()] = output
             log.debug(f"Add Event -> {event}")
+            print_deployment_step("UPDATE", f"  Create event {event.event_type.value} {event.original_resource_name} for lambda {new_resource.name}") 
 
         
         for event in remove_events:
@@ -274,12 +292,13 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
             output = EVENT_TO_HANDLERS.get(key).get("REMOVE")(casted_event, previous_resource.hash)
             event_output.pop(casted_event.get_hash())
             log.debug(f"Remove Event -> {casted_event}")
+            print_deployment_step("UPDATE", f"  Remove event {casted_event.event_type.value} {casted_event.original_resource_name} for lambda {new_resource.name}")
 
         cdev_cloud_mapper.update_output_by_key(previous_resource.hash, "events", event_output)
 
 
     cdev_cloud_mapper.reidentify_cloud_resource(previous_resource.hash, new_resource.hash)
-
+    print_deployment_step("UPDATE", f"  Finished updating lambda function {new_resource.name}")
     return True
 
 

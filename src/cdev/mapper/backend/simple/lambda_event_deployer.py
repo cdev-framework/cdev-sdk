@@ -288,6 +288,9 @@ def _handle_adding_queue_event(event: simple_lambda.Event, cloud_function_id) ->
     queue_resource = cdev_cloud_mapper.get_output_value_by_name("cdev::simple::queue", event.original_resource_name)
     log.debug(f"Found Table info for {event} -> {queue_resource}")
 
+    
+
+    
 
     rv = raw_aws_client.run_client_function("lambda", "create_event_source_mapping", {
         "EventSourceArn": queue_resource.get("arn"),

@@ -53,3 +53,13 @@ def confirm_deployment() -> bool:
     rv = Confirm.ask("[bold magenta]Do you want to deploy these changes?[/bold magenta]")
     return rv
 
+
+
+
+def print_deployment_step(action_type: str, msg: str):
+    if action_type == 'CREATE':
+        console.print(f"    [bold green](CREATE)[/bold green] {msg}")
+    elif action_type == 'UPDATE':
+        console.print(f"    [bold yellow](UPDATE)[/bold yellow] {msg}")
+    elif action_type == 'DELETE':
+        console.print(f"    [bold red](DELETE)[/bold red] {msg}")
