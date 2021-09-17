@@ -13,7 +13,8 @@ setuptools.setup(
         "boto3==1.17.90",
         "pydantic==1.8.2",
         "networkx==2.5.1",
-        "python-json-logger==2.0.2"
+        "python-json-logger==2.0.2",
+        "watchdog==2.1.5"
     ],
     python_requires='>=3.5'
 )

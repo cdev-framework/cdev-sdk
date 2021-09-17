@@ -4,6 +4,7 @@ from ast import parse
 import os
 
 from  .. import commands as commands
+from ..commands import local_development
 
 
 
@@ -18,7 +19,11 @@ CDEV_COMMANDS = [
         "help": "See the differences that have been made since the last deployment",
         "default": commands.plan
     }, 
-    
+    {
+        "name": "develop",
+        "help": "Open an interactive development environment",
+        "default": local_development.develop
+    }, 
     {
         "name": "deploy",
         "help": "Deploy a set of changes",

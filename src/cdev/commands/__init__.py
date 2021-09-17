@@ -3,6 +3,15 @@ All the commands available for use
 """
 
 import os
+from rich.console import Console
+
+from rich.layout import Layout
+from rich.panel import Panel
+from rich.table import Table
+from rich.live import Live
+
+from cdev.utils.hasher import hash_string
+
 
 
 
@@ -43,10 +52,17 @@ def deploy(args):
     project.initialize_project()
     rendered_frontend = frontend_executer.execute_frontend()
     project_diffs = resource_state_manager.create_project_diffs(rendered_frontend)
+    
+
+
     if not backend_executer.validate_diffs(project_diffs):
         raise Exception 
 
     print_plan(rendered_frontend, project_diffs)
+
+    if not project_diffs:
+        print("No differences to deploy")
+        return
 
     if not confirm_deployment():
         raise Exception
@@ -102,4 +118,5 @@ def user(command, args):
         pass
 
 
-    
+
+

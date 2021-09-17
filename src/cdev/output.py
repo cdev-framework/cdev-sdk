@@ -12,8 +12,6 @@ from cdev.utils.environment import get_current_environment
 # This file outputs things in a pretty way for the CLI
 console = Console()
 
-
-
 def print_local_diffs(diff: Component_State_Difference):
     console.print(f"[bold magenta] {diff.new_component.name}[/bold magenta]")
 
@@ -54,8 +52,6 @@ def confirm_deployment() -> bool:
     return rv
 
 
-
-
 def print_deployment_step(action_type: str, msg: str):
     if action_type == 'CREATE':
         console.print(f"    [bold green](CREATE)[/bold green] {msg}")
@@ -63,3 +59,23 @@ def print_deployment_step(action_type: str, msg: str):
         console.print(f"    [bold yellow](UPDATE)[/bold yellow] {msg}")
     elif action_type == 'DELETE':
         console.print(f"    [bold red](DELETE)[/bold red] {msg}")
+
+def print(msg:str) -> None:
+    console.print(msg)
+
+
+####################################################
+###### Output capturing for development environment
+####################################################
+
+def start_capturing_console():
+    console.begin_capture()
+
+def get_current_captured_logs() -> str:
+    new_output = console.end_capture()
+    print(new_output)
+    console.begin_capture()
+    return new_output
+
+def end_capturing_console():
+    return console.end_capture()
