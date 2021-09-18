@@ -19,19 +19,19 @@ from ..utils import project
 from ..utils.logger import get_cdev_logger
 from ..utils import environment as cdev_environment
 
-from cdev.output import print_plan, confirm_deployment
+from cdev.output import print_plan, confirm_deployment, print
 
 log = get_cdev_logger(__name__)
 
+from ..frontend import executer as frontend_executer
+from ..backend import executer as backend_executer
+from ..backend import resource_state_manager
 
 def plan(args):
-    from ..frontend import executer as frontend_executer
-    from ..backend import executer as backend_executer
-    from ..backend import resource_state_manager
-
     log.debug(f"Calling `cdev plan`")
     project.initialize_project()
     log.debug(f"Initialized project")
+    print("MADE IT HERE IN PLAN")
     rendered_frontend = frontend_executer.execute_frontend()
     log.debug(f"New rendered frontend -> {rendered_frontend}")
     project_diffs = resource_state_manager.create_project_diffs(rendered_frontend)
@@ -64,8 +64,8 @@ def deploy(args):
         print("No differences to deploy")
         return
 
-    if not confirm_deployment():
-        raise Exception
+    #if not confirm_deployment():
+    #    raise Exception
 
     backend_executer.deploy_diffs(project_diffs)
 

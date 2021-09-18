@@ -118,8 +118,9 @@ def _import_project_file(fp: str) -> None:
     mod_name = _get_module_name_from_path(fp)
         
     if sys.modules.get(mod_name):
-        print(f"already loaded {mod_name}")
+        #print(f"already loaded {mod_name}")
         importlib.reload(sys.modules.get(mod_name))
+        return
         
     # When the python file is imported and executed all the Component objects are initialized
     mod = importlib.import_module(mod_name)

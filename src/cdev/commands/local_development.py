@@ -6,26 +6,60 @@ from typing import List
 from rich.console import Console
 from rich.layout import Layout
 from rich.panel import Panel
+from rich.style import Style
 from rich.table import Table
 from rich.live import Live
+from rich.text import Text
 
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
+
+
+import logging
+import threading
+import time
+
 from cdev import output as cdev_output
 
-STD_OUT_BUFFER = []
-print(STD_OUT_BUFFER)
+STD_OUT_HISTORY_BUFFER = []
+history = []
+Program_Executing = True
+
+
+
+def make_develop_layout() -> Layout:
+    layout = Layout("tmp")
+    layout.split(
+        
+        Layout(name="stdout"),
+        Layout(name="output"), 
+        Layout(name="commands"), 
+     
+    )
+
+    layout['stdout'].ratio = 70
+    layout['output'].ratio = 20
+    layout['commands'].ratio = 1
+    #layout['hidden'].visible = False
+
+    layout['commands'].update("[blink]----- Command ------[blink]")
+
+    return layout
+
+
+
+LAYOUT = make_develop_layout()
+LIVE_OBJECT = Live(LAYOUT, auto_refresh=False, transient=True)
 
 def develop(args):
     run_enhanced_local_development_environment(args)
 
 
 def run_enhanced_local_development_environment(args):
-    cdev_output.start_capturing_console()
-    patterns = ["*"]
-    ignore_patterns = None
-    ignore_directories = False
+    patterns = ["./src/*"]
+    ignore_patterns = ["*/__pycache__/*"]
+    ignore_directories = True
     case_sensitive = True
     my_event_handler = PatternMatchingEventHandler(patterns, ignore_patterns, ignore_directories, case_sensitive)
 
@@ -38,84 +72,85 @@ def run_enhanced_local_development_environment(args):
     go_recursively = True
     my_observer = Observer()
     my_observer.schedule(my_event_handler, path, recursive=go_recursively)
-
-
-    full_layout = make_develop_layout()
-
     
-    full_layout["stdout"].update(Panel("RIGHT NOW"))
-    full_layout["hidden"].update("[blink]----- Command ------[blink]")
 
-    history = []
-    stdout_buffer = []
-    
+    x = threading.Thread(target=handle_stdin, daemon=True)
     try:
-        with Live(full_layout, auto_refresh=False, transient=True) as l:
+        with LIVE_OBJECT as l:
             my_observer.start()
+            x.start()
+            last_stdout_hash = 0
             while True:
+                messages, messages_hash = cdev_output.get_messages_from_buffer(None,None)
                 
-                line =  sys.stdin.readline()
-                history.append(line)
                 
-                full_layout["output"].update(Panel("> "+str("\n> ".join(history[-2:]))))
 
-                l.update(full_layout, refresh=True)
-                
-                
-               
-
-                new_string = "\n".join(get_buffer())
-                reset_buffer()
-                full_layout['stdout'].update(Panel("No NEW CONTENT"))
-                l.update(full_layout, refresh=True)
-
-                if not new_string:
-                    full_layout['stdout'].update(Panel(str(new_string)))
-                    l.update(full_layout, refresh=True)
-                
-                else:                   
-                    full_layout['stdout'].update(Panel(new_string))
-                    l.update(full_layout, refresh=True)
+                if messages_hash == last_stdout_hash:
+                    pass
+                else:
+                    print(messages)
+                    messages_as_string = "\n".join(messages)
+                    last_stdout_hash = messages_hash
+                    LAYOUT['stdout'].update(Panel(messages_as_string))
+                    update_screen()
+                    sleep(.1)
 
 
     except KeyboardInterrupt:
         my_observer.stop()
         my_observer.join()
+        x.join()
         print("Development environment closed")
         exit(0)
 
 
-def make_develop_layout() -> Layout:
-    layout = Layout("tmp")
-    layout.split(
+def handle_stdin():
+    while Program_Executing:
+        _new_line = []
+        for line in sys.stdin.readline():
+            _new_line.append(line)
+
+        add_line_to_history("".join(_new_line))
         
-        Layout(name="stdout"),
-        Layout(name="output"), 
-        Layout(name="hidden"), 
-     
-    )
+        potential_new_line = get_new_lines()
+        if potential_new_line:
+            LAYOUT["output"].update(Panel(potential_new_line))
+        
+        update_screen()
+            
 
-    layout['stdout'].ratio = 70
-    layout['output'].ratio = 20
-    layout['hidden'].ratio = 1
-    #layout['hidden'].visible = False
 
-    return layout
+def update_screen():
+    LIVE_OBJECT.update(LAYOUT, refresh=True)
 
-def get_buffer() -> List:
-    return STD_OUT_BUFFER
 
-def reset_buffer():
-    STD_OUT_BUFFER = []
+def add_line_to_history(line):
+    history.append(line)
 
+    
+
+def get_new_lines() -> str:
+    if not history:
+        return None
+    lines = '\n> '.join(history)
+    rv = "> " + lines
+    history.clear()
+    return rv
+
+from . import deploy, plan
 def on_created(event):
-    STD_OUT_BUFFER.append(f"hey, {event.src_path} has been created!")
+    cdev_output.print(f"hey, [red]{event.src_path}[/red] has been created!")
+    plan({})
+    cdev_output.print(f"hey, [red]{event.src_path}[/red] has been created!")
 
 def on_deleted(event):
-    STD_OUT_BUFFER.append(f"what the f**k! Someone deleted {event.src_path}!")
+    cdev_output.print(f"what the f**k! Someone deleted {event.src_path}!")
+    #plan({})
 
 def on_modified(event):
-    STD_OUT_BUFFER.append(f"hey buddy, {event.src_path} has been modified")
+    cdev_output.print(f"hey buddy, {event.src_path} has been modified")
+    #plan({})
 
 def on_moved(event):
-    STD_OUT_BUFFER.append(f"ok ok ok, someone moved {event.src_path} to {event.dest_path}")
+    cdev_output.print(f"ok ok ok, someone moved {event.src_path} to {event.dest_path}")
+    #plan({})

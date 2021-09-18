@@ -39,7 +39,7 @@ def _find_resources_information_from_file(fp) -> List[Rendered_Resource]:
     mod_name = _get_module_name_from_path(fp)
         
     if sys.modules.get(mod_name):
-        print(f"already loaded {mod_name}")
+        #print(f"already loaded {mod_name}")
         importlib.reload(sys.modules.get(mod_name))
         
     # When the python file is imported and executed all the Cdev resources are created and registered with the

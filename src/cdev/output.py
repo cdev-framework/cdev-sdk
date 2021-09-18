@@ -1,10 +1,11 @@
-from typing import List
+from typing import List, Tuple
 import threading
 from rich.console import Console
 from rich.prompt import Prompt,Confirm
 from rich.progress import Progress, BarColumn, TextColumn
 
-from time import sleep
+
+from cdev.utils import hasher   
 
 from cdev.models import Action_Type, Component_State_Difference, Rendered_State
 from cdev.utils.environment import get_current_environment
@@ -12,70 +13,82 @@ from cdev.utils.environment import get_current_environment
 # This file outputs things in a pretty way for the CLI
 console = Console()
 
+CAPTURE_OUTPUT = True
+
+
 def print_local_diffs(diff: Component_State_Difference):
-    console.print(f"[bold magenta] {diff.new_component.name}[/bold magenta]")
+    print(f"[bold magenta] {diff.new_component.name}[/bold magenta]")
 
     for resource_diff in diff.resource_diffs:
 
         if resource_diff.action_type == Action_Type.CREATE:
-            console.print(f"    [bold green](CREATE)[/bold green] {resource_diff.new_resource.name}")
+            print(f"    [bold green](CREATE)[/bold green] {resource_diff.new_resource.name}")
         elif resource_diff.action_type == Action_Type.DELETE:
-            console.print(f"    [bold red](DELETE)[/bold red] {resource_diff.previous_resource.name}")
+            print(f"    [bold red](DELETE)[/bold red] {resource_diff.previous_resource.name}")
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
-            console.print(f"    [bold yellow](UPDATE)[/bold yellow] {resource_diff.new_resource.name}")
+            print(f"    [bold yellow](UPDATE)[/bold yellow] {resource_diff.new_resource.name}")
         elif resource_diff.action_type == Action_Type.UPDATE_NAME:
-            console.print(f"    [bold yellow](RENAME)[/bold yellow] {resource_diff.previous_resource.name} -> {resource_diff.new_resource.name}")
+            print(f"    [bold yellow](RENAME)[/bold yellow] {resource_diff.previous_resource.name} -> {resource_diff.new_resource.name}")
 
 
 def print_local_state(state: Rendered_State):
-    console.print("---FULL NEW STATE---")
+    print("---FULL NEW STATE---")
 
     for component in state.rendered_components:
-        console.print(f"[bold magenta] {component.name}[/bold magenta]")
+        print(f"[bold magenta] {component.name}[/bold magenta]")
         for resource in component.rendered_resources:
-            console.print(f"    [bold blue]{resource.name} ({resource.ruuid})[/bold blue]")
+            print(f"    [bold blue]{resource.name} ({resource.ruuid})[/bold blue]")
 
 
 def print_plan(new_state: Rendered_State, diffs: List[Component_State_Difference]):
-    console.print(f"[bold yellow]CURRENT ENVIRONMENT[/bold yellow] -> [bold blue] {get_current_environment()}[/bold blue]")
+    print(f"[bold yellow]CURRENT ENVIRONMENT[/bold yellow] -> [bold blue] {get_current_environment()}[/bold blue]")
     
     print_local_state(new_state)
 
-    console.print(f"---DIFFS---")
+    print(f"---DIFFS---")
     for component_diff in diffs:
         print_local_diffs(component_diff)
 
 
 def confirm_deployment() -> bool:
-    console.print("")
+    print("")
     rv = Confirm.ask("[bold magenta]Do you want to deploy these changes?[/bold magenta]")
     return rv
 
 
 def print_deployment_step(action_type: str, msg: str):
     if action_type == 'CREATE':
-        console.print(f"    [bold green](CREATE)[/bold green] {msg}")
+        print(f"    [bold green](CREATE)[/bold green] {msg}")
     elif action_type == 'UPDATE':
-        console.print(f"    [bold yellow](UPDATE)[/bold yellow] {msg}")
+        print(f"    [bold yellow](UPDATE)[/bold yellow] {msg}")
     elif action_type == 'DELETE':
-        console.print(f"    [bold red](DELETE)[/bold red] {msg}")
+        print(f"    [bold red](DELETE)[/bold red] {msg}")
 
 def print(msg:str) -> None:
-    console.print(msg)
+    if CAPTURE_OUTPUT:
+        add_message(msg)
+    else:
+        console.print(msg)
 
 
 ####################################################
 ###### Output capturing for development environment
 ####################################################
+STD_OUT_BUFFER = []
 
-def start_capturing_console():
-    console.begin_capture()
+def add_message(msg: str) -> None:
+    STD_OUT_BUFFER.append(msg)
 
-def get_current_captured_logs() -> str:
-    new_output = console.end_capture()
-    print(new_output)
-    console.begin_capture()
-    return new_output
 
-def end_capturing_console():
-    return console.end_capture()
+def get_messages_from_buffer(start_index: int, end_index: int) -> Tuple[List[str], int]:
+    if start_index and end_index:
+        messages = STD_OUT_BUFFER[start_index:end_index]
+    elif not end_index:
+        messages = STD_OUT_BUFFER[start_index:]
+    elif not start_index:
+        messages = STD_OUT_BUFFER[:end_index]
+    else:
+        messages = STD_OUT_BUFFER
+
+
+    return (messages, hasher.hash_list(messages))

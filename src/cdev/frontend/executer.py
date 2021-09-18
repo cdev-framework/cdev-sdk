@@ -41,6 +41,7 @@ def execute_frontend() -> Rendered_State:
     try:
         ALL_COMPONENTS = Cdev_Project.instance().get_components()
         log.info(f"Components in project -> {ALL_COMPONENTS}")
+        print(len(ALL_COMPONENTS))
 
         project_components_sorted = SortedList(key=lambda x: x.name)
         log.debug(f"Sorted Components by name -> {project_components_sorted}")
