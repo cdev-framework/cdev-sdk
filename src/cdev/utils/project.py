@@ -12,10 +12,10 @@ from cdev.settings import SETTINGS as cdev_settings
 
 from cdev.constructs import Cdev_Project
 
+from cdev.mapper.cloudmapper import DefaultMapper
 from . import environment as cdev_environment
 
 INTERNAL_FOLDER_NAME = cdev_settings.get("INTERNAL_FOLDER_NAME")
-
 
 INTERMEDIATE_FOLDER_NAME = cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION")
 INTERMEDIATE_FUNCTIONS_FOLDER_NAME = cdev_settings.get("CDEV_INTERMEDIATE_FILES_LOCATION")
@@ -25,6 +25,8 @@ LOCAL_STATE_LOCATION = cdev_settings.get("LOCAL_STATE_LOCATION")
 
 CDEV_PROJECT_FILE = cdev_settings.get("CDEV_PROJECT_FILE")
 CDEV_ENVIRONMENT_INFO_FILE = cdev_settings.get("CDEV_ENVIRONMENT_INFO_FILE")
+
+
 
 
 class project_definition(BaseModel):
@@ -58,9 +60,23 @@ def create_new_project(project_info: project_definition) -> bool:
     for environment in project_info.environment_names:
         cdev_environment.create_environment(environment)
 
-    # TODO set starting environment 
-    cdev_environment.set_current_environment("dev_daniel")
+    cdev_environment.set_current_environment("dev")
 
+
+
+def check_if_project_exists() -> bool:
+    return os.path.isfile(os.path.join(os.getcwd(), ".cdev", "project_info.json"))
+
+
+def initialize_project() -> None:
+
+
+    if Cdev_Project.instance():
+        Cdev_Project.instance().clear()
+
+    _import_project_file(_get_cdev_project_file())
+    
+    Cdev_Project.instance().add_mapper(DefaultMapper())
 
 def _create_project_file(project_info: project_definition) -> bool:
     project_json = {
@@ -72,21 +88,6 @@ def _create_project_file(project_info: project_definition) -> bool:
 
     with open(project_info_fp, "w") as fh: 
         fh.write(json.dumps(project_json, indent=4))
-
-
-def check_if_project_exists() -> bool:
-    return os.path.isfile(os.path.join(os.getcwd(), ".cdev", "project_info.json"))
-
-
-def initialize_project() -> None:
-    from cdev.mapper.cloudmapper import DefaultMapper
-    
-    if Cdev_Project.instance():
-        Cdev_Project.instance().clear()
-
-    _import_project_file(_get_cdev_project_file())
-    
-    Cdev_Project.instance().add_mapper(DefaultMapper())
 
 
 def _initialize_project_structure(folder_path):

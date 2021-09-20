@@ -44,6 +44,8 @@ SETTINGS["CAPTURE_OUTPUT"] = False
 
 
 
+
+
 SETTINGS["LOGGING_INFO"] = {
     "version": 1,
     "formatters": {
@@ -80,7 +82,42 @@ SETTINGS["LOGGING_INFO"] = {
             "rich_tracebacks": True
         }
     },
-    "loggers":{
+    "loggers":{  
+        "cli": {
+            "level": "DEBUG",
+            "handlers": ["fileHandler"],
+            "propagate": False
+        },
+        "commands": {
+            "level": "DEBUG",
+            "handlers": ["fileHandler"],
+            "propagate": False
+        },
+        "frontend": {
+            "level": "DEBUG",
+            "handlers": ["fileHandler"],
+            "propagate": False
+        },
+        "backend": {
+            "level": "DEBUG",
+            "handlers": ["fileHandler"],
+            "propagate": False
+        },
+        "mapper": {
+            "level": "DEBUG",
+            "handlers": ["fileHandler"],
+            "propagate": False
+        },
+        "resources": {
+            "level": "DEBUG",
+            "handlers": ["fileHandler"],
+            "propagate": False
+        },
+        "utils": {
+            "level": "DEBUG",
+            "handlers": ["fileHandler"],
+            "propagate": False
+        },
         "cli_rich": {
             "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["richHandler"],
@@ -161,43 +198,7 @@ SETTINGS["LOGGING_INFO"] = {
 }
 
 
-file_logger = {
-    "cli": {
-        "level": "DEBUG",
-        "handlers": ["fileHandler"],
-        "propagate": False
-    },
-    "commands": {
-        "level": "DEBUG",
-        "handlers": ["fileHandler"],
-        "propagate": False
-    },
-    "frontend": {
-        "level": "DEBUG",
-        "handlers": ["fileHandler"],
-        "propagate": False
-    },
-    "backend": {
-        "level": "DEBUG",
-        "handlers": ["fileHandler"],
-        "propagate": False
-    },
-    "mapper": {
-        "level": "DEBUG",
-        "handlers": ["fileHandler"],
-        "propagate": False
-    },
-    "resources": {
-        "level": "DEBUG",
-        "handlers": ["fileHandler"],
-        "propagate": False
-    },
-    "utils": {
-        "level": "DEBUG",
-        "handlers": ["fileHandler"],
-        "propagate": False
-    },
-}
+
 
 
 def set_setting(key: str, val: Any) -> None:

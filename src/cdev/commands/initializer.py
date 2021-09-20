@@ -13,7 +13,7 @@ def init(args):
 
     project_name = Prompt.ask("Enter your project name")
 
-    info = project.project_definition(base_project_dir, project_name, ['prod', 'stage', 'dev_daniel'])
+    info = project.project_definition(base_project_dir, project_name, ['prod', 'stage', 'dev'])
 
     project.create_new_project(info)
 
