@@ -3,7 +3,9 @@ import argparse
 from ast import parse
 import os
 
-from  ..commands import normal as commands
+from cdev import output
+
+from ..commands import plan, deploy, destroy, environment, cloud_output
 from ..commands import local_development, initializer
 
 
@@ -17,7 +19,7 @@ CDEV_COMMANDS = [
     {
         "name": "plan",
         "help": "See the differences that have been made since the last deployment",
-        "default": commands.plan
+        "default": plan.plan_command
     }, 
     {
         "name": "develop",
@@ -27,17 +29,17 @@ CDEV_COMMANDS = [
     {
         "name": "destroy",
         "help": "See the differences that have been made since the last deployment",
-        "default": commands.destroy
+        "default": destroy.destroy_command
     }, 
     {
         "name": "deploy",
         "help": "Deploy a set of changes",
-        "default": commands.deploy
+        "default": deploy.deploy_command
     }, 
     {
         "name": "output",
         "help": "See the generate cloud output",
-        "default": commands.output
+        "default": cloud_output.cloud_output_command
     }, 
     
     {
@@ -48,7 +50,7 @@ CDEV_COMMANDS = [
     {
         "name": "environment",
         "help": "Change and create environments for deployment",
-        "default": commands.environment,
+        "default": environment.environment,
         "subcommands": [
             {
                 "command": "ls",
@@ -80,36 +82,6 @@ CDEV_COMMANDS = [
             }
         ]
     },
-    {
-        "name": "user",
-        "help": "Change and create user information",
-        "default": commands.user,
-        "subcommands": [
-            {
-                "command": "ls",
-                "help": "Show available users",
-                "args": [
-                    {"dest": "--all", "help": "show more details", "action":"store_true"}
-                ]
-            },
-            {
-                "command": "set",
-                "help": "",
-                "args": []
-            },
-            {
-                "command": "get",
-                "help": "",
-                "args": []
-            },
-            {
-                "command": "create",
-                "help": "",
-                "args": []
-            }
-        ]
-    },
-
 ]
 
 def subcommand_function_wrapper(name, func):
