@@ -17,7 +17,8 @@ class simple_api_model(Rendered_Resource):
 
 class simple_api_output(str, Enum):
     cloud_id = "cloud_id"
-    routes = "routes"
+    endpoints = "endpoints"
+    endpoint = "endpoint"
 
 
 class Api(Cdev_Resource):

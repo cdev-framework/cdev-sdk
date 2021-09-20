@@ -63,7 +63,12 @@ def create_new_project(project_info: project_definition) -> bool:
 
 def initialize_project() -> None:
     from cdev.mapper.cloudmapper import DefaultMapper
+    
+    if Cdev_Project.instance():
+        Cdev_Project.instance().clear()
+
     _import_project_file(_get_cdev_project_file())
+    
     Cdev_Project.instance().add_mapper(DefaultMapper())
 
 
@@ -73,7 +78,6 @@ def _initialize_project_structure(folder_path):
 
     needed_folders = _get_needed_folder_structure(folder_path)
 
-    
     for dir in needed_folders:
         if not os.path.isdir(dir):
             try:

@@ -9,11 +9,12 @@ from cdev.utils import hasher
 
 from cdev.models import Action_Type, Component_State_Difference, Rendered_State
 from cdev.utils.environment import get_current_environment
+from cdev.settings import SETTINGS as CDEV_SETTINGS
 
 # This file outputs things in a pretty way for the CLI
 console = Console()
 
-CAPTURE_OUTPUT = True
+
 
 
 def print_local_diffs(diff: Component_State_Difference):
@@ -65,7 +66,7 @@ def print_deployment_step(action_type: str, msg: str):
         print(f"    [bold red](DELETE)[/bold red] {msg}")
 
 def print(msg:str) -> None:
-    if CAPTURE_OUTPUT:
+    if CDEV_SETTINGS.get("CAPTURE_OUTPUT"):
         add_message(msg)
     else:
         console.print(msg)
@@ -76,19 +77,44 @@ def print(msg:str) -> None:
 ####################################################
 STD_OUT_BUFFER = []
 
+ALL_BUFFERS = {}
+
 def add_message(msg: str) -> None:
     STD_OUT_BUFFER.append(msg)
 
+def create_buffer(buffer_name: str):
+    ALL_BUFFERS[buffer_name] = []
 
-def get_messages_from_buffer(start_index: int, end_index: int) -> Tuple[List[str], int]:
-    if start_index and end_index:
-        messages = STD_OUT_BUFFER[start_index:end_index]
-    elif not end_index:
-        messages = STD_OUT_BUFFER[start_index:]
-    elif not start_index:
-        messages = STD_OUT_BUFFER[:end_index]
+def clear_buffer(buffer_name: str):
+    ALL_BUFFERS[buffer_name] = []
+
+def add_message_to_buffer(buffer_name: str, msg: str):
+    if not buffer_name in ALL_BUFFERS:
+        raise Exception
+
+    ALL_BUFFERS[buffer_name].append(msg)
+
+def get_messages_from_buffer(start_index: int, end_index: int, buffer_name: str = None) -> Tuple[List[str], int ,int]:
+    if buffer_name:
+        read_buffer = ALL_BUFFERS.get(buffer_name)
     else:
-        messages = STD_OUT_BUFFER
+        read_buffer = STD_OUT_BUFFER
+
+    start_line_no = 0
+
+    if start_index and end_index:
+        messages = read_buffer[start_index:end_index]
+    elif not end_index:
+        messages = read_buffer[start_index:]
+    elif not start_index:
+        messages = read_buffer[:end_index]
+    else:
+        messages = read_buffer
+
+    if start_index < 0:
+        start_line_no = (len(read_buffer)+ start_index) if (len(read_buffer) + start_index) > 1 else 1
+    else:
+        start_line_no = start_index
 
 
-    return (messages, hasher.hash_list(messages))
+    return (messages, start_line_no, hasher.hash_list(messages))

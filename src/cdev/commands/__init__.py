@@ -3,12 +3,6 @@ All the commands available for use
 """
 
 import os
-from rich.console import Console
-
-from rich.layout import Layout
-from rich.panel import Panel
-from rich.table import Table
-from rich.live import Live
 
 from cdev.utils.hasher import hash_string
 
@@ -21,17 +15,20 @@ from ..utils import environment as cdev_environment
 
 from cdev.output import print_plan, confirm_deployment, print
 
+from cdev import backend
+
 log = get_cdev_logger(__name__)
 
 from ..frontend import executer as frontend_executer
 from ..backend import executer as backend_executer
-from ..backend import resource_state_manager
+from ..backend import resource_state_manager, cloud_mapper_manager
+from ..constructs import Cdev_Project
 
 def plan(args):
     log.debug(f"Calling `cdev plan`")
     project.initialize_project()
     log.debug(f"Initialized project")
-    print("MADE IT HERE IN PLAN")
+    #print("MADE IT HERE IN PLAN")
     rendered_frontend = frontend_executer.execute_frontend()
     log.debug(f"New rendered frontend -> {rendered_frontend}")
     project_diffs = resource_state_manager.create_project_diffs(rendered_frontend)
@@ -64,10 +61,11 @@ def deploy(args):
         print("No differences to deploy")
         return
 
-    #if not confirm_deployment():
-    #    raise Exception
+    if not confirm_deployment():
+        raise Exception
 
     backend_executer.deploy_diffs(project_diffs)
+    output({})
 
     return 
 
@@ -101,6 +99,36 @@ def environment(command, args):
         cdev_environment.set_current_environment(parsed_args.get("env"))
     elif command == 'create':
         cdev_environment.create_environment(parsed_args.get("env"))
+
+
+def output(args):
+    log.debug(f"Calling `cdev output`")
+    project.initialize_project()
+    log.debug(f"Initialized project")
+    #print("MADE IT HERE IN PLAN")
+    rendered_frontend = frontend_executer.execute_frontend()
+    
+    PROJECT = Cdev_Project()
+    
+    desired_outputs = PROJECT.get_outputs()
+
+    rendered_outputs = []
+
+    for label, output in desired_outputs.items(): 
+        
+        identifier = output.resource.split("::")[-1]
+
+        if output.transformer:
+            rendered_value = cloud_mapper_manager.get_output_value(identifier, output.key, transformer=output.get("transformer"))
+        else:
+            rendered_value = cloud_mapper_manager.get_output_value(identifier, output.key)
+
+        rendered_outputs.append(f"[magenta]{label}[/magenta] -> [green]{rendered_value}[/green]")
+
+    print(f"---OUTPUTS---")
+    for rendered_output in rendered_outputs:
+        print(rendered_output)
+        
 
 
 def user(command, args):

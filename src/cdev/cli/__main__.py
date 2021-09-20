@@ -29,6 +29,11 @@ CDEV_COMMANDS = [
         "help": "Deploy a set of changes",
         "default": commands.deploy
     }, 
+    {
+        "name": "output",
+        "help": "See the generate cloud output",
+        "default": commands.output
+    }, 
     
     {
         "name": "init",

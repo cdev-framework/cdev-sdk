@@ -25,8 +25,10 @@ class Cdev_Component():
     - __Triggered deployments__: Any change in a resource within the component will trigger the component to need to be revaluated 
     for changes. This means in a monolothic component, all changes will trigger a re-evaluation on the whole state of the project
     - __Parallelization__: (In the future) rendering components should be able to be parallelized, so using multiple non dependant 
-    components  should lead to better total evaluation times.
+    components should lead to better total evaluation times.
     """
+
+
 
     def __init__(self, name: str):
         self.name = name
@@ -38,6 +40,7 @@ class Cdev_Component():
 
     def get_name(self) -> str:
         return self.name
+
 
 
 
@@ -79,23 +82,26 @@ class Cdev_Project():
     _components = []
     _mappers = []
     _state = None
+    _outputs = {}
 
-    def __new__(cls, name):
+
+    def __new__(cls):
         if cls._instance is None:
             #print(f'Creating the Cdev Project object -> {name}')
             cls._instance = super(Cdev_Project, cls).__new__(cls)
             # Put any initialization here.
         else:
             # Raise Error
-            print("SECOND TIME")
+            pass
 
 
         return cls._instance
 
+
     @classmethod
     def instance(cls):
         if cls._instance is None:
-            print('HAVE NOT CREATED PROJECT OBJECT YET')
+            pass
         return cls._instance
 
 
@@ -131,8 +137,10 @@ class Cdev_Project():
 
         self._mappers.append(mapper)
 
+
     def get_mappers(self) -> List[CloudMapper]:
         return self._mappers
+
 
     def get_mapper_namespace(self) -> Dict:
         rv = {}
@@ -143,6 +151,22 @@ class Cdev_Project():
 
         return rv
 
+
+    def add_output(self, label: str, output: Cloud_Output) -> None:
+        # Output labels to display after a deployment
+        self._outputs[label] = output
+
+
+    def get_outputs(self) -> Dict:
+        return self._outputs
+
+
+    def clear(self) -> None:
+        self._instance = None
+        self._components = []
+        self._mappers = []
+        self._state = None  
+        self._outputs = {}      
 
 
 

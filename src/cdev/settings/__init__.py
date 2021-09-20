@@ -5,6 +5,7 @@ Basic available settings
 import os
 import sys
 import logging
+from typing import Any
 from rich.logging import RichHandler
 
 from rich.traceback import install
@@ -38,6 +39,8 @@ SETTINGS["OUTPUT_PLAIN"] = False
 SETTINGS["SHOW_LOGS"] = True
 
 SETTINGS["CONSOLE_LOG_LEVEL"] = "ERROR"
+
+SETTINGS["CAPTURE_OUTPUT"] = False
 
 
 
@@ -191,3 +194,7 @@ SETTINGS["LOGGING_INFO"] = {
     "disable_existing_loggers": False
 
 }
+
+
+def set_setting(key: str, val: Any) -> None:
+    SETTINGS[key] = val
