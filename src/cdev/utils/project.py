@@ -53,12 +53,29 @@ class project_definition(BaseModel):
 
 def create_new_project(project_info: project_definition) -> bool:
     _initialize_project_structure(project_info.base_dir)
+    _create_project_file(project_info)
 
     for environment in project_info.environment_names:
         cdev_environment.create_environment(environment)
 
     # TODO set starting environment 
     cdev_environment.set_current_environment("dev_daniel")
+
+
+def _create_project_file(project_info: project_definition) -> bool:
+    project_json = {
+        "project_name": project_info.project_name
+    }
+
+    project_info_fp = os.path.join(project_info.base_dir, ".cdev" , "project_info.json")
+    touch(project_info_fp)
+
+    with open(project_info_fp, "w") as fh: 
+        fh.write(json.dumps(project_json, indent=4))
+
+
+def check_if_project_exists() -> bool:
+    return os.path.isfile(os.path.join(os.getcwd(), ".cdev", "project_info.json"))
 
 
 def initialize_project() -> None:

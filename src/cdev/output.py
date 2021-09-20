@@ -56,6 +56,11 @@ def confirm_deployment() -> bool:
     rv = Confirm.ask("[bold magenta]Do you want to deploy these changes?[/bold magenta]")
     return rv
 
+def confirm_destroy() -> bool:
+    print("")
+    rv = Confirm.ask("[bold magenta]Do you want to delete this project?[/bold magenta]")
+    return rv
+
 
 def print_deployment_step(action_type: str, msg: str):
     if action_type == 'CREATE':

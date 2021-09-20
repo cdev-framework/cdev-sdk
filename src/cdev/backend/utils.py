@@ -3,6 +3,8 @@ import os
 
 from pydantic.types import NonPositiveInt
 
+from cdev.utils import project
+
 from ..models import Rendered_State
 
 from ..models import CloudMapping
@@ -14,12 +16,12 @@ from ..utils.logger import get_cdev_logger
 from ..utils.paths import get_full_path_from_internal_folder
 log = get_cdev_logger(__name__)
 
-current_environment_name = cdev_environment.get_current_environment()
-current_environment_info = cdev_environment.get_environment_info(current_environment_name)
+if project.check_if_project_exists():
+    current_environment_name = cdev_environment.get_current_environment()
+    current_environment_info = cdev_environment.get_environment_info(current_environment_name)
 
-
-FULL_CLOUD_MAPPING_PATH = get_full_path_from_internal_folder(current_environment_info.cloud_mapping_fp)
-FULL_RESOURCE_STATE_PATH = get_full_path_from_internal_folder(current_environment_info.resource_state_fp)
+    FULL_CLOUD_MAPPING_PATH = get_full_path_from_internal_folder(current_environment_info.cloud_mapping_fp)
+    FULL_RESOURCE_STATE_PATH = get_full_path_from_internal_folder(current_environment_info.resource_state_fp)
 
 def get_resource_state_path():
     return FULL_RESOURCE_STATE_PATH

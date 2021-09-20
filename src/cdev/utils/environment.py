@@ -1,6 +1,5 @@
 import json
 import os
-from pathlib import PosixPath, WindowsPath
 from typing import List, Dict
 
 
@@ -68,6 +67,9 @@ def create_environment(environment_name: str) -> bool:
 
 
 def get_environment_info_object() -> environment_info:
+    if not os.path.isfile(CDEV_ENVIRONMENT_INFO_FILE): 
+        return None
+
     if os.stat(CDEV_ENVIRONMENT_INFO_FILE).st_size == 0:
         return environment_info(**{
             "environments": [],
@@ -83,6 +85,10 @@ def get_environment_info_object() -> environment_info:
 
 def get_environment_info(environment_name: str) -> cdev_environment:
     environment_info = get_environment_info_object()
+
+    if not environment_info:
+        return None
+
     environments_by_name = {x.name:x for x in environment_info.environments}
 
     if not environment_name in environments_by_name:
@@ -112,6 +118,9 @@ def set_current_environment(environment_name: str) -> bool:
 
 def get_current_environment() -> str:
     environment_info = get_environment_info_object()
+
+    if not environment_info:
+        return None
 
     return environment_info.current_environment
 

@@ -16,15 +16,16 @@ from watchdog.events import PatternMatchingEventHandler
 
 from cdev.utils import hasher
 
-from ..utils import project
-from ..frontend import executer as frontend_executer
-from ..backend import executer as backend_executer
-from ..backend import resource_state_manager, cloud_mapper_manager
-
 import logging
 import threading
 import time
 
+    
+from ..utils import project
+from ..frontend import executer as frontend_executer
+from ..backend import executer as backend_executer
+from ..backend import resource_state_manager, cloud_mapper_manager
+    
 from cdev import output as cdev_output
 from cdev.settings import set_setting
 
@@ -153,6 +154,7 @@ def get_output_buffer() -> Tuple[str, str]:
 
 
 def local_development_deploy(args):
+
     project.initialize_project()
     rendered_frontend = frontend_executer.execute_frontend()
     project_diffs = resource_state_manager.create_project_diffs(rendered_frontend)

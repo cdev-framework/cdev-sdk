@@ -81,41 +81,6 @@ SETTINGS["LOGGING_INFO"] = {
         }
     },
     "loggers":{
-        "cli": {
-            "level": "DEBUG",
-            "handlers": ["fileHandler"],
-            "propagate": False
-        },
-        "commands": {
-            "level": "DEBUG",
-            "handlers": ["fileHandler"],
-            "propagate": False
-        },
-        "frontend": {
-            "level": "DEBUG",
-            "handlers": ["fileHandler"],
-            "propagate": False
-        },
-        "backend": {
-            "level": "DEBUG",
-            "handlers": ["fileHandler"],
-            "propagate": False
-        },
-        "mapper": {
-            "level": "DEBUG",
-            "handlers": ["fileHandler"],
-            "propagate": False
-        },
-        "resources": {
-            "level": "DEBUG",
-            "handlers": ["fileHandler"],
-            "propagate": False
-        },
-        "utils": {
-            "level": "DEBUG",
-            "handlers": ["fileHandler"],
-            "propagate": False
-        },
         "cli_rich": {
             "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["richHandler"],
@@ -193,6 +158,45 @@ SETTINGS["LOGGING_INFO"] = {
     },
     "disable_existing_loggers": False
 
+}
+
+
+file_logger = {
+    "cli": {
+        "level": "DEBUG",
+        "handlers": ["fileHandler"],
+        "propagate": False
+    },
+    "commands": {
+        "level": "DEBUG",
+        "handlers": ["fileHandler"],
+        "propagate": False
+    },
+    "frontend": {
+        "level": "DEBUG",
+        "handlers": ["fileHandler"],
+        "propagate": False
+    },
+    "backend": {
+        "level": "DEBUG",
+        "handlers": ["fileHandler"],
+        "propagate": False
+    },
+    "mapper": {
+        "level": "DEBUG",
+        "handlers": ["fileHandler"],
+        "propagate": False
+    },
+    "resources": {
+        "level": "DEBUG",
+        "handlers": ["fileHandler"],
+        "propagate": False
+    },
+    "utils": {
+        "level": "DEBUG",
+        "handlers": ["fileHandler"],
+        "propagate": False
+    },
 }
 
 

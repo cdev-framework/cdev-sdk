@@ -3,8 +3,8 @@ import argparse
 from ast import parse
 import os
 
-from  .. import commands as commands
-from ..commands import local_development
+from  ..commands import normal as commands
+from ..commands import local_development, initializer
 
 
 
@@ -23,6 +23,11 @@ CDEV_COMMANDS = [
         "name": "develop",
         "help": "Open an interactive development environment",
         "default": local_development.develop
+    },
+    {
+        "name": "destroy",
+        "help": "See the differences that have been made since the last deployment",
+        "default": commands.destroy
     }, 
     {
         "name": "deploy",
@@ -38,7 +43,7 @@ CDEV_COMMANDS = [
     {
         "name": "init",
         "help": "Create a new project",
-        "default": commands.init
+        "default": initializer.init
     },
     {
         "name": "environment",
