@@ -64,7 +64,7 @@ LAYOUT = make_develop_layout()
 LIVE_OBJECT = Live(LAYOUT, auto_refresh=False, transient=True)
 
 def develop(args):
-    set_setting("CAPTURE_OUTPUT", True)
+    #set_setting("CAPTURE_OUTPUT", True)
     run_enhanced_local_development_environment(args)
 
 
@@ -89,30 +89,32 @@ def run_enhanced_local_development_environment(args):
     handle_std_in_thread = threading.Thread(target=handle_std_input, daemon=True)
     cdev_output.create_buffer(CLOUD_OUTPUT_BUFFER)
     refresh_local_output({"buffer_name": CLOUD_OUTPUT_BUFFER, "reinitialize_project": True})
+    my_observer.start()
+    cdev_output.print(f"")
+    cdev_output.print(f"[blink] *** waiting for changes ***[/blink]")
+    
     try:
-        with LIVE_OBJECT as l:
-            my_observer.start()
-            cdev_output.print(f"")
-            cdev_output.print(f"[blink] *** waiting for changes ***[/blink]")
-            refresh_output()
-
-            handle_std_in_thread.start()
-            last_stdout_hash = 0
-            while True:
-                messages, start_line_no, messages_hash = cdev_output.get_messages_from_buffer(-25,None)
-                
-                modified_messages = [f"({start_line_no+i}) {x}" for i,x in enumerate(messages,0)]
-
-                if messages_hash == last_stdout_hash:
-                    pass
-                else:
-                    
-                    messages_as_string = "\n".join(modified_messages)
-                    last_stdout_hash = messages_hash
-                    LAYOUT['stdout'].update(Panel(messages_as_string, title="STD OUT"))
-                    update_screen()
-                    
-                    sleep(.1)
+        while True:
+            pass
+        #with LIVE_OBJECT as l:
+        #    refresh_output()
+        #    handle_std_in_thread.start()
+        #    last_stdout_hash = 0
+        #    while True:
+        #        messages, start_line_no, messages_hash = cdev_output.get_messages_from_buffer(-25,None)
+        #        
+        #        modified_messages = [f"({start_line_no+i}) {x}" for i,x in enumerate(messages,0)]
+#
+        #        if messages_hash == last_stdout_hash:
+        #            pass
+        #        else:
+        #            
+        #            messages_as_string = "\n".join(modified_messages)
+        #            last_stdout_hash = messages_hash
+        #            LAYOUT['stdout'].update(Panel(messages_as_string, title="STD OUT"))
+        #            update_screen()
+        #            
+        #            sleep(.1)
 
 
     except KeyboardInterrupt:
@@ -125,9 +127,10 @@ def run_enhanced_local_development_environment(args):
 
 def refresh_output():
     cdev_output.clear_buffer(CLOUD_OUTPUT_BUFFER)
-    refresh_local_output({"buffer_name": CLOUD_OUTPUT_BUFFER, "reinitialize_project": False})
-    cloud_outputs,_,_ = cdev_output.get_messages_from_buffer(0,10, CLOUD_OUTPUT_BUFFER)
-    LAYOUT['cloud_output'].update(Panel("\n".join(cloud_outputs), title="Cloud Output"))
+    #refresh_local_output({"buffer_name": CLOUD_OUTPUT_BUFFER, "reinitialize_project": False})
+    refresh_local_output({"reinitialize_project": False})
+    #cloud_outputs,_,_ = cdev_output.get_messages_from_buffer(0,10, CLOUD_OUTPUT_BUFFER)
+    #LAYOUT['cloud_output'].update(Panel("\n".join(cloud_outputs), title="Cloud Output"))
 
 
 
@@ -225,7 +228,7 @@ def refresh_local_output(args: Dict):
     
     for rendered_output in rendered_outputs:
         if not write_to_buffer:
-            print(rendered_output)
+            cdev_output.print(rendered_output)
         else:
             cdev_output.add_message_to_buffer(args.get("buffer_name"), str(rendered_output))
 
