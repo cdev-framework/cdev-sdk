@@ -38,7 +38,10 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
         # Creating this resource might require creating a new component in the state so handle that here 
         resource_state_manager.handle_component_difference(component_diff)
 
-        component_name = component_diff.new_component.name
+        if component_diff.new_component:
+            component_name = component_diff.new_component.name
+        else:
+            component_name = component_diff.previous_component.name
 
         sorted_resources = generate_sorted_resources(component_diff)
 
@@ -71,6 +74,8 @@ def deploy_diffs(project_diffs: List[Component_State_Difference]) -> None:
                 print("EXCEPT HERE")
                 print(e)
 
+        if component_diff.action_type == Action_Type.DELETE:
+            resource_state_manager.remove_component(component_diff.previous_component.name)
 
 
 

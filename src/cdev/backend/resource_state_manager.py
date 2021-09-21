@@ -32,88 +32,101 @@ def create_project_diffs(new_project_state: Rendered_State) -> List[Component_St
         previous_hash_to_component = {x.hash: x for x in previous_local_state.rendered_components}
         # build map<name,resource>
         previous_name_to_component = {x.name: x for x in previous_local_state.rendered_components}
+        previous_components_to_remove = [x for x in previous_local_state.rendered_components]
     else:
         previous_hash_to_component = {}
         previous_name_to_component = {}
+        previous_components_to_remove = []
 
     log.debug(f"previous_hash_to_component -> {previous_hash_to_component}")
     log.debug(f"previous_name_to_component -> {previous_name_to_component}")
 
-    for component in new_project_state.rendered_components:
-        
-        if not component.hash in previous_hash_to_component and not component.name in previous_name_to_component:
-            # Create COMPONENT and ALL RESOURCES
-            log.info(f"CREATE COMPONENT -> {component.name}")
-            rv.append( Component_State_Difference(
-                    **{
-                        "action_type": Action_Type.CREATE,
-                        "previous_component": None,
-                        "new_component": component,
-                        "resource_diffs": _create_resource_diffs(component.rendered_resources,[])
-                    }
+
+    if new_project_state.rendered_components:
+        for component in new_project_state.rendered_components:
+
+            if not component.hash in previous_hash_to_component and not component.name in previous_name_to_component:
+                # Create COMPONENT and ALL RESOURCES
+                log.info(f"CREATE COMPONENT -> {component.name}")
+                rv.append( Component_State_Difference(
+                        **{
+                            "action_type": Action_Type.CREATE,
+                            "previous_component": None,
+                            "new_component": component,
+                            "resource_diffs": _create_resource_diffs(component.rendered_resources,[])
+                        }
+                    )
                 )
-            )
 
-        elif component.hash in previous_hash_to_component and component.name in previous_name_to_component:
-            # Since the hash is the same we can infer all the resource hashes are the same
-            # Even though the hash has remained same we need to check for name changes in the resources
+            elif component.hash in previous_hash_to_component and component.name in previous_name_to_component:
+                # Since the hash is the same we can infer all the resource hashes are the same
+                # Even though the hash has remained same we need to check for name changes in the resources
 
-            resource_diffs = _create_resource_diffs(component.rendered_resources, previous_name_to_component.get(component.name).rendered_resources)
-            
-            if len(resource_diffs)  == 0:
-                log.info(f"KEEP SAME {previous_hash_to_component.get(component.hash).name}")
-            else:
-                log.info(f"UPDATE RESOURCE NAME {previous_hash_to_component.get(component.hash).name}")
+                resource_diffs = _create_resource_diffs(component.rendered_resources, previous_name_to_component.get(component.name).rendered_resources)
+
+                if len(resource_diffs)  == 0:
+                    log.info(f"KEEP SAME {previous_hash_to_component.get(component.hash).name}")
+                else:
+                    log.info(f"UPDATE RESOURCE NAME {previous_hash_to_component.get(component.hash).name}")
+                    rv.append(
+                        Component_State_Difference(
+                            **{
+                                "action_type": Action_Type.UPDATE_IDENTITY,
+                                "previous_component": previous_hash_to_component.get(component.hash),
+                                "new_component": component,
+                                "resource_diffs": resource_diffs
+                            }
+                        )
+                    )
+                # POP the seen previous component as we go so only remaining resources will be deletes
+                previous_components_to_remove.remove(previous_name_to_component.get(component.name))
+
+            elif component.hash in previous_hash_to_component and not component.name in previous_name_to_component:
+                # hash of the component has stayed the same but the user has renamed the component name
+                log.info(f"UPDATE NAME FROM {previous_hash_to_component.get(component.hash).name} -> {component.name}")
+                rv.append(
+                    Component_State_Difference(
+                        **{
+                            "action_type": Action_Type.UPDATE_NAME,
+                            "previous_component": previous_hash_to_component.get(component.hash),
+                            "new_component": component,
+                            "resource_diffs": None
+                        }
+                    )
+                )
+                # POP the seen previous component as we go so only remaining resources will be deletes
+                previous_components_to_remove.remove(previous_hash_to_component.get(component.hash))
+
+            elif not component.hash in previous_hash_to_component and component.name in previous_name_to_component:
+                # hash of the component has changed but not the name 
+                log.info(f"UPDATE IDENTITY FROM {previous_name_to_component.get(component.name).hash} -> {component.hash} ")
                 rv.append(
                     Component_State_Difference(
                         **{
                             "action_type": Action_Type.UPDATE_IDENTITY,
                             "previous_component": previous_hash_to_component.get(component.hash),
                             "new_component": component,
-                            "resource_diffs": resource_diffs
+                            "resource_diffs": _create_resource_diffs(component.rendered_resources, previous_name_to_component.get(component.name).rendered_resources)
                         }
                     )
                 )
+                # POP the seen previous component as we go so only remaining resources will be deletes
+                previous_components_to_remove.remove(previous_name_to_component.get(component.name))
 
 
-            continue
+    log.debug(previous_components_to_remove)
+    for removed_component in previous_components_to_remove:
+        #print(removed_component)
+        log.debug(removed_component)
+        rv.append(Component_State_Difference(
+            **{
+                "action_type": Action_Type.DELETE,
+                "previous_component": removed_component,
+                "new_component": None,
+                "resource_diffs": _create_resource_diffs([], removed_component.rendered_resources)
+            }
+        ))
 
-        if component.hash in previous_hash_to_component and not component.name in previous_name_to_component:
-            # hash of the component has stayed the same but the user has renamed the component name
-            log.info(f"UPDATE NAME FROM {previous_hash_to_component.get(component.hash).name} -> {component.name}")
-            rv.append(
-                Component_State_Difference(
-                    **{
-                        "action_type": Action_Type.UPDATE_NAME,
-                        "previous_component": previous_hash_to_component.get(component.hash),
-                        "new_component": component,
-                        "resource_diffs": None
-                    }
-                )
-            )
-
-        if not component.hash in previous_hash_to_component and component.name in previous_name_to_component:
-            # hash of the component has changed but not the name 
-            log.info(f"UPDATE IDENTITY FROM {previous_name_to_component.get(component.name).hash} -> {component.hash} ")
-            rv.append(
-                Component_State_Difference(
-                    **{
-                        "action_type": Action_Type.UPDATE_IDENTITY,
-                        "previous_component": previous_hash_to_component.get(component.hash),
-                        "new_component": component,
-                        "resource_diffs": _create_resource_diffs(component.rendered_resources, previous_name_to_component.get(component.name).rendered_resources)
-                    }
-                )
-            )
-
-
-
-        # POP the seen previous component as we go so only remaining resources will be deletes
-        
-        # For each remaining resource:
-            # DELETE object
-
-        # append to rv
 
     return rv
 
@@ -292,3 +305,26 @@ def write_resource_difference(component_name: str, diff: Resource_State_Differen
 
     backend_utils.write_resource_state(current_backend)
         
+
+def remove_component(component_name: str):
+    """
+    Remove a component from the resource state if it has been deleted. The component must be empty for this to succeed.
+    """
+    if not backend_initializer.is_backend_initialized():
+        print("BAD NO BACKEND")
+        return None
+
+    current_backend = backend_utils.load_resource_state()
+
+    for indx, rendered_component  in enumerate(current_backend.rendered_components):
+        if rendered_component.name == component_name:
+            previous_component = current_backend.rendered_components.pop(indx)
+
+            if previous_component.rendered_resources:
+                log.error("Can not remove non empty component")
+                raise Exception
+
+    current_backend.rendered_components.sort(key=lambda x: x.name)
+    current_backend.hash = hasher.hash_list([x.hash for x in current_backend.rendered_components])
+
+    backend_utils.write_resource_state(current_backend)

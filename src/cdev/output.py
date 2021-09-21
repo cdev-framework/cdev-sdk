@@ -58,7 +58,7 @@ def confirm_deployment() -> bool:
 
 def confirm_destroy() -> bool:
     print("")
-    rv = Confirm.ask("[bold magenta]Do you want to delete this project?[/bold magenta]")
+    rv = Confirm.ask("[bold magenta]Do you want to delete this environment?[/bold magenta]")
     return rv
 
 
