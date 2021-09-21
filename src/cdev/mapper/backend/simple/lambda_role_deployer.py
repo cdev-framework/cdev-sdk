@@ -38,6 +38,14 @@ def create_role_with_permissions(role_name: str, permissions: List[Union[simple_
     log.debug(f"Create Role {role_arn}")
 
     permission_info = dict()
+
+    # Add the basic lambda permission to all lambda roles
+    # interestingly, adding this permission in the resource caused a weird issue with the live deployment module
+    permissions.append(simple_lambda.PermissionArn(**{
+        "arn": "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    }))
+
+
     for permission in permissions:
         rv= add_policy(role_name, permission)
         permission_info[permission.get_hash()] = rv

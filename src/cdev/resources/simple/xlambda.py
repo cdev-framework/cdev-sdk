@@ -18,6 +18,8 @@ from cdev.utils import hasher, logger, parent_resources, environment as cdev_env
 
 log = logger.get_cdev_logger(__name__)
 
+from cdev import output as cdev_output
+
 class EventTypes(Enum):
     HTTP_API_ENDPOINT = "api::endpoint"
     TABLE_STREAM = "table::stream"
@@ -122,7 +124,7 @@ class simple_aws_lambda_function_model(Rendered_Resource):
 
 
 class simple_lambda(Cdev_Resource):
-    def __init__(self, cdev_name: str, function_name: str ,filepath: str,  events: List[Event]=[], configuration: lambda_function_configuration={}, permissions: List[Union[Permission,PermissionArn]]=[] ,includes: List[str]=[]) -> None:
+    def __init__(self, cdev_name: str, function_name: str ,filepath: str,  events: List[Event]=[], configuration: lambda_function_configuration={}, function_permissions: List[Union[Permission,PermissionArn]]=[] ,includes: List[str]=[]) -> None:
         super().__init__(cdev_name)
 
         self.filepath = filepath
@@ -133,12 +135,12 @@ class simple_lambda(Cdev_Resource):
         self.configuration = configuration
         config_parents = [f"{'::'.join(x.resource.split('::')[:3])};hash;{x.resource.split('::')[-1]}" for x in parent_resources.find_cloud_output(configuration.dict())]
         
-        self.permissions = permissions
-        self.permissions_hash = hasher.hash_list([x.get_hash for x in permissions])
-        permissions_parents = [f"{'::'.join(x.resource.split('::')[:-1])};name;{x.resource.split('::')[-1]}" for x in permissions if isinstance(x, Permission)]
-        self.permissions.append(PermissionArn(**{
-            "arn": "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-        }))
+        
+        self._permissions = function_permissions
+        self.permissions_hash = hasher.hash_list([x.get_hash for x in function_permissions])
+        permissions_parents = [f"{'::'.join(x.resource.split('::')[:-1])};name;{x.resource.split('::')[-1]}" for x in function_permissions if isinstance(x, Permission)]
+        
+
 
         self.src_code_hash = hasher.hash_file(filepath)
         self.config_hash = configuration.get_cdev_hash()
@@ -161,7 +163,7 @@ class simple_lambda(Cdev_Resource):
             "function_name": self.function_name,
             "filepath": self.filepath,
             "events": self.events,
-            "permissions": self.permissions,
+            "permissions": self._permissions,
             "configuration": self.configuration,
             "permissions_hash": self.permissions_hash,
             "src_code_hash": self.src_code_hash,
@@ -177,7 +179,7 @@ class simple_lambda(Cdev_Resource):
 
 
 
-def simple_lambda_function_annotation(name: str, function_name: str, events: List[Event]=[],  Environment={}, permissions: List[Union[Permission,PermissionArn]]=[], includes: List[str]=[]):
+def simple_lambda_function_annotation(name: str, function_name: str, events: List[Event]=[],  Environment={}, Permissions: List[Union[Permission,PermissionArn]]=[], includes: List[str]=[]):
     """
     This annotation is used to designate that a function should be deployed on the AWS lambda platform. Functions that are designated
     using this annotation should have a signature that takes two inputs (event,context) to conform to the aws lambda handler signature.
@@ -235,8 +237,8 @@ def simple_lambda_function_annotation(name: str, function_name: str, events: Lis
         mod = importlib.import_module(mod_name)
 
         full_filepath = os.path.abspath(mod.__file__)
-                    
-        return simple_lambda(cdev_name=name, function_name=function_name ,filepath=full_filepath, events=events, configuration=final_config, permissions=permissions ,includes=includes)
+        
+        return simple_lambda(cdev_name=name, function_name=function_name ,filepath=full_filepath, events=events, configuration=final_config, function_permissions=Permissions ,includes=includes)
 
     
    

@@ -130,6 +130,7 @@ def _remove_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
     # Steps:
     # Remove and event that is on the function to make sure resources are properly cleaned up
     # Remove the actual function
+    # Remove the role associated with the function
     print_deployment_step("DELETE", f"Removing resources for lambda {resource.name}")
     log.debug(f"Attempting to delete {resource}")
     cloud_id = cdev_cloud_mapper.get_output_value(resource.hash, "cloud_id")
@@ -211,8 +212,8 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
 
         permission_output = cdev_cloud_mapper.get_output_value(previous_resource.hash, "permissions")
         role_name_output = cdev_cloud_mapper.get_output_value(previous_resource.hash, "role_name")
-       
-
+        log.debug(previous_resource.hash)
+        log.debug(f"{permission_output}")
         for permission in create_permissions:
             rv = add_policy(role_name_output, permission)
             permission_output[permission.get_hash()] = rv

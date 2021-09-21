@@ -9,6 +9,7 @@ from . import cloud_output
 log = logger.get_cdev_logger(__name__)
 
 
+
 def deploy_command(args):
     project.initialize_project()
     rendered_frontend = frontend_executer.execute_frontend()
@@ -29,4 +30,24 @@ def deploy_command(args):
     backend_executer.deploy_diffs(project_diffs)
     cloud_output.cloud_output_command({})
 
-    return 
+    return
+
+
+
+def local_deploy_command(args):
+    project.initialize_project()
+    rendered_frontend = frontend_executer.execute_frontend()
+    project_diffs = resource_state_manager.create_project_diffs(rendered_frontend)
+
+    if not backend_executer.validate_diffs(project_diffs):
+        raise Exception 
+
+
+    if not project_diffs:
+        cdev_output.print("No differences to deploy")
+        return
+
+    cdev_output.print_plan(rendered_frontend, project_diffs)
+    backend_executer.deploy_diffs(project_diffs)
+
+    return

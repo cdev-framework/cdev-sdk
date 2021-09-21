@@ -122,10 +122,11 @@ class TablePermissions():
     
         self.READ_STREAM = Permission(
             actions=[
-                "DescribeStream",
-                "GetRecords",
-                "GetShardIterator",
-                "ListStreams"
+                "dynamodb:DescribeStream",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:ListShards",
+                "dynamodb:ListStreams"
             ],
             resource=f'cdev::simple::table::{resource_name}',
             effect="Allow"
