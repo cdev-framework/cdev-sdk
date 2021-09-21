@@ -24,7 +24,10 @@ CDEV_COMMANDS = [
     {
         "name": "develop",
         "help": "Open an interactive development environment",
-        "default": local_development.develop
+        "default": local_development.develop,
+        "args": [
+            {"dest": "--simple", "help": "run a simple follower instead of full development environment", "action":"store_true"}
+        ]
     },
     {
         "name": "destroy",
@@ -116,6 +119,13 @@ for command in CDEV_COMMANDS:
 
     else:
         tmp.set_defaults(func=command.get("default"))
+
+        if command.get("args"):
+            for arg in command.get("args"):
+                dest = arg.get("dest")
+                arg.pop("dest")
+                tmp.add_argument(dest, **arg)
+
         tmp.add_argument("--output", type=str, choices=["json", "plain-text", "rich"],
                                 help="change the type of output generated")
 

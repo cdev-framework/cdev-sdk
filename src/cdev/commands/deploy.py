@@ -48,6 +48,7 @@ def local_deploy_command(args):
         return
 
     cdev_output.print_plan(rendered_frontend, project_diffs)
+    
     backend_executer.deploy_diffs(project_diffs)
-
+    
     return

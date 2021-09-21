@@ -64,9 +64,10 @@ LAYOUT = make_develop_layout()
 LIVE_OBJECT = Live(LAYOUT, auto_refresh=False, transient=True)
 
 def develop(args):
-    #set_setting("CAPTURE_OUTPUT", True)
-    run_enhanced_local_development_environment(args)
+    if not args.simple:
+        set_setting("CAPTURE_OUTPUT", True)
 
+    run_enhanced_local_development_environment(args)
 
 def run_enhanced_local_development_environment(args):
     patterns = ["./src/*"]
@@ -75,67 +76,89 @@ def run_enhanced_local_development_environment(args):
     case_sensitive = True
     my_event_handler = PatternMatchingEventHandler(patterns, ignore_patterns, ignore_directories, case_sensitive)
 
-    my_event_handler.on_created = file_change_handler
-    my_event_handler.on_deleted = file_change_handler
-    my_event_handler.on_modified = file_change_handler
-    my_event_handler.on_moved = file_change_handler
 
     path = os.getcwd()
     go_recursively = True
     my_observer = Observer()
-    my_observer.schedule(my_event_handler, path, recursive=go_recursively)
+
+    if args.simple:
+        my_event_handler.on_created = file_change_handler_simple
+        my_event_handler.on_deleted = file_change_handler_simple
+        my_event_handler.on_modified = file_change_handler_simple
+        my_event_handler.on_moved = file_change_handler_simple
+
+        my_observer.schedule(my_event_handler, path, recursive=go_recursively)
+
+    else:
+        my_event_handler.on_created = file_change_handler
+        my_event_handler.on_deleted = file_change_handler
+        my_event_handler.on_modified = file_change_handler
+        my_event_handler.on_moved = file_change_handler
+
+        my_observer.schedule(my_event_handler, path, recursive=go_recursively)
     
 
-    handle_std_in_thread = threading.Thread(target=handle_std_input, daemon=True)
+    
     cdev_output.create_buffer(CLOUD_OUTPUT_BUFFER)
     refresh_local_output({"buffer_name": CLOUD_OUTPUT_BUFFER, "reinitialize_project": True})
     my_observer.start()
     cdev_output.print(f"")
     cdev_output.print(f"[blink] *** waiting for changes ***[/blink]")
     
+    handle_std_in_thread = threading.Thread(target=handle_std_input, daemon=True)
     try:
-        while True:
-            pass
-        #with LIVE_OBJECT as l:
-        #    refresh_output()
-        #    handle_std_in_thread.start()
-        #    last_stdout_hash = 0
-        #    while True:
-        #        messages, start_line_no, messages_hash = cdev_output.get_messages_from_buffer(-25,None)
-        #        
-        #        modified_messages = [f"({start_line_no+i}) {x}" for i,x in enumerate(messages,0)]
-#
-        #        if messages_hash == last_stdout_hash:
-        #            pass
-        #        else:
-        #            
-        #            messages_as_string = "\n".join(modified_messages)
-        #            last_stdout_hash = messages_hash
-        #            LAYOUT['stdout'].update(Panel(messages_as_string, title="STD OUT"))
-        #            update_screen()
-        #            
-        #            sleep(.1)
+        
+        if args.simple:
+            # IF this is a simple develop session don't create live panels
+            while True:
+                pass
+
+        
+        with LIVE_OBJECT as l:
+            refresh_output_buffer()
+            
+            handle_std_in_thread.start()
+            last_stdout_hash = 0
+            while True:
+                messages, start_line_no, messages_hash = cdev_output.get_messages_from_buffer(-25,None)
+                
+                modified_messages = [f"({start_line_no+i}) {x}" for i,x in enumerate(messages,0)]
+
+                if messages_hash == last_stdout_hash:
+                    pass
+                else:
+                    
+                    messages_as_string = "\n".join(modified_messages)
+                    last_stdout_hash = messages_hash
+                    LAYOUT['stdout'].update(Panel(messages_as_string, title="STD OUT"))
+                    update_screen()
+                    
+                    sleep(.1)
 
 
     except KeyboardInterrupt:
         print("Development environment closed1")
         my_observer.stop()
         my_observer.join()
-        handle_std_in_thread.join()
+
+        if not args.simple:
+            handle_std_in_thread.join()
         exit(0)
 
 
-def refresh_output():
+def refresh_output_buffer():
     cdev_output.clear_buffer(CLOUD_OUTPUT_BUFFER)
-    #refresh_local_output({"buffer_name": CLOUD_OUTPUT_BUFFER, "reinitialize_project": False})
+    refresh_local_output({"buffer_name": CLOUD_OUTPUT_BUFFER, "reinitialize_project": False})
+    cloud_outputs,_,_ = cdev_output.get_messages_from_buffer(0,10, CLOUD_OUTPUT_BUFFER)
+    LAYOUT['cloud_output'].update(Panel("\n".join(cloud_outputs), title="Cloud Output"))
+
+
+def refresh_output_simple():
     refresh_local_output({"reinitialize_project": False})
-    #cloud_outputs,_,_ = cdev_output.get_messages_from_buffer(0,10, CLOUD_OUTPUT_BUFFER)
-    #LAYOUT['cloud_output'].update(Panel("\n".join(cloud_outputs), title="Cloud Output"))
 
 
 
 def handle_std_input():
-    
     while True:
         command = []
         for line in sys.stdin.readline():
@@ -143,7 +166,7 @@ def handle_std_input():
             command.append(line)
 
         cdev_output.print("".join(command)[:-1])
-        refresh_output()
+        refresh_output_buffer()
         update_screen()
 
 
@@ -151,7 +174,14 @@ def file_change_handler(args):
     cdev_output.print(f"File Change Detected. Starting Deploy Process")
     deploy.local_deploy_command({})
     cdev_output.print(f"[blink] *** waiting for changes ***[/blink]")
-    refresh_output()
+    refresh_output_buffer()
+    update_screen()
+
+def file_change_handler_simple(args):
+    cdev_output.print(f"File Change Detected. Starting Deploy Process")
+    deploy.local_deploy_command({})
+    cdev_output.print(f"[blink] *** waiting for changes ***[/blink]")
+    refresh_output_simple()
     update_screen()
 
 
@@ -175,25 +205,6 @@ def get_output_buffer() -> Tuple[str, str]:
 
     #history.clear()
     return lines, hash_val
-
-
-def local_development_deploy(args):
-
-    project.initialize_project()
-    rendered_frontend = frontend_executer.execute_frontend()
-    project_diffs = resource_state_manager.create_project_diffs(rendered_frontend)
-    
-    if not backend_executer.validate_diffs(project_diffs):
-        raise Exception 
-
-    if not project_diffs:
-        print("No differences to deploy")
-        return
-
-    backend_executer.deploy_diffs(project_diffs)
-    refresh_local_output({})
-
-    return 
 
 
 def refresh_local_output(args: Dict):  
