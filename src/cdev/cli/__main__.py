@@ -46,6 +46,7 @@ CDEV_COMMANDS = [
         "help": "This command is used to run user defined and resource functions.",
         "default": run.run_command,
         "args": [
+            {"dest": "subcommand", "help": "the user defined command to call"},
             {"dest": "args", "nargs": argparse.REMAINDER}
         ]
     },
@@ -122,13 +123,15 @@ for command in CDEV_COMMANDS:
                                 help="change the type of output generated")
 
     else:
-        tmp.set_defaults(func=command.get("default"))
-
         if command.get("args"):
             for arg in command.get("args"):
                 dest = arg.get("dest")
                 arg.pop("dest")
                 tmp.add_argument(dest, **arg)
+                
+        tmp.set_defaults(func=command.get("default"))
+
+        
 
         tmp.add_argument("--output", type=str, choices=["json", "plain-text", "rich"],
                                 help="change the type of output generated")

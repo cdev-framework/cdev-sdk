@@ -136,9 +136,16 @@ class BaseCommand():
     def run_from_command_line(self, argv):
         """
         Handles input from command line and builds arg parser and uses it to validate input. 
+
+        argv -> [program_name, command, *args]
+
+        program_name: represents where to find the command
+        command: command to run
+        *args: args for the command
         """
         parser = self.create_arg_parser(argv[0], argv[1])
 
+        
         options = parser.parse_args(argv[2:])
         cmd_options = vars(options)
         # Move positional args out of options to mimic legacy optparse

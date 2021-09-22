@@ -20,46 +20,86 @@ def _get_module_name_from_path(fp):
     return fp.split("/")[-1][:-3]
 
 def run_command(args):
-    print(args)
+    """
+    Attempts to find and run a user defined command 
+
+    format:
+    cdev run <sub_command> <args> 
+    """
+    # Convert namespace into dict
     params = vars(args)
 
-    sub_command = params.get("args")[0]
-
+    # This is the command to run... It can be a single command or a path to the command where the path is '.' delimitated
+    sub_command = params.get("subcommand")
 
     if len(sub_command.split(".")) > 0:
-        print(params)
         nested_command = sub_command.split(".")
-        nested_command.append(params.get("args")[1])
-        did_found_command, location = _find_command(nested_command)
-        if did_found_command:
-            log.debug(location)
-            _start_dir = os.getcwd()
-            mod_name = _get_module_name_from_path(location)
-        
-            if sys.modules.get(mod_name):
-                #print(f"already loaded {mod_name}")
-                importlib.reload(sys.modules.get(mod_name))
-            
-            os.chdir(os.path.dirname(location))
+        did_find_command, location = _find_complex_command(nested_command)
 
-            mod = importlib.import_module(mod_name)
+        program_name = ".".join(nested_command[:-1])
+        command_name = nested_command[-1]
+    
+    else:
+        did_find_command, location, app_name = _find_simple_command(sub_command)
+
+        program_name = app_name
+        command_name = sub_command
+        
+
+    
+    if did_find_command:
+        # We change directory to where the command file is found so that importing works
+        # note this must be understood by the user creating the command because it affects how they structure importing local modules
+        _start_dir = os.getcwd()
+        os.chdir(os.path.dirname(location))
+
+        mod_name = _get_module_name_from_path(location)
+        
+        # sometime the module is already loaded so just reload it to capture any changes
+        if sys.modules.get(mod_name):
+            importlib.reload(sys.modules.get(mod_name))
+        
+        mod = importlib.import_module(mod_name)
+        
+        # Check for the class that derives from BaseCommand... if there is more then one class then throw error (note this is a current implementation detail)
+        # because it is easier if their is only one command per file so that we can use the file name as the command name
+        _has_found_a_valid_command = False
+        _object_name = None
+        for item in dir(mod):    
+            if inspect.isclass(getattr(mod,item)) and issubclass(getattr(mod,item), BaseCommand) and not (getattr(mod,item) == BaseCommand):
+                if _has_found_a_valid_command:
+                    # TODO better exception
+                    log.error(f"Found too many commands in file {location}")
+                    return
+
+                _has_found_a_valid_command = True
+                # Find all the Cdev_Resources in the module and render them
+                _object_name = item
+
+        if _has_found_a_valid_command:
+            # initalize an instance of the class
+            init_obj  =  getattr(mod, _object_name)()
+
             
-            for item in dir(mod):    
-                if inspect.isclass(getattr(mod,item)) and issubclass(getattr(mod,item), BaseCommand) and not (getattr(mod,item) == BaseCommand):
-                    # Find all the Cdev_Resources in the module and render them
-                    init_obj = getattr(mod,item)()
-                    _execute_command(init_obj, params.get("args"))
-                    
-                    
-            os.chdir(_start_dir)
+            _execute_command(init_obj, [program_name, command_name, *params.get("args")])
         else:
-            print("DID NOT FIND COMMAND")
+            log.error(f"Found no class that is a subclass of 'BaseCommand' in {location}")
+            return 
+                
+        os.chdir(_start_dir)
+    else:
+        # TODO Throw error
+        print("DID NOT FIND COMMAND")
+
 
 def _execute_command(command_obj, param: List[str]):
     command_obj.run_from_command_line(param)
 
 
-def _find_command(command: List[str]) -> Tuple[bool, Union[str, None]]:
+def _find_simple_command(command: str) -> Tuple[bool, Union[str, None]]:
+    pass
+
+def _find_complex_command(command: List[str]) -> Tuple[bool, Union[str, None]]:
     """
     This command will search for the given command. Search order is:
     
