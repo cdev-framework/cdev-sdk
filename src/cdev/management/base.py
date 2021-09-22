@@ -137,7 +137,7 @@ class BaseCommand():
         """
         Handles input from command line and builds arg parser and uses it to validate input. 
         """
-        parser = self.create_parser(argv[0], argv[1])
+        parser = self.create_arg_parser(argv[0], argv[1])
 
         options = parser.parse_args(argv[2:])
         cmd_options = vars(options)
@@ -172,4 +172,4 @@ class BaseCommand():
         The actual logic of the command. Subclasses must implement
         this method.
         """
-        raise NotImplementedError('subclasses of BaseCommand must provide a handle() method')
+        raise NotImplementedError('subclasses of BaseCommand must provide a command() method')
