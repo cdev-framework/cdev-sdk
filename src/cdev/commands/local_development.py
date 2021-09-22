@@ -230,9 +230,9 @@ def refresh_local_output(args: Dict):
         identifier = output.resource.split("::")[-1]
 
         if output.transformer:
-            rendered_value = cloud_mapper_manager.get_output_value(identifier, output.key, transformer=output.get("transformer"))
+            rendered_value = cloud_mapper_manager.get_output_value_by_hash(identifier, output.key, transformer=output.get("transformer"))
         else:
-            rendered_value = cloud_mapper_manager.get_output_value(identifier, output.key)
+            rendered_value = cloud_mapper_manager.get_output_value_by_hash(identifier, output.key)
 
         rendered_outputs.append(f"[magenta]{label}[/magenta] -> [green]{rendered_value}[/green]")
 

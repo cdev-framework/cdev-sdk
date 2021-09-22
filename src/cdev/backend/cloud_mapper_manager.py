@@ -89,7 +89,7 @@ def remove_cloud_resource(identifier: str, old_resource) -> bool:
     return True
 
 
-def get_output_value(identifier: str, key: str, transformer: Callable[[Any], Any]=None) -> Any:
+def get_output_value_by_hash(identifier: str, key: str, transformer: Callable[[Any], Any]=None) -> Any:
     cloud_mapping =  backend_utils.load_cloud_mapping()
 
     if not identifier in cloud_mapping.state:
@@ -120,7 +120,7 @@ def get_output_value_by_name(resource_type: str, name: str, transformer: Callabl
     return None
 
 
-def get_output_value_by_hash(identifier: str) -> Dict:
+def get_output_by_hash(identifier: str) -> Dict:
     cloud_mapping =  backend_utils.load_cloud_mapping()
 
    
@@ -148,7 +148,7 @@ def update_output_value(identifier: str, info: dict) -> bool:
 
 def update_output_by_key(identifier: str, key: str, val: Any) -> bool:
     
-    full_output = get_output_value_by_hash(identifier)
+    full_output = get_output_by_hash(identifier)
 
     full_output[key] = val
 

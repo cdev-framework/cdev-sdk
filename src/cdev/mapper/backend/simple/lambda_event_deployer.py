@@ -83,7 +83,7 @@ def _handle_deleting_api_event(event: simple_lambda.Event, resource_hash) -> boo
     log.debug(f"Attempting to delete {event} from function {resource_hash}")
     
     # Go ahead and make sure we have info for this event in the function's output and cloud integration id of this event
-    function_event_info = cdev_cloud_mapper.get_output_value(resource_hash, "events")
+    function_event_info = cdev_cloud_mapper.get_output_value_by_hash(resource_hash, "events")
     log.debug(f"Function event info {function_event_info}")
 
     if not event.get_hash() in function_event_info:
@@ -92,7 +92,7 @@ def _handle_deleting_api_event(event: simple_lambda.Event, resource_hash) -> boo
 
     integration_id = function_event_info.get(event.get_hash()).get("UUID")
     stmt_id = function_event_info.get(event.get_hash()).get("Stmt_id")
-    cloud_id = cdev_cloud_mapper.get_output_value(resource_hash, "cloud_id")
+    cloud_id = cdev_cloud_mapper.get_output_value_by_hash(resource_hash, "cloud_id")
 
     # Delete the permission on the lambda function
     raw_aws_client.run_client_function("lambda", "remove_permission", {
@@ -200,7 +200,7 @@ def _handle_adding_stream_event(event: simple_lambda.Event, cloud_function_id) -
 def _handle_deleting_stream_event(event: simple_lambda.Event, resource_hash) -> bool:
     log.debug(f"Attempting to delete {event} from function {resource_hash}")
     # Go ahead and make sure we have info for this event in the function's output and cloud integration id of this event
-    function_event_info = cdev_cloud_mapper.get_output_value(resource_hash, "events")
+    function_event_info = cdev_cloud_mapper.get_output_value_by_hash(resource_hash, "events")
     log.debug(f"Function event info {function_event_info}")
     log.debug(event)
     if not event.get_hash() in function_event_info:
@@ -252,7 +252,7 @@ def _handle_deleting_bucket_event(event: simple_lambda.Event, resource_hash) -> 
     log.debug(f"Attempting to delete {event} from function {resource_hash}")
     
     # Go ahead and make sure we have info for this event in the function's output and cloud integration id of this event
-    function_event_info = cdev_cloud_mapper.get_output_value(resource_hash, "events")
+    function_event_info = cdev_cloud_mapper.get_output_value_by_hash(resource_hash, "events")
     log.debug(f"Function event info {function_event_info}")
 
     if not event.get_hash() in function_event_info:
@@ -262,7 +262,7 @@ def _handle_deleting_bucket_event(event: simple_lambda.Event, resource_hash) -> 
     bucket_event_id = function_event_info.get(event.get_hash()).get("UUID")
     bucket_name = function_event_info.get(event.get_hash()).get("bucket_name")
     stmt_id = function_event_info.get(event.get_hash()).get("Stmt_id")
-    cloud_id = cdev_cloud_mapper.get_output_value(resource_hash, "cloud_id")
+    cloud_id = cdev_cloud_mapper.get_output_value_by_hash(resource_hash, "cloud_id")
 
     # Delete the permission on the lambda function
     raw_aws_client.run_client_function("lambda", "remove_permission", {
@@ -309,7 +309,7 @@ def _handle_adding_queue_event(event: simple_lambda.Event, cloud_function_id) ->
 def _handle_deleting_queue_event(event: simple_lambda.Event, resource_hash) -> bool:
     log.debug(f"Attempting to delete {event} from function {resource_hash}")
     # Go ahead and make sure we have info for this event in the function's output and cloud integration id of this event
-    function_event_info = cdev_cloud_mapper.get_output_value(resource_hash, "events")
+    function_event_info = cdev_cloud_mapper.get_output_value_by_hash(resource_hash, "events")
     log.debug(f"Function event info {function_event_info}")
     log.debug(event)
     if not event.get_hash() in function_event_info:
@@ -354,7 +354,7 @@ def _handle_adding_topic_subscription(event: simple_lambda.Event, cloud_function
 def _handle_deleting_topic_subscription(event: simple_lambda.Event, resource_hash) -> bool:
     log.debug(f"Attempting to delete {event} from function {resource_hash}")
     # Go ahead and make sure we have info for this event in the function's output and cloud integration id of this event
-    function_event_info = cdev_cloud_mapper.get_output_value(resource_hash, "events")
+    function_event_info = cdev_cloud_mapper.get_output_value_by_hash(resource_hash, "events")
     log.debug(f"Function event info {function_event_info}")
     log.debug(event)
     if not event.get_hash() in function_event_info:
@@ -365,7 +365,7 @@ def _handle_deleting_topic_subscription(event: simple_lambda.Event, resource_has
 
     subscription_arn = function_event_info.get(event.get_hash()).get("UUID")
     stmt_id = function_event_info.get(event.get_hash()).get("Stmt_id")
-    cloud_id = cdev_cloud_mapper.get_output_value(resource_hash, "cloud_id")
+    cloud_id = cdev_cloud_mapper.get_output_value_by_hash(resource_hash, "cloud_id")
 
     # Delete the permission on the lambda function
     raw_aws_client.run_client_function("lambda", "remove_permission", {

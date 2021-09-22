@@ -1067,7 +1067,7 @@ class restapi_model(Rendered_Resource):
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set([('restApiId', 'id')])
-        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value_by_hash(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value_by_hash(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
 
     class Config:
         extra='ignore'
@@ -1107,7 +1107,7 @@ class resource_model(Rendered_Resource):
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', ('resourceId', 'id')])
-        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value_by_hash(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value_by_hash(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
 
     class Config:
         extra='ignore'
@@ -1237,7 +1237,7 @@ class integration_model(Rendered_Resource):
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod'])
-        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value_by_hash(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value_by_hash(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
 
     class Config:
         extra='ignore'
@@ -1325,7 +1325,7 @@ class stage_model(Rendered_Resource):
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'stageName'])
-        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value_by_hash(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value_by_hash(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
 
     class Config:
         extra='ignore'
@@ -1404,7 +1404,7 @@ class integrationresponse_model(Rendered_Resource):
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod', 'statusCode'])
-        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value_by_hash(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value_by_hash(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
 
     class Config:
         extra='ignore'
@@ -1492,7 +1492,7 @@ class method_model(Rendered_Resource):
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod'])
-        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value_by_hash(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value_by_hash(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
 
     class Config:
         extra='ignore'
@@ -1550,7 +1550,7 @@ class methodresponse_model(Rendered_Resource):
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', 'resourceId', 'httpMethod', 'statusCode'])
-        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value_by_hash(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value_by_hash(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
 
     class Config:
         extra='ignore'
@@ -1626,7 +1626,7 @@ class deployment_model(Rendered_Resource):
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['restApiId', ('deploymentId', 'id')])
-        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value_by_hash(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value_by_hash(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
 
     class Config:
         extra='ignore'

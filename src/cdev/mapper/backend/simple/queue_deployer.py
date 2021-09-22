@@ -60,7 +60,7 @@ def _update_simple_queue(previous_resource: simple_queue.simple_queue_model, new
 
 
 def _remove_simple_queue(identifier: str, resource: simple_queue.simple_queue_model) -> bool:
-    queue_url = cdev_cloud_mapper.get_output_value(identifier, "queue_url")
+    queue_url = cdev_cloud_mapper.get_output_value_by_hash(identifier, "queue_url")
     
     raw_aws_client.run_client_function("sqs", "delete_queue", {
         "QueueUrl": queue_url

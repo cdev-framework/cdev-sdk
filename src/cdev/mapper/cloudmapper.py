@@ -72,9 +72,9 @@ def _recursive_replace_output(obj) -> dict:
                     identifier = v.get('resource').split("::")[-1]
 
                     if "transformer" in v:
-                        rv[k] = cdev_cloud_mapper.get_output_value(identifier, v.get("key"), transformer=v.get("transformer"))
+                        rv[k] = cdev_cloud_mapper.get_output_value_by_hash(identifier, v.get("key"), transformer=v.get("transformer"))
                     else:
-                        rv[k] = cdev_cloud_mapper.get_output_value(identifier, v.get("key"))
+                        rv[k] = cdev_cloud_mapper.get_output_value_by_hash(identifier, v.get("key"))
 
                 else:
                     rv[k] = _recursive_replace_output(v)

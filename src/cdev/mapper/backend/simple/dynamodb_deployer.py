@@ -60,7 +60,7 @@ def _update_simple_dynamodb_table(previous_resource: simple_dynamodb_table.simpl
 
 def _remove_simple_dynamodb_table(identifier: str, resource: simple_dynamodb_table.simple_table_model) -> bool:
     
-    table_name = cdev_cloud_mapper.get_output_value(identifier, "table_name")
+    table_name = cdev_cloud_mapper.get_output_value_by_hash(identifier, "table_name")
     print_deployment_step("DELETE", f"[blink]Removing table {resource.name} (may take a few seconds)[/blink]")
     raw_aws_client.run_client_function("dynamodb", "delete_table", {
         "TableName": table_name,

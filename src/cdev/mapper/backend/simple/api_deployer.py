@@ -98,7 +98,7 @@ def _create_simple_api(identifier: str, resource: simple_api.simple_api_model) -
 
 def _remove_simple_api(identifier: str, resource: simple_api.simple_api_model) -> bool:
     
-    api_id = cdev_cloud_mapper.get_output_value(identifier, "cloud_id")
+    api_id = cdev_cloud_mapper.get_output_value_by_hash(identifier, "cloud_id")
 
     raw_aws_client.run_client_function("apigatewayv2", "delete_api", {
         "ApiId": api_id
@@ -158,7 +158,7 @@ def _update_simple_api(previous_resource: simple_api.simple_api_model, new_resou
     log.debug(f'Routes to be created -> {routes_to_be_created}')
     log.debug(f'Routes to be deleted -> {routes_to_be_deleted}')
 
-    previous_cloud_id = cdev_cloud_mapper.get_output_value(previous_resource.hash, "cloud_id")
+    previous_cloud_id = cdev_cloud_mapper.get_output_value_by_hash(previous_resource.hash, "cloud_id")
 
     new_output_info = {}
     for route in routes_to_be_created:
@@ -175,7 +175,7 @@ def _update_simple_api(previous_resource: simple_api.simple_api_model, new_resou
 
         log.debug(f"Created Route -> {route}")
 
-    previous_route_info = cdev_cloud_mapper.get_output_value(previous_resource.hash, "endpoints")
+    previous_route_info = cdev_cloud_mapper.get_output_value_by_hash(previous_resource.hash, "endpoints")
 
     previous_route_info.update(new_output_info)
 

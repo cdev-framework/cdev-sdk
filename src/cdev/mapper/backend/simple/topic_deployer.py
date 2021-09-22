@@ -50,7 +50,7 @@ def _update_simple_topic(previous_resource: simple_topic.simple_topic_model, new
 
 
 def _remove_simple_topic(identifier: str, resource: simple_topic.simple_topic_model) -> bool:
-    topic_arn = cdev_cloud_mapper.get_output_value(identifier, "arn")
+    topic_arn = cdev_cloud_mapper.get_output_value_by_hash(identifier, "arn")
     
     raw_aws_client.run_client_function("sns", "delete_topic", {
         "TopicArn": topic_arn

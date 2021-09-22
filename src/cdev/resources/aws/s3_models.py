@@ -462,7 +462,7 @@ class bucket_model(Rendered_Resource):
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['Bucket', 'ExpectedBucketOwner'])
-        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value_by_hash(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value_by_hash(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
 
     class Config:
         extra='ignore'
@@ -711,7 +711,7 @@ class object_model(Rendered_Resource):
 
     def filter_to_remove(self, identifier) -> dict:
         NEEDED_ATTRIBUTES = set(['Bucket', 'Key', 'MFA', 'VersionId', 'RequestPayer', 'BypassGovernanceRetention', 'ExpectedBucketOwner'])
-        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
+        return {(k if type(k)==str else k[0]):(cloud_mapper_manager.get_output_value_by_hash(identifier, k) if type(k)==str else cloud_mapper_manager.get_output_value_by_hash(identifier, k[1])) for k in NEEDED_ATTRIBUTES }
 
     class Config:
         extra='ignore'
