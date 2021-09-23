@@ -1,3 +1,4 @@
+from typing import List
 from ast import parse
 import os
 
@@ -26,10 +27,43 @@ def write_intermediate_file(original_path, needed_lines, parsed_path):
     
 
     actual_lines = fs_utils.get_lines_from_file_list(file_list, needed_lines)
-    _write_intermediate_function(parsed_path, actual_lines)
+
+    cleaned_actual_lines = _clean_lines(actual_lines)
+    print(f"cleand line -> {cleaned_actual_lines}")
+    _write_intermediate_function(parsed_path, cleaned_actual_lines)
     _make_intermediate_zip(parsed_path)
 
     return True
+
+
+def _clean_lines(lines: List[str]):
+    """
+    Parsed functions can have empty lines or comments as the last lines of the, so we are going to start from the end of the file and remove those lines
+    """
+
+    # final line should be an offset from the end of the list the represents the final real line of python code
+    final_line_no = -1
+
+
+    for i in range(len(lines)-1):
+        tmp_line = lines[-(i+1)]
+
+        # if the line is blank it is not a valid line
+        if not tmp_line:
+            continue
+
+        # if the line is a comment (starts with '#') or is just whitespace
+        if not(tmp_line[0] == '#' or tmp_line.isspace()):
+            final_line_no = i
+            break
+        
+    if final_line_no == -1 or final_line_no == 0:
+        rv = lines
+    else:
+        rv = lines[:-final_line_no]
+    
+    return rv
+
 
 def _write_intermediate_function(path, lines):
     # Function takes a filepath (fp), filename, and lines then writes the lines to the file
