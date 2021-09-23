@@ -93,6 +93,8 @@ class GlobalStatement():
         for i in range(self.line_no[0], self.line_no[1] + 2):
             self.hashed = self.hashed + i
 
+        self.hashed = self.hashed * self.line_no[0]
+
     def __hash__(self):
         return self.hashed
 
@@ -212,7 +214,7 @@ class file_information():
         self.global_functions = {}
 
         
-        # dict<statement, list(str)>: fuction from statement to symbols
+        # dict<statement, list(str)>: function from statement to symbols
         self.statement_to_symbol = {}
 
         # dict<str, list(statement)>: dictionary from string name of symbol to global statement
