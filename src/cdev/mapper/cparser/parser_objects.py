@@ -4,10 +4,15 @@ import symtable
 from enum import Enum
 import tokenize
 import re
+import hashlib
 
 from sortedcontainers import SortedList
 
 INCLUDE_REGEX = '^#include <(\w+)>$'
+
+def _hash_line_numbers(line_no_1: int, line_no_2: int) -> str:
+    s_numbers = f"{line_no_1}:{line_no_2}"
+    return int.from_bytes( hashlib.md5(s_numbers.encode()).digest(), byteorder='big')
 
 
 class parsed_function():
@@ -76,7 +81,7 @@ class GlobalStatement():
     node = None
 
     # hash
-    hashed = 0
+    hashed = ""
 
     # The type of statement
     statement_type = GlobalStatementType.STANDARD
@@ -88,12 +93,12 @@ class GlobalStatement():
 
         self.node = node
 
-        self.hashed = 0
+        self.hashed = _hash_line_numbers(self.line_no[0], self.line_no[1])
 
-        for i in range(self.line_no[0], self.line_no[1] + 2):
-            self.hashed = self.hashed + i
-
-        self.hashed = self.hashed * self.line_no[0]
+        #for i in range(self.line_no[0], self.line_no[1] + 2):
+        #    self.hashed = self.hashed + i
+#
+        #self.hashed = self.hashed * self.line_no[0]
 
     def __hash__(self):
         return self.hashed
