@@ -23,7 +23,7 @@ log = logger.get_cdev_logger(__name__)
 
 def _handle_adding_api_event(event, cloud_function_id) -> Dict:
     log.debug(f"Attempting to create {event} for function {cloud_function_id}")
-    api_resource = cdev_cloud_mapper.get_output_value_by_name("cdev::simple::api", event.original_resource_name)
+    api_resource = cdev_cloud_mapper.get_output_by_name("cdev::simple::api", event.original_resource_name)
     log.debug(f"Found Api info for {event} -> {api_resource}")
     api_id = api_resource.get("cloud_id")
     routes = api_resource.get("endpoints")
@@ -103,7 +103,7 @@ def _handle_deleting_api_event(event: simple_lambda.Event, resource_hash) -> boo
     # To delete a route event from a simple api we need to delete the integration.
     # This requires first detaching the integration from the route then deleting the integration. 
     try:
-        api_resource = cdev_cloud_mapper.get_output_value_by_name("cdev::simple::api", event.original_resource_name)
+        api_resource = cdev_cloud_mapper.get_output_by_name("cdev::simple::api", event.original_resource_name)
     except Exception as e:
         log.debug(e)
         log.error(f"Looking up 'cdev::simple::api' {event.original_resource_name} in cloud_output")
@@ -148,7 +148,7 @@ def _handle_deleting_api_event(event: simple_lambda.Event, resource_hash) -> boo
 
 def _handle_adding_stream_event(event: simple_lambda.Event, cloud_function_id) -> Dict:
     log.debug(f"Attempting to create {event} for function {cloud_function_id}")
-    table_resource = cdev_cloud_mapper.get_output_value_by_name("cdev::simple::table", event.original_resource_name)
+    table_resource = cdev_cloud_mapper.get_output_by_name("cdev::simple::table", event.original_resource_name)
     log.debug(f"Found Table info for {event} -> {table_resource}")
 
     rv = raw_aws_client.run_client_function("dynamodb", "describe_table", {
@@ -223,7 +223,7 @@ def _handle_deleting_stream_event(event: simple_lambda.Event, resource_hash) -> 
 
 def _handle_adding_bucket_event(event: simple_lambda.Event, cloud_function_id) -> Dict:
     log.debug(f"Attempting to create {event} for function {cloud_function_id}")
-    bucket_resource = cdev_cloud_mapper.get_output_value_by_name("cdev::simple::bucket", event.original_resource_name)
+    bucket_resource = cdev_cloud_mapper.get_output_by_name("cdev::simple::bucket", event.original_resource_name)
     log.debug(f"Found Bucket info for {event} -> {bucket_resource}")
     bucket_arn = bucket_resource.get("arn")
     bucket_name = bucket_resource.get("bucket_name")
@@ -285,7 +285,7 @@ def _handle_deleting_bucket_event(event: simple_lambda.Event, resource_hash) -> 
 
 def _handle_adding_queue_event(event: simple_lambda.Event, cloud_function_id) -> Dict:
     log.debug(f"Attempting to create {event} for function {cloud_function_id}")
-    queue_resource = cdev_cloud_mapper.get_output_value_by_name("cdev::simple::queue", event.original_resource_name)
+    queue_resource = cdev_cloud_mapper.get_output_by_name("cdev::simple::queue", event.original_resource_name)
     log.debug(f"Found Table info for {event} -> {queue_resource}")
 
     
@@ -332,7 +332,7 @@ def _handle_deleting_queue_event(event: simple_lambda.Event, resource_hash) -> b
 
 def _handle_adding_topic_subscription(event: simple_lambda.Event, cloud_function_id) -> Dict:
     log.debug(f"Attempting to create {event} for function {cloud_function_id}")
-    topic_resource = cdev_cloud_mapper.get_output_value_by_name("cdev::simple::topic", event.original_resource_name)
+    topic_resource = cdev_cloud_mapper.get_output_by_name("cdev::simple::topic", event.original_resource_name)
     log.debug(f"Found Table info for {event} -> {topic_resource}")
 
     # Add permission to lambda to allow apigateway to invoke this function

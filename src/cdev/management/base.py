@@ -147,6 +147,7 @@ class BaseCommand():
 
         
         options = parser.parse_args(argv[2:])
+        
         cmd_options = vars(options)
         # Move positional args out of options to mimic legacy optparse
         args = cmd_options.pop('args', ())

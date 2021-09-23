@@ -120,7 +120,7 @@ def _create_policy(permission: simple_lambda.Permission) -> str:
     cdev_resource_name = permission.resource.split("::")[-1]
     cdev_resource_type = "::".join(permission.resource.split("::")[:-1])
     
-    resource_info = cloud_mapper_manager.get_output_value_by_name(cdev_resource_type, cdev_resource_name)
+    resource_info = cloud_mapper_manager.get_output_by_name(cdev_resource_type, cdev_resource_name)
     
     if not resource_info:
         raise Exception

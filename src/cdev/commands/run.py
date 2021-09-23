@@ -58,7 +58,9 @@ def run_command(args):
         # sometime the module is already loaded so just reload it to capture any changes
         if sys.modules.get(mod_name):
             importlib.reload(sys.modules.get(mod_name))
-        
+
+
+        sys.path.insert(0, os.getcwd())
         mod = importlib.import_module(mod_name)
         
         # Check for the class that derives from BaseCommand... if there is more then one class then throw error (note this is a current implementation detail)

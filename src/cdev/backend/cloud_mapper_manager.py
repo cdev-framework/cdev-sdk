@@ -109,15 +109,29 @@ def get_output_value_by_hash(identifier: str, key: str, transformer: Callable[[A
     return original_data
 
 
-def get_output_value_by_name(resource_type: str, name: str, transformer: Callable[[Any], Any]=None) -> str:
+def get_output_value_by_name(resource_type: str, name: str, key: str ,transformer: Callable[[Any], Any]=None) -> Any:
+    cloud_mapping =  backend_utils.load_cloud_mapping()
+
+    for resource_id in cloud_mapping.state:
+        if cloud_mapping.state.get(resource_id).output.get("cdev_name") == name and cloud_mapping.state.get(resource_id).output.get("ruuid") == resource_type:
+            cloud_output = cloud_mapping.state.get(resource_id).output
+
+            if key not in cloud_output:
+                raise Exception
+            else:
+                return cloud_output.get(key)
+
+    raise Exception
+
+def get_output_by_name(resource_type: str, name: str, transformer: Callable[[Any], Any]=None) -> Dict:
     cloud_mapping =  backend_utils.load_cloud_mapping()
 
     for resource_id in cloud_mapping.state:
         if cloud_mapping.state.get(resource_id).output.get("cdev_name") == name and cloud_mapping.state.get(resource_id).output.get("ruuid") == resource_type:
             return cloud_mapping.state.get(resource_id).output
 
-    print(f"COULD NOT FIND type:{resource_type}, {name}")
-    return None
+    
+    raise Exception
 
 
 def get_output_by_hash(identifier: str) -> Dict:

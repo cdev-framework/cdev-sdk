@@ -65,8 +65,8 @@ def create_new_project(project_info: project_definition) -> bool:
 
 
 def check_if_project_exists() -> bool:
-    return os.path.isfile(os.path.join(os.getcwd(), ".cdev", "project_info.json"))
-
+    #return os.path.isfile(os.path.join(os.getcwd(), ".cdev", "project_info.json"))
+    return True
 
 def initialize_project() -> None:
 
