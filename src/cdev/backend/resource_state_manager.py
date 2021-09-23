@@ -187,16 +187,17 @@ def _create_resource_diffs(new_resources: List[Rendered_Resource], old_resource:
                 }
             ))
 
-    for resource in old_resource:
-        log.info(f"delete resource diff {resource}")
-        rv.append(Resource_State_Difference(
-                **{
-                    "action_type": Action_Type.DELETE,
-                    "previous_resource": resource,
-                    "new_resource": None
-                }
+    if old_resource:
+        for resource in old_resource:
+            log.info(f"delete resource diff {resource}")
+            rv.append(Resource_State_Difference(
+                    **{
+                        "action_type": Action_Type.DELETE,
+                        "previous_resource": resource,
+                        "new_resource": None
+                    }
+                )
             )
-        )
 
     return rv
 
