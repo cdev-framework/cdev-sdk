@@ -65,7 +65,7 @@ def _find_resources_information_from_file(fp) -> List[Rendered_Resource]:
                 pre_parsed_info = obj.render()
 
                 functions_to_parse.append(pre_parsed_info.configuration.Handler)
-                function_name_to_rendered_resource[pre_parsed_info.configuration.Handler] = pre_parsed_info
+                function_name_to_rendered_resource[_clean_function_name(pre_parsed_info.configuration.Handler)] = pre_parsed_info
                 log.info(f"PREPROCESS {pre_parsed_info}")
 
             else:
@@ -107,21 +107,26 @@ def _create_serverless_function_resources(filepath: FilePath, functions_names_to
 
     rv = {}
     for parsed_function in parsed_function_info.parsed_functions:
-        log.info(f"{parsed_function.name} -> {parsed_function}")
+        cleaned_name = _clean_function_name(parsed_function.name)
+
+        log.info(f"{cleaned_name} -> {parsed_function}")
         final_info = {}
 
-        full_path = fs_utils.get_parsed_path(filepath, parsed_function.name)
+        full_path = fs_utils.get_parsed_path(filepath, cleaned_name)
         writer.write_intermediate_file(filepath, parsed_function.get_line_numbers_serializeable(), full_path)
 
 
         final_info["file_path"] = paths.get_relative_to_project_path(full_path)
-        final_info["Handler"] = parsed_function.name +"."+ parsed_function.name
+        final_info["Handler"] = cleaned_name +"."+ parsed_function.name
         final_info["src_code_hash"] = hasher.hash_file(full_path)
 
-        rv[parsed_function.name] = final_info
+        rv[cleaned_name] = final_info
 
     return rv
-    
+
+
+def _clean_function_name(potential_name: str) -> str:
+    return potential_name.replace("_","")
 
 
 
