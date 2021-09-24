@@ -125,7 +125,7 @@ def _create_policy(permission: simple_lambda.Permission) -> str:
     if not resource_info:
         raise Exception
     
-    statement["Resource"] = resource_info.get("arn")
+    statement["Resource"] = resource_info.get("arn") if not permission.resource_suffix else f"{resource_info.get('arn')}{permission.resource_suffix}"
 
     policy['Statement'] = [statement]
 
@@ -155,7 +155,7 @@ def _create_role(name: str) -> str:
 def _attach_policy_to_arn(role_arn: str, policy_arn: str) -> bool:
     log.debug(f"Attempting to attach {policy_arn} to role {role_arn}")
     raw_aws_client.run_client_function("iam", "attach_role_policy", {
-        "RoleName":role_arn,
+        "RoleName": role_arn,
         "PolicyArn": policy_arn
     })
 

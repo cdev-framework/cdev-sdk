@@ -244,8 +244,8 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
     if not previous_resource.events_hash == new_resource.events_hash:
         log.debug(f"UPDATE EVENT HASH: {previous_resource.events} -> {new_resource.events}")
         if did_update_permission:
-            print_deployment_step("UPDATE", "   [blink]Wait for new permissions to take effect[blink]")
-            sleep(5)
+            print_deployment_step("UPDATE", "   [blink]Wait for new permissions to take effect (~10s)[blink]")
+            sleep(10)
 
         previous_hashes = set([simple_lambda.Event(**x).get_hash() for x in previous_resource.events])
         new_hashes = set([x.get_hash() for x in new_resource.events])

@@ -1,4 +1,5 @@
 from enum import Enum
+from os import supports_effective_ids
 from typing import List, Dict, Union
 
 
@@ -129,7 +130,8 @@ class TablePermissions():
                 "dynamodb:ListStreams"
             ],
             resource=f'cdev::simple::table::{resource_name}',
-            effect="Allow"
+            effect="Allow",
+            resource_suffix="/stream/*"
         )
 
 
