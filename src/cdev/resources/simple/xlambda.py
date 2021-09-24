@@ -124,13 +124,13 @@ class simple_aws_lambda_function_model(Rendered_Resource):
 
 
 class simple_lambda(Cdev_Resource):
-    def __init__(self, cdev_name: str, function_name: str ,filepath: str,  events: List[Event]=[], configuration: lambda_function_configuration={}, function_permissions: List[Union[Permission,PermissionArn]]=[] ,includes: List[str]=[]) -> None:
+    def __init__(self, cdev_name: str, filepath: str, function_name: str="" ,events: List[Event]=[], configuration: lambda_function_configuration={}, function_permissions: List[Union[Permission,PermissionArn]]=[] ,includes: List[str]=[]) -> None:
         super().__init__(cdev_name)
 
         self.filepath = filepath
         self.includes = includes
         self.events = events
-        self.function_name = f"{function_name}_{cdev_environment.get_current_environment_hash()}"
+        self.function_name = f"{function_name}_{cdev_environment.get_current_environment_hash()}" if function_name else f"{cdev_name}_{cdev_environment.get_current_environment_hash()}"
 
         self.configuration = configuration
         config_parents = [f"{'::'.join(x.resource.split('::')[:3])};hash;{x.resource.split('::')[-1]}" for x in parent_resources.find_cloud_output(configuration.dict())]
@@ -179,7 +179,7 @@ class simple_lambda(Cdev_Resource):
 
 
 
-def simple_lambda_function_annotation(name: str, function_name: str, events: List[Event]=[],  Environment={}, Permissions: List[Union[Permission,PermissionArn]]=[], includes: List[str]=[]):
+def simple_lambda_function_annotation(name: str, function_name: str="", events: List[Event]=[],  Environment={}, Permissions: List[Union[Permission,PermissionArn]]=[], includes: List[str]=[]):
     """
     This annotation is used to designate that a function should be deployed on the AWS lambda platform. Functions that are designated
     using this annotation should have a signature that takes two inputs (event,context) to conform to the aws lambda handler signature.
@@ -238,7 +238,7 @@ def simple_lambda_function_annotation(name: str, function_name: str, events: Lis
 
         full_filepath = os.path.abspath(mod.__file__)
         
-        return simple_lambda(cdev_name=name, function_name=function_name ,filepath=full_filepath, events=events, configuration=final_config, function_permissions=Permissions ,includes=includes)
+        return simple_lambda(cdev_name=name, filepath=full_filepath, function_name=function_name ,events=events, configuration=final_config, function_permissions=Permissions ,includes=includes)
 
     
    

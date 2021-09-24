@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import List, Dict, Union
 
+import cdev
+
 
 from ...constructs import Cdev_Resource
 from ...models import Cloud_Output, Rendered_Resource
@@ -70,11 +72,17 @@ class simple_bucket_output(str, Enum):
 
 
 class Bucket(Cdev_Resource):
-    def __init__(self, cdev_name: str, bucket_name: str) -> None:
-        
+    def __init__(self, cdev_name: str, bucket_name: str="") -> None:
+        """
+        Create a simple S3 bucket that can be used as an object store. 
+
+        Args:
+            cdev_name (str): Name of the resource
+            bucket_name (str, optional): base name of the bucket in s3. If not provided, will default to cdev_name.
+        """
         super().__init__(cdev_name)
 
-        self.bucket_name = f"{bucket_name}{cdev_environment.get_current_environment_hash()}"
+        self.bucket_name = f"{bucket_name}{cdev_environment.get_current_environment_hash()}" if bucket_name else f"{cdev_name}{cdev_environment.get_current_environment_hash()}"
 
         self.permissions = BucketPermissions(cdev_name)
 

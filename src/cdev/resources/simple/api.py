@@ -23,9 +23,21 @@ class simple_api_output(str, Enum):
 
 class Api(Cdev_Resource):
 
-    def __init__(self, cdev_name: str, api_name: str, allow_cors: bool) -> None:
+    def __init__(self, cdev_name: str, api_name: str="", allow_cors: bool=True) -> None:
+        """
+        Create a simple http Api.
+
+        Args
+            cdev_name (str): name of the resource
+            api_name (str, optional): name in aws of the resource. defaults to cdev_name if not provided
+            allow_cors (str, optional): allow CORS on the api 
+
+        Note:
+            To create routes for the api use the `route` method
+        """
+
         super().__init__(cdev_name)
-        self.api_name = f"{api_name}_{cdev_environment.get_current_environment_hash()}"
+        self.api_name = f"{api_name}_{cdev_environment.get_current_environment_hash()}" if api_name else f"{cdev_name}_{cdev_environment.get_current_environment_hash()}"
         self._routes = []
         self.allow_cors = allow_cors
         self.hash = (hasher.hash_list([hasher.hash_list(self._routes), self.api_name, self.allow_cors]))

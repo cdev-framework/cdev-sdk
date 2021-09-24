@@ -42,10 +42,14 @@ class simple_topic_output(str, Enum):
 
 
 class Topic(Cdev_Resource):
-    def __init__(self, cdev_name: str, topic_name: str, is_fifo: bool = False) -> None:
-        
+    def __init__(self, cdev_name: str, topic_name: str="", is_fifo: bool = False) -> None:
+        """
+        Simple SNS topic. 
+        """
         super().__init__(cdev_name)
-        self.topic_name = f"{topic_name}_{cdev_environment.get_current_environment_hash()}" if not is_fifo else f"{topic_name}_{cdev_environment.get_current_environment_hash()}.fifo"
+        
+        _base_name = topic_name if topic_name else cdev_name
+        self.topic_name = f"{_base_name}_{cdev_environment.get_current_environment_hash()}" if not is_fifo else f"{_base_name}_{cdev_environment.get_current_environment_hash()}.fifo"
         self.fifo = is_fifo
         self.permissions = TopicPermissions(cdev_name)
 

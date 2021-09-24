@@ -134,14 +134,17 @@ class TablePermissions():
 
 
 class Table(Cdev_Resource):
-    def __init__(self, cdev_name: str, table_name: str, attributes: List[Dict[str, Union[attribute_type,str]]], keys: List[Dict[str, Union[key_type, str]]]) -> None:
+    def __init__(self, cdev_name: str, attributes: List[Dict[str, Union[attribute_type,str]]], keys: List[Dict[str, Union[key_type, str]]], table_name: str="") -> None:
         rv = Table.check_attributes_and_keys(attributes, keys)
         if not rv[0]:
             print(rv[1])
             raise Exception
 
         super().__init__(cdev_name)
-        self.table_name = f"{table_name}_{cdev_environment.get_current_environment_hash()}"
+
+
+
+        self.table_name = f"{table_name}_{cdev_environment.get_current_environment_hash()}" if table_name else f"{cdev_name}_{cdev_environment.get_current_environment_hash()}"
         self.attributes = [{"AttributeName": x.get("AttributeName"), "AttributeType": x.get("AttributeType").value} for x in attributes]
         self.keys = [{"AttributeName": x.get("AttributeName"), "KeyType": x.get("KeyType").value} for x in keys]
         self._stream = None

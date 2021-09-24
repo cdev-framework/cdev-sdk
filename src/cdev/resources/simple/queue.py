@@ -69,10 +69,19 @@ class simple_queue_output(str, Enum):
 
 class Queue(Cdev_Resource):
     def __init__(self, cdev_name: str, queue_name: str, is_fifo: bool = False) -> None:
-        
+        """
+        A simple sqs queue. 
+
+        args:
+            cdev_name (str): Name of the resource
+            queue_name (str, optional): Name of the queue in aws. Defaults to cdev_name if not provided.
+            is_fifo (bool, optional, default=False): if this should be a First-in First-out queue (link to difference) TODO
+        """
         super().__init__(cdev_name)
         
-        self.queue_name = f"{queue_name}_{cdev_environment.get_current_environment_hash()}" if not is_fifo else f"{queue_name}_{cdev_environment.get_current_environment_hash()}.fifo"
+        _base_name = queue_name if queue_name else cdev_name
+
+        self.queue_name = f"{_base_name}_{cdev_environment.get_current_environment_hash()}" if not is_fifo else f"{_base_name}_{cdev_environment.get_current_environment_hash()}.fifo"
         self.fifo = is_fifo
         self.permissions = QueuePermissions(cdev_name)
 
