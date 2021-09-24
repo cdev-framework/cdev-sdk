@@ -57,7 +57,7 @@ def _create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
 
     # Step 3
     # TODO
-    print_deployment_step("CREATE", f"  [blink]Waiting for role to finish creating[/blink]")
+    print_deployment_step("CREATE", f"  [blink]Waiting for role to finish creating (~10s)[/blink]")
     sleep(10)
     # ughhhh add a retry wrapper because it takes time to generate the IAM roles across all regions so we need to wait a few seconds to create this 
     lambda_function_args = {

@@ -29,7 +29,7 @@ def write_intermediate_file(original_path, needed_lines, parsed_path):
     actual_lines = fs_utils.get_lines_from_file_list(file_list, needed_lines)
 
     cleaned_actual_lines = _clean_lines(actual_lines)
-    print(f"cleand line -> {cleaned_actual_lines}")
+    
     _write_intermediate_function(parsed_path, cleaned_actual_lines)
     _make_intermediate_zip(parsed_path)
 

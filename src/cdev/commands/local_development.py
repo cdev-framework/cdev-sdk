@@ -179,9 +179,11 @@ def file_change_handler(args):
 
 def file_change_handler_simple(args):
     cdev_output.print(f"File Change Detected. Starting Deploy Process")
-    deploy.local_deploy_command({})
+    did_deploy = deploy.local_deploy_command({})
+    if did_deploy:
+        refresh_output_simple()
     cdev_output.print(f"[blink] *** waiting for changes ***[/blink]")
-    refresh_output_simple()
+    
     update_screen()
 
 
@@ -236,7 +238,11 @@ def refresh_local_output(args: Dict):
 
         rendered_outputs.append(f"[magenta]{label}[/magenta] -> [green]{rendered_value}[/green]")
 
-    
+    if not write_to_buffer:
+        cdev_output.print("---Current Output---")
+    else:
+        cdev_output.add_message_to_buffer(args.get("buffer_name"), "---Current Output---")
+
     for rendered_output in rendered_outputs:
         if not write_to_buffer:
             cdev_output.print(rendered_output)

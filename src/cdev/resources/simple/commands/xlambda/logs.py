@@ -31,9 +31,8 @@ class show_logs(BaseCommand):
             return
 
         cloud_watch_group_name = f"/aws/lambda/{cloud_name}"
-
+        
         if watch_val:
-            print("HELERFGER")
             _watch_log_group(cloud_watch_group_name, self.stdout)
             return
         

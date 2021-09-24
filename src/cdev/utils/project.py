@@ -8,6 +8,7 @@ from typing import List, Dict
 from pydantic import BaseModel
 from pydantic.types import FilePath
 
+
 from cdev.settings import SETTINGS as cdev_settings
 
 from cdev.constructs import Cdev_Project
@@ -65,8 +66,8 @@ def create_new_project(project_info: project_definition) -> bool:
 
 
 def check_if_project_exists() -> bool:
-    #return os.path.isfile(os.path.join(os.getcwd(), ".cdev", "project_info.json"))
-    return True
+    return os.path.isfile(os.path.join(cdev_settings.get("BASE_PATH"), ".cdev", "project_info.json"))
+    
 
 def initialize_project() -> None:
 

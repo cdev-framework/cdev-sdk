@@ -34,7 +34,7 @@ def deploy_command(args):
 
 
 
-def local_deploy_command(args):
+def local_deploy_command(args) -> bool:
     project.initialize_project()
     rendered_frontend = frontend_executer.execute_frontend()
     project_diffs = resource_state_manager.create_project_diffs(rendered_frontend)
@@ -45,10 +45,10 @@ def local_deploy_command(args):
 
     if not project_diffs:
         cdev_output.print("No differences to deploy")
-        return
+        return False
 
     cdev_output.print_plan(rendered_frontend, project_diffs)
     
     backend_executer.deploy_diffs(project_diffs)
     
-    return
+    return True
