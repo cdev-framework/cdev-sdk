@@ -107,6 +107,13 @@ class Cdev_Project():
             pass
         return cls._instance
 
+    def clear_previous_state(self):
+        self._state = None
+        self._outputs = {}
+        self._INSTALLED_COMMANDS = []
+        self._INSTALLED_COMPONENTS = []
+        self._INSTALLED_MAPPERS = []
+
     #################
     ##### Components
     #################

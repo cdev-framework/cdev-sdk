@@ -13,6 +13,7 @@ from rich.text import Text
 
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
+from cdev.constructs import Cdev_Project
 
 from cdev.utils import hasher
 
@@ -82,10 +83,10 @@ def run_enhanced_local_development_environment(args):
     my_observer = Observer()
 
     if args.simple:
-        my_event_handler.on_created = file_change_handler_simple
-        my_event_handler.on_deleted = file_change_handler_simple
+        #my_event_handler.on_created = file_change_handler_simple
+        #my_event_handler.on_deleted = file_change_handler_simple
         my_event_handler.on_modified = file_change_handler_simple
-        my_event_handler.on_moved = file_change_handler_simple
+        #my_event_handler.on_moved = file_change_handler_simple
 
         my_observer.schedule(my_event_handler, path, recursive=go_recursively)
 
@@ -178,6 +179,8 @@ def file_change_handler(args):
     update_screen()
 
 def file_change_handler_simple(args):
+    CDEV_PROJECT = Cdev_Project()
+    CDEV_PROJECT.clear_previous_state()
     cdev_output.print(f"File Change Detected. Starting Deploy Process")
     did_deploy = deploy.local_deploy_command({})
     if did_deploy:
