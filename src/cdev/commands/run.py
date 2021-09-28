@@ -34,9 +34,7 @@ def run_command(args):
 
     # This is the command to run... It can be a single command or a path to the command where the path is '.' delimitated
     sub_command = params.get("subcommand")
-
-    print(sub_command)
-
+    
     project.initialize_project()
 
     if len(sub_command.split(".")) > 1:
@@ -137,7 +135,7 @@ def _find_complex_command(command: List[str]) -> Tuple[bool, Union[str, None]]:
     3. local project commands
     """
     ALL_LOCATIONS = [DEFAULT_RESOURCE_LOCATION]
-    ALL_LOCATIONS.append(PROJECT.INSTALLED_COMMANDS)
+    ALL_LOCATIONS.append(PROJECT.get_commands())
 
     found_command = False
     found_starting_point = None
