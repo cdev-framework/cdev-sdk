@@ -8,11 +8,13 @@ from ...utils import hasher, environment as cdev_environment
 
 from .xlambda import Event as lambda_event, EventTypes, Permission
 
+
 RUUID = 'cdev::simple::queue'
 
 
-
 class QueuePermissions():
+    RUUID = 'cdev::simple::queue'
+    
     def __init__(self, resource_name) -> None:
         self.READ_QUEUE = Permission(
             actions=[
@@ -20,7 +22,7 @@ class QueuePermissions():
                 "sqs:DeleteMessage",
                 "sqs:GetQueueAttributes"
             ],
-            resource=f'{RUUID}::{resource_name}',
+            resource=f'{self.RUUID}::{resource_name}',
             effect="Allow"
         )
     
@@ -29,7 +31,7 @@ class QueuePermissions():
                 "sqs:SendMessage",
                 "sqs:GetQueueAttributes",
             ],
-            resource=f'{RUUID}::{resource_name}',
+            resource=f'{self.RUUID}::{resource_name}',
             effect="Allow"
         )
     
@@ -40,7 +42,7 @@ class QueuePermissions():
                 "sqs:GetQueueAttributes",
                 "sqs:SendMessage",
             ],
-            resource=f'{RUUID}::{resource_name}',
+            resource=f'{self.RUUID}::{resource_name}',
             effect="Allow"
         )
     
@@ -50,7 +52,7 @@ class QueuePermissions():
                 "sqs:DeleteMessage",
                 "sqs:GetQueueAttributes"
             ],
-            resource=f'{RUUID}::{resource_name}',
+            resource=f'{self.RUUID}::{resource_name}',
             effect="Allow"
         )
 
@@ -68,6 +70,8 @@ class simple_queue_output(str, Enum):
 
 
 class Queue(Cdev_Resource):
+    RUUID = 'cdev::simple::queue'
+
     def __init__(self, cdev_name: str, queue_name: str, is_fifo: bool = False) -> None:
         """
         A simple sqs queue. 
@@ -89,7 +93,7 @@ class Queue(Cdev_Resource):
 
     def render(self) -> simple_queue_model:
         return simple_queue_model(**{
-            "ruuid": RUUID,
+            "ruuid": self.RUUID,
             "name": self.name,
             "hash": self.hash ,
             "queue_name": self.queue_name,
@@ -112,7 +116,7 @@ class Queue(Cdev_Resource):
 
         event = lambda_event(**{
             "original_resource_name": self.name,
-            "original_resource_type": RUUID,
+            "original_resource_type": self.RUUID,
             "event_type": EventTypes.QUEUE_TRIGGER,
             "config": config
             }
@@ -122,4 +126,4 @@ class Queue(Cdev_Resource):
 
 
     def from_output(self, key: simple_queue_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"{RUUID}::{self.hash}", "key": key.value, "type": "cdev_output"})
+        return Cloud_Output(**{"resource": f"{self.RUUID}::{self.hash}", "key": key.value, "type": "cdev_output"})

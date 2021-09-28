@@ -7,6 +7,7 @@ from typing import List, Dict, Set, Callable
 
 from .models import Rendered_Component, Resource_State_Difference, Cloud_Output
 
+from .utils import environment as cdev_environment
 
 
 class Cdev_Component():
@@ -79,10 +80,12 @@ class Cdev_Project():
     """
 
     _instance = None
-    _components = []
-    _mappers = []
+
     _state = None
     _outputs = {}
+    _INSTALLED_COMMANDS = []
+    _INSTALLED_COMPONENTS = []
+    _INSTALLED_MAPPERS = []
 
 
     def __new__(cls):
@@ -104,6 +107,9 @@ class Cdev_Project():
             pass
         return cls._instance
 
+    #################
+    ##### Components
+    #################
 
     def add_component(self, component: Cdev_Component) -> None:
         if not isinstance(component, Cdev_Component):
@@ -111,7 +117,7 @@ class Cdev_Project():
             print(f"CANT ADD THIS COMPONENT -> {component}")
             return 
         
-        self._components.append(component)
+        self._INSTALLED_COMPONENTS.append(component)
 
 
     def add_components(self, components: List[Cdev_Component]) -> None:
@@ -126,20 +132,29 @@ class Cdev_Project():
         
     
     def get_components(self) -> List[Cdev_Component]:
-        return self._components
+        return self._INSTALLED_COMPONENTS
 
-
+    #################
+    ##### Mapper
+    #################
     def add_mapper(self, mapper: CloudMapper ) -> None:
         if not isinstance(mapper, CloudMapper):
             # TODO Throw error
             print(f"BAD CLOUD MAPPER {mapper}")
             return
 
-        self._mappers.append(mapper)
+        self._INSTALLED_MAPPERS.append(mapper)
+
+
+    def add_mappers(self, mappers: List[CloudMapper] ) -> None:
+        for mapper in mappers:
+            self.add_mapper(mapper)
+
+        self._INSTALLED_MAPPERS.append(mapper)
 
 
     def get_mappers(self) -> List[CloudMapper]:
-        return self._mappers
+        return self._INSTALLED_MAPPERS
 
 
     def get_mapper_namespace(self) -> Dict:
@@ -150,6 +165,28 @@ class Cdev_Project():
                 rv[namespace] = mapper
 
         return rv
+
+    #################
+    ##### Commands
+    #################
+
+    def add_command(self, command_location: str):
+        self._INSTALLED_COMMANDS.append(command_location)
+
+
+    def add_commands(self, command_locations: List[str]):
+        for command_location in command_locations:
+            self.add_command(command_location)
+
+    def get_commands(self) -> List[str]:
+        return self._INSTALLED_COMMANDS
+    
+    #################
+    ##### Environment
+    #################
+
+    def get_environment(self) -> str:
+        return cdev_environment.get_current_environment()
 
 
     def add_output(self, label: str, output: Cloud_Output) -> None:
@@ -170,10 +207,9 @@ class Cdev_Project():
 
 
 
-
-
-
 class Cdev_Resource():
+    #RUUID = ""
+
     def __init__(self, name: str ) -> None:
         self.name = name
         pass

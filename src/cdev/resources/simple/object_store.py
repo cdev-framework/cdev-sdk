@@ -20,6 +20,9 @@ class Bucket_Event_Types(Enum):
 
 
 class BucketPermissions():
+
+    RUUID = 'cdev::simple::bucket'
+
     def __init__(self, resource_name) -> None:
         self.READ_BUCKET = Permission(
             actions=[
@@ -27,7 +30,7 @@ class BucketPermissions():
                 "s3:GetObjectVersion",
                 "s3:ListBucket"
             ],
-            resource=f'{RUUID}::{resource_name}',
+            resource=f'{self.RUUID}::{resource_name}',
             effect="Allow"
         )
     
@@ -37,7 +40,7 @@ class BucketPermissions():
                 "s3:PutObjectAcl",
                 "s3:ListBucket"
             ],
-            resource=f'{RUUID}::{resource_name}',
+            resource=f'{self.RUUID}::{resource_name}',
             effect="Allow"
         )
     
@@ -46,7 +49,7 @@ class BucketPermissions():
                 "s3:*Object",
                 "s3:ListBucket"
             ],
-            resource=f'{RUUID}::{resource_name}',
+            resource=f'{self.RUUID}::{resource_name}',
             effect="Allow"
         )
     
@@ -55,7 +58,7 @@ class BucketPermissions():
                 "s3:*Object",
                 "s3:ListBucket"
             ],
-            resource=f'{RUUID}::{resource_name}',
+            resource=f'{self.RUUID}::{resource_name}',
             effect="Allow"
         )
 
@@ -72,6 +75,8 @@ class simple_bucket_output(str, Enum):
 
 
 class Bucket(Cdev_Resource):
+    RUUID = 'cdev::simple::bucket'
+
     def __init__(self, cdev_name: str, bucket_name: str="") -> None:
         """
         Create a simple S3 bucket that can be used as an object store. 
@@ -90,7 +95,7 @@ class Bucket(Cdev_Resource):
 
     def render(self) -> simple_bucket_model:
         return simple_bucket_model(**{
-            "ruuid": RUUID,
+            "ruuid": self.RUUID,
             "name": self.name,
             "hash": self.hash ,
             "bucket_name": self.bucket_name,
@@ -104,7 +109,7 @@ class Bucket(Cdev_Resource):
 
         event = lambda_event(**{
             "original_resource_name": self.name,
-            "original_resource_type": RUUID,
+            "original_resource_type": self.RUUID,
             "event_type": EventTypes.BUCKET_TRIGGER,
             "config": config
             }
@@ -114,4 +119,4 @@ class Bucket(Cdev_Resource):
 
 
     def from_output(self, key: simple_bucket_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"cdev::simple::bucket::{self.hash}", "key": key.value, "type": "cdev_output"})
+        return Cloud_Output(**{"resource": f"{self.RUUID}::{self.hash}", "key": key.value, "type": "cdev_output"})

@@ -8,6 +8,7 @@ from ...utils import hasher, environment as cdev_environment
 
 from .xlambda import Event as lambda_event, EventTypes
 
+RUUID = "cdev::simple::api"
 
 class simple_api_model(Rendered_Resource):
     api_name: str
@@ -22,6 +23,7 @@ class simple_api_output(str, Enum):
 
 
 class Api(Cdev_Resource):
+    RUUID = "cdev::simple::api"
 
     def __init__(self, cdev_name: str, api_name: str="", allow_cors: bool=True) -> None:
         """
@@ -52,7 +54,7 @@ class Api(Cdev_Resource):
 
         event = lambda_event(**{
             "original_resource_name": self.name,
-            "original_resource_type": "cdev::simple::api",
+            "original_resource_type": self.RUUID,
             "event_type": EventTypes.HTTP_API_ENDPOINT,
             "config": config
             }
@@ -66,7 +68,7 @@ class Api(Cdev_Resource):
     
     def render(self) -> simple_api_model:
         return simple_api_model(**{
-            "ruuid": "cdev::simple::api",
+            "ruuid": self.RUUID,
             "name": self.name,
             "hash": self.hash,
             "api_name": self.api_name,
@@ -76,5 +78,5 @@ class Api(Cdev_Resource):
         )
 
     def from_output(self, key: simple_api_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"cdev::simple::api::{self.hash}", "key": key.value, "type": "cdev_output"})
+        return Cloud_Output(**{"resource": f"{self.RUUID}::{self.hash}", "key": key.value, "type": "cdev_output"})
 

@@ -32,7 +32,7 @@ def _create_simple_dynamodb_table(identifier: str, resource: simple_dynamodb_tab
         "cloud_id": rv.get("TableDescription").get("TableArn"), 
         "arn": rv.get("TableDescription").get("TableArn"), 
         "cdev_name": resource.name,
-        "ruuid": "cdev::simple::table"
+        "ruuid": resource.ruuid
     }
 
     cdev_cloud_mapper.add_identifier(identifier),

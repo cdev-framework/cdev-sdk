@@ -12,7 +12,7 @@ from .xlambda import Event as lambda_event, EventTypes, Permission
 #log = logger.get_cdev_logger(__name__)
 
 
-
+RUUID = "cdev::simple::table"
 
 class attribute_type(Enum):
     """
@@ -70,7 +70,7 @@ class simple_table_output(str, Enum):
 
 
 class TablePermissions():
-
+    RUUID = "cdev::simple::table"
     def __init__(self, resource_name) -> None:
     
         self.READ_TABLE = Permission(
@@ -81,7 +81,7 @@ class TablePermissions():
                 "dynamodb:Query",
                 "dynamodb:ConditionCheckItem"
             ],
-            resource=f'cdev::simple::table::{resource_name}',
+            resource=f'{self.RUUID}::{resource_name}',
             effect="Allow"
         )
     
@@ -99,7 +99,7 @@ class TablePermissions():
                 "dynamodb:UpdateItem",
                 "dynamodb:DescribeLimits"
             ],
-            resource=f'cdev::simple::table::{resource_name}',
+            resource=f'{self.RUUID}::{resource_name}',
             effect="Allow"
         )
     
@@ -117,7 +117,7 @@ class TablePermissions():
                 "dynamodb:Scan",
                 "dynamodb:UpdateItem",
             ],
-            resource=f'cdev::simple::table::{resource_name}',
+            resource=f'{self.RUUID}::{resource_name}',
             effect="Allow"
         )
     
@@ -129,13 +129,15 @@ class TablePermissions():
                 "dynamodb:ListShards",
                 "dynamodb:ListStreams"
             ],
-            resource=f'cdev::simple::table::{resource_name}',
+            resource=f'{self.RUUID}::{resource_name}',
             effect="Allow",
             resource_suffix="/stream/*"
         )
 
 
 class Table(Cdev_Resource):
+    RUUID = "cdev::simple::table"
+
     def __init__(self, cdev_name: str, attributes: List[Dict[str, Union[attribute_type,str]]], keys: List[Dict[str, Union[key_type, str]]], table_name: str="") -> None:
         rv = Table.check_attributes_and_keys(attributes, keys)
         if not rv[0]:
@@ -157,7 +159,7 @@ class Table(Cdev_Resource):
 
     def render(self) -> simple_table_model:
         return simple_table_model(**{
-            "ruuid": "cdev::simple::table",
+            "ruuid": self.RUUID,
             "name": self.name,
             "hash": self.hash ,
             "table_name": self.table_name,
@@ -180,7 +182,7 @@ class Table(Cdev_Resource):
 
         event = lambda_event(**{
             "original_resource_name": self.name,
-            "original_resource_type": "cdev::simple::table",
+            "original_resource_type": self.RUUID,
             "event_type": EventTypes.TABLE_STREAM,
             "config": config
             }

@@ -7,7 +7,8 @@ from pydantic.types import FilePath
 from cdev.management.base import BaseCommand
 
 from cdev.output import ALL_BUFFERS
-from ..utils import logger
+from cdev.constructs import Cdev_Project
+from ..utils import project, logger
 import inspect
 
 
@@ -15,6 +16,8 @@ log = logger.get_cdev_logger(__name__)
 
 DEFAULT_RESOURCE_LOCATION = os.path.join(os.path.dirname(__file__), ".." ,"resources")
 COMMANDS_DIR = "commands"
+
+PROJECT = Cdev_Project()
 
 def _get_module_name_from_path(fp):
     return fp.split("/")[-1][:-3]
@@ -32,7 +35,11 @@ def run_command(args):
     # This is the command to run... It can be a single command or a path to the command where the path is '.' delimitated
     sub_command = params.get("subcommand")
 
-    if len(sub_command.split(".")) > 0:
+    print(sub_command)
+
+    project.initialize_project()
+
+    if len(sub_command.split(".")) > 1:
         nested_command = sub_command.split(".")
         did_find_command, location = _find_complex_command(nested_command)
 
@@ -41,7 +48,7 @@ def run_command(args):
     
     else:
         did_find_command, location, app_name = _find_simple_command(sub_command)
-
+        
         program_name = app_name
         command_name = sub_command
         
@@ -98,8 +105,28 @@ def _execute_command(command_obj, param: List[str]):
     command_obj.run_from_command_line(param)
 
 
-def _find_simple_command(command: str) -> Tuple[bool, Union[str, None]]:
-    pass
+def _find_simple_command(command: str) -> Tuple[bool, Union[str, None], Union[str, None] ]:
+    ALL_LOCATIONS = PROJECT.get_commands()
+    
+    found_location = False
+    for location in ALL_LOCATIONS:
+        try:
+            
+            mod = importlib.import_module(f"{location}.commands.{command}")
+            current_location_attempt = mod.__file__
+        except Exception as e:
+            log.debug(f"{location} did not have a file commands/{command} that was importable")
+            continue
+        
+        found_location = True
+        break
+
+    if found_location:
+        return (True, current_location_attempt, location)
+    else:
+        return (False, None, None)
+    
+
 
 def _find_complex_command(command: List[str]) -> Tuple[bool, Union[str, None]]:
     """
@@ -110,6 +137,7 @@ def _find_complex_command(command: List[str]) -> Tuple[bool, Union[str, None]]:
     3. local project commands
     """
     ALL_LOCATIONS = [DEFAULT_RESOURCE_LOCATION]
+    ALL_LOCATIONS.append(PROJECT.INSTALLED_COMMANDS)
 
     found_command = False
     found_starting_point = None

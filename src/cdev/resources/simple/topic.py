@@ -11,13 +11,15 @@ from .xlambda import Event as lambda_event, EventTypes, Permission
 RUUID = 'cdev::simple::topic'
 
 class TopicPermissions():
+    RUUID = 'cdev::simple::topic'
+
     def __init__(self, resource_name) -> None:
         self.SUBSCRIBE = Permission(
             actions=[
                 "sns:GetTopicAttributes",
                 "sns:Subscribe",
             ],
-            resource=f'{RUUID}::{resource_name}',
+            resource=f'{self.RUUID}::{resource_name}',
             effect="Allow"
         )
     
@@ -26,7 +28,7 @@ class TopicPermissions():
                 "sns:GetTopicAttributes",
                 "sns:Publish"
             ],
-            resource=f'{RUUID}::{resource_name}',
+            resource=f'{self.RUUID}::{resource_name}',
             effect="Allow"
         )
 
@@ -42,6 +44,9 @@ class simple_topic_output(str, Enum):
 
 
 class Topic(Cdev_Resource):
+
+    RUUID = 'cdev::simple::topic'
+
     def __init__(self, cdev_name: str, topic_name: str="", is_fifo: bool = False) -> None:
         """
         Simple SNS topic. 
@@ -57,7 +62,7 @@ class Topic(Cdev_Resource):
 
     def render(self) -> simple_topic_model:
         return simple_topic_model(**{
-            "ruuid": RUUID,
+            "ruuid": self.RUUID,
             "name": self.name,
             "hash": self.hash ,
             "topic_name": self.topic_name,
@@ -72,7 +77,7 @@ class Topic(Cdev_Resource):
 
         event = lambda_event(**{
             "original_resource_name": self.name,
-            "original_resource_type": RUUID,
+            "original_resource_type": self.RUUID,
             "event_type": EventTypes.TOPIC_TRIGGER,
             "config": config
             }
@@ -82,4 +87,4 @@ class Topic(Cdev_Resource):
 
 
     def from_output(self, key: simple_topic_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"{RUUID}::{self.hash}", "key": key.value, "type": "cdev_output"})
+        return Cloud_Output(**{"resource": f"{self.RUUID}::{self.hash}", "key": key.value, "type": "cdev_output"})
