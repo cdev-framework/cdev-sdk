@@ -30,7 +30,6 @@ class put_object(BaseCommand):
 
         try:
             resource = get_resource(resource_name, RUUID)
-
             dynamodb_table_name = get_output_value_by_hash(resource.hash, "table_name")
         except Exception as e:
             self.stderr.write(f"Could not find simple table {resource_name}")        
