@@ -114,6 +114,7 @@ def _find_simple_command(command: str) -> Tuple[bool, Union[str, None], Union[st
             current_location_attempt = mod.__file__
         except Exception as e:
             log.debug(f"{location} did not have a file commands/{command} that was importable")
+            print(e)
             continue
         
         found_location = True

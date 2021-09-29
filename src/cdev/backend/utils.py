@@ -83,3 +83,18 @@ def load_cloud_mapping() -> CloudMapping:
     except BaseException as e:
         print(e)
         return None
+
+
+def get_resource(original_resource_name: str, original_resource_type: str):
+    resource_state = load_resource_state()
+    for component in resource_state.rendered_components:
+        for resource in component.rendered_resources:
+            if not resource.ruuid == original_resource_type:
+                continue
+
+            if not resource.name == original_resource_name:
+                continue
+
+            return resource
+
+    raise Exception
