@@ -181,3 +181,25 @@ class BaseCommand():
         this method.
         """
         raise NotImplementedError('subclasses of BaseCommand must provide a command() method')
+
+
+
+class BaseCommandContainer():
+    """
+    This is used to designate that the directory is a CommandContainer and should be searched for when looking for commands.
+
+    This class should be initialized in the __init__.py file for the folder.
+
+    The directory should contain valid Commands or other CommandContainers
+    """
+
+    # Help message for this container
+    help = ""
+
+    def __init__(self, stdout=None, stderr=None, no_color=False, force_color=False):
+        self.stdout = OutputWrapper(stdout or sys.stdout)
+        self.stderr = OutputWrapper(stderr or sys.stderr)
+
+
+    def get_help_message(self) -> str:
+        return self.help

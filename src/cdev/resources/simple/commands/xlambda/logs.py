@@ -11,6 +11,10 @@ RUUID = "cdev::simple::lambda_function"
 
 class show_logs(BaseCommand):
 
+    help = """
+        Get the logs of a deployed lambda function
+    """
+
     def add_arguments(self, parser: ArgumentParser):
         parser.add_argument("function_name", type=str, help= "The function that you want to watch")
         parser.add_argument("--watch", action="store_true", help= "watch the logs. If this flag is passed, only --start_time flag is read")
