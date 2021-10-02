@@ -11,13 +11,18 @@ from cdev.constructs import Cdev_Project
 from ..utils import project, logger
 import inspect
 
-
 log = logger.get_cdev_logger(__name__)
 
 DEFAULT_RESOURCE_LOCATION = "cdev.resources.simple"
 COMMANDS_DIR = "commands"
 
 PROJECT = Cdev_Project()
+
+class AmbiguousCommandName(Exception):
+    pass
+
+class NoCommandFound(Exception):
+    pass
 
 def _get_module_name_from_path(fp):
     return fp.split("/")[-1][:-3]
@@ -37,8 +42,18 @@ def run_command(args):
     
     project.initialize_project()
 
-    did_find_command, location, app_name = _find_command(sub_command)
-    
+    try:
+        program_name, command = _find_command(sub_command)
+    except NoCommandFound as e:
+        print(f"Could not find command {sub_command}")
+        return
+    except AmbiguousCommandName as e:
+        print(f"{sub_command} is ambiguous")
+        return
+        
+
+    print(program_name)
+    print(command)
         
 
     
@@ -93,7 +108,7 @@ def _execute_command(command_obj, param: List[str]):
     command_obj.run_from_command_line(param)
 
 
-def _find_command(command: str) -> Tuple[bool, Union[str, None], Union[str, None] ]:
+def _find_command(command: str) -> Tuple[str, str]:
     """
     Find the desired command based on the search path
 
@@ -101,7 +116,7 @@ def _find_command(command: str) -> Tuple[bool, Union[str, None], Union[str, None
         command (str): The full command to search for. can be '.' seperated to denote search path. 
 
     Returns:
-        tuple: did_find_command, location, app_name 
+        tuple: location, app_name, is_command_container
 
     Raises:
         KeyError: Raises an exception.
@@ -112,25 +127,112 @@ def _find_command(command: str) -> Tuple[bool, Union[str, None], Union[str, None
     all_search_locations_list = [DEFAULT_RESOURCE_LOCATION]
     all_search_locations_list.extend(PROJECT.get_commands())
 
-    print(all_search_locations_list)
+
+    _all_potential_locations = [] # (location, is_command)
+    _found_at_least_one_possible = False
     for search_location in all_search_locations_list:
-        print("-----------------")
+
         actual_search_start = f"{search_location}.{COMMANDS_DIR}"
         if len(command_list) == 1:
-            did_find, locations = _recursive_find_unspecified_command(command_list[0], actual_search_start, [])
-            print(did_find, locations)
-        else:
+            print(search_location)
+            if command_list[0] == search_location.split(".")[-1]:
+                print(f"Top level name match -> {command_list}; {search_location}")
+                _all_potential_locations.extend([(actual_search_start, False)])
+                _found_at_least_one_possible = True
+                continue
 
+            did_find, locations = _recursive_find_unspecified_command(command_list[0], actual_search_start, [])
+            
+            if did_find:
+                _found_at_least_one_possible = True
+                _all_potential_locations.extend([(x,True) for x in locations])
+        else:
             search_location_list = search_location.split(".")
 
             if not command_list[0] == search_location_list[-1]:
                 print(f"Top level name do not match -> {command_list}; {search_location_list}")
                 continue
 
-            did_find, file_location = _recursive_find_specified_command(command_list[1:], actual_search_start)
-            print(did_find, file_location)
+            did_find, location, is_command  = _recursive_find_specified_command(command_list[1:], actual_search_start)
+            
+            if is_command:
+                if not _is_valid_command_module(f"{location}.{command_list[-1]}"):
+                    raise NoCommandFound
+            else:
+                if not  _is_valid_command_container_module(f"{location}.{command_list[-1]}"):
+                    raise NoCommandFound
 
-    pass
+            if did_find:
+                return (location, is_command), command_list[-1]
+            else:
+                raise NoCommandFound
+
+    print(_all_potential_locations)
+    if not _found_at_least_one_possible:
+        raise NoCommandFound
+    
+
+    valid_command_locations = []
+    for potential_location in _all_potential_locations:
+        if potential_location[0]:
+            valid_command_locations.append(potential_location) if _is_valid_command_container_module(f"{potential_location[0]}") else ""
+
+        else:
+            valid_command_locations.append(potential_location) if _is_valid_command_module(f"{potential_location[0]}.{command_list[0]}") else ""
+    
+    #valid_command_locations = [x[0] for x in _all_potential_locations if  or ]
+    if len(valid_command_locations) > 1:
+        raise AmbiguousCommandName
+
+    if len(valid_command_locations) == 0:
+        raise NoCommandFound
+
+    return valid_command_locations[0], command_list[0]
+
+
+
+
+
+
+def _is_valid_command_module(mod_path: str):
+    mod = importlib.import_module(mod_path)
+    
+    # Check for the class that derives from BaseCommand... if there is more then one class then throw error (note this is a current implementation detail)
+    # because it is easier if their is only one command per file so that we can use the file name as the command name
+    _has_found_a_valid_command = False
+    _object_name = None
+    for item in dir(mod):    
+        if inspect.isclass(getattr(mod,item)) and issubclass(getattr(mod,item), BaseCommand) and not (getattr(mod,item) == BaseCommand):
+            if _has_found_a_valid_command:
+                # TODO better exception
+                log.error(f"Found too many commands in file {mod_path}")
+                return
+
+            _has_found_a_valid_command = True
+
+    return _has_found_a_valid_command
+
+
+def _is_valid_command_container_module(mod_path: str):
+    mod = importlib.import_module(mod_path)
+    
+    
+    # Check for the class that derives from BaseCommandContainer... if there is more then one class then throw error (note this is a current implementation detail)
+    # because it is easier if their is only one command per file so that we can use the file name as the command name
+    _has_found_a_valid_command_container = False
+    _object_name = None
+    for item in dir(mod):
+
+        if inspect.isclass(getattr(mod,item)) and issubclass(getattr(mod,item), BaseCommandContainer) and not (getattr(mod,item) == BaseCommandContainer):
+            if _has_found_a_valid_command_container:
+                # TODO better exception
+                log.error(f"Found too many commands in file {mod_path}")
+                return
+
+            _has_found_a_valid_command_container = True
+
+    return _has_found_a_valid_command_container
+
 
 
 def _recursive_find_specified_command(command_list: List[str], search_path: str) -> Tuple[bool, Union[str, None]]:
@@ -148,12 +250,16 @@ def _recursive_find_specified_command(command_list: List[str], search_path: str)
             
                 if len(command_list) == 1:
                     # A location was specified and we are the final part of the command so the command must be a py file in this dir
+                    # of be a directory that has a command container 
                     if is_dir:      
-                        continue
+                        if os.path.isfile(os.path.join(current_location_attempt, command_list[0], "__init__.py")):
+                            return (True, search_path, False)
+                        else:
+                            continue
                     else:
                         if potential_location[:-3] == command_list[0]:
                             #print(f"Found Command at -> {os.path.join(current_location_attempt, potential_location)}")
-                            return (True, os.path.join(current_location_attempt, potential_location) )
+                            return (True, search_path, True)
                         else:
                             continue
 
@@ -168,7 +274,7 @@ def _recursive_find_specified_command(command_list: List[str], search_path: str)
                         else:
                             continue
 
-        return (False, "")
+        return (False, "", False)
                         
     except Exception as e:
         print(f"Could not do {search_path}")
@@ -187,6 +293,10 @@ def _recursive_find_unspecified_command(command: str, search_path: str, found_lo
 
         new_locations = found_locations
         found_any_matches = False
+
+        if not os.listdir(current_location_attempt):
+            return
+
         for potential_location in os.listdir(current_location_attempt):
             is_dir = os.path.isdir(os.path.join(current_location_attempt, potential_location))
             
@@ -194,12 +304,12 @@ def _recursive_find_unspecified_command(command: str, search_path: str, found_lo
                 # A location was specified and we are still have paths to search down for the command so if this element is not a dir and if it is recursively keep searching
                 if not is_dir:
                     if potential_location[:-3] == command:
-                        print(f"Found Command at -> {os.path.join(current_location_attempt, potential_location)}")
-                        return (True, [os.path.join(current_location_attempt, potential_location)] )
+                        #print(f"Found Command at -> {os.path.join(current_location_attempt, potential_location)}")
+                        return (True, [search_path] )
                     else:
                         continue
                 else:
-                    print(f"Recursively look in -> {os.path.join(current_location_attempt, potential_location)} for {command}")
+                    #print(f"Recursively look in -> {os.path.join(current_location_attempt, potential_location)} for {command}")
                     did_find, locations = _recursive_find_unspecified_command(command, f"{search_path}.{potential_location}", new_locations)
 
                     if did_find:
@@ -209,11 +319,9 @@ def _recursive_find_unspecified_command(command: str, search_path: str, found_lo
                     
         return (found_any_matches, new_locations) 
                         
-    except Exception as e:
-        print(f"Could not do {search_path}")
-        print(e)
-        #log.debug(f"{search_path} did not have a file commands that was importable")
-        #return Tuple(False, "")
+    except Exception as e:        
+        log.debug(f"{search_path} did not have a file commands that was importable")
+        return (False, [""])
 
 
 def _get_command_container_info(potential_location):
@@ -244,74 +352,3 @@ def _get_command_container_info(potential_location):
     except Exception as e:
         log.debug(f"{potential_location} did not have a file command container that was valid")
         print(e)
-        
-
-
-
-
-def _find_simple_command(command: str) -> Tuple[bool, Union[str, None], Union[str, None] ]:
-    ALL_LOCATIONS = PROJECT.get_commands()
-    
-    found_location = False
-    for location in ALL_LOCATIONS:
-        try:
-            
-            mod = importlib.import_module(f"{location}.commands.{command}")
-            current_location_attempt = mod.__file__
-        except Exception as e:
-            log.debug(f"{location} did not have a file commands/{command} that was importable")
-            print(e)
-            continue
-        
-        found_location = True
-        break
-
-    if found_location:
-        return (True, current_location_attempt, location)
-    else:
-        return (False, None, None)
-    
-
-
-def _find_complex_command(command: List[str]) -> Tuple[bool, Union[str, None]]:
-    """
-    This command will search for the given command. Search order is:
-    
-    1. default included cdev resources
-    2. Installed applications
-    3. local project commands
-    """
-    ALL_LOCATIONS = [DEFAULT_RESOURCE_LOCATION]
-    ALL_LOCATIONS.append(PROJECT.get_commands())
-
-    found_command = False
-    found_starting_point = None
-    for potential_starting_point in ALL_LOCATIONS:
-        # See if the starting dir has the correct directory
-        if not command[0] in os.listdir(potential_starting_point):
-            log.debug(f"{potential_starting_point} does not contain {command[0]} -> {command}")
-            continue
-
-        # Check if that location has a commands folder
-        if not COMMANDS_DIR in os.listdir(os.path.join(potential_starting_point, command[0])):
-            log.debug(f"{potential_starting_point} does not contain command dir ({COMMANDS_DIR}) -> {command}")            
-            continue
-
-        if _recursive_find_command_in_dir(command[1:], os.path.join(potential_starting_point, command[0], COMMANDS_DIR)):
-            found_command = True
-            found_starting_point = potential_starting_point
-            break
-
-        log.debug(f"Did not find {command} in {potential_starting_point}")
-
-    
-    log.debug(f"Found command {command} starting at {found_starting_point}")
-    if found_command:
-        command_location = os.path.join(found_starting_point, command[0], COMMANDS_DIR, *command[1:-1], f"{command[-1]}.py" )
-    else:
-        command_location = None
-
-
-    return (found_command, command_location)
-
-
