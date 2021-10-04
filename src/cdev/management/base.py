@@ -201,5 +201,5 @@ class BaseCommandContainer():
         self.stderr = OutputWrapper(stderr or sys.stderr)
 
 
-    def get_help_message(self) -> str:
-        return self.help
+    def display_help_message(self) -> str:
+        self.stdout.write(self.help)

@@ -1,9 +1,10 @@
 import importlib
 import os
 import sys
+from types import ModuleType
 from typing import Container, List, Tuple, Union
 
-from pydantic.types import FilePath
+from pydantic.types import FilePath, StrictBool
 from cdev.management.base import BaseCommand, BaseCommandContainer
 
 from cdev.output import ALL_BUFFERS
@@ -22,6 +23,9 @@ class AmbiguousCommandName(Exception):
     pass
 
 class NoCommandFound(Exception):
+    pass
+
+class TooManyCommandClasses(Exception):
     pass
 
 def _get_module_name_from_path(fp):
@@ -43,72 +47,109 @@ def run_command(args):
     project.initialize_project()
 
     try:
-        program_name, command = _find_command(sub_command)
+        program_name, command, is_command = _find_command(sub_command)
     except NoCommandFound as e:
         print(f"Could not find command {sub_command}")
         return
     except AmbiguousCommandName as e:
         print(f"{sub_command} is ambiguous")
-        return
+        return 
         
 
-    print(program_name)
-    print(command)
-        
 
+    full_mod_name = f"{program_name}.{command}" if command else program_name
+ 
+    # sometime the module is already loaded so just reload it to capture any changes
+    if sys.modules.get(full_mod_name):
+        importlib.reload(sys.modules.get(full_mod_name))
     
-    # if did_find_command:
-    #     # We change directory to where the command file is found so that importing works
-    #     # note this must be understood by the user creating the command because it affects how they structure importing local modules
-    #     _start_dir = os.getcwd()
-    #     os.chdir(os.path.dirname(location))
+    mod = importlib.import_module(full_mod_name)
 
-    #     mod_name = _get_module_name_from_path(location)
+    try:
+        if is_command:
+            execute_command(mod, (program_name, command, params.get("args")))
+        else:
+            execute_command_container(mod)
+    except TooManyCommandClasses:
+        print("Too mayn commands in module")
+    except NoCommandFound:
+        print(f"Could not find command {sub_command}")
+    except Exception as e:
+        raise e
+    
+
+
+def execute_command(mod: ModuleType, info: Tuple):
+    """
+    Run a BaseCommand child from the given module. The info param provides information to run the commands including params provided to the command.
+
+    Args:
+        mod (module): Loaded module that contains the command
+        info tuple(program_name, command_name, params): information to run the function
+
+    Returns:
+        None
+
+    Raises:
+        TooManyCommandClasses
+        NoCommandFound
+    """
+
+    # Check for the class that derives from BaseCommand... if there is more then one class then throw error (note this is a current implementation detail)
+    # because it is easier if their is only one command per file so that we can use the file name as the command name
+    _has_found_a_valid_command = False
+    _object_name = None
+    for item in dir(mod):    
+        if inspect.isclass(getattr(mod,item)) and issubclass(getattr(mod,item), BaseCommand) and not (getattr(mod,item) == BaseCommand):
+            if _has_found_a_valid_command:
+                # TODO better exception
+                log.error(f"Found too many commands in module {mod.__name__}")
+                raise TooManyCommandClasses
+
+            _has_found_a_valid_command = True
+            # Find all the Cdev_Resources in the module and render them
+            _object_name = item
+    if _has_found_a_valid_command:
+        # initalize an instance of the class
+        init_obj  =  getattr(mod, _object_name)()
+
+        _execute_command(init_obj, [info[0], info[1], *info[2]])
+    else:
+        log.error(f"Found no class that is a subclass of 'BaseCommand' in {mod}")
+        raise NoCommandFound
+
+
+def execute_command_container(mod: ModuleType):
+    # Check for the class that derives from BaseCommand... if there is more then one class then throw error (note this is a current implementation detail)
+    # because it is easier if their is only one command per file so that we can use the file name as the command name
+    _has_found_a_valid_command = False
+    _object_name = None
+    for item in dir(mod):    
+        if inspect.isclass(getattr(mod,item)) and issubclass(getattr(mod,item), BaseCommandContainer) and not (getattr(mod,item) == BaseCommandContainer):
+            if _has_found_a_valid_command:
+                # TODO better exception
+                log.error(f"Found too many command containters in module {mod.__name__}")
+                raise TooManyCommandClasses
+
+            _has_found_a_valid_command = True
+            # Find all the Cdev_Resources in the module and render them
+            _object_name = item
+    if _has_found_a_valid_command:
+        # initalize an instance of the class
+        init_obj  =  getattr(mod, _object_name)()
+
+        init_obj.display_help_message()
+    else:
+        log.error(f"Found no class that is a subclass of 'BaseCommand' in {mod}")
+        raise NoCommandFound
         
-    #     # sometime the module is already loaded so just reload it to capture any changes
-    #     if sys.modules.get(mod_name):
-    #         importlib.reload(sys.modules.get(mod_name))
-
-
-    #     sys.path.insert(0, os.getcwd())
-    #     mod = importlib.import_module(mod_name)
-        
-    #     # Check for the class that derives from BaseCommand... if there is more then one class then throw error (note this is a current implementation detail)
-    #     # because it is easier if their is only one command per file so that we can use the file name as the command name
-    #     _has_found_a_valid_command = False
-    #     _object_name = None
-    #     for item in dir(mod):    
-    #         if inspect.isclass(getattr(mod,item)) and issubclass(getattr(mod,item), BaseCommand) and not (getattr(mod,item) == BaseCommand):
-    #             if _has_found_a_valid_command:
-    #                 # TODO better exception
-    #                 log.error(f"Found too many commands in file {location}")
-    #                 return
-
-    #             _has_found_a_valid_command = True
-    #             # Find all the Cdev_Resources in the module and render them
-    #             _object_name = item
-
-    #     if _has_found_a_valid_command:
-    #         # initalize an instance of the class
-    #         init_obj  =  getattr(mod, _object_name)()
-
-            
-    #         _execute_command(init_obj, [program_name, command_name, *params.get("args")])
-    #     else:
-    #         log.error(f"Found no class that is a subclass of 'BaseCommand' in {location}")
-    #         return 
-                
-    #     os.chdir(_start_dir)
-    # else:
-    #     # TODO Throw error
-    #     print("DID NOT FIND COMMAND")
 
 
 def _execute_command(command_obj, param: List[str]):
     command_obj.run_from_command_line(param)
 
 
-def _find_command(command: str) -> Tuple[str, str]:
+def _find_command(command: str) -> Tuple[str, str, bool]:
     """
     Find the desired command based on the search path
 
@@ -116,69 +157,100 @@ def _find_command(command: str) -> Tuple[str, str]:
         command (str): The full command to search for. can be '.' seperated to denote search path. 
 
     Returns:
-        tuple: location, app_name, is_command_container
+        tuple: location, app_name, is_command
 
     Raises:
         KeyError: Raises an exception.
     """
 
-
+    # Command in list form
     command_list = command.split(".")
+
+    # Create list of all directories to start searching in
     all_search_locations_list = [DEFAULT_RESOURCE_LOCATION]
     all_search_locations_list.extend(PROJECT.get_commands())
+    
+    if len(command_list) == 1:
+        return _find_unspecified_command(command_list[0], all_search_locations_list)
+
+    else:
+        return _find_specified_command(command_list, all_search_locations_list)
+    
 
 
-    _all_potential_locations = [] # (location, is_command)
+def _find_specified_command(command_list: List[str], all_search_locations_list: List[str]) -> Tuple[str, str, bool]:
+    for search_location in all_search_locations_list:
+        # All start locations should have a '<commands_dir>' folder that is a valid python module
+        actual_search_start = f"{search_location}.{COMMANDS_DIR}"
+
+
+        # This a specified command, so it must be in the described searched path
+        search_location_list = search_location.split(".")
+
+        if not command_list[0] == search_location_list[-1]:
+            # top level names do not match so don't even try recursively looking
+            print(f"Top level name do not match -> {command_list}; {search_location_list}")
+            continue
+
+        # Try to find the location recursively
+        did_find, location, is_command  = _recursive_find_specified_command(command_list[1:], actual_search_start)
+        
+        if is_command:
+            if not _is_valid_command_module(f"{location}.{command_list[-1]}"):
+                raise NoCommandFound
+        else:
+            if not  _is_valid_command_container_module(f"{location}.{command_list[-1]}"):
+                raise NoCommandFound
+
+        if did_find:
+            return (location, command_list[-1], is_command)
+        else:
+            raise NoCommandFound
+
+
+
+def _find_unspecified_command(command: str, all_search_locations_list: List[str]) -> Tuple[str, str, bool]:
+    
+    _all_potential_locations = [] # List[(location, is_command)]
     _found_at_least_one_possible = False
     for search_location in all_search_locations_list:
 
+        # All start locations should have a '<commands_dir>' folder that is a valid python module
         actual_search_start = f"{search_location}.{COMMANDS_DIR}"
-        if len(command_list) == 1:
-            print(search_location)
-            if command_list[0] == search_location.split(".")[-1]:
-                print(f"Top level name match -> {command_list}; {search_location}")
-                _all_potential_locations.extend([(actual_search_start, False)])
-                _found_at_least_one_possible = True
-                continue
 
-            did_find, locations = _recursive_find_unspecified_command(command_list[0], actual_search_start, [])
-            
-            if did_find:
-                _found_at_least_one_possible = True
-                _all_potential_locations.extend([(x,True) for x in locations])
-        else:
-            search_location_list = search_location.split(".")
+        
+        if command == search_location.split(".")[-1]:
+            # Command is equal to the top level package so it is a valid match to the location as a Command Container
+            _all_potential_locations.extend([(actual_search_start, False)])
+            _found_at_least_one_possible = True
+            continue
 
-            if not command_list[0] == search_location_list[-1]:
-                print(f"Top level name do not match -> {command_list}; {search_location_list}")
-                continue
+        # recursively look through the actual start location for potential matches 
+        did_find, locations = _recursive_find_unspecified_command(command, actual_search_start, [])
 
-            did_find, location, is_command  = _recursive_find_specified_command(command_list[1:], actual_search_start)
-            
-            if is_command:
-                if not _is_valid_command_module(f"{location}.{command_list[-1]}"):
-                    raise NoCommandFound
-            else:
-                if not  _is_valid_command_container_module(f"{location}.{command_list[-1]}"):
-                    raise NoCommandFound
+        if did_find:
+            # The recursive search could have yielded multiple possible matches
+            _found_at_least_one_possible = True
+            _all_potential_locations.extend([(x,True) for x in locations])
 
-            if did_find:
-                return (location, is_command), command_list[-1]
-            else:
-                raise NoCommandFound
 
-    print(_all_potential_locations)
     if not _found_at_least_one_possible:
         raise NoCommandFound
     
 
     valid_command_locations = []
-    for potential_location in _all_potential_locations:
-        if potential_location[0]:
-            valid_command_locations.append(potential_location) if _is_valid_command_container_module(f"{potential_location[0]}") else ""
-
+    is_command = True
+    
+    
+    for potential_location, is_command_local in _all_potential_locations:
+        if is_command_local:
+            valid_command_locations.append(potential_location) if _is_valid_command_module(f"{potential_location}.{command}") else ""
+           
+            is_command = is_command_local
         else:
-            valid_command_locations.append(potential_location) if _is_valid_command_module(f"{potential_location[0]}.{command_list[0]}") else ""
+            valid_command_locations.append(potential_location) if _is_valid_command_container_module(f"{potential_location}") else ""
+            
+            is_command = is_command_local
     
     #valid_command_locations = [x[0] for x in _all_potential_locations if  or ]
     if len(valid_command_locations) > 1:
@@ -186,12 +258,11 @@ def _find_command(command: str) -> Tuple[str, str]:
 
     if len(valid_command_locations) == 0:
         raise NoCommandFound
+    
 
-    return valid_command_locations[0], command_list[0]
+    final_command = None if  not is_command else command
 
-
-
-
+    return (valid_command_locations[0], final_command, is_command)
 
 
 def _is_valid_command_module(mod_path: str):
@@ -323,32 +394,3 @@ def _recursive_find_unspecified_command(command: str, search_path: str, found_lo
         log.debug(f"{search_path} did not have a file commands that was importable")
         return (False, [""])
 
-
-def _get_command_container_info(potential_location):
-    try: 
-        mod = importlib.import_module(potential_location)
-        
-        # Check for the class that derives from BaseCommandCommand... if there is more then one class then throw error (note this is a current implementation detail)
-        _has_found_a_valid_command_container = False
-        _object_name = None
-        for item in dir(mod):    
-            if inspect.isclass(getattr(mod,item)) and issubclass(getattr(mod,item), BaseCommandCommand) and not (getattr(mod,item) == BaseCommandCommand):
-                if _has_found_a_valid_command_container:
-                    # TODO better exception
-                    log.error(f"Found too many command containers in mod {mod}")
-                    return
-
-                _has_found_a_valid_command_container = True
-                # Find all the Cdev_Resources in the module and render them
-                _object_name = item
-
-        if _has_found_a_valid_command_container:
-            # initalize an instance of the class
-            init_obj  =  getattr(mod, _object_name)()
-
-        current_location_attempt = mod.__file__
-
-
-    except Exception as e:
-        log.debug(f"{potential_location} did not have a file command container that was valid")
-        print(e)
