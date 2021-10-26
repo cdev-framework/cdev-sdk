@@ -42,15 +42,15 @@ def get_boto_client(service_name):
         return _get_boto_client(service_name, profile_name=cdev_settings.SETTINGS.get("CREDENTIALS").get("value"))
 
 
-def monitor_status(func: Callable, params: dict, previous_val, lookup_keys: List) -> dict: 
+def monitor_status(func: Callable, params: dict, previous_val, lookup_func: Callable) -> dict: 
     """
     This function is used to monitor the status of resources as they are created by aws. Alot of resources are created
     asynchronously by aws, which means the original create call returns before the actual resource is created. Therefor,
     we use this function to handle repeatedly calling a status function to check if the resource was created.   
     """
 
-    MAX_RESOURCE_TIME = 30
-    HEARTBEAT_PACE = 2
+    MAX_RESOURCE_TIME = 60
+    HEARTBEAT_PACE = 10
 
     loops = int(MAX_RESOURCE_TIME/HEARTBEAT_PACE)
     print(f"WAITING FOR CHANGE OF VALUE {previous_val}")
@@ -58,9 +58,10 @@ def monitor_status(func: Callable, params: dict, previous_val, lookup_keys: List
     for _ in range(loops):
         rv = func(**params)
 
-        tmp_keys = list(lookup_keys)
+
         if rv.get("ResponseMetadata").get("HTTPStatusCode") == 200:
-            new_value = _recursive_find_key(rv, tmp_keys)
+            new_value = lookup_func(rv)
+            print(new_value)
             if not new_value == previous_val:
                 return rv
         
@@ -85,8 +86,8 @@ def run_client_function(service: str, function_name: str, args: dict, wait: dict
         final_args = {
             "WaiterConfig":
                 {
-                    'Delay': 5,
-                    'MaxAttempts': 20
+                    'Delay': 10,
+                    'MaxAttempts': 60
                 }
         }
         final_args.update( wait.get("args") )
@@ -96,6 +97,25 @@ def run_client_function(service: str, function_name: str, args: dict, wait: dict
         log.debug(f"Finish wait {args_as_string} -> {final_args}")
 
     return rv
+
+
+def aws_resource_wait(service: str, wait: dict):
+    rendered_client = _get_boto_client(service)
+    waiter = rendered_client.get_waiter(wait.get("name"))
+    final_args = {
+        "WaiterConfig":
+            {
+                'Delay': 10,
+                'MaxAttempts': 60
+            }
+    }
+    final_args.update( wait.get("args") )
+    
+    log.debug(f"Begin wait {final_args}")
+    waiter.wait(**final_args)
+    log.debug(f"Finish wait {final_args}")
+
+
     
 
 

@@ -1,5 +1,4 @@
 from enum import Enum
-from os import supports_effective_ids
 from typing import List, Dict, Union
 
 
