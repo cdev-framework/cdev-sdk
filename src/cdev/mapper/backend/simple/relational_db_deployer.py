@@ -1,3 +1,4 @@
+from time import sleep
 import boto3
 from cdev.models import Resource_State_Difference, Action_Type
 from cdev.utils import logger
@@ -17,7 +18,6 @@ def _create_simple_relational_db(identifier: str, resource: relational_db.simple
             "DatabaseName": resource.DatabaseName,
             "DBClusterIdentifier": resource.DBClusterIdentifier,
             "Engine": resource.Engine.value,
-            "Port": resource.Port,
             "MasterUsername": resource.MasterUsername,
             "MasterUserPassword": resource.MasterUserPassword,
             "EnableHttpEndpoint": resource.EnableHttpEndpoint,
@@ -39,20 +39,6 @@ def _create_simple_relational_db(identifier: str, resource: relational_db.simple
         lambda x: x.get("DBClusters")[0].get("Status")
     )
     
-    #raw_aws_client.aws_resource_wait("rds", {
-    #        "name": "db_instance_available",
-    #        "args": {
-    #            "Filters":[
-    #                {
-    #                "Name": "db-cluster-id",
-    #                "Values": [
-    #                   rv.get("DBCluster").get("DBClusterArn") ,
-    #                ]
-    #                }
-    #            ]
-    #        }
-    #    }
-    #)
 
     print_deployment_step("CREATE", f"  Created database {resource.name}")
 
@@ -72,11 +58,83 @@ def _create_simple_relational_db(identifier: str, resource: relational_db.simple
 
 
 def _update_simple_relational_db(previous_resource: relational_db.simple_relational_db_model, new_resource: relational_db.simple_relational_db_model) -> bool:
-    pass
+    if not new_resource.Engine.value == previous_resource.Engine:
+        print(f"Cant not update Engine; {previous_resource.Engine} -> {new_resource.Engine}")
+        return False
 
+    if not new_resource.MasterUsername == previous_resource.MasterUsername:
+        print("Cant update Master Username")
+        return False
+
+    if not new_resource.DBClusterIdentifier == previous_resource.DBClusterIdentifier:
+        print("Cant update DB cluster info")
+        return False
+
+    if not new_resource.DatabaseName == previous_resource.DatabaseName:
+        print("Cant update db name")
+        return False
+
+    if not new_resource.Port == previous_resource.Port:
+        print("Cant update db port")
+        return False
+
+    update_args = {
+        "DBClusterIdentifier": new_resource.DBClusterIdentifier
+    }
+
+    scaling_config = {
+
+    }
+
+    if not new_resource.MasterUserPassword == previous_resource.MasterUserPassword:
+        update_args['MasterUserPassword'] = new_resource.MasterUserPassword
+        update_args['ApplyImmediately'] = True
+
+    if not new_resource.EnableHttpEndpoint == previous_resource.EnableHttpEndpoint:
+        update_args['EnableHttpEndpoint'] = new_resource.EnableHttpEndpoint
+
+
+
+    if not new_resource.MaxCapacity == previous_resource.MaxCapacity:
+        scaling_config['MaxCapacity'] = new_resource.MaxCapacity
+
+    if not new_resource.MinCapacity == previous_resource.MinCapacity:
+        scaling_config["MinCapacity"] = new_resource.MinCapacity
+
+    if not new_resource.SecondsToPause == previous_resource.SecondsToPause:
+        scaling_config["AutoPause"] = new_resource.SecondsToPause == 0
+        scaling_config["SecondsUntilAutoPause"] = new_resource.SecondsToPause if not new_resource.SecondsToPause == 0 else 300
+
+    
+    if scaling_config:
+        update_args["ScalingConfiguration"] = scaling_config
+
+    raw_aws_client.run_client_function("rds", "modify_db_cluster", update_args)
+
+    cdev_cloud_mapper.reidentify_cloud_resource(previous_resource.hash, new_resource.hash)
+    print_deployment_step("UPDATE", f"  Finished updating lambda function {new_resource.name}")
+
+    return True
+    
+    
 
 def _remove_simple_relational_db(identifier: str, resource: relational_db.simple_relational_db_model) -> bool:
-    pass
+    print_deployment_step("DELETE", f"[blink]Deleting relational db {resource.name} (this will take a few minutes)[/blink]")
+    
+    raw_aws_client.run_client_function("rds", "delete_db_cluster", {
+        "DBClusterIdentifier": resource.DBClusterIdentifier,
+        "SkipFinalSnapshot": True
+    })
+
+
+    print_deployment_step("DELETE", f"Removed relational db {resource.name}")
+    
+    cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
+    cdev_cloud_mapper.remove_identifier(identifier)
+    log.debug(f"Delete information in resource and cloud state")
+
+    return True
+
 
 
 def handle_simple_relational_db_deployment(resource_diff: Resource_State_Difference) -> bool:

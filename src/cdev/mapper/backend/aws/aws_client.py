@@ -49,24 +49,25 @@ def monitor_status(func: Callable, params: dict, previous_val, lookup_func: Call
     we use this function to handle repeatedly calling a status function to check if the resource was created.   
     """
 
-    MAX_RESOURCE_TIME = 60
+    MAX_RESOURCE_TIME = 600
     HEARTBEAT_PACE = 10
 
     loops = int(MAX_RESOURCE_TIME/HEARTBEAT_PACE)
-    print(f"WAITING FOR CHANGE OF VALUE {previous_val}")
+    log.debug(f"WAITING FOR CHANGE OF VALUE {previous_val}")
 
     for _ in range(loops):
         rv = func(**params)
 
-
         if rv.get("ResponseMetadata").get("HTTPStatusCode") == 200:
             new_value = lookup_func(rv)
-            print(new_value)
+            log.debug(new_value)
             if not new_value == previous_val:
+                log.debug(f"FINISHED {new_value}")
                 return rv
         
-        print("HEARTBEAT")
+        log.debug("HEARTBEAT")
         sleep(HEARTBEAT_PACE)       
+
 
     return None
 

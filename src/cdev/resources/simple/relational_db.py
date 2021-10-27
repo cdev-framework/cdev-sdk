@@ -34,8 +34,6 @@ class simple_relational_db_model(Rendered_Resource):
     """Replacement"""
     MasterUserPassword: str
     """No Interruption"""
-    Port: Optional[int]
-    """No Interruption"""
     MaxCapacity: int
     """No Interruption"""
     MinCapacity: int
@@ -76,11 +74,11 @@ class RelationalDBPermissions():
 class RelationalDB(Cdev_Resource):
 
     def __init__(self, cdev_name: str, engine: db_engine, username: str, password: str, httpendpoint: bool=True, cluster_name: str="", 
-                database_name: str="", port: int = 5432, max_capacity: int = 64, min_capacity:int = 2, seconds_to_pause: int = 300) -> None:
+                database_name: str="", max_capacity: int = 64, min_capacity:int = 2, seconds_to_pause: int = 300) -> None:
 
 
         super().__init__(cdev_name)
-        print(engine.value)
+        
         self.Engine = engine.value
         self.MasterUsername = username
         self.MasterUserPassword = password
@@ -89,7 +87,6 @@ class RelationalDB(Cdev_Resource):
         self.DatabaseName = database_name
         self.EnableHttpEndpoint = httpendpoint
         
-        self.Port = port
         self.MaxCapacity = max_capacity
         self.MinCapacity = min_capacity
         self.SecondsToPause = seconds_to_pause
@@ -98,7 +95,7 @@ class RelationalDB(Cdev_Resource):
 
 
         self.hash = hasher.hash_list([self.Engine,self.MasterUsername,self.MasterUserPassword,self.DBClusterIdentifier,self.DatabaseName,
-                            self.EnableHttpEndpoint,self.Port,self.MaxCapacity,
+                            self.EnableHttpEndpoint,self.MaxCapacity,
                             self.MinCapacity,self.SecondsToPause])
 
     def render(self) -> simple_relational_db_model:
@@ -112,7 +109,6 @@ class RelationalDB(Cdev_Resource):
             "Engine": self.Engine,
             "MasterUsername": self.MasterUsername,
             "MasterUserPassword": self.MasterUserPassword,
-            "Port": self.Port,
             "MaxCapacity": self.MaxCapacity,
             "MinCapacity": self.MinCapacity,
             "SecondsToPause": self.SecondsToPause
