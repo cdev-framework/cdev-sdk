@@ -4,6 +4,7 @@ from typing import Dict, List
 from cdev.models import Resource_State_Difference, Action_Type
 from cdev.utils import hasher, logger
 from cdev.resources.simple import static_site as simple_static_site
+from cdev.resources.simple.commands.static_site.sync import sync_files
 from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
 from cdev.output import print_deployment_step
 from ..aws import aws_client as raw_aws_client
@@ -63,6 +64,15 @@ def _create_simple_static_site(identifier: str, resource: simple_static_site.sim
 
     cdev_cloud_mapper.add_identifier(identifier),
     cdev_cloud_mapper.update_output_value(identifier, output_info)
+
+    if resource.sync_folder:
+        print_deployment_step("CREATE", f"  syncing files")
+        file_syncer = sync_files()
+        file_syncer.command(**{
+            "resource_name": resource.name,
+            "dir": resource.content_folder
+        })
+        print_deployment_step("CREATE", f"  synced files")
 
     return True
 
