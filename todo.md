@@ -22,6 +22,7 @@ This is a running list of tasks that need to be done on the project.
 - Add support for Global Secondary Indexes for dynamodb
 - Add support for simple Websockets on API Gateway
 - Add support for S3 static website hosting
+- Fix `cdev output` command because it can render some values as emoji that are not emojis (ex. arn of secret has :secret: in it)
 
 
 ### Bugs
