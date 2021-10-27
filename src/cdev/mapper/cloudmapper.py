@@ -9,7 +9,8 @@ from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
 
 from .backend.aws import aws_lambda, dynamodb, iam, s3, sqs, apigatewayv2, apigateway
 
-from .backend.simple import api_deployer, lambda_deployer, dynamodb_deployer, bucket_deployer, queue_deployer, topic_deployer, relational_db_deployer
+from .backend.simple import api_deployer, lambda_deployer, dynamodb_deployer, bucket_deployer
+from .backend.simple import queue_deployer, topic_deployer, relational_db_deployer, static_site_deployer
 
 
 class DefaultMapper(CloudMapper):
@@ -124,6 +125,7 @@ RESOURCE_TO_HANDLER_FUNCTION = {
     "cdev::simple::bucket": bucket_deployer.handle_simple_bucket_deployment,
     "cdev::simple::queue": queue_deployer.handle_simple_queue_deployment,
     "cdev::simple::topic": topic_deployer.handle_simple_topic_deployment,
-    "cdev::simple::relationaldb": relational_db_deployer.handle_simple_relational_db_deployment
+    "cdev::simple::relationaldb": relational_db_deployer.handle_simple_relational_db_deployment,
+    "cdev::simple::staticsite": static_site_deployer.handle_simple_static_site_deployment
 }
 
