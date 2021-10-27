@@ -45,7 +45,7 @@ class simple_relational_db_model(Rendered_Resource):
 
 class simple_relational_db_output(str, Enum):
     endpoint = "cloud_id"
-    secret_arn = "secret-arn"
+    secret_arn = "secret_arn"
 
 
 

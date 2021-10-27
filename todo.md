@@ -22,10 +22,11 @@ This is a running list of tasks that need to be done on the project.
 - Add support for Global Secondary Indexes for dynamodb
 - Add support for simple Websockets on API Gateway
 - Add support for S3 static website hosting
-- Add support for aws Aurora as a sql option
 
 
 ### Bugs
 - If the lambda function annotation is split into two lines the parser incorrectly adds the second line cause the function to most likely be in an unusable state.
 
 
+### Nice to haves
+- Make a runtime library for aws aurora that is compatible with the [python db interface](https://www.python.org/dev/peps/pep-0249/) (Large task)

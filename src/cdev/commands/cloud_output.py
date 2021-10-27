@@ -1,7 +1,9 @@
+from typing_extensions import final
 from ..backend import cloud_mapper_manager
 from ..frontend import executer as frontend_executer
 from .. import output as cdev_output
 from ..utils import project, logger
+from rich.markup import escape
 
 
 from ..constructs import Cdev_Project
@@ -32,8 +34,9 @@ def cloud_output_command(args):
         else:
             rendered_value = cloud_mapper_manager.get_output_value_by_hash(identifier, output.key)
 
-        rendered_outputs.append(f"[magenta]{label}[/magenta] -> [green]{rendered_value}[/green]")
+        final_val = escape(rendered_value)
+        rendered_outputs.append(f"[magenta]{escape(label)}[/magenta] -> [green]{final_val}[/green]")
 
     cdev_output.print(f"---OUTPUTS---")
     for rendered_output in rendered_outputs:
-        cdev_output.print(rendered_output)
+        print(rendered_output)
