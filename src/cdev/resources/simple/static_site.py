@@ -25,7 +25,6 @@ class simple_static_site_output(str, Enum):
     site_url = "site_url"
     
 
-
 class StaticSite(Cdev_Resource):
     
 

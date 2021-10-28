@@ -3,6 +3,8 @@ from argparse import ArgumentParser
 import boto3
 import os
 from cdev.backend import cloud_mapper_manager, utils
+import mimetypes 
+
 
 RUUID = 'cdev::simple::staticsite'
 
@@ -38,12 +40,15 @@ class sync_files(BaseCommand):
             bucket.object_versions.delete()
 
         
-
-
         for subdir, dirs, files in os.walk(final_dir):
             for file in files:
                 full_path = os.path.join(subdir, file)
                 
                 key_name = os.path.relpath(full_path,final_dir)
-                bucket.upload_file(full_path, key_name)
+
+                mimetype, _ = mimetypes.guess_type(full_path)
+                if mimetype is None:
+                    raise Exception("Failed to guess mimetype")
+                    
+                bucket.upload_file(full_path, key_name, ExtraArgs={'ContentType': mimetype})
                 
