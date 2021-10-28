@@ -9,6 +9,7 @@ from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
 from cdev.output import print_deployment_step
 from ..aws import aws_client as raw_aws_client
 import json
+import boto3
 
 log = logger.get_cdev_logger(__name__)
 RUUID = 'cdev::simple::staticsite'
@@ -76,14 +77,79 @@ def _create_simple_static_site(identifier: str, resource: simple_static_site.sim
 
     return True
 
-def _update_simple_static_site(previous_resource:  simple_static_site.simple_static_site_model, new_resource: simple_static_site.simple_static_site_model) -> bool:
-    _remove_simple_static_site(previous_resource.hash, previous_resource)
-    _create_simple_static_site(new_resource.hash, new_resource)
+def _update_simple_static_site(previous_resource: simple_static_site.simple_static_site_model, new_resource: simple_static_site.simple_static_site_model) -> bool:
+    if not previous_resource.site_name == new_resource.site_name:
+        print_deployment_step('UPDATE', f"Changed sitename from {previous_resource.site_name} -> {new_resource.site_name}. Hard Update Required.")
+        _remove_simple_static_site(previous_resource.hash, previous_resource)
+        _create_simple_static_site(new_resource.hash, new_resource)
+
+    if not previous_resource.index_document == new_resource.index_document:
+        raw_aws_client.run_client_function("s3", "put_bucket_website", {
+            'Bucket': new_resource.site_name,
+            'WebsiteConfiguration': {
+                "ErrorDocument": {
+                    "Key": new_resource.error_document
+                }, 
+                "IndexDocument": {
+                    "Suffix": new_resource.index_document
+                }
+            }
+        })
+        print_deployment_step('UPDATE', f"Updated index document for {new_resource.name}")
+
+    if not previous_resource.error_document == new_resource.error_document:
+        raw_aws_client.run_client_function("s3", "put_bucket_website", {
+            'Bucket': new_resource.site_name,
+            'WebsiteConfiguration': {
+                "ErrorDocument": {
+                    "Key": new_resource.error_document
+                }, 
+                "IndexDocument": {
+                    "Suffix": new_resource.index_document
+                }
+            }
+        })
+
+        print_deployment_step('UPDATE', f"Updated error document for {new_resource.name}")
+
+    if not previous_resource.sync_folder == new_resource.sync_folder:
+        # If there has been a change in sync from false to true then sync the new directory
+        if new_resource.sync_folder:
+            print_deployment_step('UPDATE', f"syncing files from { new_resource.content_folder} -> {new_resource.name}")
+            file_syncer = sync_files()
+            file_syncer.command(**{
+                "resource_name": new_resource.name,
+                "dir": new_resource.content_folder
+            })
+            print_deployment_step('UPDATE', f"synced files from { new_resource.content_folder} -> {new_resource.name}")
+        else:
+            print_deployment_step('UPDATE', f"Disabled resource sync for {new_resource.name}")
+
+    elif not previous_resource.content_folder == new_resource.content_folder:
+        print_deployment_step('UPDATE', f"clearing files {new_resource.name}")
+        # If there was not change to sync but there is a change to the content folder. Clear the bucket and sync new folder
+        s3 = boto3.resource('s3')
+        bucket = s3.Bucket(new_resource.site_name)
+        bucket.object_versions.delete()
+        print_deployment_step('UPDATE', f"syncing new files from { new_resource.content_folder} -> {new_resource.name}")
+        file_syncer = sync_files()
+        file_syncer.command(**{
+            "resource_name": new_resource.name,
+            "dir": new_resource.content_folder
+        })
+        print_deployment_step('UPDATE', f"synced new files from { new_resource.content_folder} -> {new_resource.name}")
+
+    cdev_cloud_mapper.reidentify_cloud_resource(previous_resource.hash, new_resource.hash)
+    print_deployment_step("UPDATE", f"  Finished updating static site {new_resource.name}")
 
     return True
 
 
 def _remove_simple_static_site(identifier: str, resource: simple_static_site.simple_static_site_model) -> bool:
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket(resource.site_name)
+    bucket.object_versions.delete()
+    
     raw_aws_client.run_client_function("s3", "delete_bucket", {
         "Bucket": resource.site_name
     })

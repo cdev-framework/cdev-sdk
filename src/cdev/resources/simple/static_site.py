@@ -11,7 +11,9 @@ RUUID = 'cdev::simple::staticsite'
 
 class simple_static_site_model(Rendered_Resource):
     site_name: str
+    """Name of the site this page will be for. The site name must match the final dns domain that will be used if this site will be served with a simple cdn."""
     index_document: str
+    """The suffix for documents when request are made for a folder. ex: site.com/dir1/ will look for /dir1/<index_document>"""
     error_document: str
     sync_folder: bool
     content_folder: Optional[str]
@@ -21,6 +23,7 @@ class simple_static_site_output(str, Enum):
     cloud_id = "cloud_id"
     bucket_name = "bucket_name"
     site_url = "site_url"
+    
 
 
 class StaticSite(Cdev_Resource):
@@ -42,6 +45,9 @@ class StaticSite(Cdev_Resource):
         self.error_document = error_document
         self.sync_folder = sync_folder
         self.content_folder = content_folder
+
+        if self.sync_folder and not self.content_folder:
+            print(f"If sync_folder is set to 'True' then you must provide a path to the folder.")
 
         self.site_name, self.index_document, self.error_document, self.sync_folder, self.content_folder
 
