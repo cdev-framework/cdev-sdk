@@ -19,6 +19,7 @@ from ..cparser import cdev_parser as cparser
 
 from . import utils as fs_utils
 from . import writer
+from . import package_mananger as cdev_package_manager
 
 log = logger.get_cdev_logger(__name__)
 
@@ -105,20 +106,27 @@ def _create_serverless_function_resources(filepath: FilePath, functions_names_to
 
     parsed_function_info = cparser.parse_functions_from_file(filepath, include_functions=include_functions_list, remove_top_annotation=True)
 
+
     rv = {}
     for parsed_function in parsed_function_info.parsed_functions:
         cleaned_name = _clean_function_name(parsed_function.name)
-
+        log.debug(f"{cleaned_name} (pkg info)-> {parsed_function.imported_packages} ")
+        log.debug(f"{cleaned_name} (pkg info*)-> {parsed_function.needed_imports} ")
         log.info(f"{cleaned_name} -> {parsed_function}")
         final_info = {}
 
         full_path = fs_utils.get_parsed_path(filepath, cleaned_name)
         writer.write_intermediate_file(filepath, parsed_function.get_line_numbers_serializeable(), full_path)
+        
+        if parsed_function.needed_imports:
+            cdev_package_manager.create_zip_archive(parsed_function.needed_imports, cleaned_name)
 
 
         final_info["file_path"] = paths.get_relative_to_project_path(full_path)
         final_info["Handler"] = cleaned_name +"."+ parsed_function.name
         final_info["src_code_hash"] = hasher.hash_file(full_path)
+
+
 
         rv[cleaned_name] = final_info
 

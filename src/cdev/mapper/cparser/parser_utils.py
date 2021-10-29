@@ -501,15 +501,17 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
                     next_symbols = next_symbols.union(
                         actual_new_needed_symbols)
 
+        print(f"all pkg in file -> {file_info_obj.imported_symbol_to_global_statement}")
         for symbol in all_used_symbols:
-            
-            if symbol in file_info_obj.imported_symbol_to_global_statement and not symbol in already_included_symbols:
+            print(f"pkg->>>>> {symbol}")
+            if symbol in file_info_obj.imported_symbol_to_global_statement and not symbol in EXCLUDED_SYMBOLS:
+                print(f"add pkg->>>>> {symbol}")
                 p_function.add_import(
                     file_info_obj.imported_symbol_to_global_statement.get(symbol)
                 )
 
         
-
+        
         #finally add the parsed function object to the file info
         file_info_obj.add_parsed_functions(p_function)
 

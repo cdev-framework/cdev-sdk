@@ -59,7 +59,7 @@ def create_package_info(pkg_name):
 
 
 def create_zip_archive(pkgs, layername):
-    print(layername)
+    
     BASE_LOCATION = os.path.join(CDEV_SETTINGS.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), "layers")
 
     zip_file_location = os.path.join(BASE_LOCATION,"layer_"+layername+".zip")
@@ -116,10 +116,14 @@ def _recursive_create_package_info(pkg_name):
                     rv["type"] = PackageTypes.BUILTIN
                 else:
                     rv["type"] = PackageTypes.LOCALPACKAGE
-                    rv["fp"] = os.path.dirname(mod.__file__)
+
+                    if mod.__file__.split("/")[-1] == "__init__.py":
+                        rv["fp"] = os.path.dirname(mod.__file__)
+                    else:
+                        rv["fp"] = mod.__file__
             else:
                 print("BAADDD")
-
+        print(rv)
         dependencies = _recursive_check_for_dependencies(rv)
 
         rv["tree"] = dependencies.get("tree")
@@ -178,7 +182,7 @@ def _get_local_package_dependencies(pkg):
     # The only way to get this dependency tree is to parse each file for import statements :upsidedownsmile: 
 
     pkg_names = cdev_parser.parse_folder_for_dependencies(pkg.get("fp"))
-    return pkg_names
+    return []
 
 
 

@@ -48,8 +48,9 @@ class parsed_function():
         return list(self.needed_line_numbers)
 
     def add_import(self, global_import_obj):
-        self.add_line_numbers(global_import_obj.get_line_no())
-        self.imported_packages.add(global_import_obj.orginal_package)
+        print(f"pkg {global_import_obj}")
+        #self.add_line_numbers(global_import_obj.get_line_no())
+        self.imported_packages.add(global_import_obj.original_package)
 
 
 class GlobalStatementType(Enum):
@@ -128,7 +129,7 @@ class GlobalStatement():
 class ImportStatement(GlobalStatement):
     # The original package that the package is from
     # ex: import pandas as pd... original_package = 'pandas'
-    orginal_package = ""
+    original_package = ""
 
     # The actual symbol the package is import as
     # ex: import pandas as pd... as_symbol = 'pd'
@@ -140,7 +141,7 @@ class ImportStatement(GlobalStatement):
     def __init__(self, node, line_no, symbol_table, asname, pkgname):
         super().__init__(node, line_no, symbol_table)
         self.as_symbol = asname
-        self.orginal_package = pkgname
+        self.original_package = pkgname
 
     def get_type(self):
         return GlobalStatementType.IMPORT

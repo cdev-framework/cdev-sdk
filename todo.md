@@ -15,18 +15,20 @@ This is a running list of tasks that need to be done on the project.
 - Add more options for the stream functionality for the data sync tool
 - Work on README 
 - Create the first tutorial on the website
+- Package dependencies with Lambda Functions 
 
 
 ### Small
 - Add implementations of the sync functionality for different resources
 - Add support for Global Secondary Indexes for dynamodb
 - Add support for simple Websockets on API Gateway
-- Add support for S3 static website hosting
 - Fix `cdev output` command because it can render some values as emoji that are not emojis (ex. arn of secret has :secret: in it)
 
 
 ### Bugs
 - If the lambda function annotation is split into two lines the parser incorrectly adds the second line cause the function to most likely be in an unusable state.
+- Look init project init because intermediate folder might not be created. Add better check for file system state.
+- Add project and a salt to creating the env hash so that projects don't have resource collisions on aws. 
 
 
 ### Nice to haves
