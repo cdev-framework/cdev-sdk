@@ -1,7 +1,7 @@
 import os
 import hashlib
 
-from sortedcontainers import SortedList
+from sortedcontainers import SortedDict
 
 from .parser_objects import *
 from .import parser_utils as p_utils
@@ -28,15 +28,19 @@ def parse_functions_from_file(file_loc, include_functions=[], function_manual_in
         print(f"{type(e.error)} -> {e.error.message}")
 
     for parsed_function in file_information.parsed_functions:
-        ALL_PACKAGES = set()
+        ALL_PACKAGES = {}
         if parsed_function.imported_packages:
             for pkg_name in parsed_function.imported_packages:
-                ALL_PACKAGES = ALL_PACKAGES.union(get_package_info(pkg_name))
+                if not ALL_PACKAGES:
+                    ALL_PACKAGES = get_package_info(pkg_name)
+                else:
+                    ALL_PACKAGES.update(get_package_info(pkg_name))
 
+        
         parsed_function.needed_packages = ALL_PACKAGES
 
         if ALL_PACKAGES:
-            sorted_packages =  SortedList(ALL_PACKAGES)
+            sorted_packages =  SortedDict(ALL_PACKAGES)
             parsed_function.needed_imports = sorted_packages
 
     log.info("STEP 2 COMPLETE")

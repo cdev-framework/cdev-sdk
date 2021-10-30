@@ -102,8 +102,8 @@ def _create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
 def _upload_s3_code_artifact(resource: simple_lambda.simple_aws_lambda_function_model) -> str:
     # Takes in a resource and create an s3 artifact that can be use as src code for lambda deployment
     keyname = resource.function_name + f"-{resource.hash}" + ".zip"
-    original_zipname = resource.configuration.Handler.split(".")[0] + ".zip"
-    zip_location = os.path.join(os.path.dirname(os.path.abspath(resource.filepath)), original_zipname )
+    #original_zipname = resource.configuration.Handler.split(".")[0] + ".zip"
+    zip_location = resource.filepath
     
     log.debug(f"artifact keyname {keyname}; ondisk location {zip_location}; is valid file {os.path.isfile(zip_location)}")
 

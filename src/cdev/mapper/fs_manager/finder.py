@@ -46,11 +46,6 @@ def _find_resources_information_from_file(fp) -> List[Rendered_Resource]:
     # When the python file is imported and executed all the Cdev resources are created
     mod = importlib.import_module(mod_name)
     rv = []
-
-    #info = _create_serverless_function_resources(mod, fp)
-#
-    #if info:
-    #    rv.extend(info)
     
     functions_to_parse = []
     function_name_to_rendered_resource = {}
@@ -110,23 +105,17 @@ def _create_serverless_function_resources(filepath: FilePath, functions_names_to
     rv = {}
     for parsed_function in parsed_function_info.parsed_functions:
         cleaned_name = _clean_function_name(parsed_function.name)
-        log.debug(f"{cleaned_name} (pkg info)-> {parsed_function.imported_packages} ")
-        log.debug(f"{cleaned_name} (pkg info*)-> {parsed_function.needed_imports} ")
-        log.info(f"{cleaned_name} -> {parsed_function}")
+       
         final_info = {}
 
-        full_path = fs_utils.get_parsed_path(filepath, cleaned_name)
-        writer.write_intermediate_file(filepath, parsed_function.get_line_numbers_serializeable(), full_path)
+        intermediate_path = fs_utils.get_parsed_path(filepath, cleaned_name)
         
-        if parsed_function.needed_imports:
-            cdev_package_manager.create_zip_archive(parsed_function.needed_imports, cleaned_name)
-
-
-        final_info["file_path"] = paths.get_relative_to_project_path(full_path)
-        final_info["Handler"] = cleaned_name +"."+ parsed_function.name
-        final_info["src_code_hash"] = hasher.hash_file(full_path)
-
-
+        src_code_hash, handler_path, archive_path = writer.create_full_deployment_package(filepath, parsed_function.get_line_numbers_serializeable(), intermediate_path, parsed_function.needed_imports)
+        
+            
+        final_info["src_code_hash"] = src_code_hash
+        final_info["file_path"] = paths.get_relative_to_project_path(archive_path)
+        final_info["Handler"] = handler_path
 
         rv[cleaned_name] = final_info
 

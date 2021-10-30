@@ -3,8 +3,11 @@ import sys
 import pkg_resources
 from zipfile import ZipFile
 
+
 from cdev.settings import SETTINGS as CDEV_SETTINGS
 from ..cparser import cdev_parser 
+
+from packaging.utils import canonicalize_name
 
 # Keep cache of already seen package names
 PACKAGE_CACHE = {}
@@ -16,7 +19,19 @@ STANDARD_LIBRARY_FILES = ['3_6', "3_7", "3_8"]
 # Build a dict of pkg name to pip package obj so you don't have to loop over all the packages when doing a look up
 PKG_NAME_TO_PIP_PKG = {}
 for f in pkg_resources.working_set:
-    PKG_NAME_TO_PIP_PKG[f.key] = f
+    dist_dir_location =  os.path.join(f.location, f"{f.project_name.replace('-', '_')}-{f.parsed_version}.dist-info")
+    toplevel_file_location  = os.path.join(dist_dir_location, 'top_level.txt')
+    
+    if not os.path.isdir(dist_dir_location):
+        continue
+
+    if not os.path.isfile(toplevel_file_location):
+        PKG_NAME_TO_PIP_PKG[f.key] = f
+        continue
+
+    with open(toplevel_file_location) as fh:
+        pkg_python_name = fh.readline().strip()
+        PKG_NAME_TO_PIP_PKG[pkg_python_name] = f
 
 
 class PackageTypes:
@@ -37,12 +52,12 @@ def get_all_package_info(pkg_names):
 
 
 def get_package_info(pkg_name):
-    info =  create_package_info(pkg_name)
+    info = create_package_info(pkg_name)
 
     if info.get("flat"):
-        return info.get("flat")
+        return {info.get("pkg_name"): info}
 
-    return set()
+    return {}
 
 
 def create_package_info(pkg_name):
@@ -67,7 +82,7 @@ def create_zip_archive(pkgs, layername):
     with ZipFile(zip_file_location, 'w') as zipfile:
         for pkg in pkgs:
             pkg_info = PACKAGE_CACHE.get(pkg)
-
+            
             if not pkg_info:
                 print("CANT FIND INFORMATION")
 
@@ -123,7 +138,7 @@ def _recursive_create_package_info(pkg_name):
                         rv["fp"] = mod.__file__
             else:
                 print("BAADDD")
-        print(rv)
+        
         dependencies = _recursive_check_for_dependencies(rv)
 
         rv["tree"] = dependencies.get("tree")
@@ -182,6 +197,7 @@ def _get_local_package_dependencies(pkg):
     # The only way to get this dependency tree is to parse each file for import statements :upsidedownsmile: 
 
     pkg_names = cdev_parser.parse_folder_for_dependencies(pkg.get("fp"))
+    print(f"ahahah {pkg_names}")
     return []
 
 
