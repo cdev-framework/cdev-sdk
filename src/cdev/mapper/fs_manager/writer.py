@@ -54,14 +54,17 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
     if pkg_info.get("layer_dependencies"):
         dir = os.path.join(INTERMEDIATE_FOLDER, os.path.dirname(parsed_path))
         
-        dependencies_archive_locations, dependencies_hash  = _make_layers_zips(dir, filename[:-3], pkg_info.get("layer_dependencies") )
+        dependencies_info, dependencies_hash  = _make_layers_zips(dir, filename[:-3], pkg_info.get("layer_dependencies") )
+        
+
+        
     else:
-        dependencies_archive_locations = None
+        dependencies_info = None
         dependencies_hash= None
 
     src_code_hash = _make_intermediate_handler_zip(zip_archive_location, handler_files)
 
-    return (src_code_hash, zip_archive_location, base_handler_path, dependencies_archive_locations, dependencies_hash)
+    return (src_code_hash, zip_archive_location, base_handler_path, dependencies_info, dependencies_hash)
 
 
 def _create_package_dependencies_info(pkgs) -> Dict:
@@ -202,7 +205,10 @@ def _make_layers_zips(zip_archive_location_directory, basename, needed_info) -> 
 
         if not zip_archive_full_path in archives_made:
             archives_made.add(zip_archive_full_path)
-            archive_to_hashlist[layer_name] = []
+            archive_to_hashlist[layer_name] = {
+                "artifact_path": zip_archive_full_path,
+                "hash": []
+            }
 
         with ZipFile(zip_archive_full_path, 'w') as zipfile:
             for dirname, subdirs, files in os.walk(info.get("base_folder")):
@@ -214,12 +220,20 @@ def _make_layers_zips(zip_archive_location_directory, basename, needed_info) -> 
                 for filename in files:
                     original_path = os.path.join(dirname, filename)
                     zipfile.write(original_path, os.path.join(zip_dir_name, filename))
-                    archive_to_hashlist[layer_name].append(cdev_hasher.hash_file(original_path))
+                    archive_to_hashlist[layer_name]['hash'].append(cdev_hasher.hash_file(original_path))
 
-    archive_to_hash = {}
+    archive_to_hash = []
+    dependency_info = []
     for layer_name in archive_to_hashlist:
-        archive_to_hash[layer_name] = cdev_hasher.hash_list(archive_to_hashlist[layer_name]) 
+        package_hash = cdev_hasher.hash_list(archive_to_hashlist.get(layer_name).get('hash'))
+        archive_to_hash.append(package_hash)
     
-    return list(archives_made), archive_to_hash
+        dependency_info.append({
+            'name': layer_name,
+            'artifact_path': cdev_paths.get_relative_to_project_path( archive_to_hashlist.get(layer_name).get("artifact_path")),
+            'hash': package_hash
+        })
+
+    return dependency_info, cdev_hasher.hash_list(archive_to_hash)
         
 

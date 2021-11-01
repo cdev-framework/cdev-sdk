@@ -27,8 +27,9 @@ def _create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
     # Steps for creating a deployed lambda function
     # 1. Create IAM Role with needed permissions (note this is first to give aws more time to create the role in all regions and be available for use)
     # 2. Upload the artifact to S3 as the archive location
-    # 3. Create the function
-    # 4. Create any integrations that are need based on Events passed in
+    # 3. Upload dependencies if needed
+    # 4. Create the function
+    # 5. Create any integrations that are need based on Events passed in
     print_deployment_step("CREATE", f"Creating lambda function resources for lambda {resource.name}")
     
     log.debug(f"Attempting to create {resource}")
@@ -36,6 +37,8 @@ def _create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
         "ruuid": resource.ruuid,
         "cdev_name": resource.name,
     }
+
+
 
     # Step 1
     role_name = f"lambda_{resource.function_name}"
@@ -56,6 +59,17 @@ def _create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
     final_info['artifact_key'] = keyname
 
     # Step 3
+    if resource.dependencies_info:
+        cloud_dependency_info = []
+        for dependency in resource.dependencies_info:
+            rv = _create_dependency(resource, dependency)
+            cloud_dependency_info.append(rv)
+
+        print_deployment_step("CREATE", f"  Create dependencies for lambda function {resource.name}")
+
+        final_info['layers'] = cloud_dependency_info
+    
+    # Step 4
     # TODO
     print_deployment_step("CREATE", f"  [blink]Waiting for role to finish creating (~10s)[/blink]")
     sleep(10)
@@ -66,14 +80,15 @@ def _create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
         "Role": role_arn,
         "Handler": resource.configuration.Handler,
         "Code": {"S3Bucket":BUCKET, "S3Key":keyname},
-        "Environment": resource.configuration.Environment.dict() if resource.configuration.Environment else {}
+        "Environment": resource.configuration.Environment.dict() if resource.configuration.Environment else {},
+        "Layers": [f'{x.get("arn")}:{x.get("version")}' for x in final_info.get('layers')] if final_info.get('layers') else []
     }
 
     lambda_function_rv = raw_aws_client.run_client_function("lambda", "create_function", lambda_function_args)
 
     final_info['cloud_id'] = lambda_function_rv.get("FunctionArn")
 
-    # Step 4
+    # Step 5
     log.debug(f"lambda events -> {resource.events}")
     if resource.events:
         event_hash_to_output = {}
@@ -104,6 +119,67 @@ def _upload_s3_code_artifact(resource: simple_lambda.simple_aws_lambda_function_
     keyname = resource.function_name + f"-{resource.hash}" + ".zip"
     #original_zipname = resource.configuration.Handler.split(".")[0] + ".zip"
     zip_location = resource.filepath
+    
+    log.debug(f"artifact keyname {keyname}; ondisk location {zip_location}; is valid file {os.path.isfile(zip_location)}")
+
+    if not os.path.isfile(zip_location):
+        #TODO better exception
+        log.error(f"bad archive local path given {zip_location}")
+        raise Exception
+
+
+
+    log.debug(f"upload artifact to s3")
+    with open(zip_location, "rb") as fh:
+        object_args = {
+            "Bucket": BUCKET,
+            "Key": keyname,
+            "Body": fh.read()
+        }
+        raw_aws_client.run_client_function("s3", "put_object", object_args)
+
+    return keyname
+
+def _create_dependency(resource: simple_lambda.simple_aws_lambda_function_model, dependency: Dict) -> Dict:
+    key_name = _upload_s3_dependency(resource, dependency)
+
+    layer_name = key_name.replace("-", "_")[:-4]
+    dependency_rv = raw_aws_client.run_client_function("lambda", "publish_layer_version", {
+        "Content": {
+            "S3Bucket": BUCKET,
+            "S3Key": key_name
+        },
+        "LayerName": layer_name,
+        "CompatibleRuntimes": [
+            "python3.6",
+            "python3.7",
+            "python3.8",
+            
+        ]
+    })
+
+    return {
+        "arn": dependency_rv.get("LayerArn"),
+        "S3bucket": BUCKET,
+        "S3key": key_name,
+        "version": dependency_rv.get("Version"),
+        "name": layer_name,
+        "hash": dependency.get("hash")
+    }
+
+
+def _remove_dependency(dependency_cloud_info: Dict):
+    raw_aws_client.run_client_function("lambda", "delete_layer_version", {
+        "LayerName": dependency_cloud_info.get("name"),
+        "VersionNumber": dependency_cloud_info.get("version")
+    })
+
+
+def _upload_s3_dependency(resource: simple_lambda.simple_aws_lambda_function_model, dependency: Dict) -> str:
+    # Takes in a resource and create an s3 artifact that can be use as src code for lambda deployment
+    keyname = resource.name + "-" + dependency.get('name') + f"-{resource.hash}" + ".zip"
+    #original_zipname = resource.configuration.Handler.split(".")[0] + ".zip"
+    zip_location = dependency.get('artifact_path')
     
     log.debug(f"artifact keyname {keyname}; ondisk location {zip_location}; is valid file {os.path.isfile(zip_location)}")
 
@@ -157,6 +233,14 @@ def _remove_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
     log.debug(f"Attemping to delete role {role_name} and permissions {permissions}")
     delete_role_and_permissions(role_name, [v for _,v in permissions.items()])
     print_deployment_step("DELETE", f"  Remove role for lambda function {resource.name}")
+
+    log.debug(f"Attempting to delete dependencies")
+    dependencies_info = cdev_cloud_mapper.get_output_value_by_hash(resource.hash, "layers")
+    if dependencies_info:
+        for dependency_info in dependencies_info:
+            _remove_dependency(dependency_info)
+
+        print_deployment_step("DELETE", f"  Remove dependencies for lambda function {resource.name}")
 
     cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
     cdev_cloud_mapper.remove_identifier(identifier)
@@ -239,7 +323,53 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
             "S3Bucket": BUCKET,
             "Publish": True
         })
-        print_deployment_step("UPDATE", f"  Update source code for lambda function {new_resource.name}") 
+        print_deployment_step("UPDATE", f"  Update source code for lambda function {new_resource.name}")
+
+    if not previous_resource.dependencies_hash == new_resource.dependencies_hash:
+        log.debug(f"UPDATE DEPENDENCIES OF {previous_resource.name}; {previous_resource.dependencies_hash} -> {new_resource.dependencies_hash}")
+        previous_hashes = set([x.get("hash") for x in previous_resource.dependencies_info])
+        new_hashes = set([x.get("hash") for x in new_resource.dependencies_info])
+
+        create_dependencies = []
+        remove_dependencies = []
+
+        if previous_resource.dependencies_info:
+            for dependency in new_resource.dependencies_info:
+                if not dependency.get("hash") in previous_hashes:
+                    create_dependencies.append(dependency)
+        else:
+            create_dependencies = new_resource.dependencies_info
+
+        if new_resource.dependencies_info:
+            for dependency in previous_resource.dependencies_info:
+                if not dependency.get("hash") in new_hashes:
+                    remove_dependencies.append(dependency)
+        else:
+            remove_dependencies = previous_resource.dependencies_info
+
+        dependencies_info = cdev_cloud_mapper.get_output_value_by_hash(previous_resource.hash, "layers")
+        
+        if remove_dependencies:
+            for dependency in remove_dependencies:
+                cloud_info = [x for x in dependencies_info if x.get("hash") == dependency.get("hash")][0]
+                _remove_dependency(cloud_info)
+                dependencies_info.remove(cloud_info)
+                print_deployment_step("UPDATE", f'  Remove dependency {cloud_info.get("name")}')
+        
+        if create_dependencies:
+            for dependency in create_dependencies:
+                rv = _create_dependency(new_resource, dependency)
+                dependencies_info.append(rv)
+                print_deployment_step("UPDATE", f'  Create dependency {rv.get("name")}')
+
+        sleep(5)
+        raw_aws_client.run_client_function("lambda", "update_function_configuration", {
+                "FunctionName": cdev_cloud_mapper.get_output_value_by_hash(previous_resource.hash, "cloud_id"),
+                "Layers": [f'{x.get("arn")}:{x.get("version")}' for x in dependencies_info] if dependencies_info else []
+            })
+
+        cdev_cloud_mapper.update_output_by_key(previous_resource.hash, "layers", dependencies_info)
+
 
     if not previous_resource.events_hash == new_resource.events_hash:
         log.debug(f"UPDATE EVENT HASH: {previous_resource.events} -> {new_resource.events}")

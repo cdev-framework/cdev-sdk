@@ -119,8 +119,8 @@ class simple_aws_lambda_function_model(Rendered_Resource):
     events: List[Event]
     permissions: List[Union[Permission,PermissionArn]]
     src_code_hash: str
-    dependencies_hashes: Optional[Dict[str, str]]
-    dependencies: Optional[List[str]]
+    dependencies_hash: Optional[str]
+    dependencies_info: Optional[List[Dict]]
     config_hash: str
     events_hash: str
     permissions_hash: str
@@ -157,8 +157,8 @@ class simple_lambda(Cdev_Resource):
         self.config_hash = configuration.get_cdev_hash()
         self.events_hash = hasher.hash_list([x.get_hash() for x in events])
 
-        self.dependencies_hashes = None
-        self.dependencies = None
+        self.dependencies_hash = None
+        self.dependencies_info = []
 
         self.full_hash = hasher.hash_list([self.function_name, self.src_code_hash, self.config_hash, self.events_hash, self.permissions_hash])
 
@@ -184,8 +184,8 @@ class simple_lambda(Cdev_Resource):
             "config_hash": self.config_hash,
             "events_hash": self.events_hash,
             "parent_resources": self.parents,
-            "dependencies_hashes": self.dependencies_hashes,
-            "dependencies": self.dependencies
+            "dependencies_hash": self.dependencies_hash,
+            "dependencies_info": self.dependencies_info
         })
         
 

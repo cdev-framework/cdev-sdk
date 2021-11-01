@@ -79,11 +79,10 @@ def _find_resources_information_from_file(fp) -> List[Rendered_Resource]:
 
             tmp = function_name_to_rendered_resource.get(parsed_function_name)
             tmp.src_code_hash = parsed_function_info.get(parsed_function_name).get("src_code_hash")
-
-            tmp.dependencies = parsed_function_info.get(parsed_function_name).get("dependencies_paths")
             
             
-            tmp.dependencies_hashes = parsed_function_info.get(parsed_function_name).get("dependencies_hashes")
+            tmp.dependencies_info = parsed_function_info.get(parsed_function_name).get("dependencies_info")
+            tmp.dependencies_hash = parsed_function_info.get(parsed_function_name).get("dependencies_hash")
 
             tmp.filepath =  parsed_function_info.get(parsed_function_name).get("file_path")
             tmp.configuration.Handler = parsed_function_info.get(parsed_function_name).get("Handler")
@@ -91,10 +90,8 @@ def _find_resources_information_from_file(fp) -> List[Rendered_Resource]:
 
             tmp.config_hash = tmp.configuration.get_cdev_hash()
             
-            if tmp.dependencies_hashes:
-                values_to_hash = [tmp.src_code_hash, tmp.config_hash, tmp.events_hash, tmp.permissions_hash]
-                values_to_hash.extend([tmp.dependencies_hashes.get(x) for x in tmp.dependencies_hashes])
-                tmp.hash = hasher.hash_list(values_to_hash)
+            if tmp.dependencies_hash:
+                tmp.hash = hasher.hash_list([tmp.src_code_hash, tmp.config_hash, tmp.events_hash, tmp.permissions_hash, tmp.dependencies_hash])
             else:
                 tmp.hash = hasher.hash_list([tmp.src_code_hash, tmp.config_hash, tmp.events_hash, tmp.permissions_hash])
 
@@ -119,7 +116,7 @@ def _create_serverless_function_resources(filepath: FilePath, functions_names_to
         cleaned_name = _clean_function_name(parsed_function.name)
         intermediate_path = fs_utils.get_parsed_path(filepath, cleaned_name)
         
-        src_code_hash, archive_path, base_handler_path, dependencies_locations, dependencies_hashes = writer.create_full_deployment_package(filepath, 
+        src_code_hash, archive_path, base_handler_path, dependencies_info, dependencies_hash = writer.create_full_deployment_package(filepath, 
                                                                                 parsed_function.get_line_numbers_serializeable(), 
                                                                                 intermediate_path, parsed_function.needed_imports)
         
@@ -129,12 +126,12 @@ def _create_serverless_function_resources(filepath: FilePath, functions_names_to
         final_info["file_path"] = paths.get_relative_to_project_path(archive_path)
         final_info["Handler"] = final_handler_path
 
-        if dependencies_locations:
-            final_info['dependencies_paths'] = [paths.get_relative_to_project_path(x) for x in dependencies_locations]
-            final_info['dependencies_hashes'] = dependencies_hashes
+        if dependencies_info:
+            final_info['dependencies_info'] = dependencies_info
+            final_info['dependencies_hash'] = dependencies_hash
         else:
-            final_info['dependencies_paths'] = None
-            final_info['dependencies_hashes'] = None
+            final_info['dependencies_info'] = []
+            final_info['dependencies_hash'] = None
         
         rv[cleaned_name] = final_info
 
