@@ -7,13 +7,36 @@ from pydantic.types import FilePath
 from . import utils as fs_utils
 from zipfile import ZipFile
 from cdev.settings import SETTINGS as cdev_settings
-from cdev.utils import paths as cdev_paths
+from cdev.utils import paths as cdev_paths, hasher as cdev_hasher
 import shutil
 
 INTERMEDIATE_FOLDER = cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION")
+EXCLUDE_SUBDIRS = {"__pycache__"}
 
 def create_full_deployment_package(original_path : FilePath, needed_lines: List[int], parsed_path: str, pkgs:List[dict]=None ):
+    """
+    Create all the needed deployment resources needed for a given serverless function. This includes parsing out the needed lines from
+    the original function, packaging local dependencies, and packaging external dependencies (pip packages).
+
+    Args:
+        original_path (FilePath): The original file location that this function is from
+        needed_lines (List[int]): The list of line numbers needed from the original function
+        parsed_path (str): The final location of the parsed file
+        pkgs (List[Dict]): The list of package info for the function
+
+    Returns:
+        src_code_hash (str): The hash of the source code archive 
+        handler_archive_location (FilePath): The location of the created archive for the handler
+        base_handler_path (str): The path to the file as a python package path
+        dependencies_archive_locations (List[FilePath]): Locations of any external dependency archive 
+        dependencies_hash (Dict[str,str]): The hash for each of the created dependency archives (layer_name -> hash)
+    """
     _make_intermediate_handler_file(original_path, needed_lines, parsed_path)
+
+    # Start from the base intermediate folder location then replace '/' with '.' and final remove the '.py' from the end
+    base_handler_path = cdev_paths.get_relative_to_intermediate_path(parsed_path).replace("/", ".")[:-3]
+
+
     handler_files = [parsed_path]
 
     filename = os.path.split(parsed_path)[1]
@@ -31,14 +54,15 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
     if pkg_info.get("layer_dependencies"):
         dir = os.path.join(INTERMEDIATE_FOLDER, os.path.dirname(parsed_path))
         
-        _make_layers_zips(dir, filename[:-3], pkg_info.get("layer_dependencies") )
+        dependencies_archive_locations, dependencies_hash  = _make_layers_zips(dir, filename[:-3], pkg_info.get("layer_dependencies") )
+    else:
+        dependencies_archive_locations = None
+        dependencies_hash= None
 
-    _make_intermediate_handler_zip(zip_archive_location, handler_files)
+    src_code_hash = _make_intermediate_handler_zip(zip_archive_location, handler_files)
 
-    return (123, "helloworld23", zip_archive_location)
+    return (src_code_hash, zip_archive_location, base_handler_path, dependencies_archive_locations, dependencies_hash)
 
-
-EXCLUDE_SUBDIRS = {"__pycache__"}
 
 def _create_package_dependencies_info(pkgs) -> Dict:
 
@@ -78,7 +102,15 @@ def _create_package_dependencies_info(pkgs) -> Dict:
     return rv
 
 
-def _make_intermediate_handler_file(original_path, needed_lines, parsed_path):
+def _make_intermediate_handler_file(original_path, needed_lines, parsed_path) -> str:
+    """
+    Make the actual file that will be deployed onto a serverless platform by parsing out the needed lines from the original file
+
+    Args:
+        original_path (FilePath): The original file location that this function is from
+        needed_lines (List[int]): The list of line numbers needed from the original function
+        parsed_path (str): The final location of the parsed file
+    """
     if not os.path.isfile(original_path):
         print(f"nah {original_path}")
         return False
@@ -150,18 +182,28 @@ def _write_intermediate_function(path, lines):
 
     return True
 
-def _make_intermediate_handler_zip(zip_archive_location: str, paths: List[str]):
+def _make_intermediate_handler_zip(zip_archive_location: str, paths: List[str]) -> str:
+    hashes = []
     with ZipFile(zip_archive_location, 'w') as zipfile:
         for path in paths:
             filename = os.path.relpath(path,INTERMEDIATE_FOLDER)
             zipfile.write(path, filename)
-            
+            hashes.append(cdev_hasher.hash_file(path))
+
+    return cdev_hasher.hash_list(hashes)
 
 
-def _make_layers_zips(zip_archive_location_directory, basename, needed_info):
-
+def _make_layers_zips(zip_archive_location_directory, basename, needed_info) -> List[FilePath]:
+    archives_made = set()
+    archive_to_hashlist = {}
+    layer_name = "layer1"
     for info in needed_info:
-        zip_archive_full_path = os.path.join(zip_archive_location_directory,  basename + "_layer1" + ".zip" )
+        zip_archive_full_path = os.path.join(zip_archive_location_directory,  basename +"_" + layer_name  + ".zip" )
+
+        if not zip_archive_full_path in archives_made:
+            archives_made.add(zip_archive_full_path)
+            archive_to_hashlist[layer_name] = []
+
         with ZipFile(zip_archive_full_path, 'w') as zipfile:
             for dirname, subdirs, files in os.walk(info.get("base_folder")):
                 if dirname.split("/")[-1] in EXCLUDE_SUBDIRS:
@@ -170,8 +212,14 @@ def _make_layers_zips(zip_archive_location_directory, basename, needed_info):
                 zip_dir_name = os.path.normpath( os.path.join('python', info.get("pkg_name") , os.path.relpath(dirname , info.get("base_folder") ) ) )
 
                 for filename in files:
-                    zipfile.write(os.path.join(dirname, filename), os.path.join(zip_dir_name, filename))
+                    original_path = os.path.join(dirname, filename)
+                    zipfile.write(original_path, os.path.join(zip_dir_name, filename))
+                    archive_to_hashlist[layer_name].append(cdev_hasher.hash_file(original_path))
+
+    archive_to_hash = {}
+    for layer_name in archive_to_hashlist:
+        archive_to_hash[layer_name] = cdev_hasher.hash_list(archive_to_hashlist[layer_name]) 
     
-       
+    return list(archives_made), archive_to_hash
         
 

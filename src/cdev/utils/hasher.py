@@ -27,3 +27,14 @@ def hash_file(fp: FilePath) -> str:
         hash = hashlib.md5(fh.read().encode()).hexdigest()
 
     return hash
+
+
+
+def hash_zipfile(fp: FilePath) -> str:
+    with open(fp, "rb") as fh:
+        m = hashlib.md5()
+        data = fh.read()
+        m.update(data)
+        hash = m.hexdigest()
+
+    return hash
