@@ -29,6 +29,8 @@ def get_full_path_from_intermediate_folder(relative_path: str) -> FilePath:
 def is_in_project(full_path: str) -> bool:
     return os.path.commonprefix([full_path, cdev_settings.SETTINGS.get("BASE_PATH")]) == cdev_settings.SETTINGS.get("BASE_PATH")
 
+def get_project_path() -> FilePath:
+    return cdev_settings.SETTINGS.get("BASE_PATH")
 
 
 def create_path(startingpath, fullpath):

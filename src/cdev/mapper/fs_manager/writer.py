@@ -31,13 +31,10 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
         dependencies_archive_locations (List[FilePath]): Locations of any external dependency archive 
         dependencies_hash (Dict[str,str]): The hash for each of the created dependency archives (layer_name -> hash)
     """
-    _make_intermediate_handler_file(original_path, needed_lines, parsed_path)
+    handler_files = _make_intermediate_handler_file(original_path, needed_lines, parsed_path)
 
     # Start from the base intermediate folder location then replace '/' with '.' and final remove the '.py' from the end
     base_handler_path = cdev_paths.get_relative_to_intermediate_path(parsed_path).replace("/", ".")[:-3]
-
-
-    handler_files = [parsed_path]
 
     filename = os.path.split(parsed_path)[1]
     zip_archive_location = os.path.join(os.path.dirname(parsed_path), filename[:-3] + ".zip")
@@ -116,7 +113,7 @@ def _make_intermediate_handler_file(original_path, needed_lines, parsed_path) ->
     """
     if not os.path.isfile(original_path):
         print(f"nah {original_path}")
-        return False
+        raise Exception
 
 
     file_list =  fs_utils.get_file_as_list(original_path)
@@ -126,6 +123,31 @@ def _make_intermediate_handler_file(original_path, needed_lines, parsed_path) ->
     cleaned_actual_lines = _clean_lines(actual_lines)
     
     _write_intermediate_function(parsed_path, cleaned_actual_lines)
+
+
+    path_from_project_dir = os.path.dirname(cdev_paths.get_relative_to_project_path(original_path)).split('/')
+
+    intermediate_location = cdev_paths.get_project_path()
+    
+    rv = [parsed_path]
+    while path_from_project_dir:
+        
+        intermediate_location = os.path.join(intermediate_location, path_from_project_dir.pop(0))
+        
+        file_loc = os.path.join(intermediate_location, "__init__.py")
+        intermediate_file_location = cdev_paths.get_full_path_from_intermediate_folder(cdev_paths.get_relative_to_project_path(file_loc))
+        if os.path.isfile(file_loc):
+            
+            shutil.copyfile(file_loc, intermediate_file_location)   
+        else:
+            with open(intermediate_file_location, 'a'):
+                os.utime(intermediate_file_location)
+
+
+        rv.append(intermediate_file_location)
+
+    return rv
+
 
 
 def _clean_lines(lines: List[str]):
@@ -163,6 +185,10 @@ def _copy_local_dependencies(files: List[FilePath]) -> List[FilePath]:
         intermediate_location = cdev_paths.get_full_path_from_intermediate_folder( cdev_paths.get_relative_to_project_path(file))
         rv.append(intermediate_location)
 
+        if os.path.isfile(intermediate_location):
+            continue
+
+
         relative_to_intermediate = cdev_paths.get_relative_to_intermediate_path(intermediate_location).split("/")[:-1]
 
         cdev_paths.create_path(INTERMEDIATE_FOLDER, relative_to_intermediate)
@@ -186,14 +212,18 @@ def _write_intermediate_function(path, lines):
     return True
 
 def _make_intermediate_handler_zip(zip_archive_location: str, paths: List[str]) -> str:
+    """
+    Make the archive for the handler deployment. 
+    """
     hashes = []
     with ZipFile(zip_archive_location, 'w') as zipfile:
         for path in paths:
-            filename = os.path.relpath(path,INTERMEDIATE_FOLDER)
+            filename = os.path.relpath(path, INTERMEDIATE_FOLDER)
             zipfile.write(path, filename)
             hashes.append(cdev_hasher.hash_file(path))
 
     return cdev_hasher.hash_list(hashes)
+
 
 
 def _make_layers_zips(zip_archive_location_directory, basename, needed_info) -> List[FilePath]:
