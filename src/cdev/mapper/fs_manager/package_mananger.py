@@ -1,12 +1,16 @@
 import os
 import sys
+import typing
 import pkg_resources
 from zipfile import ZipFile
-from typing import List
+from typing import List, Set, Dict, Tuple
 import re
+
+from pydantic.types import FilePath
 
 
 from cdev.settings import SETTINGS as CDEV_SETTINGS
+from cdev.utils import hasher as cdev_hasher
 from ..cparser import cdev_parser 
 
 from packaging.utils import canonicalize_name
@@ -99,6 +103,7 @@ for f in pkg_resources.working_set:
 
     if not os.path.isfile(toplevel_file_location):
         PKG_NAME_TO_PIP_PKG[f.project_name] = f
+    
         continue
 
     #print(f"{f} -> {f.platform}")
@@ -130,69 +135,74 @@ class PackageTypes:
     AWSINCLUDED = "awsincluded"
 
 
-def get_all_package_info(pkg_names): 
-    # Take in a list/set of all top level pkgs a function uses and return the set of ALL pkgs that are needed for its layers
-    rv = set()
+class PackageInfo:
+    def __init__(self, pkg_name: str, type: PackageTypes, version_id: str=None , fp: FilePath=None ) -> None:
+        self.pkg_name = pkg_name
+        self.type = type
+        self.version_id = version_id
+        self.fp = fp
+        self.tree = None
+        self.flat = None
 
-    for pkg_name in pkg_names:
-        rv = rv.union(get_package_info(pkg_name))
 
-    return sorted(rv)
+    def set_tree(self, tree: List):
+        self.tree = tree
+
+    
+    def set_flat(self, flat: Set['PackageInfo']):
+        self.flat = flat
 
 
-def get_package_info(pkg_name):
+    def get_id_str(self) -> str:
+        if self.type == PackageTypes.LOCALPACKAGE:
+            if os.path.isfile(self.fp):
+                return f"{self.pkg_name}-{self.fp}-{cdev_hasher.hash_file(self.fp)}"
+
+            else:
+                return f"{self.pkg_name}-{self.fp}"
+
+        elif self.type == PackageTypes.PIP:
+            return f"{self.pkg_name}-{self.version_id}"
+
+        else:
+            return self.pkg_name
+
+    def __str__(self) -> str:
+        return self.get_id_str()
+
+
+    def __hash__(self) -> int:
+        return int(cdev_hasher.hash_string(self.get_id_str()), base=16)
+
+
+def get_package_info(pkg_name) -> Dict[str, PackageInfo]:
 
     info = create_package_info(pkg_name)
     
-    if info.get("flat"):
-        return {info.get("pkg_name"): info}
+    if info:
+        return {info.pkg_name: info}
 
     return {}
 
 
-def create_package_info(pkg_name):
-    # RV :  {
-    #   pkg_name: pkg_name,
-    #   type: ENUM("builtin", "standardlib", "pip", "localpackage", "awsincluded")
-    #   ?Dependencies: SET({<objs>}),
-    #   ?AsList: [{objs}],
-    #   ?fp: path_to_dir
-    # }
+def create_package_info(pkg_name) -> PackageInfo:
+
     pkg_info =  _recursive_create_package_info(pkg_name)
-    #print(pkg_info)
+
+    if pkg_info.flat:
+        pkg_info.flat.remove(pkg_info)
+
     return pkg_info
 
 
-def create_zip_archive(pkgs, layername):
-    
-    BASE_LOCATION = os.path.join(CDEV_SETTINGS.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), "layers")
-
-    zip_file_location = os.path.join(BASE_LOCATION,"layer_"+layername+".zip")
-
-    with ZipFile(zip_file_location, 'w') as zipfile:
-        for pkg in pkgs:
-            pkg_info = PACKAGE_CACHE.get(pkg)
-            
-            if not pkg_info:
-                print("CANT FIND INFORMATION")
-
-            for dirname, subdirs, files in os.walk(pkg_info.get("fp")):
-                zip_dir_name = os.path.normpath( os.path.join('python', pkg ,os.path.relpath(dirname ,pkg_info.get('fp') )) )
-
-                for filename in files:
-                    zipfile.write(os.path.join(dirname, filename), os.path.join(zip_dir_name, filename))
-
-    return zip_file_location
-
-
-def _recursive_create_package_info(unmodified_pkg_name):
+def _recursive_create_package_info(unmodified_pkg_name: str) -> PackageInfo:
 
     if unmodified_pkg_name in PACKAGE_CACHE:
         #print(f"CACHE HIT -> {pkg_name}")
         return PACKAGE_CACHE.get(unmodified_pkg_name)
         
 
-    rv =  {"pkg_name": unmodified_pkg_name}
+    
     if not unmodified_pkg_name in sys.modules and not unmodified_pkg_name in PKG_NAME_TO_PIP_PKG and not unmodified_pkg_name in DIFF_PROJECT_TO_TOP:
         print(f"BAD PKG NAME -> {unmodified_pkg_name}")
         raise Exception
@@ -204,31 +214,37 @@ def _recursive_create_package_info(unmodified_pkg_name):
 
         pkg_name = DIFF_PROJECT_TO_TOP.get(unmodified_pkg_name, unmodified_pkg_name)
         
-        if pkg_name in INCOMPATIBLE_LIBRARIES:
-            raise Exception
-
-
+        
         mod = sys.modules.get(pkg_name)
         
 
         if pkg_name in standard_lib_info:
-            rv["type"] = PackageTypes.STANDARDLIB 
+            tmp_type = PackageTypes.STANDARDLIB 
+            tmp_fp = None
+            tmp_version = None
 
         elif pkg_name in aws_packages:
-            rv["type"] = PackageTypes.AWSINCLUDED
+            tmp_type = PackageTypes.AWSINCLUDED
+            tmp_fp = None
+            tmp_version = None
 
         elif pkg_name in pip_packages:
-            rv["type"] = PackageTypes.PIP
+            if pkg_name in INCOMPATIBLE_LIBRARIES:
+                raise Exception
+
+            tmp_type = PackageTypes.PIP
             # The package could be either a folder (normal case) or a single python file (ex: 'six' package)
             # If it can not be found as either than there is an issue
             potential_dir = os.path.join(pip_packages.get(pkg_name).location, pkg_name)
-            potential_file = os.path.join(pip_packages.get(pkg_name).location, pkg_name+".py") 
+            potential_file = os.path.join(pip_packages.get(pkg_name).location, pkg_name+".py")
+
+            tmp_version = pip_packages.get(pkg_name).version
 
             if os.path.isdir(potential_dir):
-                rv["fp"] = potential_dir
+                tmp_fp = potential_dir
 
             elif os.path.isfile( potential_file):
-                rv["fp"] = potential_file
+                tmp_fp = potential_file
 
             else:
                 raise Exception
@@ -236,80 +252,93 @@ def _recursive_create_package_info(unmodified_pkg_name):
         else:
             if mod:
                 if not mod.__file__:
-                    rv["type"] = PackageTypes.BUILTIN
+                    tmp_type = PackageTypes.BUILTIN
+                    tmp_fp = None
+                    tmp_version = None
                 else:
-                    rv["type"] = PackageTypes.LOCALPACKAGE
+                    tmp_type = PackageTypes.LOCALPACKAGE
+                    tmp_version = None
 
                     if mod.__file__.split("/")[-1] == "__init__.py":
-                        rv["fp"] = os.path.dirname(mod.__file__)
+                        tmp_fp = os.path.dirname(mod.__file__)
                     else:
-                        rv["fp"] = mod.__file__
+                        tmp_fp = mod.__file__
             else:
                 print("BAADDD")
                 raise Exception
-        
-        dependencies = _recursive_check_for_dependencies(rv)
 
-        rv["tree"] = dependencies.get("tree")
-        rv["flat"] = dependencies.get("flat")
+        rv = PackageInfo(
+            pkg_name = unmodified_pkg_name,
+            type =  tmp_type,
+            version_id = tmp_version,
+            fp = tmp_fp
+        )
+        
+        dependency_tree, dependencies_flat = _recursive_check_for_dependencies(rv)
+
+        rv.set_tree(dependency_tree)
+        rv.set_flat(dependencies_flat)
 
         PACKAGE_CACHE[pkg_name] = rv
 
         return rv
 
 
-def _recursive_check_for_dependencies(obj):
+def _recursive_check_for_dependencies(pkg: PackageInfo) -> Tuple[List, List]:
 
-    if obj.get("type") == PackageTypes.BUILTIN or obj.get("type") == PackageTypes.STANDARDLIB or obj.get("type") == PackageTypes.AWSINCLUDED:
-        return obj
+    if pkg.type == PackageTypes.BUILTIN or pkg.type == PackageTypes.STANDARDLIB or pkg.type == PackageTypes.AWSINCLUDED:
+        return None,None
 
-    if obj.get("type") == PackageTypes.PIP:
+    if pkg.type == PackageTypes.PIP:
         
-        if obj.get("pkg_name") in DIFF_PROJECT_TO_TOP:
+        if pkg.pkg_name in DIFF_PROJECT_TO_TOP:
             # package linked by pip project name that is different than the top level name of the module
-            old_name = obj.get("pkg_name")
-            pkg_name = DIFF_PROJECT_TO_TOP.get(obj.get("pkg_name"))
+            old_name = pkg.pkg_name
+            pkg_name = DIFF_PROJECT_TO_TOP.get(pkg.pkg_name)
             
         else:
-            pkg_name = obj.get("pkg_name")
+            pkg_name = pkg.pkg_name
 
 
         item = PKG_NAME_TO_PIP_PKG.get(pkg_name)
 
-        rv = {}
-        rv['flat'] = set([(pkg_name, obj.get("type"), obj.get("fp") )])
-        rv['tree'] = []
+        
+        tmp_flat = set([pkg])
+        tmp_tree = []
 
         for req in item.requires():
             tmp = _recursive_create_package_info(req.key)
 
-            rv["tree"].append(tmp)
-            if tmp.get("flat"):
-                rv['flat'] = rv["flat"].union(tmp.get("flat"))
+            tmp_tree.append(tmp)
+            if tmp.flat:
+                print(tmp.flat)
+                tmp_flat = tmp_flat.union(set(tmp.flat))
 
-        return rv
+        return tmp_tree, tmp_flat
 
-    if obj.get("type") == PackageTypes.LOCALPACKAGE:
-        items = _get_local_package_dependencies(obj)
+    if pkg.type == PackageTypes.LOCALPACKAGE:
         
-        rv = {}
-        rv['flat'] = set([(obj.get('pkg_name'), obj.get("type"), obj.get("fp") )])
-        rv['tree'] = []
+        tmp_flat = set([pkg])
+        tmp_tree = []
 
-        for req in items:
+        required_items = _get_local_package_dependencies(pkg)
+        
+
+        for req in required_items:
             tmp = _recursive_create_package_info(req)
 
-            rv["tree"].append(tmp)
-            if tmp.get("flat"):
-                rv['flat'] = rv["flat"].union(tmp.get("flat"))
+            tmp_tree.append(tmp)
+            if tmp.flat:
+                print(tmp.flat)
+                tmp_flat = tmp_flat.union(set(tmp.flat))
 
-        return rv
+        return tmp_tree, tmp_flat
 
-    return obj
+    return None, None
 
 
     
-def _get_local_package_dependencies(pkg):
+def _get_local_package_dependencies(pkg: PackageInfo) -> List[str]:
     # This is the hardest case of dependencies to handle
     # This is if the developer imports a local python module they created or got without pip
     # This module can depend on other packages (local,pip,etc)
@@ -321,31 +350,31 @@ def _get_local_package_dependencies(pkg):
         # This setting should be set
         raise Exception
 
-    if os.path.isdir(pkg.get("fp")):
-        if pkg.get("fp") == _current_working_dir:
-            print(f'can not include whole current directory -> {pkg.get("fp")}')
+    if os.path.isdir(pkg.fp):
+        if pkg.fp == _current_working_dir:
+            print(f'can not include whole current directory -> {pkg.fp}')
             raise Exception
-        elif is_parent_dir(pkg.get("fp"), _current_working_dir):
-            print(f'can not include entire parent directory -> {pkg.get("fp")}')
+        elif is_parent_dir(pkg.fp, _current_working_dir):
+            print(f'can not include entire parent directory -> {pkg.fp}')
             raise Exception
         else:
-            print(f'check only this file -> {pkg.get("fp")}')
-            pkg_names = cdev_parser.parse_folder_for_dependencies(pkg.get("fp"))
+            print(f'check only this file -> {pkg.fp}')
+            pkg_names = cdev_parser.parse_folder_for_dependencies(pkg.fp)
 
     else:
-        pkg_dir = os.path.dirname(pkg.get("fp"))
+        pkg_dir = os.path.dirname(pkg.fp)
 
         if pkg_dir == _current_working_dir:
-            print(f'check only this file -> {pkg.get("fp")}')
+            print(f'check only this file -> {pkg.fp}')
             pkg_names = []
-        elif is_parent_dir(pkg.get("fp"), _current_working_dir):
+        elif is_parent_dir(pkg.fp, _current_working_dir):
             print(f'can not include entire parent directory -> {pkg_dir}')
             raise Exception
         else:
             print(f"Not same {pkg_dir} ; {_current_working_dir}")
-            pkg_names = cdev_parser.parse_folder_for_dependencies(pkg.get("fp"))
+            pkg_names = cdev_parser.parse_folder_for_dependencies(pkg.fp)
 
-    return pkg_names
+    return list(pkg_names)
 
 
 

@@ -1,19 +1,54 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Tuple
 from ast import parse
 import os
 
-from pydantic.types import FilePath
+from pydantic.types import DirectoryPath, FilePath
 
 from . import utils as fs_utils
+from .package_mananger import PackageInfo, PackageTypes
+
 from zipfile import ZipFile
 from cdev.settings import SETTINGS as cdev_settings
 from cdev.utils import paths as cdev_paths, hasher as cdev_hasher
+import json
 import shutil
 
 INTERMEDIATE_FOLDER = cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION")
 EXCLUDE_SUBDIRS = {"__pycache__"}
 
-def create_full_deployment_package(original_path : FilePath, needed_lines: List[int], parsed_path: str, pkgs:List[dict]=None ):
+CACHE_LOCATION = os.path.join(cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), "cache.json")
+
+
+class LayerWriterCache:
+    """
+    Naive cache implentation for writing zip files for the lambda layers.  
+    """
+
+    def __init__(self) -> None:
+
+        if not os.path.isfile(CACHE_LOCATION):
+            self._cache = {}
+
+        else:
+
+            with open(CACHE_LOCATION) as fh:
+                self._cache = json.load(fh)
+
+
+    def find_item(self, id: str):
+        return self._cache.get(id)
+
+
+    def add_item(self, id: str, item: Tuple):
+        self._cache[id] = item
+
+        with open(CACHE_LOCATION, "w") as fh:
+            json.dump(self._cache, fh)
+
+LAYER_CACHE = LayerWriterCache()
+
+
+def create_full_deployment_package(original_path : FilePath, needed_lines: List[int], parsed_path: str, pkgs: Dict[str, PackageInfo]=None ):
     """
     Create all the needed deployment resources needed for a given serverless function. This includes parsing out the needed lines from
     the original function, packaging local dependencies, and packaging external dependencies (pip packages).
@@ -40,15 +75,19 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
     zip_archive_location = os.path.join(os.path.dirname(parsed_path), filename[:-3] + ".zip")
 
     if pkgs:
+        print("-----------------")
+        print(pkgs)
         pkg_info = _create_package_dependencies_info(pkgs)
 
         if pkg_info.get("handler_dependencies"):
             # Copy the local dependencies files into the intermediate folder to make packaging easier
             # All the local copied files are added to the set of files needed to be include in the .zip file uploaded as the handler
+            print(pkg_info.get("handler_dependencies"))
             local_dependencies_intermediate_locations = _copy_local_dependencies(pkg_info.get("handler_dependencies"))
             handler_files.extend(local_dependencies_intermediate_locations)
 
         if pkg_info.get("layer_dependencies"):
+            print(pkg_info.get("layer_dependencies"))
             dir = os.path.join(INTERMEDIATE_FOLDER, os.path.dirname(parsed_path))
 
             dependencies_info, dependencies_hash  = _make_layers_zips(dir, filename[:-3], pkg_info.get("layer_dependencies") )
@@ -65,58 +104,55 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
     return (src_code_hash, zip_archive_location, base_handler_path, dependencies_info, dependencies_hash)
 
 
-def _create_package_dependencies_info(pkgs) -> Dict:
+
+def _create_package_dependencies_info(pkgs: Dict[str, PackageInfo]) -> Dict:
 
     layer_dependencies = []
-    handler_dependencies = []
+    handler_dependencies = set()
 
 
     for pkg_name in pkgs:
         pkg = pkgs.get(pkg_name)
 
-        if pkg.get("type") == 'pip':
+        if pkg.type == PackageTypes.PIP:
             layer_dependencies.append({
-                "base_folder": pkg.get("fp"),
-                "pkg_name": pkg.get("pkg_name")
+                "base_folder": pkg.fp,
+                "pkg_name": pkg.pkg_name,
+                "id": pkg.get_id_str()
             })
 
             
 
-        elif pkg.get("type") == 'localpackage':
-            if cdev_paths.is_in_project(pkg.get("fp")):
-                if os.path.isdir(pkg.get("fp")):
+        elif pkg.type == PackageTypes.LOCALPACKAGE:
+            if cdev_paths.is_in_project(pkg.fp):
+                if os.path.isdir(pkg.fp):
 
                     #Get external dependencies in the folder
 
-                    for dir, _, files in os.walk(pkg.get("fp")):
+                    for dir, _, files in os.walk(pkg.fp):
                         if dir.split("/")[-1] in EXCLUDE_SUBDIRS:
                             continue
 
-                        handler_dependencies.extend([os.path.join( pkg.get("fp"), dir, x) for x in files])
+                        handler_dependencies = handler_dependencies.union(set([os.path.join( pkg.fp, dir, x) for x in files]))
                 else:
-                    handler_dependencies.append(pkg.get("fp"))
+                    handler_dependencies.add(pkg.fp)
             
-
        
-        for dependency in pkg.get("flat"):
-            if dependency[0] == pkg_name:
-                # The parent pkg if always included in the flat set
-                continue
+        if pkg.flat:
+            for dependency in pkg.flat:
 
-            if dependency[1] == 'pip':
-                layer_dependencies.append({
-                    "base_folder": dependency[2],
-                    "pkg_name": dependency[0]
-                })
-            elif dependency[1] == 'localpackage':
-                handler_dependencies.append({
-                    "base_folder": dependency[2]
-                })
+                if dependency.type == PackageTypes.PIP:
+                    layer_dependencies.append({
+                        "base_folder": dependency.fp,
+                        "pkg_name": dependency.pkg_name
+                    })
+                elif dependency.type == PackageTypes.LOCALPACKAGE:
+                    handler_dependencies.add( dependency.fp )
 
             
     rv = {
         "layer_dependencies": layer_dependencies,
-        "handler_dependencies": handler_dependencies
+        "handler_dependencies": list(handler_dependencies)
     }
 
 
@@ -247,7 +283,17 @@ def _make_intermediate_handler_zip(zip_archive_location: str, paths: List[str]) 
 
 
 
-def _make_layers_zips(zip_archive_location_directory, basename, needed_info) -> List[FilePath]:
+def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: str, needed_info: List[Dict]) -> Tuple[List[FilePath], str]:
+
+
+    _current_hash = cdev_hasher.hash_list([x.get("id") for x in needed_info])
+    
+    cache_item = LAYER_CACHE.find_item(_current_hash)
+    if cache_item:
+        print(f"CACHE HIT -> {basename} -> CURRENT DEPENDENCY HASH {_current_hash}")
+        return cache_item
+
+
     archives_made = set()
     archive_to_hashlist = {}
     layer_name = "layer1"
@@ -274,7 +320,8 @@ def _make_layers_zips(zip_archive_location_directory, basename, needed_info) -> 
                 file_name = os.path.split(info.get("base_folder"))[1]
                 # since this is a module that is just a single file plop in /python/<filename> and it will be on the pythonpath
                 zip_file_name = os.path.normpath( os.path.join('python', file_name))
-                zipfile.write(info.get("base_folder"), os.path.join(zip_dir_name, filename))
+                zipfile.write(info.get("base_folder"), os.path.join(zip_dir_name, zip_file_name))
+
                 archive_to_hashlist[layer_name]['hash'].append(cdev_hasher.hash_file(info.get("base_folder")))
 
 
@@ -301,7 +348,11 @@ def _make_layers_zips(zip_archive_location_directory, basename, needed_info) -> 
             'artifact_path': cdev_paths.get_relative_to_project_path( archive_to_hashlist.get(layer_name).get("artifact_path")),
             'hash': package_hash
         })
+    
+    total_archive_hash = cdev_hasher.hash_list(archive_to_hash)
 
-    return dependency_info, cdev_hasher.hash_list(archive_to_hash)
+    LAYER_CACHE.add_item(_current_hash, (dependency_info, total_archive_hash ))
+
+    return dependency_info, cdev_hasher.hash_list(total_archive_hash)
         
 
