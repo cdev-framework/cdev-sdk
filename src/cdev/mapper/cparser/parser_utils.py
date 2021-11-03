@@ -198,7 +198,18 @@ def _generate_global_statement(file_info_obj, node, line_info):
                     continue
 
             if isinstance(n, ast.ImportFrom):
-                #print(f"IMPORT FROM: {n}")
+                for imprt in n.names:
+                    if not imprt.asname:
+                        asname = imprt.name
+                    else:
+                        asname = imprt.asname
+
+                    imp_statement = ImportStatement(ast_node,
+                                                    [start_line, last_line],
+                                                    symbol_table, asname,
+                                                    n.module)
+
+                    file_info_obj.add_global_import(imp_statement)
                 continue
 
     global_statement_obj = GlobalStatement(ast_node, [start_line, last_line],

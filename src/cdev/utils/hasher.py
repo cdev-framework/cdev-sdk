@@ -10,6 +10,10 @@ cryptographically secure and should not be used for that. Instead, these functio
 that will be used to track changes throughout the system. 
 """
 
+class FILE_CACHE_CLASS:
+    cache = {}
+
+FILE_CACHE = FILE_CACHE_CLASS()
 
 def hash_list(val: List[str]) -> str:
     if not val:
@@ -22,19 +26,20 @@ def hash_string(val: str) -> str:
     return hashlib.md5(val.encode()).hexdigest() 
 
 
+def clear_file_cache():
+    FILE_CACHE.cache = {}
+
+
 def hash_file(fp: FilePath) -> str:
-    with open(fp, "r") as fh:
-        hash = hashlib.md5(fh.read().encode()).hexdigest()
+    if fp in FILE_CACHE.cache:
+        return FILE_CACHE.cache.get(fp)
 
-    return hash
-
-
-
-def hash_zipfile(fp: FilePath) -> str:
     with open(fp, "rb") as fh:
-        m = hashlib.md5()
-        data = fh.read()
-        m.update(data)
-        hash = m.hexdigest()
+        hash = hashlib.md5(fh.read()).hexdigest()
+
+    FILE_CACHE.cache[fp] = hash
 
     return hash
+
+
+

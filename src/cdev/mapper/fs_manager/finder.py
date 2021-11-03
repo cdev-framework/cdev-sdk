@@ -12,6 +12,7 @@ from cdev.models import Rendered_Resource
 from cdev.resources.simple.xlambda import simple_lambda
 
 from cdev.utils import hasher, paths, logger
+from cdev.settings import set_setting as set_cdev_setting
 
 from ..cparser import cdev_parser as cparser
 
@@ -36,6 +37,7 @@ def _find_resources_information_from_file(fp) -> List[Rendered_Resource]:
     if not os.path.isfile(fp):
         print("OH NO")
         return
+    set_cdev_setting("CURRENT_PARSING_DIR", os.path.dirname(fp))
 
     mod_name = _get_module_name_from_path(fp)
         
@@ -80,7 +82,7 @@ def _find_resources_information_from_file(fp) -> List[Rendered_Resource]:
             tmp = function_name_to_rendered_resource.get(parsed_function_name)
             tmp.src_code_hash = parsed_function_info.get(parsed_function_name).get("src_code_hash")
             
-            
+
             tmp.dependencies_info = parsed_function_info.get(parsed_function_name).get("dependencies_info")
             tmp.dependencies_hash = parsed_function_info.get(parsed_function_name).get("dependencies_hash")
 
@@ -115,6 +117,8 @@ def _create_serverless_function_resources(filepath: FilePath, functions_names_to
         
         cleaned_name = _clean_function_name(parsed_function.name)
         intermediate_path = fs_utils.get_parsed_path(filepath, cleaned_name)
+        
+        #print(parsed_function.needed_imports)
         
         src_code_hash, archive_path, base_handler_path, dependencies_info, dependencies_hash = writer.create_full_deployment_package(filepath, 
                                                                                 parsed_function.get_line_numbers_serializeable(), 

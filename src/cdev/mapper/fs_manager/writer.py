@@ -42,19 +42,20 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
     if pkgs:
         pkg_info = _create_package_dependencies_info(pkgs)
 
-    if pkg_info.get("handler_dependencies"):
-        # Copy the local dependencies files into the intermediate folder to make packaging easier
-        # All the local copied files are added to the set of files needed to be include in the .zip file uploaded as the handler
-        local_dependencies_intermediate_locations = _copy_local_dependencies(pkg_info.get("handler_dependencies"))
-        handler_files.extend(local_dependencies_intermediate_locations)
+        if pkg_info.get("handler_dependencies"):
+            # Copy the local dependencies files into the intermediate folder to make packaging easier
+            # All the local copied files are added to the set of files needed to be include in the .zip file uploaded as the handler
+            local_dependencies_intermediate_locations = _copy_local_dependencies(pkg_info.get("handler_dependencies"))
+            handler_files.extend(local_dependencies_intermediate_locations)
 
-    if pkg_info.get("layer_dependencies"):
-        dir = os.path.join(INTERMEDIATE_FOLDER, os.path.dirname(parsed_path))
-        
-        dependencies_info, dependencies_hash  = _make_layers_zips(dir, filename[:-3], pkg_info.get("layer_dependencies") )
-        
+        if pkg_info.get("layer_dependencies"):
+            dir = os.path.join(INTERMEDIATE_FOLDER, os.path.dirname(parsed_path))
 
+            dependencies_info, dependencies_hash  = _make_layers_zips(dir, filename[:-3], pkg_info.get("layer_dependencies") )
         
+        else:
+            dependencies_info = None
+            dependencies_hash= None
     else:
         dependencies_info = None
         dependencies_hash= None
@@ -79,6 +80,8 @@ def _create_package_dependencies_info(pkgs) -> Dict:
                 "pkg_name": pkg.get("pkg_name")
             })
 
+            
+
         elif pkg.get("type") == 'localpackage':
             if cdev_paths.is_in_project(pkg.get("fp")):
                 if os.path.isdir(pkg.get("fp")):
@@ -92,6 +95,24 @@ def _create_package_dependencies_info(pkgs) -> Dict:
                         handler_dependencies.extend([os.path.join( pkg.get("fp"), dir, x) for x in files])
                 else:
                     handler_dependencies.append(pkg.get("fp"))
+            
+
+       
+        for dependency in pkg.get("flat"):
+            if dependency[0] == pkg_name:
+                # The parent pkg if always included in the flat set
+                continue
+
+            if dependency[1] == 'pip':
+                layer_dependencies.append({
+                    "base_folder": dependency[2],
+                    "pkg_name": dependency[0]
+                })
+            elif dependency[1] == 'localpackage':
+                handler_dependencies.append({
+                    "base_folder": dependency[2]
+                })
+
             
     rv = {
         "layer_dependencies": layer_dependencies,
@@ -230,9 +251,13 @@ def _make_layers_zips(zip_archive_location_directory, basename, needed_info) -> 
     archives_made = set()
     archive_to_hashlist = {}
     layer_name = "layer1"
-    for info in needed_info:
-        zip_archive_full_path = os.path.join(zip_archive_location_directory,  basename +"_" + layer_name  + ".zip" )
+    zip_archive_full_path = os.path.join(zip_archive_location_directory,  basename +"_" + layer_name  + ".zip" )
 
+    if os.path.isfile(zip_archive_full_path):
+        os.remove(zip_archive_full_path)
+
+    for info in needed_info:
+        
         if not zip_archive_full_path in archives_made:
             archives_made.add(zip_archive_full_path)
             archive_to_hashlist[layer_name] = {
@@ -240,17 +265,30 @@ def _make_layers_zips(zip_archive_location_directory, basename, needed_info) -> 
                 "hash": []
             }
 
-        with ZipFile(zip_archive_full_path, 'w') as zipfile:
-            for dirname, subdirs, files in os.walk(info.get("base_folder")):
-                if dirname.split("/")[-1] in EXCLUDE_SUBDIRS:
-                    continue
+        
 
-                zip_dir_name = os.path.normpath( os.path.join('python', info.get("pkg_name") , os.path.relpath(dirname , info.get("base_folder") ) ) )
 
-                for filename in files:
-                    original_path = os.path.join(dirname, filename)
-                    zipfile.write(original_path, os.path.join(zip_dir_name, filename))
-                    archive_to_hashlist[layer_name]['hash'].append(cdev_hasher.hash_file(original_path))
+        with ZipFile(zip_archive_full_path, 'a') as zipfile:
+            if os.path.isfile(info.get("base_folder")):
+                # this is a single python file not a folder (ex: six.py)
+                file_name = os.path.split(info.get("base_folder"))[1]
+                # since this is a module that is just a single file plop in /python/<filename> and it will be on the pythonpath
+                zip_file_name = os.path.normpath( os.path.join('python', file_name))
+                zipfile.write(info.get("base_folder"), os.path.join(zip_dir_name, filename))
+                archive_to_hashlist[layer_name]['hash'].append(cdev_hasher.hash_file(info.get("base_folder")))
+
+
+            else:
+                for dirname, subdirs, files in os.walk(info.get("base_folder")):
+                    if dirname.split("/")[-1] in EXCLUDE_SUBDIRS:
+                        continue
+                    
+                    zip_dir_name = os.path.normpath( os.path.join('python', info.get("pkg_name") , os.path.relpath(dirname , info.get("base_folder") ) ) )
+    
+                    for filename in files:
+                        original_path = os.path.join(dirname, filename)
+                        zipfile.write(original_path, os.path.join(zip_dir_name, filename))
+                        archive_to_hashlist[layer_name]['hash'].append(cdev_hasher.hash_file(original_path))
 
     archive_to_hash = []
     dependency_info = []
