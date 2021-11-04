@@ -1,7 +1,9 @@
+from typing import List
 import docker
 from pkg_resources import EntryPoint
 from cdev.settings import SETTINGS as CDEV_SETTINGS
 import os
+import json
 from pkg_resources import Distribution
 
 from .utils import PackageTypes,PackageInfo
@@ -28,14 +30,55 @@ def docker_available() -> bool:
     return True
 
 
+CACHE_LOCATION = os.path.join(CDEV_SETTINGS.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), "dockercache.json")
+
+class DockerDownloadCache:
+    """
+    Naive cache implentation for know which files have been downloaded.  
+    """
+
+    def __init__(self) -> None:
+
+        if not os.path.isfile(CACHE_LOCATION):
+            self._cache = {}
+
+        else:
+
+            with open(CACHE_LOCATION) as fh:
+                self._cache = json.load(fh)
+
+
+    def find_item(self, id: str):
+        raw_data = self._cache.get(id)
+        if raw_data:
+
+            return PackageInfo(**raw_data)
+        else:
+            None
+
+
+    def add_item(self, id: str, item: PackageInfo):
+        self._cache[id] = item.dict()
+
+        with open(CACHE_LOCATION, "w") as fh:
+            json.dump(self._cache, fh, indent=4)
+
+
+DOWNLOAD_CACHE = DockerDownloadCache()
+
+
 def download_package(pkg: Distribution, pkg_name: str, unmodified_pkg_name: str):
+    cache_item = DOWNLOAD_CACHE.find_item(pkg.project_name)
+    if cache_item:
+        #print(f"CACHE HIT -> {pkg.project_name} -> {cache_item}")
+        return cache_item 
+    
     print(f"DOWNLOADING {pkg} FROM DOCKER")
     client =  docker.from_env()
 
     client.images.pull("public.ecr.aws/lambda/python:3.8-arm64")
     
     print(f"PULLED IMAGE")
-    print(f"RUNNING AS {os.getuid()}")
 
     container = client.containers.run("public.ecr.aws/lambda/python:3.8-arm64",
                         entrypoint="/var/lang/bin/pip", 
@@ -45,33 +88,103 @@ def download_package(pkg: Distribution, pkg_name: str, unmodified_pkg_name: str)
                         user=os.getuid()
                     )
 
-
     for x in container.logs(stream=True):
-        print("------")
         msg = x.decode('ascii')
         print(msg)
-        if 'Downloading' in msg:
-
-            try:
-                package_name, version = tuple(msg.split(" ")[1].split("-")[:2])
-                print(f"DOWNLOADED -> {package_name}; {version}")
-            except Exception:
-                continue
-
-            
-            
-
-    rv = PackageInfo(
-            pkg_name = unmodified_pkg_name,
-            type = PackageTypes.PIP ,
-            version_id = pkg.version,
-            fp = os.path.join(PACKAGING_DIR, pkg_name)
-        )
+    
 
 
+    info = _create_package_info(pkg.project_name)
 
-    return rv
+    return info
 
     
 
+
+def _create_package_info(project_name: str) -> PackageInfo:
+    cache_item = DOWNLOAD_CACHE.find_item(project_name)
+    if cache_item:
+        print(f"CACHE HIT -> {project_name} -> {cache_item}")
+        return cache_item 
+
+
+    for file in os.listdir(PACKAGING_DIR):
+        if not file[-9:] == "dist-info":
+            continue
+
+        if file.split("-")[0] == project_name.replace("-", "_") and file.split("-")[2] == "info":
+            # This is the dist info folder for the pkg
+            dist_info_dir = file
+
+
+    if not os.path.isdir(os.path.join(PACKAGING_DIR,dist_info_dir)):
+        raise Exception
+
+    if not os.path.isfile(os.path.join(PACKAGING_DIR,dist_info_dir, "METADATA")):
+        raise Exception
+
     
+    # The project name might not always be the same as the top level module name used when importing the project
+    if not os.path.isfile(os.path.join(PACKAGING_DIR,dist_info_dir, "top_level.txt")):
+        pkg_name = project_name
+
+    else:
+        with open(os.path.join(PACKAGING_DIR,dist_info_dir, "top_level.txt")) as fh:
+            pkg_name = fh.readline().strip()
+
+
+    required_packages = []
+    current_package_version = ''
+    with open(os.path.join(PACKAGING_DIR,dist_info_dir, "METADATA")) as fh:
+        lines = fh.readlines()
+
+        for line in lines:
+            if not line:
+                break
+
+            if line.split(":")[0] == "Version":
+                current_package_version = line.split(":")[1].strip()
+
+            if line.split(":")[0] == "Requires-Dist":
+                required_info = line.split(":")[1]
+
+                if len(required_info.split(";")) > 1:
+                    # https://packaging.python.org/specifications/core-metadata/#provides-extra-multiple-use
+                    # This line has an extra tag and should not be included
+                    continue
+
+                required_packages.append(line.split(":")[1].strip().split(" ")[0])
+        
+    # The package could be either a folder (normal case) or a single python file (ex: 'six' package)
+    # If it can not be found as either than there is an issue
+    potential_dir = os.path.join(PACKAGING_DIR, pkg_name)
+    potential_file = os.path.join(PACKAGING_DIR, pkg_name+".py")
+    
+
+    if os.path.isdir(potential_dir):
+        tmp_fp = potential_dir
+
+    elif os.path.isfile(potential_file):
+        tmp_fp = potential_file
+
+    info = PackageInfo(**{
+        "pkg_name": pkg_name,
+        "type": PackageTypes.PIP,
+        "version_id": current_package_version,
+        "fp": tmp_fp
+    })
+
+    tmp_flat_requirements = []
+
+
+    for required_package in required_packages:
+        dependent_pkg_info = _create_package_info(required_package)
+        tmp_flat_requirements.extend(dependent_pkg_info.flat)
+        tmp_flat_requirements.append(dependent_pkg_info)
+
+
+    info.set_flat(tmp_flat_requirements)    
+
+    DOWNLOAD_CACHE.add_item(project_name, info)
+
+    return info

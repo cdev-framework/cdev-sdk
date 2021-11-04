@@ -1,8 +1,10 @@
 import os
 from sys import version_info
-from typing import List, Set
+from typing import List, Optional, Set
 
 from pydantic.types import FilePath
+from pydantic import BaseModel
+from enum import Enum
 
 from cdev.settings import SETTINGS as cdev_settings
 from cdev.utils import paths as cdev_paths, hasher as cdev_hasher
@@ -73,7 +75,7 @@ def get_parsed_path(original_path, function_name, prefix=None):
     return os.path.join(final_file_dir, final_file_name)
 
 
-class PackageTypes:
+class PackageTypes(str, Enum):
     BUILTIN = "builtin"
     STANDARDLIB = "standardlib"
     PIP = "pip"
@@ -81,21 +83,14 @@ class PackageTypes:
     AWSINCLUDED = "awsincluded"
 
 
-class PackageInfo:
-    def __init__(self, pkg_name: str, type: PackageTypes, version_id: str=None , fp: FilePath=None ) -> None:
-        self.pkg_name = pkg_name
-        self.type = type
-        self.version_id = version_id
-        self.fp = fp
-        self.tree = None
-        self.flat = None
+class PackageInfo(BaseModel):
+    pkg_name: str
+    type: PackageTypes
+    version_id: Optional[str]
+    fp: Optional[str]
+    flat: Optional[List['PackageInfo']]
 
-
-    def set_tree(self, tree: List):
-        self.tree = tree
-
-    
-    def set_flat(self, flat: Set['PackageInfo']):
+    def set_flat(self, flat: List['PackageInfo']):
         self.flat = flat
 
 
@@ -116,6 +111,11 @@ class PackageInfo:
     def __str__(self) -> str:
         return self.get_id_str()
 
+    def __repr__(self) -> str:
+        return f"{self.get_id_str()}"
+
 
     def __hash__(self) -> int:
         return int(cdev_hasher.hash_string(self.get_id_str()), base=16)
+
+PackageInfo.update_forward_refs()

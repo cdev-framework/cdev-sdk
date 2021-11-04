@@ -40,7 +40,6 @@ INCOMPATIBLE_LIBRARIES = set()
 
 def is_platform_compatible(tags: List[str]) -> bool:
     # https://packaging.python.org/specifications/platform-compatibility-tags/
-    # PEP 425
     # PEP 600
     LEGACY_ALIASES = {
         "manylinux1_x86_64": "manylinux_2_5_x86_64",
@@ -143,11 +142,12 @@ def get_package_info(pkg_name) -> Dict[str, PackageInfo]:
 
 
 def create_package_info(pkg_name) -> PackageInfo:
-
+    
     pkg_info =  _recursive_create_package_info(pkg_name)
 
     if pkg_info.flat:
-        pkg_info.flat.remove(pkg_info)
+        if pkg_info in pkg_info.flat:
+            pkg_info.flat.remove(pkg_info)
 
     return pkg_info
 
@@ -172,9 +172,6 @@ def _recursive_create_package_info(unmodified_pkg_name: str) -> PackageInfo:
         pkg_name = DIFF_PROJECT_TO_TOP.get(unmodified_pkg_name, unmodified_pkg_name)
         
         
-        
-        
-
         if pkg_name in standard_lib_info:
             tmp_type = PackageTypes.STANDARDLIB 
             tmp_fp = None
@@ -235,16 +232,17 @@ def _recursive_create_package_info(unmodified_pkg_name: str) -> PackageInfo:
                 print("BAADDD")
                 raise Exception
 
-        rv = PackageInfo(
-            pkg_name = unmodified_pkg_name,
-            type =  tmp_type,
-            version_id = tmp_version,
-            fp = tmp_fp
-        )
         
-        dependency_tree, dependencies_flat = _recursive_check_for_dependencies(rv)
+        rv = PackageInfo(**{
+            "pkg_name": unmodified_pkg_name,
+            "type":  tmp_type,
+            "version_id": tmp_version,
+            "fp": tmp_fp
+        })
+        
+        dependencies_flat = _recursive_check_for_dependencies(rv)
 
-        rv.set_tree(dependency_tree)
+        
         rv.set_flat(dependencies_flat)
 
         PACKAGE_CACHE[pkg_name] = rv
@@ -252,10 +250,10 @@ def _recursive_create_package_info(unmodified_pkg_name: str) -> PackageInfo:
         return rv
 
 
-def _recursive_check_for_dependencies(pkg: PackageInfo) -> Tuple[List, List]:
+def _recursive_check_for_dependencies(pkg: PackageInfo) -> Set[PackageInfo]:
 
     if pkg.type == PackageTypes.BUILTIN or pkg.type == PackageTypes.STANDARDLIB or pkg.type == PackageTypes.AWSINCLUDED:
-        return None,None
+        return {}
 
     if pkg.type == PackageTypes.PIP:
         
@@ -271,38 +269,38 @@ def _recursive_check_for_dependencies(pkg: PackageInfo) -> Tuple[List, List]:
         item = PKG_NAME_TO_PIP_PKG.get(pkg_name)
 
         
-        tmp_flat = set([pkg])
-        tmp_tree = []
+        tmp_flat = set()
+        
 
         for req in item.requires():
-            tmp = _recursive_create_package_info(req.key)
+            tmp_dep = _recursive_create_package_info(req.key)
 
-            tmp_tree.append(tmp)
-            if tmp.flat:
-                print(tmp.flat)
-                tmp_flat = tmp_flat.union(set(tmp.flat))
+            tmp_flat.add(tmp_dep)
+            if tmp_dep.flat:
+                
+                tmp_flat = tmp_flat.union(set(tmp_dep.flat))
 
-        return tmp_tree, tmp_flat
+        return tmp_flat
 
     if pkg.type == PackageTypes.LOCALPACKAGE:
         
-        tmp_flat = set([pkg])
-        tmp_tree = []
+        tmp_flat = set()
+        
 
         required_items = _get_local_package_dependencies(pkg)
         
 
         for req in required_items:
-            tmp = _recursive_create_package_info(req)
+            tmp_dep = _recursive_create_package_info(req)
 
-            tmp_tree.append(tmp)
-            if tmp.flat:
-                print(tmp.flat)
-                tmp_flat = tmp_flat.union(set(tmp.flat))
+            tmp_flat.add(tmp_dep)
+            if tmp_dep.flat:
+                
+                tmp_flat = tmp_flat.union(set(tmp_dep.flat))
 
-        return tmp_tree, tmp_flat
+        return tmp_flat
 
-    return None, None
+    return {}
 
 
     

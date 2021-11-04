@@ -16,7 +16,7 @@ import shutil
 INTERMEDIATE_FOLDER = cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION")
 EXCLUDE_SUBDIRS = {"__pycache__"}
 
-CACHE_LOCATION = os.path.join(cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), "cache.json")
+CACHE_LOCATION = os.path.join(cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), "writercache.json")
 
 
 class LayerWriterCache:
@@ -43,7 +43,7 @@ class LayerWriterCache:
         self._cache[id] = item
 
         with open(CACHE_LOCATION, "w") as fh:
-            json.dump(self._cache, fh)
+            json.dump(self._cache, fh, indent=4)
 
 LAYER_CACHE = LayerWriterCache()
 
@@ -77,7 +77,7 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
     if pkgs:
 
         pkg_info = _create_package_dependencies_info(pkgs)
-
+    
         if pkg_info.get("handler_dependencies"):
             # Copy the local dependencies files into the intermediate folder to make packaging easier
             # All the local copied files are added to the set of files needed to be include in the .zip file uploaded as the handler
@@ -142,7 +142,8 @@ def _create_package_dependencies_info(pkgs: Dict[str, PackageInfo]) -> Dict:
                 if dependency.type == PackageTypes.PIP:
                     layer_dependencies.append({
                         "base_folder": dependency.fp,
-                        "pkg_name": dependency.pkg_name
+                        "pkg_name": dependency.pkg_name,
+                        "id": dependency.get_id_str()
                     })
                 elif dependency.type == PackageTypes.LOCALPACKAGE:
                     handler_dependencies.add( dependency.fp )
@@ -288,7 +289,7 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
     
     cache_item = LAYER_CACHE.find_item(_current_hash)
     if cache_item:
-        print(f"CACHE HIT -> {basename} -> CURRENT DEPENDENCY HASH {_current_hash}")
+        #print(f"CACHE HIT -> {basename} -> CURRENT DEPENDENCY HASH {_current_hash}")
         return cache_item
 
 
@@ -311,11 +312,14 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
 
         with ZipFile(zip_archive_full_path, 'a') as zipfile:
             if os.path.isfile(info.get("base_folder")):
+                
+
                 # this is a single python file not a folder (ex: six.py)
                 file_name = os.path.split(info.get("base_folder"))[1]
                 # since this is a module that is just a single file plop in /python/<filename> and it will be on the pythonpath
-                zip_file_name = os.path.normpath( os.path.join('python', file_name))
-                zipfile.write(info.get("base_folder"), os.path.join(zip_dir_name, zip_file_name))
+
+                zipfile.write(info.get("base_folder"), os.path.join('python', file_name))
+                #print(f"ZIPPING INDIVIDUAL FILE {info}, FROM {info.get('base_folder')} TO {os.path.join('python', file_name)}")
 
                 archive_to_hashlist[layer_name]['hash'].append(cdev_hasher.hash_file(info.get("base_folder")))
 
@@ -331,6 +335,25 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
                         original_path = os.path.join(dirname, filename)
                         zipfile.write(original_path, os.path.join(zip_dir_name, filename))
                         archive_to_hashlist[layer_name]['hash'].append(cdev_hasher.hash_file(original_path))
+
+                pkg_dir = os.path.dirname(info.get("base_folder"))
+                for obj in os.listdir(pkg_dir):
+                    if os.path.join(pkg_dir, obj) == info.get("base_folder"):
+                        continue
+
+                    if os.path.isdir(os.path.join(pkg_dir, obj)) and obj.split(".")[0] == os.path.split(info.get("base_folder"))[1]:
+                        print(f"ALSO INCLUDE {obj} for {info}")
+                        for dirname, subdirs, files in os.walk( os.path.join(pkg_dir, obj) ):
+                            if dirname.split("/")[-1] in EXCLUDE_SUBDIRS:
+                                continue
+                            
+                            zip_dir_name = os.path.normpath( os.path.join('python', obj , os.path.relpath(dirname , os.path.join(pkg_dir, obj) ) ) )
+
+                            for filename in files:
+                                original_path = os.path.join(dirname, filename)
+                                zipfile.write(original_path, os.path.join(zip_dir_name, filename))
+                                archive_to_hashlist[layer_name]['hash'].append(cdev_hasher.hash_file(original_path))
+                        
 
     archive_to_hash = []
     dependency_info = []
