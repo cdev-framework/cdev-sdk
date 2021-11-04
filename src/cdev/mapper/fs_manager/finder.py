@@ -118,13 +118,6 @@ def _create_serverless_function_resources(filepath: FilePath, functions_names_to
         cleaned_name = _clean_function_name(parsed_function.name)
         intermediate_path = fs_utils.get_parsed_path(filepath, cleaned_name)
         
-        print("<<<<<<<<<<<<<<<<<<<")
-        print(parsed_function.needed_imports)
-        for pkg_nm, pkg in parsed_function.needed_imports.items():
-            
-            if pkg.flat:
-                print(f"{pkg.get_id_str()} -> {[x.get_id_str() for x in pkg.flat]}")
-        print(">>>>>>>>>>>>>>>>>>>")
         
         src_code_hash, archive_path, base_handler_path, dependencies_info, dependencies_hash = writer.create_full_deployment_package(filepath, 
                                                                                 parsed_function.get_line_numbers_serializeable(), 

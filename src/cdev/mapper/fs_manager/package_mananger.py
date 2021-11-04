@@ -6,7 +6,6 @@ from zipfile import ZipFile
 from typing import List, Set, Dict, Tuple
 import re
 
-from pydantic.types import FilePath
 
 
 from cdev.settings import SETTINGS as CDEV_SETTINGS
@@ -15,6 +14,9 @@ from ..cparser import cdev_parser
 
 from packaging.utils import canonicalize_name
 from sysconfig import get_platform
+
+from . import docker_package_builder
+from .utils import PackageTypes,PackageInfo
 
 # Keep cache of already seen package names
 PACKAGE_CACHE = {}
@@ -32,7 +34,7 @@ PKG_NAME_TO_PIP_PKG = {}
 
 DIFF_PROJECT_TO_TOP = {}
 
-DEPLOYMENT_PLATFORM = "x86_64"
+DEPLOYMENT_PLATFORM = CDEV_SETTINGS.get("DEPLOYMENT_PLATFORM")
 
 INCOMPATIBLE_LIBRARIES = set()
 
@@ -106,7 +108,7 @@ for f in pkg_resources.working_set:
     
         continue
 
-    #print(f"{f} -> {f.platform}")
+    #print(f"{f} -> {f.version}")
     with open(toplevel_file_location) as fh:
         pkg_python_name = fh.readline().strip()
         PKG_NAME_TO_PIP_PKG[pkg_python_name] = f
@@ -127,52 +129,7 @@ for f in pkg_resources.working_set:
 
 
 
-class PackageTypes:
-    BUILTIN = "builtin"
-    STANDARDLIB = "standardlib"
-    PIP = "pip"
-    LOCALPACKAGE = "localpackage"
-    AWSINCLUDED = "awsincluded"
 
-
-class PackageInfo:
-    def __init__(self, pkg_name: str, type: PackageTypes, version_id: str=None , fp: FilePath=None ) -> None:
-        self.pkg_name = pkg_name
-        self.type = type
-        self.version_id = version_id
-        self.fp = fp
-        self.tree = None
-        self.flat = None
-
-
-    def set_tree(self, tree: List):
-        self.tree = tree
-
-    
-    def set_flat(self, flat: Set['PackageInfo']):
-        self.flat = flat
-
-
-    def get_id_str(self) -> str:
-        if self.type == PackageTypes.LOCALPACKAGE:
-            if os.path.isfile(self.fp):
-                return f"{self.pkg_name}-{self.fp}-{cdev_hasher.hash_file(self.fp)}"
-
-            else:
-                return f"{self.pkg_name}-{self.fp}"
-
-        elif self.type == PackageTypes.PIP:
-            return f"{self.pkg_name}-{self.version_id}"
-
-        else:
-            return self.pkg_name
-
-    def __str__(self) -> str:
-        return self.get_id_str()
-
-
-    def __hash__(self) -> int:
-        return int(cdev_hasher.hash_string(self.get_id_str()), base=16)
 
 
 def get_package_info(pkg_name) -> Dict[str, PackageInfo]:
@@ -215,7 +172,7 @@ def _recursive_create_package_info(unmodified_pkg_name: str) -> PackageInfo:
         pkg_name = DIFF_PROJECT_TO_TOP.get(unmodified_pkg_name, unmodified_pkg_name)
         
         
-        mod = sys.modules.get(pkg_name)
+        
         
 
         if pkg_name in standard_lib_info:
@@ -229,27 +186,38 @@ def _recursive_create_package_info(unmodified_pkg_name: str) -> PackageInfo:
             tmp_version = None
 
         elif pkg_name in pip_packages:
+            tmp_type = PackageTypes.PIP
+            tmp_version = pip_packages.get(pkg_name).version
+
             if pkg_name in INCOMPATIBLE_LIBRARIES:
+                if CDEV_SETTINGS.get("PULL_INCOMPATIBLE_LIBRARIES"):
+                    if docker_package_builder.docker_available():
+                        rv = docker_package_builder.download_package(pip_packages.get(pkg_name), pkg_name, unmodified_pkg_name)
+                        return rv
+
+                    else:
+                        raise Exception
+
+
                 raise Exception
 
-            tmp_type = PackageTypes.PIP
             # The package could be either a folder (normal case) or a single python file (ex: 'six' package)
             # If it can not be found as either than there is an issue
             potential_dir = os.path.join(pip_packages.get(pkg_name).location, pkg_name)
             potential_file = os.path.join(pip_packages.get(pkg_name).location, pkg_name+".py")
-
-            tmp_version = pip_packages.get(pkg_name).version
+           
 
             if os.path.isdir(potential_dir):
                 tmp_fp = potential_dir
 
-            elif os.path.isfile( potential_file):
+            elif os.path.isfile(potential_file):
                 tmp_fp = potential_file
 
             else:
                 raise Exception
 
         else:
+            mod = sys.modules.get(pkg_name)
             if mod:
                 if not mod.__file__:
                     tmp_type = PackageTypes.BUILTIN

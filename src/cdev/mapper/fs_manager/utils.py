@@ -1,9 +1,11 @@
 import os
 from sys import version_info
-from typing import List
+from typing import List, Set
+
+from pydantic.types import FilePath
 
 from cdev.settings import SETTINGS as cdev_settings
-from cdev.utils import paths as cdev_paths
+from cdev.utils import paths as cdev_paths, hasher as cdev_hasher
 
 INTERMEDIATE_FOLDER = cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION")
 
@@ -71,4 +73,49 @@ def get_parsed_path(original_path, function_name, prefix=None):
     return os.path.join(final_file_dir, final_file_name)
 
 
+class PackageTypes:
+    BUILTIN = "builtin"
+    STANDARDLIB = "standardlib"
+    PIP = "pip"
+    LOCALPACKAGE = "localpackage"
+    AWSINCLUDED = "awsincluded"
 
+
+class PackageInfo:
+    def __init__(self, pkg_name: str, type: PackageTypes, version_id: str=None , fp: FilePath=None ) -> None:
+        self.pkg_name = pkg_name
+        self.type = type
+        self.version_id = version_id
+        self.fp = fp
+        self.tree = None
+        self.flat = None
+
+
+    def set_tree(self, tree: List):
+        self.tree = tree
+
+    
+    def set_flat(self, flat: Set['PackageInfo']):
+        self.flat = flat
+
+
+    def get_id_str(self) -> str:
+        if self.type == PackageTypes.LOCALPACKAGE:
+            if os.path.isfile(self.fp):
+                return f"{self.pkg_name}-{self.fp}-{cdev_hasher.hash_file(self.fp)}"
+
+            else:
+                return f"{self.pkg_name}-{self.fp}"
+
+        elif self.type == PackageTypes.PIP:
+            return f"{self.pkg_name}-{self.version_id}"
+
+        else:
+            return self.pkg_name
+
+    def __str__(self) -> str:
+        return self.get_id_str()
+
+
+    def __hash__(self) -> int:
+        return int(cdev_hasher.hash_string(self.get_id_str()), base=16)

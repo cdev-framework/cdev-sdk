@@ -5,7 +5,7 @@ import os
 from pydantic.types import DirectoryPath, FilePath
 
 from . import utils as fs_utils
-from .package_mananger import PackageInfo, PackageTypes
+from .utils import PackageTypes,PackageInfo
 
 from zipfile import ZipFile
 from cdev.settings import SETTINGS as cdev_settings
@@ -75,19 +75,17 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
     zip_archive_location = os.path.join(os.path.dirname(parsed_path), filename[:-3] + ".zip")
 
     if pkgs:
-        print("-----------------")
-        print(pkgs)
+
         pkg_info = _create_package_dependencies_info(pkgs)
 
         if pkg_info.get("handler_dependencies"):
             # Copy the local dependencies files into the intermediate folder to make packaging easier
             # All the local copied files are added to the set of files needed to be include in the .zip file uploaded as the handler
-            print(pkg_info.get("handler_dependencies"))
+
             local_dependencies_intermediate_locations = _copy_local_dependencies(pkg_info.get("handler_dependencies"))
             handler_files.extend(local_dependencies_intermediate_locations)
 
         if pkg_info.get("layer_dependencies"):
-            print(pkg_info.get("layer_dependencies"))
             dir = os.path.join(INTERMEDIATE_FOLDER, os.path.dirname(parsed_path))
 
             dependencies_info, dependencies_hash  = _make_layers_zips(dir, filename[:-3], pkg_info.get("layer_dependencies") )
@@ -310,9 +308,6 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
                 "artifact_path": zip_archive_full_path,
                 "hash": []
             }
-
-        
-
 
         with ZipFile(zip_archive_full_path, 'a') as zipfile:
             if os.path.isfile(info.get("base_folder")):
