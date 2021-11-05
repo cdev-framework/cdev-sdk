@@ -119,3 +119,26 @@ class PackageInfo(BaseModel):
         return int(cdev_hasher.hash_string(self.get_id_str()), base=16)
 
 PackageInfo.update_forward_refs()
+
+
+class lambda_python_environments(str, Enum):
+    py36 = "py36"
+    py37 = "py37"
+    py38_x86_64 = "py38-x86_64"
+    py38_arm64 = "py38-arm64"
+    py39_x86_64 = " py39-x86_64"
+    py39_arm64 = "py39-arm64"
+    py3_x86_64 = "py3-x86_64"
+    py3_arm64 = "py3-arm64"
+
+
+CONTAINER_NAMES = {
+    lambda_python_environments.py36: "public.ecr.aws/lambda/python:3.6",
+    lambda_python_environments.py37: "public.ecr.aws/lambda/python:3.7",
+    lambda_python_environments.py38_x86_64: "public.ecr.aws/lambda/python:3.8-x86_64",
+    lambda_python_environments.py38_arm64: "public.ecr.aws/lambda/python:3.8-arm64",
+    lambda_python_environments.py39_x86_64: "public.ecr.aws/lambda/python:3.9-x86_64",
+    lambda_python_environments.py39_arm64: "public.ecr.aws/lambda/python:3.9-arm64",
+    lambda_python_environments.py3_x86_64: "public.ecr.aws/lambda/python:3-x86_64",
+    lambda_python_environments.py3_arm64: "public.ecr.aws/lambda/python:3-arm64",   
+}

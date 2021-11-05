@@ -9,6 +9,7 @@ from cdev.output import print_deployment_step
 
 
 from ..aws import aws_client as raw_aws_client
+from boto3.s3.transfer import TransferConfig
 
 
 from .lambda_event_deployer import EVENT_TO_HANDLERS
@@ -134,9 +135,10 @@ def _upload_s3_code_artifact(resource: simple_lambda.simple_aws_lambda_function_
         object_args = {
             "Bucket": BUCKET,
             "Key": keyname,
-            "Body": fh.read()
+            "Body": fh.read(),
+
         }
-        raw_aws_client.run_client_function("s3", "put_object", object_args)
+        raw_aws_client.run_client_function("s3", "upload_file", object_args)
 
     return keyname
 
@@ -188,16 +190,20 @@ def _upload_s3_dependency(resource: simple_lambda.simple_aws_lambda_function_mod
         log.error(f"bad archive local path given {zip_location}")
         raise Exception
 
+    config = TransferConfig(multipart_threshold=1024*25, max_concurrency=10,
+                        multipart_chunksize=1024*25, use_threads=True)
 
 
     log.debug(f"upload artifact to s3")
-    with open(zip_location, "rb") as fh:
-        object_args = {
-            "Bucket": BUCKET,
-            "Key": keyname,
-            "Body": fh.read()
-        }
-        raw_aws_client.run_client_function("s3", "put_object", object_args)
+    
+    object_args = {
+        "Bucket": BUCKET,
+        "Key": keyname,
+        "Filename": zip_location,
+        "Callback": lambda x: print(x),
+        "Config": config,
+    }
+    raw_aws_client.run_client_function("s3", "upload_file", object_args)
 
     return keyname
 

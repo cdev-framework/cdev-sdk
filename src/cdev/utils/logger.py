@@ -22,8 +22,8 @@ class cdev_logger:
 
         fp = log_info.get("handlers").get("fileHandler").get("filename")
         if not os.path.isfile(fp):
-            os.mkdir(os.path.dirname(os.path.dirname(fp)))
-            os.mkdir(os.path.dirname(fp))
+            #os.mkdir(os.path.dirname(os.path.dirname(fp)))
+            #os.mkdir(os.path.dirname(fp))
 
             with open(fp, 'a'):
                 os.utime(fp,None)

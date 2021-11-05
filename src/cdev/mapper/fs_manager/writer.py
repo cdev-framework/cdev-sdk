@@ -3,6 +3,7 @@ from ast import parse
 import os
 
 from pydantic.types import DirectoryPath, FilePath
+from sortedcontainers.sorteddict import SortedDict
 
 from . import utils as fs_utils
 from .utils import PackageTypes,PackageInfo
@@ -86,6 +87,7 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
             handler_files.extend(local_dependencies_intermediate_locations)
 
         if pkg_info.get("layer_dependencies"):
+            print([x.get("id") for x in pkg_info.get("layer_dependencies")])
             dir = os.path.join(INTERMEDIATE_FOLDER, os.path.dirname(parsed_path))
 
             dependencies_info, dependencies_hash  = _make_layers_zips(dir, filename[:-3], pkg_info.get("layer_dependencies") )
@@ -283,13 +285,14 @@ def _make_intermediate_handler_zip(zip_archive_location: str, paths: List[str]) 
 
 
 def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: str, needed_info: List[Dict]) -> Tuple[List[FilePath], str]:
+    ids = [x.get("id") for x in needed_info]
+    ids.sort()
 
-
-    _current_hash = cdev_hasher.hash_list([x.get("id") for x in needed_info])
-    
+    _current_hash = cdev_hasher.hash_list(ids)
+    print(ids)    
     cache_item = LAYER_CACHE.find_item(_current_hash)
     if cache_item:
-        #print(f"CACHE HIT -> {basename} -> CURRENT DEPENDENCY HASH {_current_hash}")
+        print(f"CACHE HIT -> {basename} -> CURRENT DEPENDENCY HASH {_current_hash}")
         return cache_item
 
 
@@ -297,11 +300,17 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
     archive_to_hashlist = {}
     layer_name = "layer1"
     zip_archive_full_path = os.path.join(zip_archive_location_directory,  basename +"_" + layer_name  + ".zip" )
+    seen_pkgs = set()
 
     if os.path.isfile(zip_archive_full_path):
         os.remove(zip_archive_full_path)
 
     for info in needed_info:
+        print(f"------------{info.get('id')} ------------")
+        if info.get("id") in seen_pkgs:
+            continue
+
+        seen_pkgs.add(info.get("id"))
         
         if not zip_archive_full_path in archives_made:
             archives_made.add(zip_archive_full_path)
@@ -325,11 +334,14 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
 
 
             else:
+                print(f"Walking -> {info.get('base_folder')}")
+                pkg_name = os.path.split(info.get('base_folder'))[1]
+
                 for dirname, subdirs, files in os.walk(info.get("base_folder")):
                     if dirname.split("/")[-1] in EXCLUDE_SUBDIRS:
                         continue
                     
-                    zip_dir_name = os.path.normpath( os.path.join('python', info.get("pkg_name") , os.path.relpath(dirname , info.get("base_folder") ) ) )
+                    zip_dir_name = os.path.normpath( os.path.join('python', pkg_name , os.path.relpath(dirname , info.get("base_folder") ) ) )
     
                     for filename in files:
                         original_path = os.path.join(dirname, filename)

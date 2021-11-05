@@ -16,7 +16,7 @@ from packaging.utils import canonicalize_name
 from sysconfig import get_platform
 
 from . import docker_package_builder
-from .utils import PackageTypes,PackageInfo
+from .utils import PackageTypes,PackageInfo, lambda_python_environments
 
 # Keep cache of already seen package names
 PACKAGE_CACHE = {}
@@ -134,25 +134,22 @@ for f in pkg_resources.working_set:
 def get_package_info(pkg_name) -> Dict[str, PackageInfo]:
 
     info = create_package_info(pkg_name)
-    
-    if info:
-        return {info.pkg_name: info}
+    rv = {}
+    for pkg_info in info:
+        rv[pkg_info.pkg_name]= pkg_info
 
-    return {}
+    return rv
 
 
-def create_package_info(pkg_name) -> PackageInfo:
+def create_package_info(pkg_name) -> List[PackageInfo]:
     
     pkg_info =  _recursive_create_package_info(pkg_name)
 
-    if pkg_info.flat:
-        if pkg_info in pkg_info.flat:
-            pkg_info.flat.remove(pkg_info)
 
     return pkg_info
 
 
-def _recursive_create_package_info(unmodified_pkg_name: str) -> PackageInfo:
+def _recursive_create_package_info(unmodified_pkg_name: str) -> List[PackageInfo]:
 
     if unmodified_pkg_name in PACKAGE_CACHE:
         #print(f"CACHE HIT -> {pkg_name}")
@@ -189,7 +186,7 @@ def _recursive_create_package_info(unmodified_pkg_name: str) -> PackageInfo:
             if pkg_name in INCOMPATIBLE_LIBRARIES:
                 if CDEV_SETTINGS.get("PULL_INCOMPATIBLE_LIBRARIES"):
                     if docker_package_builder.docker_available():
-                        rv = docker_package_builder.download_package(pip_packages.get(pkg_name), pkg_name, unmodified_pkg_name)
+                        rv = docker_package_builder.download_package(pip_packages.get(pkg_name), lambda_python_environments.py38_arm64, pkg_name, unmodified_pkg_name)
                         return rv
 
                     else:
@@ -245,9 +242,9 @@ def _recursive_create_package_info(unmodified_pkg_name: str) -> PackageInfo:
         
         rv.set_flat(dependencies_flat)
 
-        PACKAGE_CACHE[pkg_name] = rv
+        PACKAGE_CACHE[pkg_name] = [rv]
 
-        return rv
+        return [rv]
 
 
 def _recursive_check_for_dependencies(pkg: PackageInfo) -> Set[PackageInfo]:
@@ -273,12 +270,13 @@ def _recursive_check_for_dependencies(pkg: PackageInfo) -> Set[PackageInfo]:
         
 
         for req in item.requires():
-            tmp_dep = _recursive_create_package_info(req.key)
+            tmp_deps = _recursive_create_package_info(req.key)
+            
+            tmp_flat = tmp_flat.union(set(tmp_deps))
 
-            tmp_flat.add(tmp_dep)
-            if tmp_dep.flat:
-                
-                tmp_flat = tmp_flat.union(set(tmp_dep.flat))
+            for tmp_dep in tmp_deps:
+                if tmp_dep.flat:
+                    tmp_flat = tmp_flat.union(set(tmp_dep.flat))
 
         return tmp_flat
 
@@ -291,12 +289,13 @@ def _recursive_check_for_dependencies(pkg: PackageInfo) -> Set[PackageInfo]:
         
 
         for req in required_items:
-            tmp_dep = _recursive_create_package_info(req)
+            tmp_deps = _recursive_create_package_info(req)
 
-            tmp_flat.add(tmp_dep)
-            if tmp_dep.flat:
-                
-                tmp_flat = tmp_flat.union(set(tmp_dep.flat))
+            tmp_flat.union(set(tmp_deps))
+            for tmp_dep in tmp_deps:
+                if tmp_dep.flat:
+
+                    tmp_flat = tmp_flat.union(set(tmp_dep.flat))
 
         return tmp_flat
 
