@@ -332,50 +332,29 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
         })
         print_deployment_step("UPDATE", f"  Update source code for lambda function {new_resource.name}")
 
-    if not previous_resource.dependencies_hash == new_resource.dependencies_hash:
-        log.debug(f"UPDATE DEPENDENCIES OF {previous_resource.name}; {previous_resource.dependencies_hash} -> {new_resource.dependencies_hash}")
-        previous_hashes = set([x.get("hash") for x in previous_resource.dependencies_info])
-        new_hashes = set([x.get("hash") for x in new_resource.dependencies_info])
-
-        create_dependencies = []
-        remove_dependencies = []
-
-        if previous_resource.dependencies_info:
-            for dependency in new_resource.dependencies_info:
-                if not dependency.get("hash") in previous_hashes:
-                    create_dependencies.append(dependency)
-        else:
-            create_dependencies = new_resource.dependencies_info
-
-        if new_resource.dependencies_info:
-            for dependency in previous_resource.dependencies_info:
-                if not dependency.get("hash") in new_hashes:
-                    remove_dependencies.append(dependency)
-        else:
-            remove_dependencies = previous_resource.dependencies_info
+    if not previous_resource.external_dependencies_hash == new_resource.external_dependencies_hash:
+        log.debug(f"UPDATE DEPENDENCIES OF {previous_resource.name}; {previous_resource.external_dependencies_hash} -> {new_resource.external_dependencies_hash}")
 
         dependencies_info = cdev_cloud_mapper.get_output_value_by_hash(previous_resource.hash, "layers")
         
-        if remove_dependencies:
-            for dependency in remove_dependencies:
-                cloud_info = [x for x in dependencies_info if x.get("hash") == dependency.get("hash")][0]
-                _remove_dependency(cloud_info)
-                dependencies_info.remove(cloud_info)
-                print_deployment_step("UPDATE", f'  Remove dependency {cloud_info.get("name")}')
         
-        if create_dependencies:
-            for dependency in create_dependencies:
-                rv = _create_dependency(new_resource, dependency)
-                dependencies_info.append(rv)
-                print_deployment_step("UPDATE", f'  Create dependency {rv.get("name")}')
+        cloud_info = dependencies_info[0]
+        _remove_dependency(cloud_info)
+        
+        print_deployment_step("UPDATE", f'  Remove dependency {cloud_info.get("name")}')
+        
+  
+        new_layer_rv = _create_dependency(new_resource, new_resource.external_dependencies_info)
+        
+        print_deployment_step("UPDATE", f'  Create dependency {new_layer_rv}')
 
         sleep(5)
         raw_aws_client.run_client_function("lambda", "update_function_configuration", {
                 "FunctionName": cdev_cloud_mapper.get_output_value_by_hash(previous_resource.hash, "cloud_id"),
-                "Layers": [f'{x.get("arn")}:{x.get("version")}' for x in dependencies_info] if dependencies_info else []
+                "Layers": [f'{new_layer_rv.get("arn")}:{new_layer_rv.get("version")}']
             })
 
-        cdev_cloud_mapper.update_output_by_key(previous_resource.hash, "layers", dependencies_info)
+        cdev_cloud_mapper.update_output_by_key(previous_resource.hash, "layers", [new_layer_rv])
 
 
     if not previous_resource.events_hash == new_resource.events_hash:

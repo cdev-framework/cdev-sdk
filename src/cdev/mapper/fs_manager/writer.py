@@ -1,6 +1,7 @@
 from typing import List, Optional, Dict, Tuple
 from ast import parse
 import os
+from pydantic.main import BaseModel
 
 from pydantic.types import DirectoryPath, FilePath
 from sortedcontainers.sorteddict import SortedDict
@@ -49,6 +50,11 @@ class LayerWriterCache:
 LAYER_CACHE = LayerWriterCache()
 
 
+class ExternalDependencyWriteInfo(BaseModel):
+    location: str
+    id: str
+
+
 def create_full_deployment_package(original_path : FilePath, needed_lines: List[int], parsed_path: str, pkgs: Dict[str, PackageInfo]=None ):
     """
     Create all the needed deployment resources needed for a given serverless function. This includes parsing out the needed lines from
@@ -68,7 +74,6 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
     """
 
     dependencies_info = None
-    dependencies_hash= None
 
     # Write the actual parsed function into an intermediate folder
     _make_intermediate_handler_file(original_path, needed_lines, parsed_path)
@@ -82,7 +87,7 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
 
     if pkgs:
 
-        layer_dependencies, handler_dependencies, = _create_package_dependencies_info(pkgs)
+        layer_dependencies, handler_dependencies = _create_package_dependencies_info(pkgs)
 
         if layer_dependencies:
             # Make the layer archive in the same folder as the handler 
@@ -103,7 +108,7 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
 
 
 
-def _create_package_dependencies_info(pkgs: Dict[str, PackageInfo]) -> Tuple[List[Dict], List[str]]:
+def _create_package_dependencies_info(pkgs: Dict[str, PackageInfo]) -> Tuple[List[ExternalDependencyWriteInfo], List[str]]:
     """
     Take a dictionary of the top level packages (str [pkg_name] -> PackageInformation) that are used by a handler and return the 
     necessary information for creating the deployment packages. Packages can be broken down into two categories: handler and layer.
@@ -113,7 +118,7 @@ def _create_package_dependencies_info(pkgs: Dict[str, PackageInfo]) -> Tuple[Lis
 
 
     Returns:
-        layer_dependencies (List[Dict]): The packages to be added to the layers
+        layer_dependencies (List[ExternalDependencyWriteInfo]): The packages to be added to the layers
         handler_dependencies (List[str]): List of files to include with the handler
     
     Handler packages are located within the 'cdev project', and therefore, should be packaged into the handler archive so that they 
@@ -145,11 +150,10 @@ def _create_package_dependencies_info(pkgs: Dict[str, PackageInfo]) -> Tuple[Lis
         pkg = pkgs.get(pkg_name)
 
         if pkg.type == PackageTypes.PIP:
-            layer_dependencies.append({
-                "base_folder": pkg.fp,
-                "pkg_name": pkg.pkg_name,
+            layer_dependencies.append(ExternalDependencyWriteInfo(**{
+                "location": pkg.fp,
                 "id": pkg.get_id_str()
-            })
+            }))
 
             
 
@@ -172,11 +176,10 @@ def _create_package_dependencies_info(pkgs: Dict[str, PackageInfo]) -> Tuple[Lis
             for dependency in pkg.flat:
 
                 if dependency.type == PackageTypes.PIP:
-                    layer_dependencies.append({
-                        "base_folder": dependency.fp,
-                        "pkg_name": dependency.pkg_name,
+                    layer_dependencies.append(ExternalDependencyWriteInfo(**{
+                        "location": dependency.fp,
                         "id": dependency.get_id_str()
-                    })
+                    }))
                 elif dependency.type == PackageTypes.LOCALPACKAGE:
                     handler_dependencies.add( dependency.fp )
 
@@ -342,12 +345,11 @@ def _make_intermediate_handler_zip(zip_archive_location: str, paths: List[FilePa
 
 
 
-def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: str, needed_info: List[Dict]) -> Dict:
-    ids = [x.get("id") for x in needed_info]
+def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: str, needed_info: List[ExternalDependencyWriteInfo]) -> Dict:
+    ids = [x.id for x in needed_info]
     ids.sort()
 
     _id_hashes = cdev_hasher.hash_list(ids)
-    print(ids)    
     cache_item = LAYER_CACHE.find_item(_id_hashes)
     if cache_item:
         print(f"CACHE HIT -> {basename} -> CURRENT DEPENDENCY HASH {_id_hashes}")
@@ -362,46 +364,46 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
         os.remove(zip_archive_full_path)
 
     for info in needed_info:
-        print(f"------------{info.get('id')} ------------")
-        if info.get("id") in seen_pkgs:
+        print(f"------------{info.id} ------------")
+        if info.id in seen_pkgs:
             continue
 
-        seen_pkgs.add(info.get("id"))
+        seen_pkgs.add(info.id)
         
 
         with ZipFile(zip_archive_full_path, 'a') as zipfile:
-            if os.path.isfile(info.get("base_folder")):
+            if os.path.isfile(info.location):
                 # this is a single python file not a folder (ex: six.py)
-                file_name = os.path.split(info.get("base_folder"))[1]
+                file_name = os.path.split(info.location)[1]
                 # since this is a module that is just a single file plop in /python/<filename> and it will be on the pythonpath
 
-                zipfile.write(info.get("base_folder"), os.path.join('python', file_name))
-                #print(f"ZIPPING INDIVIDUAL FILE {info}, FROM {info.get('base_folder')} TO {os.path.join('python', file_name)}")
+                zipfile.write(info.location, os.path.join('python', file_name))
+                #print(f"ZIPPING INDIVIDUAL FILE {info}, FROM {info.location} TO {os.path.join('python', file_name)}")
 
-                _file_hashes.append(cdev_hasher.hash_file(info.get("base_folder")))
+                _file_hashes.append(cdev_hasher.hash_file(info.location))
 
 
             else:
-                print(f"Walking -> {info.get('base_folder')}")
-                pkg_name = os.path.split(info.get('base_folder'))[1]
+                print(f"Walking -> {info.location}")
+                pkg_name = os.path.split(info.location)[1]
 
-                for dirname, subdirs, files in os.walk(info.get("base_folder")):
+                for dirname, subdirs, files in os.walk(info.location):
                     if dirname.split("/")[-1] in EXCLUDE_SUBDIRS:
                         continue
                     
-                    zip_dir_name = os.path.normpath( os.path.join('python', pkg_name , os.path.relpath(dirname , info.get("base_folder") ) ) )
+                    zip_dir_name = os.path.normpath( os.path.join('python', pkg_name , os.path.relpath(dirname , info.location ) ) )
     
                     for filename in files:
                         original_path = os.path.join(dirname, filename)
                         zipfile.write(original_path, os.path.join(zip_dir_name, filename))
                         _file_hashes.append(cdev_hasher.hash_file(original_path))
 
-                pkg_dir = os.path.dirname(info.get("base_folder"))
+                pkg_dir = os.path.dirname(info.location)
                 for obj in os.listdir(pkg_dir):
-                    if os.path.join(pkg_dir, obj) == info.get("base_folder"):
+                    if os.path.join(pkg_dir, obj) == info.location:
                         continue
 
-                    if os.path.isdir(os.path.join(pkg_dir, obj)) and obj.split(".")[0] == os.path.split(info.get("base_folder"))[1]:
+                    if os.path.isdir(os.path.join(pkg_dir, obj)) and obj.split(".")[0] == os.path.split(info.location)[1]:
                         print(f"ALSO INCLUDE {obj} for {info}")
                         for dirname, subdirs, files in os.walk( os.path.join(pkg_dir, obj) ):
                             if dirname.split("/")[-1] in EXCLUDE_SUBDIRS:
