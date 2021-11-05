@@ -60,13 +60,13 @@ def _create_simple_lambda(identifier: str, resource: simple_lambda.simple_aws_la
     final_info['artifact_key'] = keyname
 
     # Step 3
-    if resource.dependencies_info:
+    if resource.external_dependencies_info:
+        print_deployment_step("CREATE", f"  Creating dependencies for lambda function {resource.name}")
         cloud_dependency_info = []
-        for dependency in resource.dependencies_info:
-            rv = _create_dependency(resource, dependency)
-            cloud_dependency_info.append(rv)
+        rv = _create_dependency(resource, resource.external_dependencies_info)
+        cloud_dependency_info.append(rv)
 
-        print_deployment_step("CREATE", f"  Create dependencies for lambda function {resource.name}")
+        
 
         final_info['layers'] = cloud_dependency_info
     
@@ -138,13 +138,14 @@ def _upload_s3_code_artifact(resource: simple_lambda.simple_aws_lambda_function_
             "Body": fh.read(),
 
         }
-        raw_aws_client.run_client_function("s3", "upload_file", object_args)
+        raw_aws_client.run_client_function("s3", "put_object", object_args)
 
     return keyname
 
 def _create_dependency(resource: simple_lambda.simple_aws_lambda_function_model, dependency: Dict) -> Dict:
     key_name = _upload_s3_dependency(resource, dependency)
 
+    # key name will always include .zip so remove that part and change '-' into '_'
     layer_name = key_name.replace("-", "_")[:-4]
     dependency_rv = raw_aws_client.run_client_function("lambda", "publish_layer_version", {
         "Content": {
@@ -179,7 +180,7 @@ def _remove_dependency(dependency_cloud_info: Dict):
 
 def _upload_s3_dependency(resource: simple_lambda.simple_aws_lambda_function_model, dependency: Dict) -> str:
     # Takes in a resource and create an s3 artifact that can be use as src code for lambda deployment
-    keyname = resource.name + "-" + dependency.get('name') + f"-{resource.hash}" + ".zip"
+    keyname = dependency.get('name') + f"-{resource.hash}" + ".zip"
     #original_zipname = resource.configuration.Handler.split(".")[0] + ".zip"
     zip_location = dependency.get('artifact_path')
     
