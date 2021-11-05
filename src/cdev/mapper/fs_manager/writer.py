@@ -64,10 +64,15 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
         src_code_hash (str): The hash of the source code archive 
         handler_archive_location (FilePath): The location of the created archive for the handler
         base_handler_path (str): The path to the file as a python package path
-        dependencies_archive_locations (List[FilePath]): Locations of any external dependency archive 
-        dependencies_hash (Dict[str,str]): The hash for each of the created dependency archives (layer_name -> hash)
+        external_dependency_information (Dict): Information about the external dependencies
     """
-    handler_files = _make_intermediate_handler_file(original_path, needed_lines, parsed_path)
+
+    dependencies_info = None
+    dependencies_hash= None
+
+    # Write the actual parsed function into an intermediate folder
+    _make_intermediate_handler_file(original_path, needed_lines, parsed_path)
+    handler_files = [parsed_path]
 
     # Start from the base intermediate folder location then replace '/' with '.' and final remove the '.py' from the end
     base_handler_path = cdev_paths.get_relative_to_intermediate_path(parsed_path).replace("/", ".")[:-3]
@@ -77,35 +82,60 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
 
     if pkgs:
 
-        pkg_info = _create_package_dependencies_info(pkgs)
+        layer_dependencies, handler_dependencies, = _create_package_dependencies_info(pkgs)
+
+        if layer_dependencies:
+            # Make the layer archive in the same folder as the handler 
+            archive_dir = os.path.join(INTERMEDIATE_FOLDER, os.path.dirname(parsed_path))
+            dependencies_info = _make_layers_zips(archive_dir, filename[:-3], layer_dependencies )
     
-        if pkg_info.get("handler_dependencies"):
+        if handler_dependencies:
             # Copy the local dependencies files into the intermediate folder to make packaging easier
             # All the local copied files are added to the set of files needed to be include in the .zip file uploaded as the handler
-
-            local_dependencies_intermediate_locations = _copy_local_dependencies(pkg_info.get("handler_dependencies"))
+            # Add their copied locations into the handler_files var so that they are written to the final handler archive
+            local_dependencies_intermediate_locations = _copy_local_dependencies(handler_dependencies)
             handler_files.extend(local_dependencies_intermediate_locations)
 
-        if pkg_info.get("layer_dependencies"):
-            print([x.get("id") for x in pkg_info.get("layer_dependencies")])
-            dir = os.path.join(INTERMEDIATE_FOLDER, os.path.dirname(parsed_path))
-
-            dependencies_info, dependencies_hash  = _make_layers_zips(dir, filename[:-3], pkg_info.get("layer_dependencies") )
-        
-        else:
-            dependencies_info = None
-            dependencies_hash= None
-    else:
-        dependencies_info = None
-        dependencies_hash= None
-
+    # Create the actual handler archive by zipping the needed files
     src_code_hash = _make_intermediate_handler_zip(zip_archive_location, handler_files)
 
-    return (src_code_hash, zip_archive_location, base_handler_path, dependencies_info, dependencies_hash)
+    return (src_code_hash, zip_archive_location, base_handler_path, dependencies_info)
 
 
 
-def _create_package_dependencies_info(pkgs: Dict[str, PackageInfo]) -> Dict:
+def _create_package_dependencies_info(pkgs: Dict[str, PackageInfo]) -> Tuple[List[Dict], List[str]]:
+    """
+    Take a dictionary of the top level packages (str [pkg_name] -> PackageInformation) that are used by a handler and return the 
+    necessary information for creating the deployment packages. Packages can be broken down into two categories: handler and layer.
+
+    Args:
+        pkgs (Dict[str, PackageInfo]): Top level packages used by the handler
+
+
+    Returns:
+        layer_dependencies (List[Dict]): The packages to be added to the layers
+        handler_dependencies (List[str]): List of files to include with the handler
+    
+    Handler packages are located within the 'cdev project', and therefore, should be packaged into the handler archive so that they 
+    remain in the correct relative location to the handler function.
+        src:\n
+        |_ views\n
+        |___ handlers.py\n
+        |_ models\n
+        |___ model.py\n
+
+    If a function in the handlers.py file references models.py as a relative package (from .. import models or from src import models) 
+    it is important to keep the relative file structure the same
+
+    Layer packages are packages that are found on the PYTHONPATH and most likely installed with a package manager like PIP. These 
+    should be packages as layers to keep the handler archive size small.
+
+    Note that the input are the top level packages used by the handler, so we must look at the 'flat' attribute to find all the 
+    needed dependencies.
+
+    
+
+    """
 
     layer_dependencies = []
     handler_dependencies = set()
@@ -151,18 +181,13 @@ def _create_package_dependencies_info(pkgs: Dict[str, PackageInfo]) -> Dict:
                     handler_dependencies.add( dependency.fp )
 
             
-    rv = {
-        "layer_dependencies": layer_dependencies,
-        "handler_dependencies": list(handler_dependencies)
-    }
+    return (layer_dependencies, list(handler_dependencies))
 
 
-    return rv
-
-
-def _make_intermediate_handler_file(original_path, needed_lines, parsed_path) -> str:
+def _make_intermediate_handler_file(original_path: FilePath, needed_lines: List[int], parsed_path: str):
     """
     Make the actual file that will be deployed onto a serverless platform by parsing out the needed lines from the original file
+    and writing them to an intermediate file
 
     Args:
         original_path (FilePath): The original file location that this function is from
@@ -182,35 +207,47 @@ def _make_intermediate_handler_file(original_path, needed_lines, parsed_path) ->
     
     _write_intermediate_function(parsed_path, cleaned_actual_lines)
 
-
-    path_from_project_dir = os.path.dirname(cdev_paths.get_relative_to_project_path(original_path)).split('/')
-
-    intermediate_location = cdev_paths.get_project_path()
     
-    rv = [parsed_path]
-    while path_from_project_dir:
-        
-        intermediate_location = os.path.join(intermediate_location, path_from_project_dir.pop(0))
-        
-        file_loc = os.path.join(intermediate_location, "__init__.py")
-        intermediate_file_location = cdev_paths.get_full_path_from_intermediate_folder(cdev_paths.get_relative_to_project_path(file_loc))
-        if os.path.isfile(file_loc):
-            
-            shutil.copyfile(file_loc, intermediate_file_location)   
-        else:
-            with open(intermediate_file_location, 'a'):
-                os.utime(intermediate_file_location)
 
 
-        rv.append(intermediate_file_location)
+    # This adds additional files like __init__.py need to make the file work 
+    #path_from_project_dir = os.path.dirname(cdev_paths.get_relative_to_project_path(original_path)).split('/')
+    #intermediate_location = cdev_paths.get_project_path()
+    #
+    #rv = [parsed_path]
+    #while path_from_project_dir:
+    #    
+    #    intermediate_location = os.path.join(intermediate_location, path_from_project_dir.pop(0))
+    #    
+    #    file_loc = os.path.join(intermediate_location, "__init__.py")
+    #    intermediate_file_location = cdev_paths.get_full_path_from_intermediate_folder(cdev_paths.get_relative_to_project_path(file_loc))
+    #    if os.path.isfile(file_loc):
+    #        
+    #        shutil.copyfile(file_loc, intermediate_file_location)   
+    #    else:
+    #        with open(intermediate_file_location, 'a'):
+    #            os.utime(intermediate_file_location)
+#
+#
+    #    rv.append(intermediate_file_location)
+#
+    #return rv
 
-    return rv
 
 
-
-def _clean_lines(lines: List[str]):
+def _clean_lines(lines: List[str]) -> List[str]:
     """
-    Parsed functions can have empty lines or comments as the last lines of the, so we are going to start from the end of the file and remove those lines
+    Parsed functions can have empty lines or comments as the last lines of the file, so we are going to start from the end of the file 
+    and remove those lines. This helps keep the hashes of the handler consistent even if there was changes below the handler that 
+    are picked up because they are comments.
+
+
+    Args:
+        lines (List[str]): original lines to be added for the handler
+    
+    Returns:
+        clean_lines (List[str]): Lines with endings trimmed of whitespace and comments
+
     """
 
     # final line should be an offset from the end of the list the represents the final real line of python code
@@ -237,10 +274,20 @@ def _clean_lines(lines: List[str]):
     return rv
 
 
-def _copy_local_dependencies(files: List[FilePath]) -> List[FilePath]:
+def _copy_local_dependencies(file_locations: List[FilePath]) -> List[FilePath]:
+    """
+    Copy the local dependency files from their original location into the intermediate folder with the actual handler.
+    This step makes the archiving step simplier since all the need files are in the intermediate folder.
+
+    Args:
+        file_locations (List[str]): list of file locations that need to be copied
+
+    Returns:
+        copied_file_locations (List[str]): list of locations of the copied files
+    """
     rv = []
-    for file in files:
-        intermediate_location = cdev_paths.get_full_path_from_intermediate_folder( cdev_paths.get_relative_to_project_path(file))
+    for file_location in file_locations:
+        intermediate_location = cdev_paths.get_full_path_from_intermediate_folder( cdev_paths.get_relative_to_project_path(file_location))
         rv.append(intermediate_location)
 
         if os.path.isfile(intermediate_location):
@@ -250,28 +297,39 @@ def _copy_local_dependencies(files: List[FilePath]) -> List[FilePath]:
         relative_to_intermediate = cdev_paths.get_relative_to_intermediate_path(intermediate_location).split("/")[:-1]
 
         cdev_paths.create_path(INTERMEDIATE_FOLDER, relative_to_intermediate)
-        shutil.copyfile(file, intermediate_location)
+        shutil.copyfile(file_location, intermediate_location)
 
 
     return rv
 
 
-def _write_intermediate_function(path, lines):
-    # Function takes a filepath (fp), filename, and lines then writes the lines to the file
-    # This function is used to create the intermediate file
-    # It creates the file on the file system and also returns metadata about the file
+def _write_intermediate_function(path: FilePath, lines: List[str]):
+    """
+    Write a set of lines for the intermediate handler into the actual file on the system
 
+    Args:
+        path (FilePath): Intermediate file path
+        lines (List[str]): List of the lines to write 
+    """
 
     with open(path, "w") as fh:
         for line in lines:
             fh.write(line)
             fh.write("\n")
+    
 
-    return True
 
-def _make_intermediate_handler_zip(zip_archive_location: str, paths: List[str]) -> str:
+
+def _make_intermediate_handler_zip(zip_archive_location: str, paths: List[FilePath]) -> str:
     """
     Make the archive for the handler deployment. 
+
+    Args:
+        zip_archive_location (str): The file path for the archive. Might not be created yet
+        paths (List[FilePath]): The list of files that should be written to the archive
+
+    Returns:
+        archive_hash (str): An identifying hash for the zip
     """
     hashes = []
     with ZipFile(zip_archive_location, 'w') as zipfile:
@@ -284,22 +342,20 @@ def _make_intermediate_handler_zip(zip_archive_location: str, paths: List[str]) 
 
 
 
-def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: str, needed_info: List[Dict]) -> Tuple[List[FilePath], str]:
+def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: str, needed_info: List[Dict]) -> Dict:
     ids = [x.get("id") for x in needed_info]
     ids.sort()
 
-    _current_hash = cdev_hasher.hash_list(ids)
+    _id_hashes = cdev_hasher.hash_list(ids)
     print(ids)    
-    cache_item = LAYER_CACHE.find_item(_current_hash)
+    cache_item = LAYER_CACHE.find_item(_id_hashes)
     if cache_item:
-        print(f"CACHE HIT -> {basename} -> CURRENT DEPENDENCY HASH {_current_hash}")
+        print(f"CACHE HIT -> {basename} -> CURRENT DEPENDENCY HASH {_id_hashes}")
         return cache_item
 
-
-    archives_made = set()
-    archive_to_hashlist = {}
-    layer_name = "layer1"
-    zip_archive_full_path = os.path.join(zip_archive_location_directory,  basename +"_" + layer_name  + ".zip" )
+    layer_name = basename + "_layer"
+    _file_hashes = []    
+    zip_archive_full_path = os.path.join(zip_archive_location_directory,  layer_name + ".zip" )
     seen_pkgs = set()
 
     if os.path.isfile(zip_archive_full_path):
@@ -312,17 +368,9 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
 
         seen_pkgs.add(info.get("id"))
         
-        if not zip_archive_full_path in archives_made:
-            archives_made.add(zip_archive_full_path)
-            archive_to_hashlist[layer_name] = {
-                "artifact_path": zip_archive_full_path,
-                "hash": []
-            }
 
         with ZipFile(zip_archive_full_path, 'a') as zipfile:
             if os.path.isfile(info.get("base_folder")):
-                
-
                 # this is a single python file not a folder (ex: six.py)
                 file_name = os.path.split(info.get("base_folder"))[1]
                 # since this is a module that is just a single file plop in /python/<filename> and it will be on the pythonpath
@@ -330,7 +378,7 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
                 zipfile.write(info.get("base_folder"), os.path.join('python', file_name))
                 #print(f"ZIPPING INDIVIDUAL FILE {info}, FROM {info.get('base_folder')} TO {os.path.join('python', file_name)}")
 
-                archive_to_hashlist[layer_name]['hash'].append(cdev_hasher.hash_file(info.get("base_folder")))
+                _file_hashes.append(cdev_hasher.hash_file(info.get("base_folder")))
 
 
             else:
@@ -346,7 +394,7 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
                     for filename in files:
                         original_path = os.path.join(dirname, filename)
                         zipfile.write(original_path, os.path.join(zip_dir_name, filename))
-                        archive_to_hashlist[layer_name]['hash'].append(cdev_hasher.hash_file(original_path))
+                        _file_hashes.append(cdev_hasher.hash_file(original_path))
 
                 pkg_dir = os.path.dirname(info.get("base_folder"))
                 for obj in os.listdir(pkg_dir):
@@ -364,25 +412,20 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
                             for filename in files:
                                 original_path = os.path.join(dirname, filename)
                                 zipfile.write(original_path, os.path.join(zip_dir_name, filename))
-                                archive_to_hashlist[layer_name]['hash'].append(cdev_hasher.hash_file(original_path))
+                                _file_hashes.append(cdev_hasher.hash_file(original_path))
                         
 
-    archive_to_hash = []
-    dependency_info = []
-    for layer_name in archive_to_hashlist:
-        package_hash = cdev_hasher.hash_list(archive_to_hashlist.get(layer_name).get('hash'))
-        archive_to_hash.append(package_hash)
+    full_archive_hash = cdev_hasher.hash_list(_file_hashes)
     
-        dependency_info.append({
-            'name': layer_name,
-            'artifact_path': cdev_paths.get_relative_to_project_path( archive_to_hashlist.get(layer_name).get("artifact_path")),
-            'hash': package_hash
-        })
+    dependency_info = {
+        'name': layer_name,
+        'artifact_path': cdev_paths.get_relative_to_project_path(zip_archive_full_path),
+        'hash': full_archive_hash
+    }
     
-    total_archive_hash = cdev_hasher.hash_list(archive_to_hash)
 
-    LAYER_CACHE.add_item(_current_hash, (dependency_info, total_archive_hash ))
+    LAYER_CACHE.add_item(_id_hashes, dependency_info)
 
-    return dependency_info, cdev_hasher.hash_list(total_archive_hash)
+    return dependency_info
         
 
