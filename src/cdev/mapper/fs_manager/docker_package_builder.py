@@ -6,7 +6,7 @@ import os
 import json
 from pkg_resources import Distribution
 
-from .utils import PackageTypes,PackageInfo, lambda_python_environments
+from .utils import PackageTypes, ModulePackagingInfo, lambda_python_environments
 
 DEPLOYMENT_PLATFORM = CDEV_SETTINGS.get("DEPLOYMENT_PLATFORM")
 
@@ -18,6 +18,7 @@ def docker_available() -> bool:
 
 
 CACHE_LOCATION = os.path.join(CDEV_SETTINGS.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), "dockercache.json")
+
 
 class DockerDownloadCache:
     """
@@ -59,12 +60,12 @@ class DockerDownloadCache:
     def find_item(self, environment: lambda_python_environments, id: str):
         raw_data = self._cache.get(environment).get(id)
         if raw_data:
-            return [PackageInfo(**x) for x in raw_data]
+            return [ModulePackagingInfo(**x) for x in raw_data]
         else:
             None
 
 
-    def add_item(self, environment: lambda_python_environments, id: str, item: PackageInfo):
+    def add_item(self, environment: lambda_python_environments, id: str, item: ModulePackagingInfo):
         self._cache[environment][id] = item
 
         with open(CACHE_LOCATION, "w") as fh:
@@ -88,11 +89,25 @@ class DockerDownloadCache:
 
 DOWNLOAD_CACHE = DockerDownloadCache()
 
+def download_package(pkg: Distribution, environment: lambda_python_environments, pkg_name: str) -> ModulePackagingInfo:
+    package_information = _download_package(pkg, environment)
 
-def download_package(pkg: Distribution, environment: lambda_python_environments, pkg_name: str, unmodified_pkg_name: str) -> List[PackageInfo]:
+    potential_modules = [x for x in package_information if x.pkg_name == pkg_name]
+
+
+    if not len(potential_modules) == 1:
+        return None
+
+
+    final_module = potential_modules[0]
+
+    return final_module
+
+
+
+def _download_package(pkg: Distribution, environment: lambda_python_environments) -> List[ModulePackagingInfo]:
     cache_item = DOWNLOAD_CACHE.find_item(environment, pkg.project_name)
     if cache_item:
-        #print(f"CACHE HIT -> {pkg.project_name} -> {cache_item}")
         return cache_item 
 
     packaging_dir = DOWNLOAD_CACHE.get_packaging_dir(environment)
@@ -124,7 +139,12 @@ def download_package(pkg: Distribution, environment: lambda_python_environments,
     
 
 
-def _create_package_info(project_name: str, environment: lambda_python_environments) -> List[PackageInfo]:
+def _create_package_info(project_name: str, environment: lambda_python_environments) -> List[ModulePackagingInfo]:
+    """
+    Creates a list of ModulePackagingInfo objects that represent the top level modules made available from this 
+    package. It uses a cache to make sure the subsequent calls do not have to recompute the dependencies. 
+    """
+
     cache_item = DOWNLOAD_CACHE.find_item(environment, project_name)
     if cache_item:
         print(f"CACHE HIT -> {project_name} -> {cache_item}")
@@ -132,14 +152,9 @@ def _create_package_info(project_name: str, environment: lambda_python_environme
 
     packaging_dir = DOWNLOAD_CACHE.get_packaging_dir(environment)
 
-    for file in os.listdir(packaging_dir):
-        if not file[-9:] == "dist-info":
-            continue
 
-        if file.split("-")[0] == project_name.replace("-", "_") and file.split("-")[2] == "info":
-            # This is the dist info folder for the pkg
-            dist_info_dir = file
-
+    # find the dist info directory that will contain metadata about the package
+    dist_info_dir =  os.path.join(packaging_dir, f"{project_name.replace('-', '_')}-{project_name}.dist-info")
 
     if not os.path.isdir(os.path.join(packaging_dir, dist_info_dir)):
         raise Exception
@@ -150,11 +165,11 @@ def _create_package_info(project_name: str, environment: lambda_python_environme
     
     # The project name might not always be the same as the top level module name used when importing the project
     if not os.path.isfile(os.path.join(packaging_dir, dist_info_dir, "top_level.txt")):
-        pkg_names = [project_name]
+        top_level_pkg_names = [project_name]
 
     else:
         with open(os.path.join(packaging_dir, dist_info_dir, "top_level.txt")) as fh:
-            pkg_names = [x.strip() for x in fh.readlines()]
+            top_level_pkg_names = [x.strip() for x in fh.readlines()]
 
 
     required_packages = []
@@ -179,9 +194,21 @@ def _create_package_info(project_name: str, environment: lambda_python_environme
 
                 required_packages.append(line.split(":")[1].strip().split(" ")[0])
     
+
+
+    tmp_flat_requirements: List[ModulePackagingInfo] = []
     rv = []
 
-    for pkg_name in pkg_names:
+
+    for required_package in required_packages:
+
+        dependent_pkg_infos = _create_package_info(required_package, environment)
+        for dependent_pkg_info in dependent_pkg_infos:
+            tmp_flat_requirements.extend(dependent_pkg_info.flat)
+            tmp_flat_requirements.append(dependent_pkg_info)
+    
+
+    for pkg_name in top_level_pkg_names:
         # The package could be either a folder (normal case) or a single python file (ex: 'six' package)
         # If it can not be found as either than there is an issue
         potential_dir = os.path.join(packaging_dir, pkg_name)
@@ -197,24 +224,12 @@ def _create_package_info(project_name: str, environment: lambda_python_environme
         else:
             continue
 
-        info = PackageInfo(**{
+        info = ModulePackagingInfo(**{
             "pkg_name": pkg_name,
             "type": PackageTypes.PIP,
             "version_id": current_package_version,
             "fp": tmp_fp
         })
-
-        tmp_flat_requirements = []
-
-        print(f"{project_name} requires -> {required_packages}")
-        for required_package in required_packages:
-
-            dependent_pkg_infos = _create_package_info(required_package, environment)
-
-            for dependent_pkg_info in dependent_pkg_infos:
-                tmp_flat_requirements.extend(dependent_pkg_info.flat)
-                tmp_flat_requirements.append(dependent_pkg_info)
-
 
 
         info.set_flat(tmp_flat_requirements) 

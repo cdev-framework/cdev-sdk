@@ -7,7 +7,7 @@ from .parser_objects import *
 from .import parser_utils as p_utils
 from .cdev_parser_exceptions import *
 
-from ..fs_manager.package_mananger import get_package_info
+from ..fs_manager.package_mananger import get_module_info
 
 
 from cdev.utils import logger as cdev_logger
@@ -31,10 +31,8 @@ def parse_functions_from_file(file_loc, include_functions=[], function_manual_in
         ALL_PACKAGES = {}
         if parsed_function.imported_packages:
             for pkg_name in parsed_function.imported_packages:
-                if not ALL_PACKAGES:
-                    ALL_PACKAGES = get_package_info(pkg_name)
-                else:
-                    ALL_PACKAGES.update(get_package_info(pkg_name))
+                ALL_PACKAGES[pkg_name] = get_module_info(pkg_name)
+
 
         
         parsed_function.needed_packages = ALL_PACKAGES

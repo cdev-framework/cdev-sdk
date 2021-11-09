@@ -16,7 +16,7 @@ from packaging.utils import canonicalize_name
 from sysconfig import get_platform
 
 from . import docker_package_builder
-from .utils import PackageTypes,PackageInfo, lambda_python_environments
+from .utils import PackageTypes, ModulePackagingInfo, lambda_python_environments
 
 # Keep cache of already seen package names
 PACKAGE_CACHE = {}
@@ -30,13 +30,18 @@ STANDARD_LIBRARY_FILES = ['3_6', "3_7", "3_8"]
 # so it is allowed to have a different name that is used when importing the package in an actual python file. Both need to 
 # be include because, when the package is reference directly in a file it will have the top name, but when it is referenced
 # as the dependency of another project it will be a the project name. 
-PKG_NAME_TO_PIP_PKG = {}
+MOD_NAME_TO_PRJ_OBJ: Dict[str, pkg_resources.Distribution] = {}
+
+PRJ_NAME_TO_PRJ_OBJ: Dict[str, pkg_resources.Distribution] = {}
+
+
+PRJ_NAME_TO_TOP_LEVEL_MODULES: Dict[str, List[str]] = {}
 
 DIFF_PROJECT_TO_TOP = {}
 
 DEPLOYMENT_PLATFORM = CDEV_SETTINGS.get("DEPLOYMENT_PLATFORM")
 
-INCOMPATIBLE_LIBRARIES = set()
+INCOMPATIBLE_PROJECTS = set()
 
 def is_platform_compatible(tags: List[str]) -> bool:
     # https://packaging.python.org/specifications/platform-compatibility-tags/
@@ -93,9 +98,13 @@ def is_platform_compatible(tags: List[str]) -> bool:
     
 
 
-for f in pkg_resources.working_set:
-    #find the dist info directory that will contain metadata about the package
-    dist_dir_location =  os.path.join(f.location, f"{f.project_name.replace('-', '_')}-{f.parsed_version}.dist-info")
+for project_obj in pkg_resources.working_set:
+    # For information on this object check 
+    # https://setuptools.pypa.io/en/latest/pkg_resources.html#distribution-objects
+    # Distribution Object
+
+    # find the dist info directory that will contain metadata about the package
+    dist_dir_location =  os.path.join(project_obj.location, f"{project_obj.project_name.replace('-', '_')}-{project_obj.parsed_version}.dist-info")
     toplevel_file_location  = os.path.join(dist_dir_location, 'top_level.txt')
     wheel_info = os.path.join(dist_dir_location, "WHEEL")
     
@@ -103,17 +112,34 @@ for f in pkg_resources.working_set:
         continue
 
     if not os.path.isfile(toplevel_file_location):
-        PKG_NAME_TO_PIP_PKG[f.project_name] = f
-    
+        # If not top level file is present, then assume the only top level module available is the project name
+        MOD_NAME_TO_PRJ_OBJ[project_obj.project_name] = project_obj
+        PRJ_NAME_TO_TOP_LEVEL_MODULES[project_obj.project_name] = [project_obj.project_name]
         continue
 
-    #print(f"{f} -> {f.version}")
+    
     with open(toplevel_file_location) as fh:
-        pkg_python_name = fh.readline().strip()
-        PKG_NAME_TO_PIP_PKG[pkg_python_name] = f
+        top_level_mod_names = fh.readlines()
 
-        if not pkg_python_name == f.project_name:
-            DIFF_PROJECT_TO_TOP[f.project_name] = pkg_python_name
+        for top_level_mod_name in top_level_mod_names:
+            MOD_NAME_TO_PRJ_OBJ[top_level_mod_name.strip()] = project_obj
+
+        potential_modules = [x.strip() for x in top_level_mod_names]
+        actual_modules = []
+        for potential_module in potential_modules:
+            # The module could be either a folder (normal case) or a single python file (ex: 'six' package)
+            # If it can not be found as either than there is an issue
+            potential_dir = os.path.join(project_obj.location, potential_module)
+            potential_file = os.path.join(project_obj.location, potential_module+".py")
+
+            if not os.path.isdir(potential_dir) and not os.path.isfile(potential_file):
+                #print(f"Could not find module {potential_module} at {dist_dir_location}")
+                continue
+
+            actual_modules.append(potential_module)
+
+        PRJ_NAME_TO_TOP_LEVEL_MODULES[project_obj.project_name] = actual_modules
+
 
     with open(wheel_info) as fh:
         lines = fh.readlines()
@@ -124,69 +150,82 @@ for f in pkg_resources.working_set:
         tags = [x.split(":")[1] for x in lines if x.split(":")[0]=='Tag'][0].strip().split("-")
         
         if not is_platform_compatible(tags):
-            INCOMPATIBLE_LIBRARIES.add(pkg_python_name)
+            INCOMPATIBLE_PROJECTS.add(project_obj.project_name)
 
 
 
+def get_module_info(pkg_name) -> ModulePackagingInfo:
+
+    # TODO add another cache here
+    info = create_module_package_info(pkg_name)
+   
+
+    return info
 
 
+def create_module_package_info(identifier: str) -> ModulePackagingInfo:
+    """
+    Create the information needed to package this dependency with a parsed function. We use the recursive method because
+    we must compute the package information for the dependencies of this dependency. Returns a ModulePackagingInfo objects
+    that represent the information to handle the packaging steps. 
 
-def get_package_info(pkg_name) -> Dict[str, PackageInfo]:
+    Args:
+        identifier (str): This can be either the package or project name 
 
-    info = create_package_info(pkg_name)
-    rv = {}
-    for pkg_info in info:
-        rv[pkg_info.pkg_name]= pkg_info
+    Returns
+        information (List[ModulePackagingInfo]): information for the packages to package
 
-    return rv
-
-
-def create_package_info(pkg_name) -> List[PackageInfo]:
-    
-    pkg_info =  _recursive_create_package_info(pkg_name)
-
+    """    
+    pkg_info =  _recursive_create_module_package_info(identifier)
 
     return pkg_info
 
 
-def _recursive_create_package_info(unmodified_pkg_name: str) -> List[PackageInfo]:
+def _recursive_create_module_package_info(pkg_name: str) -> ModulePackagingInfo:
 
-    if unmodified_pkg_name in PACKAGE_CACHE:
+    if pkg_name in PACKAGE_CACHE:
         #print(f"CACHE HIT -> {pkg_name}")
-        return PACKAGE_CACHE.get(unmodified_pkg_name)
+        return PACKAGE_CACHE.get(pkg_name)
         
 
     
-    if not unmodified_pkg_name in sys.modules and not unmodified_pkg_name in PKG_NAME_TO_PIP_PKG and not unmodified_pkg_name in DIFF_PROJECT_TO_TOP:
-        print(f"BAD PKG NAME -> {unmodified_pkg_name}")
+    if not pkg_name in sys.modules and not pkg_name in MOD_NAME_TO_PRJ_OBJ and not pkg_name in DIFF_PROJECT_TO_TOP:
+        print(f"BAD PKG NAME -> {pkg_name}")
         raise Exception
 
     else:
         standard_lib_info = _load_standard_library_information("3_6")
         aws_packages = _load_aws_packages("3_6")
-        pip_packages = _load_pip_packages()
+        pip_packages = _load_mod_to_prj()
 
-        pkg_name = DIFF_PROJECT_TO_TOP.get(unmodified_pkg_name, unmodified_pkg_name)
-        
-        
+
         if pkg_name in standard_lib_info:
-            tmp_type = PackageTypes.STANDARDLIB 
-            tmp_fp = None
-            tmp_version = None
+            rv = ModulePackagingInfo(**{
+                "pkg_name": pkg_name,
+                "type":  PackageTypes.STANDARDLIB,
+                "version_id": None,
+                "fp": None
+            })
 
         elif pkg_name in aws_packages:
-            tmp_type = PackageTypes.AWSINCLUDED
-            tmp_fp = None
-            tmp_version = None
+            rv = ModulePackagingInfo(**{
+                "pkg_name": pkg_name,
+                "type":  PackageTypes.AWSINCLUDED,
+                "version_id": None,
+                "fp": None
+            })
 
         elif pkg_name in pip_packages:
-            tmp_type = PackageTypes.PIP
-            tmp_version = pip_packages.get(pkg_name).version
+            tmp_distribution_obj = pip_packages.get(pkg_name)
+    
+            project_name = tmp_distribution_obj.project_name
 
-            if pkg_name in INCOMPATIBLE_LIBRARIES:
+            if project_name in INCOMPATIBLE_PROJECTS:
                 if CDEV_SETTINGS.get("PULL_INCOMPATIBLE_LIBRARIES"):
                     if docker_package_builder.docker_available():
-                        rv = docker_package_builder.download_package(pip_packages.get(pkg_name), lambda_python_environments.py38_arm64, pkg_name, unmodified_pkg_name)
+                        print(f"DOWNLOADING {tmp_distribution_obj.project_name} for oackage {pkg_name}")
+                        rv = docker_package_builder.download_package(tmp_distribution_obj, lambda_python_environments.py38_arm64, pkg_name)
+                        PACKAGE_CACHE[pkg_name] = rv
                         return rv
 
                     else:
@@ -206,9 +245,21 @@ def _recursive_create_package_info(unmodified_pkg_name: str) -> List[PackageInfo
 
             elif os.path.isfile(potential_file):
                 tmp_fp = potential_file
-
             else:
                 raise Exception
+
+            # required modules from this package
+            tmp_dependencies_flat = _recursive_check_for_dependencies_project(tmp_distribution_obj)
+
+            rv = ModulePackagingInfo(**{
+                "pkg_name": pkg_name,
+                "type":  PackageTypes.PIP,
+                "version_id": tmp_distribution_obj.version,
+                "fp": tmp_fp
+            })
+        
+            
+            rv.set_flat(tmp_dependencies_flat)
 
         else:
             mod = sys.modules.get(pkg_name)
@@ -230,80 +281,74 @@ def _recursive_create_package_info(unmodified_pkg_name: str) -> List[PackageInfo
                 raise Exception
 
         
-        rv = PackageInfo(**{
-            "pkg_name": unmodified_pkg_name,
-            "type":  tmp_type,
-            "version_id": tmp_version,
-            "fp": tmp_fp
-        })
+            rv = ModulePackagingInfo(**{
+                "pkg_name": pkg_name,
+                "type":  tmp_type,
+                "version_id": tmp_version,
+                "fp": tmp_fp
+            })
         
-        dependencies_flat = _recursive_check_for_dependencies(rv)
+            dependencies_flat = _recursive_check_for_dependencies_package(rv)
+            rv.set_flat(dependencies_flat)
 
         
-        rv.set_flat(dependencies_flat)
-
-        PACKAGE_CACHE[pkg_name] = [rv]
-
-        return [rv]
+        PACKAGE_CACHE[pkg_name] = rv
+        return rv
 
 
-def _recursive_check_for_dependencies(pkg: PackageInfo) -> Set[PackageInfo]:
+def _recursive_check_for_dependencies_project(project_distribution_obj: pkg_resources.Distribution) -> List[ModulePackagingInfo]:
+    """
+    Create the ModulePackagingInfo objects for all the top level modules in this package. 
+    """
+    tmp_flat = set()
 
-    if pkg.type == PackageTypes.BUILTIN or pkg.type == PackageTypes.STANDARDLIB or pkg.type == PackageTypes.AWSINCLUDED:
-        return {}
+    
+    for project_obj in project_distribution_obj.requires():
 
-    if pkg.type == PackageTypes.PIP:
-        
-        if pkg.pkg_name in DIFF_PROJECT_TO_TOP:
-            # package linked by pip project name that is different than the top level name of the module
-            old_name = pkg.pkg_name
-            pkg_name = DIFF_PROJECT_TO_TOP.get(pkg.pkg_name)
-            
+        if project_obj.project_name in PRJ_NAME_TO_TOP_LEVEL_MODULES:
+            project_name = project_obj.project_name
+
+        elif project_obj.project_name in MOD_NAME_TO_PRJ_OBJ:
+            project_name = MOD_NAME_TO_PRJ_OBJ.get(project_obj.project_name).project_name
+
         else:
-            pkg_name = pkg.pkg_name
+            raise Exception
 
 
-        item = PKG_NAME_TO_PIP_PKG.get(pkg_name)
 
-        
-        tmp_flat = set()
-        
+        top_level_modules = PRJ_NAME_TO_TOP_LEVEL_MODULES.get(project_name)
 
-        for req in item.requires():
-            tmp_deps = _recursive_create_package_info(req.key)
-            
-            tmp_flat = tmp_flat.union(set(tmp_deps))
 
-            for tmp_dep in tmp_deps:
-                if tmp_dep.flat:
-                    tmp_flat = tmp_flat.union(set(tmp_dep.flat))
+        for req in top_level_modules:
+            tmp_dep = _recursive_create_module_package_info(req)
+            tmp_flat.add(tmp_dep)
+            if tmp_dep.flat:
+                tmp_flat = tmp_flat.union( set(tmp_dep.flat) )
 
-        return tmp_flat
 
-    if pkg.type == PackageTypes.LOCALPACKAGE:
-        
-        tmp_flat = set()
-        
+    return tmp_flat
 
-        required_items = _get_local_package_dependencies(pkg)
-        
 
-        for req in required_items:
-            tmp_deps = _recursive_create_package_info(req)
+def _recursive_check_for_dependencies_package(pkg: ModulePackagingInfo) -> List[ModulePackagingInfo]:        
+    tmp_flat = set()
+    
 
-            tmp_flat.union(set(tmp_deps))
-            for tmp_dep in tmp_deps:
-                if tmp_dep.flat:
+    required_items = _get_local_package_dependencies(pkg)
+    
 
-                    tmp_flat = tmp_flat.union(set(tmp_dep.flat))
+    for req in required_items:
+        tmp_dep = _recursive_create_module_package_info(req)
 
-        return tmp_flat
+        tmp_flat.add(tmp_dep)
 
-    return {}
+        if tmp_dep.flat:
+            tmp_flat = tmp_flat.union(set(tmp_dep.flat))
+
+    return list(tmp_flat)
 
 
     
-def _get_local_package_dependencies(pkg: PackageInfo) -> List[str]:
+def _get_local_package_dependencies(pkg: ModulePackagingInfo) -> List[str]:
     # This is the hardest case of dependencies to handle
     # This is if the developer imports a local python module they created or got without pip
     # This module can depend on other packages (local,pip,etc)
@@ -358,8 +403,8 @@ def _load_aws_packages(version="3_6"):
     return set(["boto3", "botocore"])
 
 
-def _load_pip_packages():
-    return PKG_NAME_TO_PIP_PKG
+def _load_mod_to_prj():
+    return MOD_NAME_TO_PRJ_OBJ
 
 
 def is_parent_dir(parent, child) -> bool:

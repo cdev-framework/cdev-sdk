@@ -83,14 +83,14 @@ class PackageTypes(str, Enum):
     AWSINCLUDED = "awsincluded"
 
 
-class PackageInfo(BaseModel):
+class ModulePackagingInfo(BaseModel):
     pkg_name: str
     type: PackageTypes
     version_id: Optional[str]
     fp: Optional[str]
-    flat: Optional[List['PackageInfo']]
+    flat: Optional[List['ModulePackagingInfo']]
 
-    def set_flat(self, flat: List['PackageInfo']):
+    def set_flat(self, flat: List['ModulePackagingInfo']):
         self.flat = flat
 
 
@@ -118,7 +118,7 @@ class PackageInfo(BaseModel):
     def __hash__(self) -> int:
         return int(cdev_hasher.hash_string(self.get_id_str()), base=16)
 
-PackageInfo.update_forward_refs()
+ModulePackagingInfo.update_forward_refs()
 
 
 class lambda_python_environments(str, Enum):

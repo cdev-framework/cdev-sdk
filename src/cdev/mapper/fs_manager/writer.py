@@ -7,7 +7,7 @@ from pydantic.types import DirectoryPath, FilePath
 from sortedcontainers.sorteddict import SortedDict
 
 from . import utils as fs_utils
-from .utils import PackageTypes,PackageInfo
+from .utils import PackageTypes, ModulePackagingInfo
 
 from zipfile import ZipFile
 from cdev.settings import SETTINGS as cdev_settings
@@ -55,7 +55,7 @@ class ExternalDependencyWriteInfo(BaseModel):
     id: str
 
 
-def create_full_deployment_package(original_path : FilePath, needed_lines: List[int], parsed_path: str, pkgs: Dict[str, PackageInfo]=None ):
+def create_full_deployment_package(original_path : FilePath, needed_lines: List[int], parsed_path: str, pkgs: Dict[str, ModulePackagingInfo]=None ):
     """
     Create all the needed deployment resources needed for a given serverless function. This includes parsing out the needed lines from
     the original function, packaging local dependencies, and packaging external dependencies (pip packages).
@@ -79,6 +79,13 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
     _make_intermediate_handler_file(original_path, needed_lines, parsed_path)
     handler_files = [parsed_path]
 
+    # The handler can be in a subdirectory and since we preserve the relative project structure, we need to bring any __init__.py files
+    # to make sure the handler is in a valid path
+    extra_handler_path_files = _find_packaging_files_handler(original_path)
+    print(f"Adding {extra_handler_path_files} for handler {original_path}")
+
+    handler_files.extend(extra_handler_path_files)
+
     # Start from the base intermediate folder location then replace '/' with '.' and final remove the '.py' from the end
     base_handler_path = cdev_paths.get_relative_to_intermediate_path(parsed_path).replace("/", ".")[:-3]
 
@@ -101,6 +108,8 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
             local_dependencies_intermediate_locations = _copy_local_dependencies(handler_dependencies)
             handler_files.extend(local_dependencies_intermediate_locations)
 
+
+
     # Create the actual handler archive by zipping the needed files
     src_code_hash = _make_intermediate_handler_zip(zip_archive_location, handler_files)
 
@@ -108,13 +117,13 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
 
 
 
-def _create_package_dependencies_info(pkgs: Dict[str, PackageInfo]) -> Tuple[List[ExternalDependencyWriteInfo], List[str]]:
+def _create_package_dependencies_info(pkgs: Dict[str, ModulePackagingInfo]) -> Tuple[List[ExternalDependencyWriteInfo], List[str]]:
     """
-    Take a dictionary of the top level packages (str [pkg_name] -> PackageInformation) that are used by a handler and return the 
+    Take a dictionary of the top level packages (str [pkg_name] -> ModulePackagingInfo) that are used by a handler and return the 
     necessary information for creating the deployment packages. Packages can be broken down into two categories: handler and layer.
 
     Args:
-        pkgs (Dict[str, PackageInfo]): Top level packages used by the handler
+        pkgs (Dict[str, ModulePackagingInfo]): Top level packages used by the handler
 
 
     Returns:
@@ -137,9 +146,6 @@ def _create_package_dependencies_info(pkgs: Dict[str, PackageInfo]) -> Tuple[Lis
 
     Note that the input are the top level packages used by the handler, so we must look at the 'flat' attribute to find all the 
     needed dependencies.
-
-    
-
     """
 
     layer_dependencies = []
@@ -161,7 +167,7 @@ def _create_package_dependencies_info(pkgs: Dict[str, PackageInfo]) -> Tuple[Lis
             if cdev_paths.is_in_project(pkg.fp):
                 if os.path.isdir(pkg.fp):
 
-                    #Get external dependencies in the folder
+                    # If the fp is a dir that means we need to include the entire directory
 
                     for dir, _, files in os.walk(pkg.fp):
                         if dir.split("/")[-1] in EXCLUDE_SUBDIRS:
@@ -174,12 +180,13 @@ def _create_package_dependencies_info(pkgs: Dict[str, PackageInfo]) -> Tuple[Lis
        
         if pkg.flat:
             for dependency in pkg.flat:
-
                 if dependency.type == PackageTypes.PIP:
                     layer_dependencies.append(ExternalDependencyWriteInfo(**{
                         "location": dependency.fp,
                         "id": dependency.get_id_str()
                     }))
+
+                    
                 elif dependency.type == PackageTypes.LOCALPACKAGE:
                     handler_dependencies.add( dependency.fp )
 
@@ -212,29 +219,38 @@ def _make_intermediate_handler_file(original_path: FilePath, needed_lines: List[
 
     
 
+def _find_packaging_files_handler(original_path: FilePath) -> List[FilePath]:
+    """
+    This adds additional files like __init__.py need to make the file work. Since the handler can be in submodules, it is important 
+    to find all the nested __init__.py files for making sure the handler is accessible. 
 
-    # This adds additional files like __init__.py need to make the file work 
-    #path_from_project_dir = os.path.dirname(cdev_paths.get_relative_to_project_path(original_path)).split('/')
-    #intermediate_location = cdev_paths.get_project_path()
-    #
-    #rv = [parsed_path]
-    #while path_from_project_dir:
-    #    
-    #    intermediate_location = os.path.join(intermediate_location, path_from_project_dir.pop(0))
-    #    
-    #    file_loc = os.path.join(intermediate_location, "__init__.py")
-    #    intermediate_file_location = cdev_paths.get_full_path_from_intermediate_folder(cdev_paths.get_relative_to_project_path(file_loc))
-    #    if os.path.isfile(file_loc):
-    #        
-    #        shutil.copyfile(file_loc, intermediate_file_location)   
-    #    else:
-    #        with open(intermediate_file_location, 'a'):
-    #            os.utime(intermediate_file_location)
-#
-#
-    #    rv.append(intermediate_file_location)
-#
-    #return rv
+    Args:
+        original_path (FilePath): The original path of the file 
+
+    Returns:
+        needed_files (List[Filepath]): The list of files that need to be included with the handler
+    """
+    path_from_project_dir = os.path.dirname(cdev_paths.get_relative_to_project_path(original_path)).split('/')
+    intermediate_location = cdev_paths.get_project_path()
+    rv = []
+    
+    while path_from_project_dir:
+        
+        intermediate_location = os.path.join(intermediate_location, path_from_project_dir.pop(0))
+        
+        file_loc = os.path.join(intermediate_location, "__init__.py")
+        intermediate_file_location = cdev_paths.get_full_path_from_intermediate_folder(cdev_paths.get_relative_to_project_path(file_loc))
+        if os.path.isfile(file_loc):
+            
+            shutil.copyfile(file_loc, intermediate_file_location)   
+        else:
+            with open(intermediate_file_location, 'a'):
+                os.utime(intermediate_file_location)
+
+
+        rv.append(intermediate_file_location)
+
+    return rv
 
 
 

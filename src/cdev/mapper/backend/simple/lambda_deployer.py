@@ -334,7 +334,7 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
 
     if not previous_resource.external_dependencies_hash == new_resource.external_dependencies_hash:
         log.debug(f"UPDATE DEPENDENCIES OF {previous_resource.name}; {previous_resource.external_dependencies_hash} -> {new_resource.external_dependencies_hash}")
-
+        rv = []
         dependencies_info = cdev_cloud_mapper.get_output_value_by_hash(previous_resource.hash, "layers")
         
         
@@ -343,18 +343,20 @@ def _update_simple_lambda(previous_resource: simple_lambda.simple_aws_lambda_fun
         
         print_deployment_step("UPDATE", f'  Remove dependency {cloud_info.get("name")}')
         
-  
-        new_layer_rv = _create_dependency(new_resource, new_resource.external_dependencies_info)
-        
-        print_deployment_step("UPDATE", f'  Create dependency {new_layer_rv}')
+        if new_resource.external_dependencies_info:
+            new_layer_rv = _create_dependency(new_resource, new_resource.external_dependencies_info)
 
-        sleep(5)
-        raw_aws_client.run_client_function("lambda", "update_function_configuration", {
-                "FunctionName": cdev_cloud_mapper.get_output_value_by_hash(previous_resource.hash, "cloud_id"),
-                "Layers": [f'{new_layer_rv.get("arn")}:{new_layer_rv.get("version")}']
-            })
+            print_deployment_step("UPDATE", f'  Create dependency {new_layer_rv}')
 
-        cdev_cloud_mapper.update_output_by_key(previous_resource.hash, "layers", [new_layer_rv])
+            sleep(5)
+            raw_aws_client.run_client_function("lambda", "update_function_configuration", {
+                    "FunctionName": cdev_cloud_mapper.get_output_value_by_hash(previous_resource.hash, "cloud_id"),
+                    "Layers": [f'{new_layer_rv.get("arn")}:{new_layer_rv.get("version")}']
+                })
+
+            rv = [new_layer_rv]
+
+        cdev_cloud_mapper.update_output_by_key(previous_resource.hash, "layers", rv)
 
 
     if not previous_resource.events_hash == new_resource.events_hash:
