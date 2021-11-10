@@ -29,24 +29,42 @@ ANNOTATION_LABEL = "lambda_function_annotation"
 
 
 def _get_module_name_from_path(fp):
-    return fp.split("/")[-1][:-3]
+    relative_to_project_path = paths.get_relative_to_project_path(fp)
+   
+
+    relative_to_project_path_parts =  relative_to_project_path.split("/")
 
 
-def _find_resources_information_from_file(fp) -> List[Rendered_Resource]:
+    if relative_to_project_path_parts[-1] == "__init__.py":
+        relative_to_project_path_parts.pop()
+    else:
+        # remove the .py part of the file name
+        relative_to_project_path_parts[-1] = relative_to_project_path_parts[-1][:-3]
+
+    full_module_path_from_project = ".".join(relative_to_project_path_parts)
+    
+
+    return full_module_path_from_project
+
+
+def _find_resources_information_from_file(fp: FilePath) -> List[Rendered_Resource]:
     # Input: filepath
     if not os.path.isfile(fp):
         print("OH NO")
         return
+
     set_cdev_setting("CURRENT_PARSING_DIR", os.path.dirname(fp))
 
     mod_name = _get_module_name_from_path(fp)
-        
+    
+    print("-------")
     if sys.modules.get(mod_name):
         #print(f"already loaded {mod_name}")
         importlib.reload(sys.modules.get(mod_name))
         
     # When the python file is imported and executed all the Cdev resources are created
     mod = importlib.import_module(mod_name)
+    print("-------")
     rv = []
     
     functions_to_parse = []
@@ -122,11 +140,14 @@ def _create_serverless_function_resources(filepath: FilePath, functions_names_to
         
         cleaned_name = _clean_function_name(parsed_function.name)
         intermediate_path = fs_utils.get_parsed_path(filepath, cleaned_name)
-        
+
+        print(f"imported modules ->>> {parsed_function.imported_packages}")
+        needed_module_information = cdev_package_manager.get_top_level_module_info(parsed_function.imported_packages, filepath)
+        print(f"Need modules infos ->>> { needed_module_information}")
         
         src_code_hash, archive_path, base_handler_path, dependencies_info = writer.create_full_deployment_package(filepath, 
                                                                                 parsed_function.get_line_numbers_serializeable(), 
-                                                                                intermediate_path, parsed_function.needed_imports)
+                                                                                intermediate_path, needed_module_information)
         
         final_handler_path = base_handler_path + "." + parsed_function.name
                     
@@ -158,22 +179,15 @@ def parse_folder(folder_path, prefix=None) -> List[Rendered_Resource]:
 
     python_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f)) and f[-3:]==".py"]
 
-    original_path = os.getcwd()
-
-    os.chdir(folder_path)
-
-    sys.path.append(os.getcwd())
 
     # [{<resource>}]
     rv = SortedKeyList(key=lambda x: x.hash)
 
 
     for pf in python_files:
-        final_function_info = _find_resources_information_from_file(os.path.join(os.getcwd(),pf))
+        final_function_info = _find_resources_information_from_file(os.path.join(folder_path,pf))
         if final_function_info:
             rv.update(final_function_info)
 
-        
-    os.chdir(original_path)
 
     return list(rv)

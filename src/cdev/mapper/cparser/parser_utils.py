@@ -2,6 +2,9 @@ import ast
 import os
 from sys import modules, version_info
 
+from typing import List
+from pydantic.types import DirectoryPath, FilePath
+
 import tokenize 
 
 from .parser_objects import *
@@ -180,6 +183,7 @@ def _generate_global_statement(file_info_obj, node, line_info):
     if len(used_imported_symbols) > 0:
         # This statement uses an imported symbol so we need to check it to see if it is the import statement
         for n in ast.walk(ast_node):
+            #print(n)
             if isinstance(n, ast.Import):
                 #print(f"IMPORT: {n}")
                 #print(f"FIELDS { [(cn.name, cn.asname)  for cn in n.names] }")
@@ -194,6 +198,8 @@ def _generate_global_statement(file_info_obj, node, line_info):
                                                     [start_line, last_line],
                                                     symbol_table, asname,
                                                     imprt.name)
+
+                    #print(f"{ast.dump(n)} -> {asname}?{imprt.name}")
                     file_info_obj.add_global_import(imp_statement)
                     continue
 
@@ -203,11 +209,23 @@ def _generate_global_statement(file_info_obj, node, line_info):
                         asname = imprt.name
                     else:
                         asname = imprt.asname
+                    
 
+                    if n.level > 0:
+                        if not n.module:
+                            asmodule = f"{'.' * n.level}{asname}"
+                        else:
+                            asmodule = f"{'.' * n.level}{n.module}"
+                            
+
+                    else:
+                        asmodule =  n.module
+
+                    #print(f"{ast.dump(n)} -> {asname}?{asmodule}")
                     imp_statement = ImportStatement(ast_node,
                                                     [start_line, last_line],
                                                     symbol_table, asname,
-                                                    n.module)
+                                                    asmodule)
 
                     file_info_obj.add_global_import(imp_statement)
                 continue
@@ -516,7 +534,7 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
         for symbol in all_used_symbols:
             #print(f"pkg->>>>> {symbol}")
             if symbol in file_info_obj.imported_symbol_to_global_statement and not symbol in EXCLUDED_SYMBOLS:
-                #print(f"add pkg->>>>> {symbol}")
+                print(f"add pkg->>>>> {symbol}")
                 p_function.add_import(
                     file_info_obj.imported_symbol_to_global_statement.get(symbol)
                 )
@@ -529,8 +547,11 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
     return file_info_obj
 
 
+_individual_file_cache = {}
 def _get_individual_files_imported_symbols(file_location):
-    
+    if file_location in _individual_file_cache:
+        return _individual_file_cache.get(file_location)
+
     rv = set()
     
     with open(file_location, 'r') as fh:
@@ -539,35 +560,70 @@ def _get_individual_files_imported_symbols(file_location):
 
     ast_rep = ast.parse("".join(src_code))
 
+    
+
     for node in ast.walk(ast_rep):
+        
         if isinstance(node, ast.Import):
             for pkg_name in node.names:
-                rv.add(pkg_name.name)
+                if not pkg_name.asname:
+                    asname = pkg_name.name
+                else:
+                    asname = pkg_name.asname
+                rv.add((asname, None))
     
         elif isinstance(node, ast.ImportFrom):
             # if the import has levels > 0 and no module it is a local referenced package and will already be included
             # if not then it is a package on the PYTHONPATH and we need to add it as a dependency
             
-            if not node.module and node.level > 0:
-                continue
+            
+            for pkg_name in node.names:
+                
+                if node.level > 0:
+                    if not node.module:
+                        asmodule = f"{'.' * node.level}{pkg_name.name}"
+                    else:
+                        asmodule = f"{'.' * node.level}{node.module}"
 
-            rv.add(node.module)
-           
+                    rv.add((asmodule, file_location))
+
+                else:
+                    asmodule =  node.module
+                    rv.add((asmodule, None))
+
+    _individual_file_cache[file_location] = rv
+                
     return rv
 
 
-def get_folders_imported_symbols(folder_path):
+def get_folders_imported_symbols(folder_loc: DirectoryPath, excludes: List[str]=[]):
     # Walk the whole dir/children importing all python files and then searching their symbol tree to find import statements
 
-    all_symbols = set()
+    all_modules = set()
 
-    for (dirpath, dirnames, filenames) in os.walk(folder_path):
+    for (dirpath, dirnames, filenames) in os.walk(folder_loc): 
+        if excludes:
+            if dirpath in excludes:
+                continue
+
         for filename in filenames:
+            if excludes:
+                if os.path.join(dirpath, filename) in excludes:
+                    continue
+
             if filename.endswith('.py'): 
-                rv = _get_individual_files_imported_symbols(os.sep.join([dirpath, filename]))
+                rv = _get_individual_files_imported_symbols(os.path.join(dirpath, filename))
 
-                all_symbols = all_symbols.union(rv)
+                all_modules = all_modules.union(rv)
 
-    return all_symbols
+    return all_modules
+
+
+
+def get_file_imported_symbols(file_loc: FilePath):
+    # Walk the whole dir/children importing all python files and then searching their symbol tree to find import statements
+    rv = _get_individual_files_imported_symbols(file_loc)
+
+    return rv
 
 

@@ -112,12 +112,12 @@ def _download_package(pkg: Distribution, environment: lambda_python_environments
 
     packaging_dir = DOWNLOAD_CACHE.get_packaging_dir(environment)
     
-    print(f"DOWNLOADING {pkg} FROM DOCKER")
+    #print(f"DOWNLOADING {pkg} FROM DOCKER")
     client =  docker.from_env()
 
     client.images.pull("public.ecr.aws/lambda/python:3.8-arm64")
     
-    print(f"PULLED IMAGE")
+    #print(f"PULLED IMAGE")
 
     container = client.containers.run("public.ecr.aws/lambda/python:3.8-arm64",
                         entrypoint="/var/lang/bin/pip", 

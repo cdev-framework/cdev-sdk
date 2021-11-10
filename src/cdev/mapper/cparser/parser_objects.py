@@ -301,6 +301,7 @@ class file_information():
     def add_global_import(self, global_obj):
         self.imported_symbol_to_global_statement[
             global_obj.as_symbol] = global_obj
+            
         self.add_global_statement(global_obj)
 
     def add_class_definition(self, name, global_obj):

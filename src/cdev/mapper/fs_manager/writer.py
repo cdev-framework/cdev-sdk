@@ -7,7 +7,7 @@ from pydantic.types import DirectoryPath, FilePath
 from sortedcontainers.sorteddict import SortedDict
 
 from . import utils as fs_utils
-from .utils import PackageTypes, ModulePackagingInfo
+from .utils import PackageTypes, ModulePackagingInfo, print_dependency_tree
 
 from zipfile import ZipFile
 from cdev.settings import SETTINGS as cdev_settings
@@ -82,7 +82,7 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
     # The handler can be in a subdirectory and since we preserve the relative project structure, we need to bring any __init__.py files
     # to make sure the handler is in a valid path
     extra_handler_path_files = _find_packaging_files_handler(original_path)
-    print(f"Adding {extra_handler_path_files} for handler {original_path}")
+    #print(f"Adding {extra_handler_path_files} for handler {original_path}")
 
     handler_files.extend(extra_handler_path_files)
 
@@ -93,6 +93,8 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
     zip_archive_location = os.path.join(os.path.dirname(parsed_path), filename[:-3] + ".zip")
 
     if pkgs:
+        
+        print_dependency_tree(original_path, pkgs.values())
 
         layer_dependencies, handler_dependencies = _create_package_dependencies_info(pkgs)
 
@@ -175,6 +177,7 @@ def _create_package_dependencies_info(pkgs: Dict[str, ModulePackagingInfo]) -> T
 
                         handler_dependencies = handler_dependencies.union(set([os.path.join( pkg.fp, dir, x) for x in files]))
                 else:
+
                     handler_dependencies.add(pkg.fp)
             
        
@@ -186,7 +189,7 @@ def _create_package_dependencies_info(pkgs: Dict[str, ModulePackagingInfo]) -> T
                         "id": dependency.get_id_str()
                     }))
 
-                    
+
                 elif dependency.type == PackageTypes.LOCALPACKAGE:
                     handler_dependencies.add( dependency.fp )
 
@@ -380,7 +383,7 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
         os.remove(zip_archive_full_path)
 
     for info in needed_info:
-        print(f"------------{info.id} ------------")
+        #print(f"------------{info.id} ------------")
         if info.id in seen_pkgs:
             continue
 
@@ -400,7 +403,7 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
 
 
             else:
-                print(f"Walking -> {info.location}")
+                #print(f"Walking -> {info.location}")
                 pkg_name = os.path.split(info.location)[1]
 
                 for dirname, subdirs, files in os.walk(info.location):

@@ -9,6 +9,8 @@ from enum import Enum
 from cdev.settings import SETTINGS as cdev_settings
 from cdev.utils import paths as cdev_paths, hasher as cdev_hasher
 
+from rich import print
+
 INTERMEDIATE_FOLDER = cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION")
 
 def get_lines_from_file_list(file_list, function_info) -> List[str]:
@@ -75,6 +77,7 @@ def get_parsed_path(original_path, function_name, prefix=None):
     return os.path.join(final_file_dir, final_file_name)
 
 
+
 class PackageTypes(str, Enum):
     BUILTIN = "builtin"
     STANDARDLIB = "standardlib"
@@ -88,11 +91,15 @@ class ModulePackagingInfo(BaseModel):
     type: PackageTypes
     version_id: Optional[str]
     fp: Optional[str]
+    tree: Optional[List['ModulePackagingInfo']]
     flat: Optional[List['ModulePackagingInfo']]
+    is_relative: Optional[bool]
 
     def set_flat(self, flat: List['ModulePackagingInfo']):
         self.flat = flat
 
+    def set_tree(self, tree: List['ModulePackagingInfo']):
+        self.tree = tree
 
     def get_id_str(self) -> str:
         if self.type == PackageTypes.LOCALPACKAGE:
@@ -119,6 +126,44 @@ class ModulePackagingInfo(BaseModel):
         return int(cdev_hasher.hash_string(self.get_id_str()), base=16)
 
 ModulePackagingInfo.update_forward_refs()
+
+
+_depth_to_color  = {
+    1: "white",
+    2: "blue",
+    3: "yellow",
+    4: "magenta",
+    0: "red"
+}
+
+
+def print_dependency_tree(handler_name: str, top_level_modules: List[ModulePackagingInfo]):
+    print(f"Handler: {handler_name}")
+
+    for module_info in top_level_modules:
+        
+        _recursive_dfs_print(module_info, 1)
+        print("|")
+
+
+
+def _recursive_dfs_print(module_info: ModulePackagingInfo, depth: int):
+    
+    base_str = f"|[{_depth_to_color.get(depth%5)}]{'-' * depth } {module_info.pkg_name}[/{_depth_to_color.get(depth%5)}] ({module_info.type})"   
+    print(base_str)
+
+    if module_info.tree:
+        for child_module in module_info.tree:
+            _recursive_dfs_print(child_module, depth+1)
+
+
+def print_handler_package():
+    pass
+
+
+def print_layer_package():
+    pass
+
 
 
 class lambda_python_environments(str, Enum):
