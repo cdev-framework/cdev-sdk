@@ -5,6 +5,7 @@ from cdev.settings import SETTINGS as CDEV_SETTINGS
 import os
 import json
 from pkg_resources import Distribution
+import re
 
 from .utils import PackageTypes, ModulePackagingInfo, lambda_python_environments
 
@@ -92,7 +93,7 @@ DOWNLOAD_CACHE = DockerDownloadCache()
 def download_package(pkg: Distribution, environment: lambda_python_environments, pkg_name: str) -> ModulePackagingInfo:
     package_information = _download_package(pkg, environment)
 
-    potential_modules = [x for x in package_information if x.pkg_name == pkg_name]
+    potential_modules = [x for x in package_information if x.module_name == pkg_name]
 
 
     if not len(potential_modules) == 1:
@@ -139,7 +140,7 @@ def _download_package(pkg: Distribution, environment: lambda_python_environments
     
 
 
-def _create_package_info(project_name: str, environment: lambda_python_environments) -> List[ModulePackagingInfo]:
+def _create_package_info(project_name: str,  environment: lambda_python_environments) -> List[ModulePackagingInfo]:
     """
     Creates a list of ModulePackagingInfo objects that represent the top level modules made available from this 
     package. It uses a cache to make sure the subsequent calls do not have to recompute the dependencies. 
@@ -152,14 +153,42 @@ def _create_package_info(project_name: str, environment: lambda_python_environme
 
     packaging_dir = DOWNLOAD_CACHE.get_packaging_dir(environment)
 
+    dist_info_dir = None
+    for _,dir_names,_ in os.walk(packaging_dir):
+        regex_dist_info = "(.*).dist-info"
+        
 
-    # find the dist info directory that will contain metadata about the package
-    dist_info_dir =  os.path.join(packaging_dir, f"{project_name.replace('-', '_')}-{project_name}.dist-info")
+        for dir_name in dir_names:
+            m = re.match(regex_dist_info, dir_name)
+            if not m:
+                print(f"No regex match {dir_name} -> {regex_dist_info}")
+                continue
+
+            dir_name_split = m.groups()
+            print(dir_name_split)
+            
+            print(f"checking {dir_name_split[0]}")
+            split_name_version = dir_name_split[0].split("-") 
+
+            name = split_name_version[0].replace("-", "_")
+            version = split_name_version[1]
+
+
+            if name == project_name.replace("-","_"):
+                dist_info_dir = os.path.join(packaging_dir, f"{name}-{version}.dist-info")
+                break
+        break 
+
+    if not dist_info_dir:
+        print(f"Could not find dist info for {project_name}")
+        raise Exception
 
     if not os.path.isdir(os.path.join(packaging_dir, dist_info_dir)):
+        print(f"COULD NOT FIND {os.path.join(packaging_dir, dist_info_dir)}")
         raise Exception
 
     if not os.path.isfile(os.path.join(packaging_dir, dist_info_dir, "METADATA")):
+        print(f"COULD NOT FIND {os.path.join(packaging_dir, dist_info_dir, 'METADATA')}")
         raise Exception
 
     
@@ -225,7 +254,7 @@ def _create_package_info(project_name: str, environment: lambda_python_environme
             continue
 
         info = ModulePackagingInfo(**{
-            "pkg_name": pkg_name,
+            "module_name": pkg_name,
             "type": PackageTypes.PIP,
             "version_id": current_package_version,
             "fp": tmp_fp

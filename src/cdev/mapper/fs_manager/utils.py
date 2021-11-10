@@ -87,7 +87,7 @@ class PackageTypes(str, Enum):
 
 
 class ModulePackagingInfo(BaseModel):
-    pkg_name: str
+    module_name: str
     type: PackageTypes
     version_id: Optional[str]
     fp: Optional[str]
@@ -104,16 +104,16 @@ class ModulePackagingInfo(BaseModel):
     def get_id_str(self) -> str:
         if self.type == PackageTypes.LOCALPACKAGE:
             if os.path.isfile(self.fp):
-                return f"{self.pkg_name}-{self.fp}-{cdev_hasher.hash_file(self.fp)}"
+                return f"{self.module_name}-{self.fp}-{cdev_hasher.hash_file(self.fp)}"
 
             else:
-                return f"{self.pkg_name}-{self.fp}"
+                return f"{self.module_name}-{self.fp}"
 
         elif self.type == PackageTypes.PIP:
-            return f"{self.pkg_name}-{self.version_id}"
+            return f"{self.module_name}-{self.version_id}"
 
         else:
-            return self.pkg_name
+            return self.module_name
 
     def __str__(self) -> str:
         return self.get_id_str()
@@ -149,7 +149,7 @@ def print_dependency_tree(handler_name: str, top_level_modules: List[ModulePacka
 
 def _recursive_dfs_print(module_info: ModulePackagingInfo, depth: int):
     
-    base_str = f"|[{_depth_to_color.get(depth%5)}]{'-' * depth } {module_info.pkg_name}[/{_depth_to_color.get(depth%5)}] ({module_info.type})"   
+    base_str = f"|[{_depth_to_color.get(depth%5)}]{'-' * depth } {module_info.module_name}[/{_depth_to_color.get(depth%5)}] ({module_info.type})"   
     print(base_str)
 
     if module_info.tree:
