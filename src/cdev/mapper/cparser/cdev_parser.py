@@ -30,9 +30,5 @@ def parse_functions_from_file(file_loc, include_functions=[], function_manual_in
 
 
 
-def parse_folder_for_dependencies(folder_loc: DirectoryPath, excludes: List[str]=None):
-    return p_utils.get_folders_imported_symbols(folder_loc, excludes)
-
-
 def parse_file_for_dependencies(file_loc: DirectoryPath):
     return p_utils.get_file_imported_symbols(file_loc)

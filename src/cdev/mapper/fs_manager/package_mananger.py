@@ -3,7 +3,7 @@ import sys
 import typing
 import pkg_resources
 from zipfile import ZipFile
-from typing import List, Set, Dict, Tuple, Union
+from typing import List, Set, Dict, Tuple, Union, Optional
 import re
 from pathlib import Path
 from pydantic.types import DirectoryPath, FilePath
@@ -34,12 +34,8 @@ STANDARD_LIBRARY_FILES = ['3_6', "3_7", "3_8"]
 # as the dependency of another project it will be a the project name. 
 MOD_NAME_TO_PRJ_OBJ: Dict[str, pkg_resources.Distribution] = {}
 
-PRJ_NAME_TO_PRJ_OBJ: Dict[str, pkg_resources.Distribution] = {}
-
-
 PRJ_NAME_TO_TOP_LEVEL_MODULES: Dict[str, List[str]] = {}
 
-DIFF_PROJECT_TO_TOP = {}
 
 DEPLOYMENT_PLATFORM = CDEV_SETTINGS.get("DEPLOYMENT_PLATFORM")
 
@@ -47,13 +43,7 @@ INCOMPATIBLE_PROJECTS = set()
 
 _already_checked_cache = set()
 
-
-def clear_already_checked_cache():
-    global _already_checked_cache
-
-    _already_checked_cache = set()
-
-def is_platform_compatible(tags: List[str]) -> bool:
+def _is_platform_compatible(tags: List[str]) -> bool:
     # https://packaging.python.org/specifications/platform-compatibility-tags/
     # PEP 600
     LEGACY_ALIASES = {
@@ -105,10 +95,16 @@ def is_platform_compatible(tags: List[str]) -> bool:
 
         return True
 
-    
-
 
 for project_obj in pkg_resources.working_set:
+    # We need to compute some information about the available modules in the current environment. This will help to provide information about
+    # the modules when handlers reference them. 
+
+    # Compute:
+    # MOD_NAME_TO_PRJ_OBJ -> Dict from the module name to the project object that contains the metadata about the project the module is from
+    # PRJ_NAME_TO_TOP_LEVEL_MODULES -> Dict from the project name to all of its top level modules which are used when including the project as a dependency
+    # INCOMPATIBLE_PROJECTS -> Projects that are not platform agnostic and would therefore need to be redownloaded for the correct deployment architecture
+
     # For information on this object check 
     # https://setuptools.pypa.io/en/latest/pkg_resources.html#distribution-objects
     # Distribution Object
@@ -159,7 +155,7 @@ for project_obj in pkg_resources.working_set:
         # We are going ot check the tags of the package to make sure it is compatible with the target deployment platform
         tags = [x.split(":")[1] for x in lines if x.split(":")[0]=='Tag'][0].strip().split("-")
         
-        if not is_platform_compatible(tags):
+        if not _is_platform_compatible(tags):
             INCOMPATIBLE_PROJECTS.add(project_obj.project_name)
 
 
@@ -177,15 +173,15 @@ def get_top_level_module_info(modules: List[str], start_location: FilePath) -> D
     """
     all_packages = {}
 
-    clear_already_checked_cache()
+    _clear_already_checked_cache(start_location)
 
     for module_name in modules:
-        all_packages[module_name] = get_module_info(module_name, start_location)
+        all_packages[module_name] = _get_module_info(module_name, start_location)
 
     return SortedDict(all_packages)
 
 
-def get_module_info(module_name: str, original_file_location: str) -> ModulePackagingInfo:
+def _get_module_info(module_name: str, original_file_location: str) -> ModulePackagingInfo:
     """
     Create the information needed to package this dependency with a parsed function. We use the recursive method because
     we must compute the package information for the dependencies of this dependency. Returns a ModulePackagingInfo objects
@@ -207,20 +203,38 @@ def get_module_info(module_name: str, original_file_location: str) -> ModulePack
     return info
 
 
+def _clear_already_checked_cache(starting_location: str):
+    # Add the starting file of the recursive calls
+    global _already_checked_cache
+
+    _already_checked_cache = set()
+
+    _already_checked_cache.add(starting_location)
+
 
 def _recursive_create_module_package_info(module_name: str, original_file_location: str) -> ModulePackagingInfo:
     """
     Recursively create a module information object by finding out what type of module this is, and then recursively creating 
     any dependant modules. 
+
+    Args:
+        module_name (str): This is the top level module name used by the handler (can be a relative module)
+        original_file_location: Location to use as start point if a local module is given
+
+    Returns:
+        module_info (ModulePackagingInfo): Information object for the given module
     
     """
 
+
     if (module_name, original_file_location) in PACKAGE_CACHE:
+        # Look in the cache if there is already information about this module to speed up the process
         return PACKAGE_CACHE.get((module_name, original_file_location))
         
 
     
     if not module_name in sys.modules and not module_name in MOD_NAME_TO_PRJ_OBJ and not module_name[0] == ".":
+        # The module name is not in the available system modules and also not a relative module
         print(f"BAD PKG NAME -> {module_name}")
         raise Exception
 
@@ -231,6 +245,7 @@ def _recursive_create_module_package_info(module_name: str, original_file_locati
 
 
         if module_name in standard_lib_info:
+            # Module is from the standard library
             rv = ModulePackagingInfo(**{
                 "module_name": module_name,
                 "type":  PackageTypes.STANDARDLIB,
@@ -239,6 +254,7 @@ def _recursive_create_module_package_info(module_name: str, original_file_locati
             })
 
         elif module_name in aws_packages:
+            # Module is part of the default libraries available in the aws lambda python environment
             rv = ModulePackagingInfo(**{
                 "module_name": module_name,
                 "type":  PackageTypes.AWSINCLUDED,
@@ -247,13 +263,19 @@ def _recursive_create_module_package_info(module_name: str, original_file_locati
             })
 
         elif module_name in pip_packages:
+            # Module was installed with a package manager and therefor contains additional metadata that can be used to find the dependencies
             tmp_distribution_obj = pip_packages.get(module_name)
     
             project_name = tmp_distribution_obj.project_name
 
             if project_name in INCOMPATIBLE_PROJECTS:
+                # Some of the projects that can be installed are platform dependant and the users environment might not match the aws lambda 
+                # environment. So, we need to use docker to pull the compatible version of the library then use that in the final archive
+                 
                 if CDEV_SETTINGS.get("PULL_INCOMPATIBLE_LIBRARIES"):
                     if docker_package_builder.docker_available():
+                        # Not that the download package function uses a cache so it will only actually pull the first time the user wants to
+                        # package this function.
                         rv = docker_package_builder.download_package(tmp_distribution_obj, lambda_python_environments.py38_arm64, module_name)
                         PACKAGE_CACHE[(module_name, original_file_location)] = rv
                         return rv
@@ -261,7 +283,7 @@ def _recursive_create_module_package_info(module_name: str, original_file_locati
                     else:
                         raise Exception
 
-
+                # TODO make this a wanring maybe 
                 raise Exception
 
             # The package could be either a folder (normal case) or a single python file (ex: 'six' package)
@@ -272,13 +294,13 @@ def _recursive_create_module_package_info(module_name: str, original_file_locati
 
             if os.path.isdir(potential_dir):
                 tmp_fp = potential_dir
-
             elif os.path.isfile(potential_file):
                 tmp_fp = potential_file
             else:
                 raise Exception
 
-            # required modules from this package
+
+            # Find the dependent modules for this project (distribution obj)
             tmp_dependencies_flat, tmp_dependencies_tree = _recursive_check_for_dependencies_project(tmp_distribution_obj)
 
             rv = ModulePackagingInfo(**{
@@ -295,10 +317,12 @@ def _recursive_create_module_package_info(module_name: str, original_file_locati
             mod = sys.modules.get(module_name)
             if mod:
                 if not mod.__file__:
+                    # if the module __file__ is not present than it is a builtin module to the interpreter 
                     tmp_type = PackageTypes.BUILTIN
                     tmp_fp = None
                     tmp_version = None
                 else:
+                    # this is a local package that was not imported using a relative path
                     tmp_type = PackageTypes.LOCALPACKAGE
                     tmp_version = None
 
@@ -307,12 +331,16 @@ def _recursive_create_module_package_info(module_name: str, original_file_locati
                     else:
                         tmp_fp = mod.__file__
             elif module_name[0] == ".":
+                # IF the module name started with a '.' then it is a relative import
+                # TODO Change this to a different type because it is important for the packaging step
                 tmp_type = PackageTypes.LOCALPACKAGE
                 tmp_version = None
 
                 tmp_module_name = module_name
 
                 levels = 0
+                # loop to compute how many layers up this relative import is by popping off the '.' char 
+                # until it reaches a different char
                 while tmp_module_name[0] == ".":
                     tmp_module_name, next_char = tmp_module_name[1:], tmp_module_name[0]
 
@@ -323,11 +351,13 @@ def _recursive_create_module_package_info(module_name: str, original_file_locati
 
                 original_path = Path(original_file_location)
 
+                # go up the amount of levels need to get to the top of the search path
                 relative_base_dir = original_path.parents[levels-1]
 
+                # since we popped off the leading '.' chars, the remaining portion is the path to search down from the top
                 tmp_pkg_path_parts = tmp_module_name.split(".")
 
-
+                # Again the module can either be a single file or a directory containing other files
                 tmp_potential_file = os.path.join(relative_base_dir, "/".join(tmp_pkg_path_parts[:-1]), tmp_pkg_path_parts[-1]+".py" )
                 tmp_potential_dir = os.path.join(relative_base_dir, "/".join(tmp_pkg_path_parts))
 
@@ -336,17 +366,13 @@ def _recursive_create_module_package_info(module_name: str, original_file_locati
                 elif os.path.isdir(tmp_potential_dir):
                     tmp_fp = tmp_potential_dir
                 else:
-                    print(f"COULD NOT FIND EITHER {tmp_potential_file} or {tmp_potential_dir}")
-                    raise Exception
-                    
-                print(f"find dependencies of local package {tmp_module_name}, levels={levels} is {tmp_fp}")
-                
+                    raise Exception            
                     
             else:
-                print(sys.modules.keys())
-                print("BAADDD")
                 raise Exception
 
+            # Since this is a local package, it does not contain any extra metadata. This means the only way to find the dependencies is to
+            # parse each python file in the needed module and look at its imports :/
             dependencies_flat, dependencies_tree = _recursive_check_for_dependencies_package(tmp_fp)
 
         
@@ -359,16 +385,23 @@ def _recursive_create_module_package_info(module_name: str, original_file_locati
                 "tree": dependencies_tree
             })
         
-        
 
-        
         PACKAGE_CACHE[(module_name, original_file_location)] = rv
         return rv
 
 
 def _recursive_check_for_dependencies_project(project_distribution_obj: pkg_resources.Distribution) -> Tuple[List[ModulePackagingInfo], List[ModulePackagingInfo]]:
     """
-    Create the ModulePackagingInfo objects for all the top level modules in this package. 
+    Create the ModulePackagingInfo objects for all dependencies of this project. By calling the '_recursive_create_module_package_info' to create the
+    ModulePackagingInfo objects, it creates a recursive stack that eventually leads to tmp_flat being a list of ALL needed dependencies and the tmp_tree
+    to be the first level in the dependency tree for this project. 
+
+    Args:
+        project_distribution_obj (pkg_resources.Distribution): object from pkg_resources that contains metadata on this package
+
+    Returns:
+        flat (List[ModulePackagingInfo]): List of ALL needed dependencies
+        tree (List[ModulePackagingInfo]): First level of a dependency tree for this project
     """
     tmp_flat = set()
     tmp_tree = set()
@@ -378,13 +411,14 @@ def _recursive_check_for_dependencies_project(project_distribution_obj: pkg_reso
         if project_obj.project_name in PRJ_NAME_TO_TOP_LEVEL_MODULES:
             project_name = project_obj.project_name
 
+        # Note that pip packages should list their dependencies as the project name, but some use the top level module name that
+        # can be slightly different than the project name.
+        # Example awswrangler (2.12.1) lists 'Requires-Dist: pymysql (>=0.9.0,<1.1.0)' but the actual package name is 'PyMySQL' 
+        # .....python packaging sucks
         elif project_obj.project_name in MOD_NAME_TO_PRJ_OBJ:
             project_name = MOD_NAME_TO_PRJ_OBJ.get(project_obj.project_name).project_name
-
         else:
             raise Exception
-
-
 
         top_level_modules = PRJ_NAME_TO_TOP_LEVEL_MODULES.get(project_name)
 
@@ -403,7 +437,19 @@ def _recursive_check_for_dependencies_project(project_distribution_obj: pkg_reso
     return tmp_flat, tmp_tree
 
 
-def _recursive_check_for_dependencies_package(fp:  Union[FilePath, DirectoryPath]) -> Tuple[List[ModulePackagingInfo], List[ModulePackagingInfo]]:        
+def _recursive_check_for_dependencies_package(fp:  Union[FilePath, DirectoryPath]) -> Tuple[List[ModulePackagingInfo], List[ModulePackagingInfo]]:
+    """
+    Create the ModulePackagingInfo objects for all dependencies of this local module. By calling the '_recursive_create_module_package_info' to create the
+    ModulePackagingInfo objects, it creates a recursive stack that eventually leads to tmp_flat being a list of ALL needed dependencies and the tmp_tree
+    to be the first level in the dependency tree for this project. 
+
+    Args:
+        project_distribution_obj (pkg_resources.Distribution): object from pkg_resources that contains metadata on this package
+
+    Returns:
+        flat (List[ModulePackagingInfo]): List of ALL needed dependencies
+        tree (List[ModulePackagingInfo]): First level of a dependency tree for this project
+    """     
     tmp_flat = set()
     tmp_tree = set()
     
@@ -425,13 +471,18 @@ def _recursive_check_for_dependencies_package(fp:  Union[FilePath, DirectoryPath
     return list(tmp_flat), tmp_tree
 
 
+def _get_local_package_dependencies(fp: Union[FilePath, DirectoryPath] ) -> List[Tuple[str, Optional[str]]]:
+    """
+    Get the local dependencies for a given local module by searching through the file/s that make up the module and looking
+    for import statements. 
 
+    Args:
+        fp (Union[FilePath, DirectoryPath]): the location of the module in question
+    
+    Returns:
+        dependencies (List[Tuple[str,str]]): List of dependant module names and an optional filepath if the module is a relative module
+    """
 
-def _get_local_package_dependencies(fp: Union[FilePath, DirectoryPath] ) -> List[str]:
-    # This is the hardest case of dependencies to handle
-    # This is if the developer imports a local python module they created or got without pip
-    # This module can depend on other packages (local,pip,etc)
-    # The only way to get this dependency tree is to parse each file for import statements :upsidedownsmile: 
 
     _current_working_dir = CDEV_SETTINGS.get("CURRENT_PARSING_DIR")
 
@@ -439,42 +490,42 @@ def _get_local_package_dependencies(fp: Union[FilePath, DirectoryPath] ) -> List
         # This setting should be set
         raise Exception
 
+    # Since we are just reading the files not importing them. We do not have a guarantee to not cause a circular dependency
+    # Therefore, we preload all the files we are going to check before checking them, and add that to a cache to check against
+    # If a file is already in the cache, it means it has/or will be accounted for.
+
     if fp in _already_checked_cache:
         # We have already included this file so skip it 
-        print(f"Already included {fp}")
         return []
-    else:
-        print(f"already checked {_already_checked_cache}")
 
+    # Local Module can be either directory or single file
     if os.path.isdir(fp):
+        module_names = set()
+
         for dir,_, files in os.walk(fp):
+            if dir in _already_checked_cache:
+                continue
+
+            # Load the directory (and subdirectories)
             _already_checked_cache.add(dir)
 
             for file in files:
+                if not file[-3:] == ".py":
+                    continue
+
+                # Load the files 
+                if os.path.join(dir, file) in _already_checked_cache:
+                    continue
+
                 _already_checked_cache.add(os.path.join(dir, file))
 
+                module_names = module_names.union( cdev_parser.parse_file_for_dependencies( os.path.join(dir, file) ) )
 
-        if fp == _current_working_dir:
-            print(f'can not include whole current directory -> {fp}')
-            raise Exception
-        elif is_parent_dir(fp, _current_working_dir):
-            module_names = cdev_parser.parse_folder_for_dependencies(fp, excludes=[_current_working_dir])
-            
-        else:
-            print(f'check only this folder -> {fp}')
-            module_names = cdev_parser.parse_folder_for_dependencies(fp)
-            print(f"found {module_names} for {fp}")
-
-        
     else:
         _already_checked_cache.add(fp)
         module_names = cdev_parser.parse_file_for_dependencies(fp)
         
-        
-            
-
     return list(module_names)
-
 
 
 def _load_standard_library_information(version="3_6"):
@@ -494,15 +545,3 @@ def _load_aws_packages(version="3_6"):
 
 def _load_mod_to_prj():
     return MOD_NAME_TO_PRJ_OBJ
-
-
-def is_parent_dir(parent, child) -> bool:
-    # Smooth out relative path names
-    parent_path = os.path.abspath(parent)
-    child_path = os.path.abspath(child)
-
-    # Compare the common path of the parent and child path with the common path of just the parent path. 
-    # Using the commonpath method on just the parent path will regularise the path name in the same way 
-    # as the comparison that deals with both paths, removing any trailing path separator
-    return os.path.commonpath([parent_path]) == os.path.commonpath([parent_path, child_path])
-    

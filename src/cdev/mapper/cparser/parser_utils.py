@@ -596,28 +596,6 @@ def _get_individual_files_imported_symbols(file_location):
     return rv
 
 
-def get_folders_imported_symbols(folder_loc: DirectoryPath, excludes: List[str]=[]):
-    # Walk the whole dir/children importing all python files and then searching their symbol tree to find import statements
-
-    all_modules = set()
-
-    for (dirpath, dirnames, filenames) in os.walk(folder_loc): 
-        if excludes:
-            if dirpath in excludes:
-                continue
-
-        for filename in filenames:
-            if excludes:
-                if os.path.join(dirpath, filename) in excludes:
-                    continue
-
-            if filename.endswith('.py'): 
-                rv = _get_individual_files_imported_symbols(os.path.join(dirpath, filename))
-
-                all_modules = all_modules.union(rv)
-
-    return all_modules
-
 
 
 def get_file_imported_symbols(file_loc: FilePath):
