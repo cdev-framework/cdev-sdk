@@ -243,8 +243,9 @@ def _find_packaging_files_handler(original_path: FilePath) -> List[FilePath]:
         
         file_loc = os.path.join(intermediate_location, "__init__.py")
         intermediate_file_location = cdev_paths.get_full_path_from_intermediate_folder(cdev_paths.get_relative_to_project_path(file_loc))
+       
         if os.path.isfile(file_loc):
-            
+            print(f"copying from {file_loc} to {intermediate_file_location}")
             shutil.copyfile(file_loc, intermediate_file_location)   
         else:
             with open(intermediate_file_location, 'a'):
@@ -296,7 +297,7 @@ def _clean_lines(lines: List[str]) -> List[str]:
     return rv
 
 
-def _copy_local_dependencies(file_locations: List[FilePath]) -> List[FilePath]:
+def _copy_local_dependencies(dependencies: List[FilePath]) -> List[FilePath]:
     """
     Copy the local dependency files from their original location into the intermediate folder with the actual handler.
     This step makes the archiving step simplier since all the need files are in the intermediate folder.
@@ -308,18 +309,31 @@ def _copy_local_dependencies(file_locations: List[FilePath]) -> List[FilePath]:
         copied_file_locations (List[str]): list of locations of the copied files
     """
     rv = []
-    for file_location in file_locations:
-        intermediate_location = cdev_paths.get_full_path_from_intermediate_folder( cdev_paths.get_relative_to_project_path(file_location))
-        rv.append(intermediate_location)
+    for dependency in dependencies:
+        intermediate_location = cdev_paths.get_full_path_from_intermediate_folder( cdev_paths.get_relative_to_project_path(dependency))
+        
 
-        if os.path.isfile(intermediate_location):
-            continue
-
-
+        
         relative_to_intermediate = cdev_paths.get_relative_to_intermediate_path(intermediate_location).split("/")[:-1]
-
+        
         cdev_paths.create_path(INTERMEDIATE_FOLDER, relative_to_intermediate)
-        shutil.copyfile(file_location, intermediate_location)
+        print(f"copying from {dependency} to {intermediate_location}")
+
+        if os.path.isdir(dependency):
+            if os.path.isdir(intermediate_location):
+                shutil.rmtree(intermediate_location)
+
+            shutil.copytree(dependency, intermediate_location, ignore=shutil.ignore_patterns('*.pyc'))
+
+            for dir_name,_,files in os.walk(intermediate_location):
+                for file in files:
+                    rv.append(os.path.join(dir_name,file))
+
+        elif os.path.isfile(dependency):
+            shutil.copyfile(dependency, intermediate_location)
+            rv.append(intermediate_location)
+        else:
+            raise Exception
 
 
     return rv
