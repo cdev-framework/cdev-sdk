@@ -129,11 +129,11 @@ ModulePackagingInfo.update_forward_refs()
 
 
 _depth_to_color  = {
-    1: "white",
-    2: "blue",
-    3: "yellow",
-    4: "magenta",
-    0: "red"
+    0: "white",
+    1: "blue",
+    2: "yellow",
+    3: "magenta",
+    4: "red"
 }
 
 
@@ -142,7 +142,7 @@ def print_dependency_tree(handler_name: str, top_level_modules: List[ModulePacka
 
     for module_info in top_level_modules:
         
-        _recursive_dfs_print(module_info, 1)
+        _recursive_dfs_print(module_info, 0)
         print("|")
 
 

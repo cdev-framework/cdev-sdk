@@ -276,7 +276,7 @@ def _recursive_create_module_package_info(module_name: str, original_file_locati
                     if docker_package_builder.docker_available():
                         # Not that the download package function uses a cache so it will only actually pull the first time the user wants to
                         # package this function.
-                        rv = docker_package_builder.download_package(tmp_distribution_obj, lambda_python_environments.py38_arm64, module_name)
+                        rv = docker_package_builder.download_package_and_create_moduleinfo(tmp_distribution_obj, lambda_python_environments.py38_arm64, module_name)
                         PACKAGE_CACHE[(module_name, original_file_location)] = rv
                         return rv
 
