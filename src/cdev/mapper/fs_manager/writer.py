@@ -59,7 +59,7 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
         original_path (FilePath): The original file location that this function is from
         needed_lines (List[int]): The list of line numbers needed from the original function
         parsed_path (str): The final location of the parsed file
-        pkgs (List[Dict]): The list of package info for the function
+        pkgs (Dict[str, ModulePackagingInfo]): The list of package info for the function
 
     Returns:
         src_code_hash (str): The hash of the source code archive 
