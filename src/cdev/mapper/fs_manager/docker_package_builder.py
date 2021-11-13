@@ -21,6 +21,8 @@ def docker_available() -> bool:
 
 CACHE_LOCATION = os.path.join(CDEV_SETTINGS.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), "dockercache.json")
 
+has_run_container = False
+build_container = None
 
 class DockerDownloadCache:
     """
@@ -133,6 +135,9 @@ def _download_package(project: Distribution, environment: lambda_python_environm
         info (List[ModulePackagingInfo]): ModulePackagingInfo for all the top level modules in the project
     
     """
+    global has_run_container
+    global build_container
+
     cache_item = DOWNLOAD_CACHE.find_item(environment, project.project_name)
     if cache_item:
         return cache_item 
@@ -146,15 +151,28 @@ def _download_package(project: Distribution, environment: lambda_python_environm
     
     print(f"PULLED IMAGE")
 
-    container = client.containers.run("public.ecr.aws/lambda/python:3.8-arm64",
-                        entrypoint="/var/lang/bin/pip", 
-                        command=f"install {project.project_name}=={project.version} --target /tmp --no-user",
-                        volumes=[f'{packaging_dir}:/tmp'],
-                        detach=True,
-                        user=os.getuid()
-                    )
+    if not has_run_container:
+        build_container = client.containers.run("public.ecr.aws/lambda/python:3.8-arm64",
+                            entrypoint="/var/lang/bin/pip", 
+                            command=f"install {project.project_name}=={project.version} --target /tmp",
+                            volumes=[f'{packaging_dir}:/tmp'],
+                            detach=True,
+                        )
+
+        has_run_container = True
+
+    else:
+        print(f"******REUSING CONTAINER******")
+        build_container.restart()
+
+        build_container.exec_run(
+            cmd=f"/var/lang/bin/pip install {project.project_name}=={project.version} --target /tmp",
+            detach=True
+        )
+
     
-    for x in container.logs(stream=True):
+
+    for x in build_container.logs(stream=True):
         msg = x.decode('ascii')
         print(f"Building Package -> {msg}")
 
