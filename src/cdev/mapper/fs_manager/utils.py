@@ -5,6 +5,7 @@ from typing import List, Optional, Set
 from pydantic.types import FilePath
 from pydantic import BaseModel
 from enum import Enum
+from pathlib import PosixPath, WindowsPath
 
 from cdev.settings import SETTINGS as cdev_settings
 from cdev.utils import paths as cdev_paths, hasher as cdev_hasher
@@ -77,6 +78,24 @@ def get_parsed_path(original_path, function_name, prefix=None):
     return os.path.join(final_file_dir, final_file_name)
 
 
+
+class ExternalDependencyWriteInfo(BaseModel):
+    location: str
+    id: str
+
+    class Config:
+        json_encoders = {
+            PosixPath: lambda v: v.as_posix(), # or lambda v: str(v)
+            WindowsPath: lambda v: v.as_posix()
+        }
+
+        extra='ignore'
+
+
+class LocalDependencyArchiveInfo(BaseModel):
+    name: str
+    artifact_path: FilePath
+    hash: str
 
 class PackageTypes(str, Enum):
     BUILTIN = "builtin"

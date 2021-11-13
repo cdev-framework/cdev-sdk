@@ -7,7 +7,7 @@ from pydantic.types import DirectoryPath, FilePath
 from sortedcontainers.sorteddict import SortedDict
 
 from . import utils as fs_utils
-from .utils import PackageTypes, ModulePackagingInfo, print_dependency_tree
+from .utils import PackageTypes, ModulePackagingInfo, print_dependency_tree, LocalDependencyArchiveInfo, ExternalDependencyWriteInfo
 
 from zipfile import ZipFile
 from cdev.settings import SETTINGS as cdev_settings
@@ -41,18 +41,13 @@ class LayerWriterCache:
         return self._cache.get(id)
 
 
-    def add_item(self, id: str, item: Tuple):
+    def add_item(self, id: str, item: json):
         self._cache[id] = item
 
         with open(CACHE_LOCATION, "w") as fh:
             json.dump(self._cache, fh, indent=4)
 
 LAYER_CACHE = LayerWriterCache()
-
-
-class ExternalDependencyWriteInfo(BaseModel):
-    location: str
-    id: str
 
 
 def create_full_deployment_package(original_path : FilePath, needed_lines: List[int], parsed_path: str, pkgs: Dict[str, ModulePackagingInfo]=None ):
@@ -70,7 +65,7 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
         src_code_hash (str): The hash of the source code archive 
         handler_archive_location (FilePath): The location of the created archive for the handler
         base_handler_path (str): The path to the file as a python package path
-        external_dependency_information (Dict): Information about the external dependencies
+        external_dependency_information (LocalDependencyArchiveInfo): Information about the external dependencies
     """
 
     dependencies_info = None
@@ -378,7 +373,21 @@ def _make_intermediate_handler_zip(zip_archive_location: str, paths: List[FilePa
 
 
 
-def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: str, needed_info: List[ExternalDependencyWriteInfo]) -> Dict:
+def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: str, needed_info: List[ExternalDependencyWriteInfo]) -> LocalDependencyArchiveInfo:
+    """
+    Create the zip archive that will be deployed with the handler function. This function uses a cache to determine if there is already an archive available to 
+    use. All modules provide are written to a single archive such that the module is in '/python/<module_name>'.
+
+    Args:
+        zip_archive_location_directory (DirectoryPath): The directory that the archive will be created in.
+        basename (str): base name for the archive
+        needed_info (List[ExternalDependencyWriteInfo]): The information about what modules to add to the archive
+
+    Returns:
+        info (LocalDependencyArchiveInfo): information about the artifact that was created
+    """
+
+    # Create a hash of the ids of the packages to see if there is an already available archive to use
     ids = [x.id for x in needed_info]
     ids.sort()
 
@@ -386,7 +395,7 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
     cache_item = LAYER_CACHE.find_item(_id_hashes)
     if cache_item:
         print(f"CACHE HIT -> {basename} -> CURRENT DEPENDENCY HASH {_id_hashes}")
-        return cache_item
+        return LocalDependencyArchiveInfo(**cache_item)
 
     layer_name = basename + "_layer"
     _file_hashes = []    
@@ -397,7 +406,6 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
         os.remove(zip_archive_full_path)
 
     for info in needed_info:
-        #print(f"------------{info.id} ------------")
         if info.id in seen_pkgs:
             continue
 
@@ -411,8 +419,6 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
                 # since this is a module that is just a single file plop in /python/<filename> and it will be on the pythonpath
 
                 zipfile.write(info.location, os.path.join('python', file_name))
-                #print(f"ZIPPING INDIVIDUAL FILE {info}, FROM {info.location} TO {os.path.join('python', file_name)}")
-
                 _file_hashes.append(cdev_hasher.hash_file(info.location))
 
 
@@ -452,14 +458,15 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
 
     full_archive_hash = cdev_hasher.hash_list(_file_hashes)
     
-    dependency_info = {
+    dependency_info = LocalDependencyArchiveInfo(**{
         'name': layer_name,
         'artifact_path': cdev_paths.get_relative_to_project_path(zip_archive_full_path),
         'hash': full_archive_hash
-    }
+    })
     
 
-    LAYER_CACHE.add_item(_id_hashes, dependency_info)
+    # convert to json string then back to python object because it has a Filepath type in it and that is always handled weird. 
+    LAYER_CACHE.add_item(_id_hashes, json.loads(dependency_info.json()))
 
     return dependency_info
         
