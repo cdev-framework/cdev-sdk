@@ -125,7 +125,8 @@ def download_package_and_create_moduleinfo(project: Distribution, environment: l
 def _download_package(project: Distribution, environment: lambda_python_environments) -> List[ModulePackagingInfo]:
     """
     Perform the actual downloading of the package and then parse out the needed information about the top level modules made available
-    from the project. Uses the cache to make sure that way we only download the project when actually needed. 
+    from the project. Uses the cache to make sure that way we only download the project when actually needed. Also reuses the same container 
+    when downloading packages so that it uses pip's cache to not redownload the same package. 
 
     Args:
         project (Distribution): The distribution object that contains the metadata for the package
@@ -162,7 +163,6 @@ def _download_package(project: Distribution, environment: lambda_python_environm
         has_run_container = True
 
     else:
-        print(f"******REUSING CONTAINER******")
         build_container.restart()
 
         build_container.exec_run(
