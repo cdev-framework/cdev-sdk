@@ -174,7 +174,7 @@ def _download_package(project: Distribution, environment: lambda_python_environm
 
     for x in build_container.logs(stream=True):
         msg = x.decode('ascii')
-        print(f"Building Package -> {msg}")
+        #print(f"Building Package -> {msg}")
 
     
     info = _create_package_info(project.project_name, environment)

@@ -7,7 +7,7 @@ from pydantic.types import DirectoryPath, FilePath
 from sortedcontainers.sorteddict import SortedDict
 
 from . import utils as fs_utils
-from .utils import PackageTypes, ModulePackagingInfo, print_dependency_tree, LocalDependencyArchiveInfo, ExternalDependencyWriteInfo
+from .utils import PackageTypes, ModulePackagingInfo, LocalDependencyArchiveInfo, ExternalDependencyWriteInfo
 
 from zipfile import ZipFile
 from cdev.settings import SETTINGS as cdev_settings
@@ -77,7 +77,7 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
     # The handler can be in a subdirectory and since we preserve the relative project structure, we need to bring any __init__.py files
     # to make sure the handler is in a valid path
     extra_handler_path_files = _find_packaging_files_handler(original_path)
-    #print(f"Adding {extra_handler_path_files} for handler {original_path}")
+    
 
     handler_files.extend(extra_handler_path_files)
 
@@ -89,7 +89,7 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
 
     if pkgs:
         
-        print_dependency_tree(original_path, pkgs.values())
+        
 
         layer_dependencies, handler_dependencies = _create_package_dependencies_info(pkgs)
 
@@ -203,7 +203,6 @@ def _make_intermediate_handler_file(original_path: FilePath, needed_lines: List[
         parsed_path (str): The final location of the parsed file
     """
     if not os.path.isfile(original_path):
-        print(f"nah {original_path}")
         raise Exception
 
 
@@ -240,7 +239,6 @@ def _find_packaging_files_handler(original_path: FilePath) -> List[FilePath]:
         intermediate_file_location = cdev_paths.get_full_path_from_intermediate_folder(cdev_paths.get_relative_to_project_path(file_loc))
        
         if os.path.isfile(file_loc):
-            print(f"copying from {file_loc} to {intermediate_file_location}")
             shutil.copyfile(file_loc, intermediate_file_location)   
         else:
             with open(intermediate_file_location, 'a'):
@@ -312,7 +310,7 @@ def _copy_local_dependencies(dependencies: List[FilePath]) -> List[FilePath]:
         relative_to_intermediate = cdev_paths.get_relative_to_intermediate_path(intermediate_location).split("/")[:-1]
         
         cdev_paths.create_path(INTERMEDIATE_FOLDER, relative_to_intermediate)
-        print(f"copying from {dependency} to {intermediate_location}")
+        
 
         if os.path.isdir(dependency):
             if os.path.isdir(intermediate_location):
@@ -394,7 +392,6 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
     _id_hashes = cdev_hasher.hash_list(ids)
     cache_item = LAYER_CACHE.find_item(_id_hashes)
     if cache_item:
-        print(f"CACHE HIT -> {basename} -> CURRENT DEPENDENCY HASH {_id_hashes}")
         return LocalDependencyArchiveInfo(**cache_item)
 
     layer_name = basename + "_layer"
@@ -423,7 +420,6 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
 
 
             else:
-                #print(f"Walking -> {info.location}")
                 pkg_name = os.path.split(info.location)[1]
 
                 for dirname, subdirs, files in os.walk(info.location):
@@ -443,7 +439,6 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
                         continue
 
                     if os.path.isdir(os.path.join(pkg_dir, obj)) and obj.split(".")[0] == os.path.split(info.location)[1]:
-                        print(f"ALSO INCLUDE {obj} for {info}")
                         for dirname, subdirs, files in os.walk( os.path.join(pkg_dir, obj) ):
                             if dirname.split("/")[-1] in EXCLUDE_SUBDIRS:
                                 continue

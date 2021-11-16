@@ -182,7 +182,7 @@ def _upload_s3_dependency(resource: simple_lambda.simple_aws_lambda_function_mod
     # Takes in a resource and create an s3 artifact that can be use as src code for lambda deployment
     keyname = dependency.get('name') + f"-{resource.hash}" + ".zip"
     #original_zipname = resource.configuration.Handler.split(".")[0] + ".zip"
-    zip_location = dependency.get('artifact_path')
+    zip_location = dependency.get('artifact_path').as_posix()
     
     log.debug(f"artifact keyname {keyname}; ondisk location {zip_location}; is valid file {os.path.isfile(zip_location)}")
 
