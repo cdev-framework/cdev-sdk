@@ -95,6 +95,7 @@ class ExternalDependencyWriteInfo(BaseModel):
         extra='ignore'
 
 
+
 class LocalDependencyArchiveInfo(BaseModel):
     name: str
     artifact_path: FilePath
@@ -171,7 +172,7 @@ def print_dependency_tree(handler_name: str, top_level_modules: List[ModulePacka
 
 def _recursive_dfs_print(module_info: ModulePackagingInfo, depth: int):
     
-    base_str = f"|[{_depth_to_color.get(depth%5)}]{'-' * depth } {module_info.module_name}[/{_depth_to_color.get(depth%5)}] ({module_info.type})"   
+    base_str = f"|[{_depth_to_color.get(depth%5)}]{'-' * depth } {module_info.get_id_str()}[/{_depth_to_color.get(depth%5)}] ({module_info.type})"   
     print(base_str)
 
     if module_info.tree:

@@ -144,6 +144,8 @@ def _create_serverless_function_resources(filepath: FilePath, functions_names_to
         print(f"imported modules ->>> {parsed_function.imported_packages}")
         needed_module_information = cdev_package_manager.get_top_level_module_info(parsed_function.imported_packages, filepath)
         print(f"Need modules infos ->>> { needed_module_information}")
+
+        fs_utils.print_dependency_tree(parsed_function.name, [v for k,v in needed_module_information.items()])
         
         src_code_hash, archive_path, base_handler_path, dependencies_info = writer.create_full_deployment_package(filepath, 
                                                                                 parsed_function.get_line_numbers_serializeable(), 

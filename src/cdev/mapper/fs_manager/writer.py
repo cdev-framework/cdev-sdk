@@ -435,9 +435,12 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
 
                 pkg_dir = os.path.dirname(info.location)
                 for obj in os.listdir(pkg_dir):
+                    # Search in the general packaging directory for any other directory with the package name
+                    # for example look for numpy.lib when including numpy
                     if os.path.join(pkg_dir, obj) == info.location:
                         continue
 
+                    
                     if os.path.isdir(os.path.join(pkg_dir, obj)) and obj.split(".")[0] == os.path.split(info.location)[1]:
                         for dirname, subdirs, files in os.walk( os.path.join(pkg_dir, obj) ):
                             if dirname.split("/")[-1] in EXCLUDE_SUBDIRS:

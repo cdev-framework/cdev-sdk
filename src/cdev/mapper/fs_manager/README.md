@@ -93,8 +93,8 @@ Since Project A and Project B share the same dependency that makes up most of bo
 |   | A     | B     | C |
 | - | -     | -     | - |
 | A | -     | -     | - |
-| B | 75 MB | -     | - |
-| C | 90 MB | 85 MB | - |
+| B | 65 MB | -     | - |
+| C | 40 MB | 35 MB | - |
 
 Although this computing this table provides the insight into which packages the make a composite layer, it is both exponential in time and memory:
 
@@ -107,7 +107,7 @@ q = Max((n - d) + 1, 4)
 Memory = O(n^q)
 Time = O(n^q)
 
-Since this table is unique to a specific set of external packages, it makes sense to only only compute this for levels `q=2` initially and provide the option for the user to build the large set of the index if desired, and if not default to the simpler algorithm of picking the largest package. 
+Since this table is unique to a specific set of external packages, it makes sense to only only compute this for levels `q<4` initially and provide the option for the user to build the larger set of the index if desired, and if not default to the simpler algorithm of picking the largest package. 
 
 
 
