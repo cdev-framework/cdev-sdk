@@ -82,38 +82,54 @@ class weighted_dependency_graph:
         self.HEAD = weighted_dependency_node("HEAD", -1)
 
         for top_level_module in top_level_modules:
-            new_top_level_node = self._recursive_add_to_graph(top_level_module, None)
+            new_top_level_node = self._recursive_add_to_graph(top_level_module)
             self._top_level_nodes.append(new_top_level_node)
             self.HEAD.add_child(new_top_level_node)
+
+    
+        for _,node in self._id_to_node.items():
+            sub_graph_weight, _ = self._recursive_compute_total_subgraph_weight(node, set())
+            node.set_total_weight(sub_graph_weight)
             
 
 
-    def _recursive_add_to_graph(self,  node_info: ModulePackagingInfo, parent: weighted_dependency_node) -> weighted_dependency_node:
-        
-        
-        if node_info.get_id_str() in self._id_to_node:
-            new_node = self._id_to_node.get(node_info.get_id_str())
-
-        else:
+    def _recursive_add_to_graph(self,  node_info: ModulePackagingInfo) -> weighted_dependency_node:
+        if not node_info.get_id_str() in self._id_to_node:
             module_individual_weight = get_module_size(node_info.fp)
             new_node = weighted_dependency_node(node_info.get_id_str(), module_individual_weight)
-            
-            total_weight = module_individual_weight    
-        
+
             if node_info.tree:
                 for child_info in node_info.tree:
-                    child_node = self._recursive_add_to_graph(child_info, new_node)
-                    total_weight += child_node.total_weight
+                    child_node = self._recursive_add_to_graph(child_info)
+
+                    new_node.add_child(child_node)
 
 
-            new_node.set_total_weight(total_weight)
             self._id_to_node[node_info.get_id_str()] = new_node
 
-
-        if parent:
-            parent.add_child(new_node)
+        else:
+            new_node = self._id_to_node.get(node_info.get_id_str())
 
         return new_node
+        
+
+    def _recursive_compute_total_subgraph_weight(self,  node: weighted_dependency_node, already_seen: Set[str]) ->  Tuple[int, Set[str]]:
+        if node.id in already_seen:
+            return 0, already_seen
+
+        total_weight = node.individual_weight
+        if node.get_children():
+            for child in node.get_children():
+                child_weight, already_seen  = self._recursive_compute_total_subgraph_weight(child, already_seen)
+                already_seen.add(child.id)
+                total_weight   += child_weight
+
+            
+        return total_weight, already_seen
+
+
+
+
 
     
     def print_graph(self):
@@ -216,10 +232,7 @@ def compute_index(dependency_graph: weighted_dependency_graph, number_of_top_lev
     return index
 
 
-def _recursively_compute_removal(current_node: weighted_dependency_node, modules_removing: Set[str], already_removed: Set[str]) -> int:
-
-
-
+def _recursively_compute_removal(current_node: weighted_dependency_node, modules_removing: Set[str], already_removed: Set[str]) -> Tuple[int, Set[str]]:
     if not current_node.get_parents():
         raise Exception
 
