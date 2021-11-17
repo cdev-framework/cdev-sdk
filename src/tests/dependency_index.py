@@ -23,6 +23,7 @@ mod_z = ModulePackagingInfo(**{
     "type": PackageTypes.PIP,
     "version_id": "1.0.0",
     "fp": "z",
+    "flat": []
 })
 
 mod_x = ModulePackagingInfo(**{
@@ -30,6 +31,7 @@ mod_x = ModulePackagingInfo(**{
     "type": PackageTypes.PIP,
     "version_id": "2.0.0",
     "fp": "x",
+    "flat": []
 })
 
 
@@ -38,7 +40,8 @@ mod_a = ModulePackagingInfo(**{
     "type": PackageTypes.PIP,
     "version_id": "1.0.1",
     "fp": "a",
-    "tree": [mod_z]
+    "tree": [mod_z],
+    "flat": [mod_z]
 })
 
 
@@ -47,7 +50,8 @@ mod_b = ModulePackagingInfo(**{
     "type": PackageTypes.PIP,
     "version_id": "1.0.2",
     "fp": "b",
-    "tree": [mod_z]
+    "tree": [mod_z],
+    "flat": [mod_z]
 })
 
 
@@ -56,7 +60,8 @@ mod_c = ModulePackagingInfo(**{
     "type": PackageTypes.PIP,
     "version_id": "3.0.2",
     "fp": "c",
-    "tree": [mod_x]
+    "tree": [mod_x],
+    "flat": [mod_x]
 })
 
 
@@ -92,7 +97,8 @@ mod_d_complex = ModulePackagingInfo(**{
     "type": PackageTypes.PIP,
     "version_id": "1.0.1",
     "fp": "d",
-    "tree": [mod_e_complex]
+    "tree": [mod_e_complex],
+    "flat": [mod_e_complex]
 })
 
 mod_z_complex = ModulePackagingInfo(**{
@@ -107,7 +113,8 @@ mod_x_complex = ModulePackagingInfo(**{
     "type": PackageTypes.PIP,
     "version_id": "2.0.0",
     "fp": "x",
-    "tree": [mod_e_complex, mod_d_complex]
+    "tree": [mod_e_complex, mod_d_complex],
+    "flat": [mod_e_complex, mod_d_complex]
 })
 
 
@@ -116,7 +123,8 @@ mod_a_complex = ModulePackagingInfo(**{
     "type": PackageTypes.PIP,
     "version_id": "1.0.1",
     "fp": "a",
-    "tree": [mod_z_complex]
+    "tree": [mod_z_complex],
+    "flat": [mod_z_complex]
 })
 
 
@@ -125,7 +133,8 @@ mod_b_complex = ModulePackagingInfo(**{
     "type": PackageTypes.PIP,
     "version_id": "1.0.2",
     "fp": "b",
-    "tree": [mod_z_complex, mod_d_complex]
+    "tree": [mod_z_complex, mod_d_complex],
+    "flat": [mod_z_complex, mod_e_complex, mod_d_complex]
 })
 
 
@@ -134,14 +143,16 @@ mod_c_complex = ModulePackagingInfo(**{
     "type": PackageTypes.PIP,
     "version_id": "3.0.2",
     "fp": "c",
-    "tree": [mod_x_complex, mod_d_complex]
+    "tree": [mod_x_complex, mod_d_complex],
+    "flat": [mod_x_complex, mod_e_complex, mod_d_complex]
 })
 
 
 complex_test_input = [
     mod_a_complex,
     mod_b_complex,
-    mod_c_complex
+    mod_c_complex,
+    mod_d_complex
 ]
 
 

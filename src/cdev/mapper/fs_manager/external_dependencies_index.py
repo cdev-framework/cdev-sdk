@@ -81,7 +81,12 @@ class weighted_dependency_graph:
         self._id_to_node: Dict[str, weighted_dependency_node] = {}
         self.HEAD = weighted_dependency_node("HEAD", -1)
 
-        for top_level_module in top_level_modules:
+        true_top_level_modules, referenced_sub_modules = self._create_pure_top_level_modules(top_level_modules)
+        self.referenced_sub_modules = referenced_sub_modules
+        
+
+        print(f"Giving Top modules {top_level_modules}; true top modules {true_top_level_modules}")
+        for top_level_module in true_top_level_modules:
             new_top_level_node = self._recursive_add_to_graph(top_level_module)
             self._top_level_nodes.append(new_top_level_node)
             self.HEAD.add_child(new_top_level_node)
@@ -92,6 +97,22 @@ class weighted_dependency_graph:
             node.set_total_weight(sub_graph_weight)
             
 
+    def _create_pure_top_level_modules(self, top_level_modules: List[ModulePackagingInfo]) -> Tuple[List[ModulePackagingInfo], List[ModulePackagingInfo]]:
+        all_child_modules = set()
+        
+
+        [*map( lambda x: all_child_modules.update({t.get_id_str() for t in x.flat}) if x.flat else {}  ,  top_level_modules) ]
+
+        true_top_level_modules = []
+        referenced_sub_modules = []
+
+        for module_info in top_level_modules:
+            if module_info.get_id_str() in all_child_modules:
+                referenced_sub_modules.append(module_info)
+            else:
+                true_top_level_modules.append(module_info)
+
+        return true_top_level_modules, referenced_sub_modules
 
     def _recursive_add_to_graph(self,  node_info: ModulePackagingInfo) -> weighted_dependency_node:
         if not node_info.get_id_str() in self._id_to_node:
