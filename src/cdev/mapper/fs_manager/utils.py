@@ -85,6 +85,9 @@ def get_parsed_path(original_path, function_name, prefix=None):
 class ExternalDependencyWriteInfo(BaseModel):
     location: str
     id: str
+    uncompressed_size: Optional[int]
+    children: Optional[List['ExternalDependencyWriteInfo']]
+    via: Optional[str]
 
     class Config:
         json_encoders = {

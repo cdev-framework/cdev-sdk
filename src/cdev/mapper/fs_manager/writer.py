@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Tuple
+from typing import List, Optional, Dict, Tuple, Set
 from ast import parse
 import os
 from pydantic.main import BaseModel
@@ -14,6 +14,8 @@ from cdev.settings import SETTINGS as cdev_settings
 from cdev.utils import paths as cdev_paths, hasher as cdev_hasher
 import json
 import shutil
+
+from .external_dependencies_index import weighted_dependency_graph
 
 INTERMEDIATE_FOLDER = cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION")
 EXCLUDE_SUBDIRS = {"__pycache__"}
@@ -147,19 +149,15 @@ def _create_package_dependencies_info(pkgs: Dict[str, ModulePackagingInfo]) -> T
 
     layer_dependencies = []
     handler_dependencies = set()
-
+    directly_referenced_module_write_info = set()
 
     for pkg_name in pkgs:
         pkg = pkgs.get(pkg_name)
 
         if pkg.type == PackageTypes.PIP:
-            layer_dependencies.append(ExternalDependencyWriteInfo(**{
-                "location": pkg.fp,
-                "id": pkg.get_id_str()
-            }))
+            directly_referenced_module_write_info.add(pkg)
 
             
-
         elif pkg.type == PackageTypes.LOCALPACKAGE:
             if cdev_paths.is_in_project(pkg.fp):
                 if os.path.isdir(pkg.fp):
@@ -176,20 +174,34 @@ def _create_package_dependencies_info(pkgs: Dict[str, ModulePackagingInfo]) -> T
                     handler_dependencies.add(pkg.fp)
             
        
-        if pkg.flat:
-            for dependency in pkg.flat:
-                if dependency.type == PackageTypes.PIP:
-                    layer_dependencies.append(ExternalDependencyWriteInfo(**{
-                        "location": dependency.fp,
-                        "id": dependency.get_id_str()
-                    }))
-
-
-                elif dependency.type == PackageTypes.LOCALPACKAGE:
-                    handler_dependencies.add( dependency.fp )
-
+            if pkg.flat:
+                directly_referenced_module_write_info.update(_recursively_find_directly_referenced_modules_in_local_module(pkg))
             
+                for dependency in pkg.flat:
+                    if dependency.type == PackageTypes.LOCALPACKAGE:
+                        handler_dependencies.add(dependency.fp)
+
+    
+    
+    graph = weighted_dependency_graph(list(directly_referenced_module_write_info))
+
+    graph.print_graph()
+    
+
     return (layer_dependencies, list(handler_dependencies))
+
+
+def _recursively_find_directly_referenced_modules_in_local_module(local_module: ModulePackagingInfo) -> Set[ModulePackagingInfo]:
+    rv = set()
+    if local_module.tree:
+        for child in local_module.tree:
+            if child.type == PackageTypes.PIP:
+                rv.add(child)
+
+            elif child.type == PackageTypes.LOCALPACKAGE:
+                rv.update(_recursively_find_directly_referenced_modules_in_local_module(child))
+
+    return rv
 
 
 def _make_intermediate_handler_file(original_path: FilePath, needed_lines: List[int], parsed_path: str):

@@ -240,7 +240,7 @@ def _create_package_info(project_name: str,  environment: lambda_python_environm
         break 
 
     if not dist_info_dir:
-        print(f"Could not find dist info for {project_name}")
+        print(f"Could not find dist info for {project_name} -> {dist_info_dir}")
         raise Exception
 
     if not os.path.isdir(os.path.join(packaging_dir, dist_info_dir)):

@@ -21,6 +21,14 @@ log = logger.get_cdev_logger(__name__)
 from cdev import output as cdev_output
 
 
+class ExternalModuleInfo(BaseModel):
+    actual_writes: str 
+
+    directly_referenced_modules: str
+
+    
+
+
 
 class EventTypes(Enum):
     HTTP_API_ENDPOINT = "api::endpoint"

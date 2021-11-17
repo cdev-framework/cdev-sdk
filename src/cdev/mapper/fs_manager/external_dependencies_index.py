@@ -2,9 +2,10 @@ import os
 from re import S
 from typing import Dict, List, Tuple, Set
 from pydantic import BaseModel
-from .utils import ExternalDependencyWriteInfo, ModulePackagingInfo
+from .utils import ExternalDependencyWriteInfo, ModulePackagingInfo, PackageTypes
 from rich import print
 from itertools import combinations
+import math
 
 class ExternalDependencyIndex(BaseModel):
     id: str
@@ -77,19 +78,23 @@ _depth_to_color  = {
 
 class weighted_dependency_graph:
     def __init__(self, top_level_modules: List[ModulePackagingInfo]) -> None:
+        print(top_level_modules)
         self._top_level_nodes: List[weighted_dependency_node] = []
         self._id_to_node: Dict[str, weighted_dependency_node] = {}
         self.HEAD = weighted_dependency_node("HEAD", -1)
 
-        true_top_level_modules, referenced_sub_modules = self._create_pure_top_level_modules(top_level_modules)
+        self.true_top_level_modules, referenced_sub_modules = self._create_pure_top_level_modules(top_level_modules)
         self.referenced_sub_modules = referenced_sub_modules
         
 
-        print(f"Giving Top modules {top_level_modules}; true top modules {true_top_level_modules}")
-        for top_level_module in true_top_level_modules:
+        print(f"Giving Top modules {len(top_level_modules)}; true top modules {len(self.true_top_level_modules)}")
+
+        for top_level_module in self.true_top_level_modules:
             new_top_level_node = self._recursive_add_to_graph(top_level_module)
-            self._top_level_nodes.append(new_top_level_node)
-            self.HEAD.add_child(new_top_level_node)
+
+            if new_top_level_node:
+                self._top_level_nodes.append(new_top_level_node)
+                self.HEAD.add_child(new_top_level_node)
 
     
         for _,node in self._id_to_node.items():
@@ -101,7 +106,7 @@ class weighted_dependency_graph:
         all_child_modules = set()
         
 
-        [*map( lambda x: all_child_modules.update({t.get_id_str() for t in x.flat}) if x.flat else {}  ,  top_level_modules) ]
+        [*map( lambda x: all_child_modules.update({t.get_id_str() for t in x.flat}) if x.flat else {},  top_level_modules) ]
 
         true_top_level_modules = []
         referenced_sub_modules = []
@@ -115,15 +120,20 @@ class weighted_dependency_graph:
         return true_top_level_modules, referenced_sub_modules
 
     def _recursive_add_to_graph(self,  node_info: ModulePackagingInfo) -> weighted_dependency_node:
+        if not node_info.type == PackageTypes.PIP:
+            return None
+
         if not node_info.get_id_str() in self._id_to_node:
+            
             module_individual_weight = get_module_size(node_info.fp)
             new_node = weighted_dependency_node(node_info.get_id_str(), module_individual_weight)
 
             if node_info.tree:
                 for child_info in node_info.tree:
                     child_node = self._recursive_add_to_graph(child_info)
-
-                    new_node.add_child(child_node)
+                    
+                    if child_node:
+                        new_node.add_child(child_node)
 
 
             self._id_to_node[node_info.get_id_str()] = new_node
@@ -148,21 +158,29 @@ class weighted_dependency_graph:
             
         return total_weight, already_seen
 
-
-
-
-
     
     def print_graph(self):
-        print(f"Total dependency size {self.get_total_weight()}")
+        total_graph_weight = math.floor(self.get_total_weight()/ 1024)
+        max_graph_weight = math.floor((250 * 1024))
+        percentage_used = math.floor((total_graph_weight/max_graph_weight) * 100)
+        print(f"Total dependency size {total_graph_weight} kb ")
+        print(f"    {percentage_used}% of max weight: {max_graph_weight} kb ")
+        print(self._top_level_nodes)
         for node in self._top_level_nodes:
-            print(f"{node.id}  ({node.total_weight}) ({node.individual_weight})")
+            total_weight_kb = math.floor(node.total_weight/1024)
+            individual_weight_kb = math.floor(node.individual_weight/1024)
+
+            print(f"{node.id}  ({total_weight_kb} kb) ({individual_weight_kb} kb)")
             self._recursive_print_graph(node, 0)
 
     
     def _recursive_print_graph(self, node: weighted_dependency_node, depth: int):
         for child in node.get_children():
-            base_str = f"|[{_depth_to_color.get(depth%5)}]{'-' * depth } {child.id}[/{_depth_to_color.get(depth%5)}] ({child.total_weight}) ({child.individual_weight}) ({len(child.get_parents())})"
+            
+            total_weight_kb = math.floor(child.total_weight/1024)
+            individual_weight_kb = math.floor(child.individual_weight/1024)
+
+            base_str = f"|[{_depth_to_color.get(depth%5)}]{'-' * depth } {child.id}[/{_depth_to_color.get(depth%5)}] ({total_weight_kb} kb) ({individual_weight_kb} kb) ({len(child.get_parents())})"
             print(base_str)
 
             self._recursive_print_graph(child, depth+1)
