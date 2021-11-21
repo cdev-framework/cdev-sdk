@@ -157,7 +157,9 @@ def _create_serverless_function_resources(filepath: FilePath, functions_names_to
         final_info["src_code_hash"] = src_code_hash
         final_info["file_path"] = paths.get_relative_to_project_path(archive_path)
         final_info["Handler"] = final_handler_path
-        final_info['external_dependencies_info'] = dependencies_info.dict()
+
+        
+        final_info['external_dependencies_info'] = dependencies_info
 
         
         rv[cleaned_name] = final_info
