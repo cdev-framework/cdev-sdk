@@ -7,13 +7,15 @@ from pydantic.types import DirectoryPath, FilePath
 from sortedcontainers.sorteddict import SortedDict
 
 from . import utils as fs_utils
-from .utils import PackageTypes, ModulePackagingInfo, LocalDependencyArchiveInfo, ExternalDependencyWriteInfo
+from .utils import PackageTypes, ModulePackagingInfo, ExternalDependencyWriteInfo
 
 from zipfile import ZipFile
 from cdev.settings import SETTINGS as cdev_settings
 from cdev.utils import paths as cdev_paths, hasher as cdev_hasher
+from cdev.resources.simple.xlambda import LambdaLayerArn, LambdaLayerArtifact
 import json
 import shutil
+import heapq
 
 from .external_dependencies_index import weighted_dependency_graph, compute_index
 import math
@@ -53,7 +55,7 @@ class LayerWriterCache:
 LAYER_CACHE = LayerWriterCache()
 
 
-def create_full_deployment_package(original_path : FilePath, needed_lines: List[int], parsed_path: str, pkgs: Dict[str, ModulePackagingInfo]=None ):
+def create_full_deployment_package(original_path : FilePath, needed_lines: List[int], parsed_path: str, pkgs: Dict[str, ModulePackagingInfo]=None, available_layers: int = 2 ):
     """
     Create all the needed deployment resources needed for a given serverless function. This includes parsing out the needed lines from
     the original function, packaging local dependencies, and packaging external dependencies (pip packages).
@@ -63,12 +65,13 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
         needed_lines (List[int]): The list of line numbers needed from the original function
         parsed_path (str): The final location of the parsed file
         pkgs (Dict[str, ModulePackagingInfo]): The list of package info for the function
+        available_layers (int): The number of layers available to use
 
     Returns:
         src_code_hash (str): The hash of the source code archive 
         handler_archive_location (FilePath): The location of the created archive for the handler
         base_handler_path (str): The path to the file as a python package path
-        external_dependency_information (LocalDependencyArchiveInfo): Information about the external dependencies
+        external_dependencies (LambdaLayerArtifact): List of layers that are needed for this function
     """
 
     dependencies_info = None
@@ -94,9 +97,22 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
         layer_dependencies, handler_dependencies = _create_package_dependencies_info(pkgs)
 
         if layer_dependencies:
-            # Make the layer archive in the same folder as the handler 
+            # Make the layer archive in the same folder as the handler
+
+            single_dependency_layers, composite_layer = _create_layers_from_referenced_modules(layer_dependencies, available_layers)
+            print(f"single dependency layers -> {single_dependency_layers}")
+            print(f"composite layers -> {composite_layer}")
+
             archive_dir = os.path.join(INTERMEDIATE_FOLDER, os.path.dirname(parsed_path))
-            dependencies_info = _make_layers_zips(archive_dir, filename[:-3], layer_dependencies )
+            dependencies_info: List[LambdaLayerArtifact] = []
+            #dependencies_info = _make_layers_zips(archive_dir, filename[:-3], layer_dependencies )
+
+            if single_dependency_layers:
+                for single_layer in single_dependency_layers:
+                   dependencies_info.append( _make_single_dependency_archive(single_layer, archive_dir))
+
+            if composite_layer:
+                dependencies_info.append(_make_composite_dependency_archive(composite_layer, archive_dir))
     
         if handler_dependencies:
             # Copy the local dependencies files into the intermediate folder to make packaging easier
@@ -114,16 +130,17 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
 
 
 
-def _create_package_dependencies_info(directly_referenced_pkgs: Dict[str, ModulePackagingInfo]) -> Tuple[List[ExternalDependencyWriteInfo], List[str]]:
+def _create_package_dependencies_info(directly_referenced_pkgs: Dict[str, ModulePackagingInfo]) -> Tuple[List[ModulePackagingInfo], List[str]]:
     """
     Take a dictionary of the directly referenced packages (str [pkg_name] -> ModulePackagingInfo) that are used by a handler and return the 
-    necessary information for creating the deployment packages. Packages can be broken down into two categories: handler and layer.
+    necessary information for creating the deployment packages. The optional parameter of how many layers are available is used to drive the optimization
+    steps for how to package the layer dependencies. Packages can be broken down into two categories: handler and layer.
 
     Args:
         pkgs (Dict[str, ModulePackagingInfo]): Directly referenced packages used by the handler
 
     Returns:
-        layer_dependencies (List[ExternalDependencyWriteInfo]): The packages to be added to the layers
+        layer_dependencies (List[ModulePackagingInfo]): The packages to be added to the layers
         handler_dependencies (List[str]): List of files to include with the handler
     
     Handler packages are located within the 'cdev project', and therefore, should be packaged into the handler archive so that they 
@@ -138,7 +155,8 @@ def _create_package_dependencies_info(directly_referenced_pkgs: Dict[str, Module
     it is important to keep the relative file structure the same
 
     Layer packages are packages that are found on the PYTHONPATH and most likely installed with a package manager like PIP. These 
-    should be packages as layers to keep the handler archive size small.
+    should be packages as layers to keep the handler archive size small. Read the Cdev dependency deep dives for an in depth breakdown of 
+    how the layers are being packaged. 
 
     Note that the input are the directly referenced packages used by the handler, so we must look at the 'flat' attribute to find all the 
     needed dependencies.
@@ -146,7 +164,7 @@ def _create_package_dependencies_info(directly_referenced_pkgs: Dict[str, Module
 
     layer_dependencies = []
     handler_dependencies = set()
-    directly_referenced_module_write_info = set()
+    directly_referenced_module_write_info: Set[ModulePackagingInfo] = set()
 
     for _, pkg in directly_referenced_pkgs.items():
 
@@ -157,36 +175,104 @@ def _create_package_dependencies_info(directly_referenced_pkgs: Dict[str, Module
             if cdev_paths.is_in_project(pkg.fp):
                 if os.path.isdir(pkg.fp):
                     # If the fp is a dir that means we need to include the entire directory
-
                     for dir, _, files in os.walk(pkg.fp):
                         if dir.split("/")[-1] in EXCLUDE_SUBDIRS:
+                            # If the directory is in the excluded subdirs then we can just continue
+                            # i.e __pycache__
                             continue
 
-                        handler_dependencies = handler_dependencies.union(set([os.path.join( pkg.fp, dir, x) for x in files]))
+                        handler_dependencies = handler_dependencies.union(set([os.path.join(pkg.fp, dir, x) for x in files]))
                 else:
-
                     handler_dependencies.add(pkg.fp)
+            else:
+                # Can not link to a locally managed module that is not within the cdev project structure.
+                print(f"Linking to local module outside of project directory {pkg.fp}")
+                #raise Exception
             
        
             if pkg.flat:
+                # If the local module has dependencies, we need to recursively search them for import statements
                 directly_referenced_module_write_info.update(_recursively_find_directly_referenced_modules_in_local_module(pkg))
             
                 for dependency in pkg.flat:
                     if dependency.type == PackageTypes.LOCALPACKAGE:
                         handler_dependencies.add(dependency.fp)
 
+
     
+
+    return (list(directly_referenced_module_write_info), list(handler_dependencies))
+
+
+def _create_layers_from_referenced_modules(directly_referenced_modules: List[ModulePackagingInfo], available_layers: int = 2) -> Tuple[List[ModulePackagingInfo], List[ModulePackagingInfo]]:
+    """
+    Run the optimization calculations for creating single dependencies and composite dependencies for the external modules used. Returns the list of modules that should be 
+    in single dependencies and in the composite layer. 
     
-    graph = weighted_dependency_graph(list(directly_referenced_module_write_info))
+    Args:
+        directly_referenced_modules (List[ModulePackagingInfo]): The modules that are directly reference
+        available_layers (int): Amount of layers that are available to be used to package the dependencies
+
+    Returns:
+        Single Dependency Layers (List[ModulePackagingInfo]): The list of dependencies that should be individual layers
+        Composite Dependency Layers (List[ModulePackagaingInfo]): The list of dependencies that go into the composite layer    
+    """
+
+
+    # Now that we have all the directly referenced import statements that are for packaged modules, we compute a weighted DAG to create
+    # an optimized deployment platform
+    # For a more detailed look at this optimization process read the dependency deep dive on the cdev website. 
+    graph = weighted_dependency_graph(directly_referenced_modules)
 
     graph.print_graph()
 
-    index = compute_index(graph, 2)
-    for pair,value in index.items():
-        print(f"{pair} -> {math.floor(value/1024)} KB")
-    
+    directly_referenced_modules_removed = set(directly_referenced_modules).difference(graph.true_top_level_modules)
+    print(f"True top level modules {graph.true_top_level_modules }; removed  {directly_referenced_modules_removed}")
 
-    return (layer_dependencies, list(handler_dependencies))
+    # Optimization algorithm:
+    # Since there is only one available layer, everything must go into the composite layer
+    if available_layers == 1:
+        return [], graph.true_top_level_modules
+
+
+    # if the true top level modules is less than (or equal to) the available layers then use a layer for each top level module
+    # so that the top level module layer can be reused within the project
+    elif len(graph.true_top_level_modules) <= available_layers:
+        return graph.true_top_level_modules, []
+
+    # If there are not enough layers available for all the top level modules, we need to create a composite layer that contains more
+    # than one top level module. We will create 1 composite layer and N amount of single layers such that the single layers remove the 
+    # most amount of code that needs to be uploaded in the composite layer. 
+    else:
+        max_index_level = 2
+        # We want the index to be the lower of the two:
+        # The user defined max index size (so they can cap computer and memory time of the index)
+        # The available layers that can be used for single dependencies
+        index_depth = min(max_index_level, available_layers)
+
+        print(f"Computing index of size {index_depth}")
+        index = compute_index(graph, index_depth)
+        for pair,value in index.items():
+            print(f"{pair} -> {math.floor(value/1024)} KB")
+
+        index_heap = [(-value, key) for key,value in index.items()]
+        heapq.heapify(index_heap)
+        print(index_heap)
+
+        
+        single_dependency_layer_ids = heapq.heappop(index_heap)[1]
+
+        single_dependency_layers: List[ModulePackagingInfo] = []
+        composite_layer: List[ModulePackagingInfo]  = []
+
+        for dependency in graph.true_top_level_modules:
+            if dependency.get_id_str() in single_dependency_layer_ids:
+                single_dependency_layers.append(dependency)
+            else:
+                composite_layer.append(dependency)
+    
+        return single_dependency_layers, composite_layer
+
 
 
 def _recursively_find_directly_referenced_modules_in_local_module(local_module: ModulePackagingInfo) -> Set[ModulePackagingInfo]:
@@ -357,8 +443,6 @@ def _write_intermediate_function(path: FilePath, lines: List[str]):
             fh.write("\n")
     
 
-
-
 def _make_intermediate_handler_zip(zip_archive_location: str, paths: List[FilePath]) -> str:
     """
     Make the archive for the handler deployment. 
@@ -380,8 +464,98 @@ def _make_intermediate_handler_zip(zip_archive_location: str, paths: List[FilePa
     return cdev_hasher.hash_list(hashes)
 
 
+def _make_single_dependency_archive( module_info: ModulePackagingInfo, archive_dir: DirectoryPath) -> LambdaLayerArtifact:
+    needed_info: List[ExternalDependencyWriteInfo]  = []
+    print(f"Making single dependency {module_info}")
 
-def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: str, needed_info: List[ExternalDependencyWriteInfo]) -> LocalDependencyArchiveInfo:
+    needed_info.append(ExternalDependencyWriteInfo(**{
+        "location": module_info.fp,
+        "id": module_info.get_id_str()
+    }))
+
+
+    for child in module_info.flat:
+        print(f"Adding  {child}")
+        if not child.type == PackageTypes.PIP:
+            continue
+
+        needed_info.append(ExternalDependencyWriteInfo(**{
+            "location": child.fp,
+            "id": child.get_id_str()
+        }))
+    
+    # Create a hash of the ids of the packages to see if there is an already available archive to use
+    ids = [x.id for x in needed_info]
+    ids.sort()
+
+    _id_hashes = cdev_hasher.hash_list(ids)
+    cache_item = LAYER_CACHE.find_item(_id_hashes)
+    if cache_item:
+        return None
+
+    layer_name = module_info.get_id_str()
+
+    archive_path, archive_hash = _make_layers_zips(archive_dir, layer_name, needed_info)
+
+    # convert to json string then back to python object because it has a Filepath type in it and that is always handled weird. 
+    #LAYER_CACHE.add_item(_id_hashes, (archive_path, archive_hash))
+
+    rv = LambdaLayerArtifact(**{
+        "name": layer_name,
+        "artifact_path": archive_path 
+    })
+
+    return rv
+
+
+
+def _make_composite_dependency_archive(module_info: List[ModulePackagingInfo], archive_dir: DirectoryPath) -> LambdaLayerArtifact:
+    needed_info: Set[ExternalDependencyWriteInfo]  = set()
+
+    print(f"Making Composite layer")
+    for module in module_info:
+        needed_info.add(ExternalDependencyWriteInfo(**{
+            "location": module.fp,
+            "id": module.get_id_str()
+        }))
+
+
+        for child in module.flat:
+            print(f"Adding  {child}")
+            if not child.type == PackageTypes.PIP:
+                continue
+
+            needed_info.add(ExternalDependencyWriteInfo(**{
+            "location": child.fp,
+            "id": child.get_id_str()
+        }))
+
+    # Create a hash of the ids of the packages to see if there is an already available archive to use
+    ids = [x.id for x in needed_info]
+    ids.sort()
+
+    _id_hashes = cdev_hasher.hash_list(ids)
+    cache_item = LAYER_CACHE.find_item(_id_hashes)
+    if cache_item:
+        return None
+
+    layer_name = f"composite_{_id_hashes}"
+
+    archive_path, archive_hash = _make_layers_zips(archive_dir, layer_name, list(needed_info))
+
+    # convert to json string then back to python object because it has a Filepath type in it and that is always handled weird. 
+    #LAYER_CACHE.add_item(_id_hashes, (archive_path, archive_hash))
+
+    rv = LambdaLayerArtifact(**{
+        "name": layer_name,
+        "artifact_path": archive_path 
+    })
+
+    return rv
+
+
+
+def _make_layers_zips(zip_archive_location_directory: DirectoryPath, layer_name: str, needed_info: List[ExternalDependencyWriteInfo]) -> Tuple[FilePath, str]:
     """
     Create the zip archive that will be deployed with the handler function. This function uses a cache to determine if there is already an archive available to 
     use. All modules provide are written to a single archive such that the module is in '/python/<module_name>'.
@@ -392,19 +566,10 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
         needed_info (List[ExternalDependencyWriteInfo]): The information about what modules to add to the archive
 
     Returns:
-        info (LocalDependencyArchiveInfo): information about the artifact that was created
+        archive_path (str): The location of the created archive relative to the Cdev project location
+        hash (str): A identifying hash of the archive 
     """
-
-    # Create a hash of the ids of the packages to see if there is an already available archive to use
-    ids = [x.id for x in needed_info]
-    ids.sort()
-
-    _id_hashes = cdev_hasher.hash_list(ids)
-    cache_item = LAYER_CACHE.find_item(_id_hashes)
-    if cache_item:
-        return LocalDependencyArchiveInfo(**cache_item)
-
-    layer_name = basename + "_layer"
+    
     _file_hashes = []    
     zip_archive_full_path = os.path.join(zip_archive_location_directory,  layer_name + ".zip" )
     seen_pkgs = set()
@@ -466,16 +631,7 @@ def _make_layers_zips(zip_archive_location_directory: DirectoryPath, basename: s
 
     full_archive_hash = cdev_hasher.hash_list(_file_hashes)
     
-    dependency_info = LocalDependencyArchiveInfo(**{
-        'name': layer_name,
-        'artifact_path': cdev_paths.get_relative_to_project_path(zip_archive_full_path),
-        'hash': full_archive_hash
-    })
-    
-
-    # convert to json string then back to python object because it has a Filepath type in it and that is always handled weird. 
-    LAYER_CACHE.add_item(_id_hashes, json.loads(dependency_info.json()))
-
-    return dependency_info
+   
+    return cdev_paths.get_relative_to_project_path(zip_archive_full_path), full_archive_hash
         
 

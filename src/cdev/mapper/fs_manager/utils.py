@@ -85,10 +85,7 @@ def get_parsed_path(original_path, function_name, prefix=None):
 class ExternalDependencyWriteInfo(BaseModel):
     location: str
     id: str
-    uncompressed_size: Optional[int]
-    children: Optional[List['ExternalDependencyWriteInfo']]
-    via: Optional[str]
-
+   
     class Config:
         json_encoders = {
             PosixPath: lambda v: v.as_posix(), # or lambda v: str(v)
@@ -97,12 +94,10 @@ class ExternalDependencyWriteInfo(BaseModel):
 
         extra='ignore'
 
+    def __hash__(self) -> int:
+        return int(cdev_hasher.hash_string(self.id), base=16)
 
 
-class LocalDependencyArchiveInfo(BaseModel):
-    name: str
-    artifact_path: FilePath
-    hash: str
 
 class PackageTypes(str, Enum):
     BUILTIN = "builtin"

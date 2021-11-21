@@ -149,7 +149,8 @@ def _create_serverless_function_resources(filepath: FilePath, functions_names_to
         
         src_code_hash, archive_path, base_handler_path, dependencies_info = writer.create_full_deployment_package(filepath, 
                                                                                 parsed_function.get_line_numbers_serializeable(), 
-                                                                                intermediate_path, needed_module_information)
+                                                                                intermediate_path, 
+                                                                                needed_module_information)
         
         final_handler_path = base_handler_path + "." + parsed_function.name
                     

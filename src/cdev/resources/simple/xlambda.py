@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Union
 
 from pydantic.main import BaseModel
 from pydantic import FilePath
+from pydantic.types import DirectoryPath
 from ...models import Rendered_Resource, Cloud_Output
 
 from sortedcontainers.sorteddict import SortedDict
@@ -18,16 +19,42 @@ from cdev.utils import hasher, logger, parent_resources, environment as cdev_env
 
 log = logger.get_cdev_logger(__name__)
 
-from cdev import output as cdev_output
+
+LAMBDA_LAYER_RUUID = "cdev::simple::lambda_layer"
+LAMBDA_FUNCTION_RUUID = "cdev::simple::lambda_function"
 
 
-class ExternalModuleInfo(BaseModel):
-    actual_writes: str 
+class simple_lambda_layer_output(str, Enum):
+    arn = "arn"
 
-    directly_referenced_modules: str
+
+class LambdaLayerFromFiles(Cdev_Resource):
+    
+    def __init__(self, name: str, files: List[Union[FilePath, DirectoryPath]]) -> None:
+        super().__init__(name)
 
     
+    def from_output(self, key: simple_lambda_layer_output) -> Cloud_Output:
+        return Cloud_Output(**{"resource": f"{self.ruuid}::{self.hash}", "key": key.value, "type": "cdev_output"})
 
+
+class LambdaLayerArtifact(Cdev_Resource):
+    
+    def __init__(self, name: str, artifact_path: FilePath) -> None:
+        super().__init__(name)
+
+    
+    def from_output(self, key: simple_lambda_layer_output) -> Cloud_Output:
+        return Cloud_Output(**{"resource": f"{self.ruuid}::{self.hash}", "key": key.value, "type": "cdev_output"})
+
+
+class LambdaLayerArn(Rendered_Resource):
+    arn: str
+
+    def get_hash(self) -> str:
+        return hasher.hash_string(self.arn)
+
+    
 
 
 class EventTypes(Enum):
@@ -130,7 +157,7 @@ class simple_aws_lambda_function_model(Rendered_Resource):
     permissions: List[Union[Permission,PermissionArn]]
     src_code_hash: str
     external_dependencies_hash: Optional[str]
-    external_dependencies_info: Optional[Dict]
+    external_dependencies: Optional[List[Union[LambdaLayerArn, Cloud_Output]]]
     config_hash: str
     events_hash: str
     permissions_hash: str
@@ -168,7 +195,7 @@ class simple_lambda(Cdev_Resource):
         self.events_hash = hasher.hash_list([x.get_hash() for x in events])
 
         self.external_dependencies_hash = None
-        self.external_dependencies_info = None
+        self.external_dependencies = None
 
         self.full_hash = hasher.hash_list([self.function_name, self.src_code_hash, self.config_hash, self.events_hash, self.permissions_hash])
 
@@ -182,7 +209,7 @@ class simple_lambda(Cdev_Resource):
        
         return simple_aws_lambda_function_model(**{
             "name": self.name,
-            "ruuid": "cdev::simple::lambda_function",
+            "ruuid": LAMBDA_FUNCTION_RUUID,
             "hash": self.full_hash,
             "function_name": self.function_name,
             "filepath": self.filepath,
@@ -195,7 +222,7 @@ class simple_lambda(Cdev_Resource):
             "events_hash": self.events_hash,
             "parent_resources": self.parents,
             "external_dependencies_hash": self.external_dependencies_hash,
-            "external_dependencies_info": self.external_dependencies_info
+            "external_dependencies": self.external_dependencies
         })
         
 
