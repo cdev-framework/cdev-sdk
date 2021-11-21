@@ -1,13 +1,13 @@
 # File System Manager
 
-This module does the heavy lifting for the `FileSystemComponent` provided with the cdev by default. The purpose of this component is to allow end users to define their desired infrastructure using high level languages like Python, but this comes at the cost of the architecture being highly coupled to the users filesystem set up. This module attempts to prevent coupling when possible, but there are some situations like handler packaging where it is impossible to completely decouple.
+This module does the heavy lifting for the `FileSystemComponent` provided with cdev by default. The purpose of this component is to allow end users to define their desired infrastructure using high level languages like Python, but this comes at the cost of the architecture being highly coupled to the users filesystem set up. This module attempts to prevent coupling when possible, but there are some situations like handler packaging where it is impossible to completely decouple.
 
 
 
 
 ## Dependencies and Packaging
 
-This is one the most important issues that cause friction when transitioning to serverless development because the constraints taken into account when creating language dependency systems are not the same constraints that exist for serverless platforms. The solution to this problem is highly dependant on the languages internal dependency system and whatever package manager is popular for that language. For Python, the main package manager is `pip`. To understand the solutions implemented in Cdev, it is important to have a solid understanding python modules and the standards that tools like `pip` work on top of. Below are some resources that you should familiar with when working on dependency and packaging. 
+This is one the most important issues that cause friction when transitioning to serverless development because the constraints taken into account when creating language dependency systems are not the same constraints that exist for serverless platforms. The solution to this problem is highly dependant on the languages internal dependency system and whatever package manager is popular for that language. For Python, the main package manager is `pip`. To understand the solutions implemented in Cdev, it is important to have a solid understanding python modules and the standards that drive tools like `pip`. Below are some resources that you should familiar with when working on dependency and packaging. 
 - [Python Modules](https://docs.python.org/3/tutorial/modules.html)
 
 
@@ -21,21 +21,13 @@ Developers that have worked with python projects know to look for this file as t
 
 A simple mirroring of these workflows on a serverless deployment platform breakdown because of everyone's favorite constraint: **cold starts**. 
 
-Although never popularly attempted, it is easier to start looking at the latter workflow of uploading just a `requirements.txt` because the problems become evident much quicker. The simple translation of this workflow would be providing the serverless deployment platform with the `requirements.txt` and having it fetch the dependencies when the function is first called. Without a caching mechanism, this would mean each cold start would include downloading all the packages, which would put it well beyond a tolerable time frame. 
+Although never popularly attempted, it is easier to start looking at the workflow of uploading just a `requirements.txt` because the problems become evident much quicker. The simple translation of this workflow would be providing the serverless deployment platform with the `requirements.txt` and having it fetch the dependencies when the function is first called. Without a caching mechanism, this would mean each cold start would include downloading all the packages, which would put it well beyond a tolerable time frame. 
 
-Adding a caching layer to prevent having to download the files each time a new function is spun up is in essence what is being provided by the serverless platforms. Aws' mechanism for defining external dependencies is Lambda Layers, which are essentially archives that will be loaded into the execution environment before your function is executed. Although on its own a fairly static offering that requires developers to manually create the archives, the current serverless development tools 
-provide functionality to create these layers from `requirements.txt` files using a single command. Although you can create this archive as easy as previous development paradigms, there is still friction under the hood when using the dependencies on the serverless platform. 
+Adding a caching layer to prevent having to download the files each time a new function is spun up is in essence what is being provided by the serverless platforms. Aws' mechanism for defining external dependencies is Lambda Layers, which are essentially archives that will be loaded into the execution environment before your function is executed. On its own, Lambda Layers are a fairly static offering that requires developers to manually create the archives, but the current serverless development tools provide functionality to create these layers from `requirements.txt` files using a single command. Although you can create this archive as easy as previous development paradigms, there is still friction under the hood when using the created dependency on the serverless platform. 
 
-Providing each function with a single layer that contains the entire projects set of dependencies can break down as the projects includes more dependencies. For example, the entire Aws Lambda execution environment has a [limit of 250 MB](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html) including used layers. This means that if a projects dependencies exceed this limit, then no function would be able to use the project's layer regardless of if any individual function actually uses all the dependencies. 
+Providing each function with a single layer that contains the entire projects set of dependencies can break down as the projects includes more dependencies. For example, the entire Aws Lambda execution environment has a [limit of 250 MB](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html) including used layers. This means that if a projects dependencies exceed this limit, then no function would be able to use the project's layer regardless of if any individual function actually uses all the dependencies.
 
-Although lots of projects will never reach this limit, it is a constraint that will weigh down larger scale projects because once this problem arises the developer must create manual processes to break up their dependencies. Cdev's solution will strive to make the process scale up to the point of reaching hard limits such as an individual function truly using more than 250MB while maintaining a familiar developer experience. 
-
-### Relative Imports 
-
-
-
-
-
+Although lots of projects will never reach this limit, it is a constraint that will weigh down larger scale projects because once this problem arises the developer must create manual processes to break up their dependencies. Cdev's solution will strive to make the process scale seamlessly up to the point of reaching hard limits, such as an individual function truly using more than 250MB, while maintaining a familiar developer experience. 
 
 ## Dependencies and Packaging Implementation Details
 Cdev's solution to dependencies and packaging strives to provide a great developer experience by allowing projects to using familiar dependency structure while scaling seamlessly to the absolute limits of the deployment platform. One of the fundamental differentiators that underpins our solution is that the input to the process is the `parsed function` output from that `cdev parser`, which provides information about the exact external dependencies used by each specific handler. This allows us to understand at a granular level what dependencies are used by each handler without forcing a project to be structured with a single handler per file. 
@@ -64,8 +56,6 @@ For each top level module, we need to find all the dependency of that top level 
 
 - Managed modules are ones that come from projects that are installed using a package manager like `pip`. The dependencies of these modules are discovered using the metadata from the project. 
 - User defined modules are ones that are created within the project. The dependencies of these modules are discovered by parsing the symbol tree of each file in the module. 
-
-
 
 
 ### Managed Modules Packaging
@@ -110,5 +100,30 @@ Time = O(n^q)
 Since this table is unique to a specific set of external packages, it makes sense to only only compute this for levels `q<4` initially and provide the option for the user to build the larger set of the index if desired, and if not default to the simpler algorithm of picking the largest package. 
 
 
+
+
+
+### Relative Imports 
+Although serverless development platforms are designed to reduce the amount of cognitive overhead for developers, they can actually surface new problems that developers did not have to previously think about. One such problem, is that developers must now understand and account for how their project is structured. When working on a growing project, it is important to separate reusable code, and one of the best mechanism for isolating code in python is to create local modules. In 'traditional' development environments, the entire project is often bundled together, which preserves the folder structure for the relative modules. To create a familiar environment where developers can create relative modules, we must understand how the serverless platforms are executing our code. 
+
+
+#### Aws Lambda Code Execution
+When creating an Aws Lambda function, one of the most important fields that must be set is the 'handler', which specifies to the platform which function to execute. The 'handler' field is not set as a file path, but instead, as a python module definition. This means that if we have a folder structure such as:
+```
+src
+|- handlers
+|--- __init__.py
+|--- api.py
+|----- function1
+|- myutils
+|--- helper.py
+|- __init__.py
+```
+The `handler` value would be `src.api.function1`
+
+Since the handler value includes the parent package `src`, we will be able to reference the `myutils` package with a relative import from our handler.
+```
+from .. import myutils
+```
 
 

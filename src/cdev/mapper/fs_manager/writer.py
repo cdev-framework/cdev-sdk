@@ -15,7 +15,8 @@ from cdev.utils import paths as cdev_paths, hasher as cdev_hasher
 import json
 import shutil
 
-from .external_dependencies_index import weighted_dependency_graph
+from .external_dependencies_index import weighted_dependency_graph, compute_index
+import math
 
 INTERMEDIATE_FOLDER = cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION")
 EXCLUDE_SUBDIRS = {"__pycache__"}
@@ -90,9 +91,6 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
     zip_archive_location = os.path.join(os.path.dirname(parsed_path), filename[:-3] + ".zip")
 
     if pkgs:
-        
-        
-
         layer_dependencies, handler_dependencies = _create_package_dependencies_info(pkgs)
 
         if layer_dependencies:
@@ -116,14 +114,13 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
 
 
 
-def _create_package_dependencies_info(pkgs: Dict[str, ModulePackagingInfo]) -> Tuple[List[ExternalDependencyWriteInfo], List[str]]:
+def _create_package_dependencies_info(directly_referenced_pkgs: Dict[str, ModulePackagingInfo]) -> Tuple[List[ExternalDependencyWriteInfo], List[str]]:
     """
-    Take a dictionary of the top level packages (str [pkg_name] -> ModulePackagingInfo) that are used by a handler and return the 
+    Take a dictionary of the directly referenced packages (str [pkg_name] -> ModulePackagingInfo) that are used by a handler and return the 
     necessary information for creating the deployment packages. Packages can be broken down into two categories: handler and layer.
 
     Args:
-        pkgs (Dict[str, ModulePackagingInfo]): Top level packages used by the handler
-
+        pkgs (Dict[str, ModulePackagingInfo]): Directly referenced packages used by the handler
 
     Returns:
         layer_dependencies (List[ExternalDependencyWriteInfo]): The packages to be added to the layers
@@ -143,7 +140,7 @@ def _create_package_dependencies_info(pkgs: Dict[str, ModulePackagingInfo]) -> T
     Layer packages are packages that are found on the PYTHONPATH and most likely installed with a package manager like PIP. These 
     should be packages as layers to keep the handler archive size small.
 
-    Note that the input are the top level packages used by the handler, so we must look at the 'flat' attribute to find all the 
+    Note that the input are the directly referenced packages used by the handler, so we must look at the 'flat' attribute to find all the 
     needed dependencies.
     """
 
@@ -151,17 +148,14 @@ def _create_package_dependencies_info(pkgs: Dict[str, ModulePackagingInfo]) -> T
     handler_dependencies = set()
     directly_referenced_module_write_info = set()
 
-    for pkg_name in pkgs:
-        pkg = pkgs.get(pkg_name)
+    for _, pkg in directly_referenced_pkgs.items():
 
         if pkg.type == PackageTypes.PIP:
             directly_referenced_module_write_info.add(pkg)
-
-            
+    
         elif pkg.type == PackageTypes.LOCALPACKAGE:
             if cdev_paths.is_in_project(pkg.fp):
                 if os.path.isdir(pkg.fp):
-
                     # If the fp is a dir that means we need to include the entire directory
 
                     for dir, _, files in os.walk(pkg.fp):
@@ -186,6 +180,10 @@ def _create_package_dependencies_info(pkgs: Dict[str, ModulePackagingInfo]) -> T
     graph = weighted_dependency_graph(list(directly_referenced_module_write_info))
 
     graph.print_graph()
+
+    index = compute_index(graph, 2)
+    for pair,value in index.items():
+        print(f"{pair} -> {math.floor(value/1024)} KB")
     
 
     return (layer_dependencies, list(handler_dependencies))

@@ -78,13 +78,12 @@ _depth_to_color  = {
 
 class weighted_dependency_graph:
     def __init__(self, top_level_modules: List[ModulePackagingInfo]) -> None:
-        print(top_level_modules)
         self._top_level_nodes: List[weighted_dependency_node] = []
         self._id_to_node: Dict[str, weighted_dependency_node] = {}
         self.HEAD = weighted_dependency_node("HEAD", -1)
 
-        self.true_top_level_modules, referenced_sub_modules = self._create_pure_top_level_modules(top_level_modules)
-        self.referenced_sub_modules = referenced_sub_modules
+        self.true_top_level_modules, self.referenced_sub_modules = self._create_pure_top_level_modules(top_level_modules)
+        
         
 
         print(f"Giving Top modules {len(top_level_modules)}; true top modules {len(self.true_top_level_modules)}")
@@ -242,7 +241,7 @@ def get_module_size(starting_path: str) -> int:
         raise Exception
 
 
-def compute_index(dependency_graph: weighted_dependency_graph, number_of_top_level_modules_to_remove: int=2) -> Tuple[Dict, List[str]]:
+def compute_index(dependency_graph: weighted_dependency_graph, number_of_top_level_modules_to_remove: int=2) -> Dict:
     index = {}
     _top_level_ids = [x.id for x in dependency_graph._top_level_nodes]
     _start_removals = []
