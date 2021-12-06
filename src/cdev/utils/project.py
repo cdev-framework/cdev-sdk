@@ -9,9 +9,9 @@ from pydantic import BaseModel
 from pydantic.types import FilePath
 
 
-from cdev.settings import SETTINGS as cdev_settings
+from cdev.core.settings import SETTINGS as cdev_settings
 
-from cdev.constructs import Cdev_Project
+from cdev.constructs import Project as Cdev_Project
 
 from cdev.mapper.cloudmapper import DefaultMapper
 from . import environment as cdev_environment

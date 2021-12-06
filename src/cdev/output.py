@@ -7,9 +7,9 @@ from rich.progress import Progress, BarColumn, TextColumn
 
 from cdev.utils import hasher   
 
-from cdev.models import Action_Type, Component_State_Difference, Rendered_State
+from cdev.core.models import Action_Type, Component_State_Difference, Rendered_State
 from cdev.utils.environment import get_current_environment
-from cdev.settings import SETTINGS as CDEV_SETTINGS
+from cdev.core.settings import SETTINGS as CDEV_SETTINGS
 
 # This file outputs things in a pretty way for the CLI
 console = Console()

@@ -3,11 +3,12 @@ import os
 
 from sortedcontainers.sortedlist import SortedList
 
-from cdev.settings import SETTINGS as cdev_settings
+from cdev.core.settings import SETTINGS as cdev_settings
 from cdev.utils import hasher
 
-from ..constructs import Cdev_Project, Cdev_Component
-from ..models import Rendered_State
+from cdev.constructs import Project as Cdev_Project
+from cdev.core.constructs import Cdev_Component
+from cdev.core.models import Rendered_State
 
 from ..utils.logger import get_cdev_logger
 

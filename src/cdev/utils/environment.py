@@ -6,8 +6,8 @@ from typing import List, Dict
 from pydantic import BaseModel
 from pydantic.types import FilePath
 
-from cdev.settings import SETTINGS as cdev_settings
-from cdev.models import CloudMapping, CloudState, Rendered_State
+from cdev.core.settings import SETTINGS as cdev_settings
+from cdev.core.models import CloudMapping, CloudState, Rendered_State
 
 from . import hasher as cdev_hasher
 

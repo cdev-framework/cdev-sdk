@@ -6,12 +6,11 @@ from enum import Enum
 from typing_extensions import Literal
 
 from pydantic import BaseModel
-from pydantic.types import constr
 
 
-class Rendered_Resource(BaseModel):
+class Resource(BaseModel):
     """
-    This is the most basic information needed to describe a rendered resource. 
+    This is the most basic information needed to describe a resource. 
 
     --- Attributes ---
 
@@ -19,16 +18,14 @@ class Rendered_Resource(BaseModel):
 
     - hash  ->  a string that is the hash of this object. This hash must be computed such that 
                 it changes only if a change in the state is desired.
-        
-    **BASEMODEL DOCUMENTATION:**
     """
 
 
     ruuid: str
     """
-    Name space indemnificator that is used to pass this resource to a downstream mapper
+    Name space identifier that is used to pass this resource to a downstream mapper
 
-    Form: (top-level-namespace):(resource-type-id)
+    Form: (top-level-namespace)::(resource-type-id)
     """
 
 
@@ -52,7 +49,7 @@ class Rendered_Resource(BaseModel):
     parent_resources: Optional[List[str]]
     """
     A set of all resource identifications (ruuid:hash) that are a parent resource to some other resource in the component. This set serves as 
-    a fast way of checking if we need to update descandants when a resource is updated 
+    a fast way of checking if we need to update descendants when a resource is updated 
     """
 
     class Config:
@@ -62,7 +59,7 @@ class Rendered_Resource(BaseModel):
 
     def get_parent_resources(self) -> List[str]:
         """
-        This function returns any resources that this resources depeneds on via the Output mechanism
+        This function returns any resources that this resources depends on via the Output mechanism
         """
         return None
 
@@ -91,11 +88,8 @@ class Cloud_Output(BaseModel):
         return f"{self.resource}$${self.key}"
 
     
-
-
-class Rendered_Component(BaseModel):
+class Component(BaseModel):
     """
-    **Rendered_Resource**
 
     This is the most basic information needed to describe a rendered component. 
 
@@ -107,8 +101,6 @@ class Rendered_Component(BaseModel):
                 it changes only if a change in the state is desired.
 
     - name  ->  a string that is the human readable name for this component
-        
-    **BASEMODEL DOCUMENTATION:**
     """
 
 
@@ -146,7 +138,6 @@ class Rendered_Component(BaseModel):
         return self.all_parent_resources
 
 
-
 class Rendered_State(BaseModel):
     """
     This is the most basic information needed to describe a projects rendered state. 
@@ -164,13 +155,11 @@ class Rendered_State(BaseModel):
     hash: str
 
 
-
 class Action_Type(str, Enum):
     CREATE='CREATE'
     UPDATE_IDENTITY='UPDATE_IDENTITY'
     UPDATE_NAME='UPDATE_NAME'
     DELETE='DELETE'
-
 
 
 class Resource_State_Difference(BaseModel):
@@ -196,8 +185,51 @@ class Component_State_Difference(BaseModel):
 class CloudState(BaseModel):
     output: Dict
 
+
 class CloudMapping(BaseModel):
     state: Dict[str,CloudState]
     """
     Dictionary from hash of the resource to the Cloud Resources
     """
+
+
+class Resource_State(BaseModel):
+    """
+    Parent class that describes a namespace that can store resource states via components and also be higher level states for other Resource States 
+    """
+
+    uuid: str
+    """
+    Unique identifier for this state
+    """
+
+    parent: Optional['Resource_State']
+    """
+    The parent namespace above this one
+    """
+
+    children: Optional[List['Resource_State']]
+    """
+    Child namespaces of this one
+    """
+
+    components: List[Rendered_Component]
+    """
+    The list of components owned by this namespace
+    """
+
+
+class Project(Resource_State):
+    children: List['Environment']
+
+
+class Environment(Resource_State):
+    parent: Project
+
+ 
+
+
+
+
+    
+

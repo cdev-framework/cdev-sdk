@@ -1,7 +1,7 @@
 from typing import List
 
-from cdev.models import Action_Type, Resource_State_Difference
-from cdev.constructs import CloudMapper
+from cdev.core.models import Action_Type, Resource_State_Difference
+from cdev.core.constructs import CloudMapper
 from cdev.settings import SETTINGS
 
 from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper

@@ -2,7 +2,7 @@ import setuptools
 setuptools.setup(
     name='cdev',
     version='0.0',
-    scripts=['./cdev/scripts/cdev'],
+    scripts=['./cdev/scripts/cdev', './cdev/scripts/cdev_core' ],
     author='CDEV LLC',
     description='CLI for cdev',
     packages=['cdev'],

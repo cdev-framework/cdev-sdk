@@ -31,6 +31,7 @@ def _set_resource_info() -> Dict:
     else:
         raise Exception
 
+
 def get_resource_state_path():
     _set_resource_info()
     return _info.get("FULL_RESOURCE_STATE_PATH")

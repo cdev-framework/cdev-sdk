@@ -1,7 +1,7 @@
 import logging.config
 import os
 
-from ..settings import SETTINGS as cdev_settings
+from cdev.core.settings import SETTINGS as cdev_settings
 
 
 #logging.config.fileConfig(os.path.join(os.path.dirname(__file__), "..","logging.ini"), disable_existing_loggers=False)
@@ -22,12 +22,13 @@ class cdev_logger:
 
         fp = log_info.get("handlers").get("fileHandler").get("filename")
         if not os.path.isfile(fp):
+            return
             #os.mkdir(os.path.dirname(os.path.dirname(fp)))
             #os.mkdir(os.path.dirname(fp))
 
-            with open(fp, 'a'):
-                os.utime(fp,None)
-        
+            #with open(fp, 'a'):
+            #    os.utime(fp,None)
+        #
         logging.config.dictConfig(log_info)
         self._json_logger = logging.getLogger(module_name)
         self._simple_logger = logging.getLogger(f"{module_name}_simple")
