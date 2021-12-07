@@ -88,7 +88,7 @@ class Cloud_Output(BaseModel):
         return f"{self.resource}$${self.key}"
 
     
-class Component(BaseModel):
+class ComponentModel(BaseModel):
     """
 
     This is the most basic information needed to describe a rendered component. 

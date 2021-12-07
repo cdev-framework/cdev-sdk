@@ -5,7 +5,7 @@ Module doc string
 
 from typing import List, Dict, Set, Callable
 
-from .models import Rendered_Component, Resource_State_Difference, Cloud_Output
+from .models import ComponentModel, Resource_State_Difference, Cloud_Output
 
 from ..utils import environment as cdev_environment
 
@@ -35,7 +35,7 @@ class Cdev_Component():
         self.name = name
         pass
 
-    def render(self)  -> Rendered_Component:
+    def render(self)  -> ComponentModel:
         """Abstract Class that must be implemented by the descendant that returns a component model"""
         pass
 
