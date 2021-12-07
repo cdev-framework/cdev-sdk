@@ -72,6 +72,7 @@ class Resource_Change_Type(str, Enum):
 
 class Resource_Difference(BaseModel):
     action_type: Resource_Change_Type
+    component_uuid: str
     previous_resource: Union[ResourceModel, None]
     new_resource: Union[ResourceModel, None]
 
@@ -104,14 +105,14 @@ class Cloud_Output(BaseModel):
 
 
 class Cdev_Resource():
-    RUUID = None
+    RUUID: str = None
 
-    def __init__(self, name: str ) -> None:
+    def __init__(self, name: str):
         self.name = name
-        pass
+    
 
     def render(self) -> str:
-        return "::"
+        pass
 
     def from_output(key: str) -> Cloud_Output:
-        return Cloud_Output()
+        pass

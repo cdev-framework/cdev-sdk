@@ -1,4 +1,4 @@
-from cdev.utils.exceptions import Cdev_Error, Cdev_Warning
+from cdev.core.utils.exceptions import Cdev_Error, Cdev_Warning
 from .fs_manager import finder
 
 

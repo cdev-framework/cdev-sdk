@@ -5,7 +5,7 @@ import os
 
 from cdev import output
 
-from ..commands import plan, deploy, destroy, environment, cloud_output, run,  local_development, initializer
+from ..commands import plan, deploy, destroy, environment, cloud_output, local_development, initializer
 
 
 parser = argparse.ArgumentParser(description='cdev cli')
@@ -41,15 +41,6 @@ CDEV_COMMANDS = [
         "help": "See the generate cloud output",
         "default": cloud_output.cloud_output_command
     }, 
-    {
-        "name": "run",
-        "help": "This command is used to run user defined and resource functions.",
-        "default": run.run_command,
-        "args": [
-            {"dest": "subcommand", "help": "the user defined command to call"},
-            {"dest": "args", "nargs": argparse.REMAINDER}
-        ]
-    },
     {
         "name": "init",
         "help": "Create a new project",

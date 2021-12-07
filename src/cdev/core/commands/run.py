@@ -8,8 +8,10 @@ from pydantic.types import FilePath, StrictBool
 from cdev.management.base import BaseCommand, BaseCommandContainer
 
 from cdev.output import ALL_BUFFERS
-from cdev.constructs import Cdev_Project
-from ..utils import project, logger
+from cdev.core.constructs.workspace import Workspace
+
+from cdev.core.utils import  logger
+
 import inspect
 
 log = logger.get_cdev_logger(__name__)
@@ -17,7 +19,8 @@ log = logger.get_cdev_logger(__name__)
 DEFAULT_RESOURCE_LOCATION = "cdev.resources.simple"
 COMMANDS_DIR = "commands"
 
-PROJECT = Cdev_Project()
+WORKSPACE = Workspace.instance()
+
 
 class AmbiguousCommandName(Exception):
     pass
@@ -27,6 +30,8 @@ class NoCommandFound(Exception):
 
 class TooManyCommandClasses(Exception):
     pass
+
+
 
 def _get_module_name_from_path(fp):
     return fp.split("/")[-1][:-3]
@@ -38,14 +43,13 @@ def run_command(args):
     format:
     cdev run <sub_command> <args> 
     """
+
     # Convert namespace into dict
     params = vars(args)
 
     # This is the command to run... It can be a single command or a path to the command where the path is '.' delimitated
     sub_command = params.get("subcommand")
     
-    project.initialize_project()
-
     try:
         program_name, command, is_command = _find_command(sub_command)
     except NoCommandFound as e:
@@ -168,7 +172,7 @@ def _find_command(command: str) -> Tuple[str, str, bool]:
 
     # Create list of all directories to start searching in
     all_search_locations_list = [DEFAULT_RESOURCE_LOCATION]
-    all_search_locations_list.extend(PROJECT.get_commands())
+    all_search_locations_list.extend(WORKSPACE.get_commands())
     
     if len(command_list) == 1:
         return _find_unspecified_command(command_list[0], all_search_locations_list)

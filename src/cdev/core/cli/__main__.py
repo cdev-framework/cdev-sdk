@@ -2,37 +2,60 @@
 import argparse
 from ast import parse
 import os
+from typing import Callable, Any
 
-from cdev.core.commands import initialize_workspace
+from cdev.core.commands import create_workspace, initialize_workspace
+from cdev.core.constructs.workspace import Workspace
 
 parser = argparse.ArgumentParser(description='cdev cli')
 subparsers = parser.add_subparsers(title='sub_command', description='valid subcommands')
 
-def myfunc():
-    print("From cdev core")
+
+def plan_command(args):
+    print("RUNNING PLAN COMMANF")
+
+    myWorkspace = Workspace.instance()
+
+
+
 
 CDEV_COMMANDS = [
     {
-        "name": "exec",
-        "help": "See the differences that have been made since the last deployment",
-        "default": myfunc
-    }, 
-    {
         "name": "init",
-        "help": "Create a new instance of a workspace and connect it to a backend",
-        "default": initialize_workspace.initialize_workspace
+        "help": "Create a new instance of a workspace",
+        "default": create_workspace.create_workspace
+    },
+    {
+        "name": "plan",
+        "help": "Create a new instance of a workspace",
+        "default": plan_command,
+        "in_workspace": True,
+        "args": [
+            {"dest": "--backend_configuration", "help": "run a simple follower instead of full development environment", "type": str}
+        ]
     }, 
     
 ]
 
 
 
-def subcommand_function_wrapper(name, func):
+
+def wrap_initialize_workspace(command: Callable) -> Callable[[Any], Any]:
+
+    def wrapped(args):
+        initialize_workspace.initialize_workspace_cli(args)
+        return command(args)
+
+
+    return wrapped
+
+
+def subcommand_function_wrapper(name, subcommand):
     # This wraps a function so that is can be used for subcommands by basing the subcommand as the first arg to the function 
     # then the remaining args as the second arg
     def inner(args):
 
-        return func(name, args)
+        return command(subcommand, args)
 
     return inner
 
@@ -64,7 +87,11 @@ for command in CDEV_COMMANDS:
                 arg.pop("dest")
                 tmp.add_argument(dest, **arg)
                 
-        tmp.set_defaults(func=command.get("default"))
+
+        if not command.get("in_workspace"):
+            tmp.set_defaults(func=command.get("default"))
+        else:
+            tmp.set_defaults(func=wrap_initialize_workspace(command.get("default")))
 
         
 

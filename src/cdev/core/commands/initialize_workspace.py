@@ -1,21 +1,17 @@
-import os
+from cdev.core.constructs.workspace import Workspace
+from pydantic.types import DirectoryPath, FilePath
+from cdev.core.settings import SETTINGS as cdev_settings
+
+WORKSPACE_INFO_DIR = cdev_settings.get("ROOT_FOLDER_NAME")
+WORKSPACE_INFO_FILENAME = cdev_settings.get("WORKSPACE_FILE_NAME")
 
 
-from cdev.core.constructs import workspace as cdev_workspace
-from cdev.core.constructs.backend import Local_Backend_Configuration
+def initialize_workspace_cli(args):
+    
+    backend_config = args.backend_configuration if args.backend_configuration else "HELLO WORLD"
 
-def initialize_workspace(args):
-    base_project_dir = os.getcwd()
+    initialize_workspace(backend_config)
 
-    if cdev_workspace.check_if_workspace_exists(base_project_dir):
-        print("Workspace already initialized")
 
-    workspace_info = cdev_workspace.Workspace_Info(
-        Local_Backend_Configuration({"name": "Daniel"}), 
-        {"CDEV_VAR": 1}
-    )
-
-    cdev_workspace.create_new_workspace(workspace_info, base_project_dir)
-
-    return
-
+def initialize_workspace(backend_configuration: str):
+    Workspace(backend_configuration)

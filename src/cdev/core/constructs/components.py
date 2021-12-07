@@ -1,4 +1,6 @@
+from enum import Enum
 from typing import Dict, Union, List, Optional, Set
+
 
 from pydantic import BaseModel
 
@@ -24,7 +26,6 @@ class ComponentModel(BaseModel):
     """
     List of Rendered Resources that make up the current state of this component
     """
-
 
     hash: str
     """
@@ -53,18 +54,24 @@ class ComponentModel(BaseModel):
         return self.all_parent_resources
 
 
-class Component_State_Difference(BaseModel):
-    action_type: Resource_Change_Type
-    previous_component: Union[ResourceModel, None]
-    new_component: Union[ResourceModel, None]
 
-    resource_diffs: Union[List[Resource_Difference], None]
+class Component_Change_Type(str, Enum):
+    CREATE='CREATE'
+    UPDATE_NAME='UPDATE_NAME'
+    DELETE='DELETE'
+ 
+
+
+class Component_Difference(BaseModel):
+    action_type: Component_Change_Type
+    previous_name: Optional[str]
+    new_name: Optional[str]
 
     class Config:  
         use_enum_values = True
 
 
-class Cdev_Component():
+class Component():
     """
     A component is a logical collection of resources. This simple definition is intended to allow flexibility for different
     styles of setup. It is up to the end user to decide on how they group the resources.
