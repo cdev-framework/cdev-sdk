@@ -1,7 +1,7 @@
-from typing import Dict
+from typing import Dict, Optional
 from pydantic import BaseModel
 
-from cdev.core.models import Component, Rendered_State, Resource_State, Resource 
+from cdev.core.models import Component, Resource_State, Resource, Resource_Difference
 
 
 class Backend_Configuration(BaseModel):
@@ -51,10 +51,6 @@ class StoredState():
         pass
 
 
-    def create_resource(self, parent_state_uuid: str, parent_component_uuid: str, resource: Resource):
-        pass
-
-
     # Deletes
     def delete_resource_state(self, state_uuid: str):
         pass
@@ -62,22 +58,69 @@ class StoredState():
 
     def delete_component(self, state_uuid: str, component_uuid: str):
         pass
+
+
+    def load_resource_state(self) -> Resource_State:
+        pass
+
+
+    def get_resource_by_name(self, original_resource_type: str, original_resource_name: str) -> Resource:
+        pass
+
+    def get_resource_by_hash(self, original_resource_type: str, original_resource_hash: str) -> Resource:
+        pass
+
+
+    # Api for changing individual Resources
+    # The resource state needs to know when a mapper will be attempting to update a cdev resource. It is in charge of
+    # determing if the current resource state is capable of handling a change in the resource. 
+    def create_resource_change(self, diff: Resource_Difference) -> str:
+        """
+        Create in the Resource State the desire to change a particular resource. If the resource state can currently handle creating
+        this change, it will return a base idempotency token that can be used to construct idempotency tokens for deploying the underlying
+        cloud resources. If the resource state can not handle the change, it will throw an error. 
+        """
+        pass
+
+
+    def complete_resource_change(self, diff: Resource_Difference, transaction_token: str ):
+        """
+        Notify the resource state that all changes to a resource have completed successfully. This will cause the resource to
+        update the state of the resource to the new state. 
+        """
+        pass
+
+
+    def fail_resource_change(self, diff: Resource_Difference, transaction_token: str, failed_state: Dict):
+        """
+        Notify the resource state that an attempted change to a resource has failed. The provided failed state should encapsulate any needed information
+        for a future mapper to recover the state of the resource back into a proper state.
+        """
+        pass
+
+
+    # Api for working with a resource states failed resource updates 
+    # We can either update the failed state by the mapper attempting to fix the underlying issue, or
+    # We can recover the resource to either the new state or previous state by the mapper fixing the issues, or
+    # We can just delete the failure from our failed state (not recommended unless you know what you are doing because it can leave resources in the cloud)
+
+    def change_failed_state_of_resource_change(transaction_token: str, new_failed_state: Dict):
+        """
+        Update the failed state of a 'resource change'. 
+        """
+        pass
+
     
-
-    def delete_resource(self, state_uuid: str, component_uuid: str, resource_hash: str):
+    def recover_failed_resource_change(transaction_token: str, to_previous_state: bool=True):
+        """
+        Recover the state of the change back to the previous state or forward to the new state. Note this will result in the failed resource change being removed from the stored state.
+        """
         pass
 
 
-    # Updates
-    def update_resource(self, old_resource_hash: str, new_resource: Resource):
+    def remove_failed_resource_change(transaction_token: str): 
+        """
+        Completely remove the failed resource change from the stored state. Note that this should be used with caution as it can lead to hanging cloud resources. 
+        """
         pass
 
-
-    def load_resource_state(self) -> Rendered_State:
-        pass
-
-
-
-
-    def get_resource(self, original_resource_name: str, original_resource_type: str):
-        pass

@@ -137,7 +137,7 @@ def generate_sorted_resources(component_diff: Component_State_Difference) -> Lis
                             parent_resource = new_resource_name_to_resource_diff.get(name_identifier)
 
                         else:
-                            # If the parent resource in the current diffs then we are assuming that it is already in the state files from a previous deployment
+                            # If the parent resource is not in the current diffs then we are assuming that it is already in the state files from a previous deployment
                             # This is a weak assumption, but the current way state is stored there is not a terrific way of finding out if this parent resource
                             # is in the state already from a previous deployment. This error will be caught when doing a look up when trying to deploy the resource.
                             # This also means this ordering only applies to ordering of diffs to make sure they are deployed correctly.
@@ -150,7 +150,7 @@ def generate_sorted_resources(component_diff: Component_State_Difference) -> Lis
                             parent_resource = new_resource_id_to_resource_diff.get(hash_identifier)
                         
                         else:
-                            # If the parent resource in the current diffs then we are assuming that it is already in the state files from a previous deployment
+                            # If the parent resource is not in the current diffs then we are assuming that it is already in the state files from a previous deployment
                             # This is a weak assumption, but the current way state is stored there is not a terrific way of finding out if this parent resource
                             # is in the state already from a previous deployment. This error will be caught when doing a look up when trying to deploy the resource.
                             # This also means this ordering only applies to ordering of diffs to make sure they are deployed correctly.

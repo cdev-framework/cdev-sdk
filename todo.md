@@ -30,6 +30,3 @@ This is a running list of tasks that need to be done on the project.
 - Look init project init because intermediate folder might not be created. Add better check for file system state.
 - Add project and a salt to creating the env hash so that projects don't have resource collisions on aws. 
 
-
-### Nice to haves
-- Make a runtime library for aws aurora that is compatible with the [python db interface](https://www.python.org/dev/peps/pep-0249/) (Large task)

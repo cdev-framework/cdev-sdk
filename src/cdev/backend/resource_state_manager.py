@@ -206,7 +206,7 @@ def handle_component_difference(diff: Component_State_Difference):
     """
     This function handles changes at the component level. Since a component is reflective of the resources that it contains,
     only light Creates and Update Name changes are handled at this level. This has to do with the fact that a component hash
-    is defineded rendered resources, and at that stage of calling this function, the mappers have not deployed the resources,
+    is defined by rendered resources, and at this stage of calling this function, the mappers have not deployed the resources,
     so we do not know if the resources have been created. 
 
     Create: Create an empty component with just the name. It will be populated by the mappers once the actual resources have been 
@@ -247,7 +247,7 @@ def _create_skeleton_component(rendered_component: Rendered_Component) -> Render
 
 def write_resource_difference(component_name: str, diff: Resource_State_Difference) -> bool:
     """
-    This function handles changes at the resource level that have already occured. This happens downstream of the mapper deploying
+    This function handles changes at the resource level that have already occurred. This happens downstream of the mapper deploying
     the resource, so we know that making the changes makes the rendered state more accurate to the deployed state. Because the basics
     of the component state have been handled upstream (basic creates and name changes) we can get the component by name.
 

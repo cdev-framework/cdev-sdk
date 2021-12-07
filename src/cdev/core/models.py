@@ -105,7 +105,7 @@ class Component(BaseModel):
 
 
 
-    rendered_resources: Union[List[Rendered_Resource], None]
+    rendered_resources: Union[List[Resource], None]
     """
     List of Rendered Resources that make up the current state of this component
     """
@@ -138,45 +138,29 @@ class Component(BaseModel):
         return self.all_parent_resources
 
 
-class Rendered_State(BaseModel):
-    """
-    This is the most basic information needed to describe a projects rendered state. 
 
-    --- Attributes ---
-
-    - rendered_components ->  a list of rendered components that make up this project
-
-    - hash  ->  a string that is the hash of this component. This hash must be computed such that 
-                it changes only if a change in the state is desired.
-
-    **BASEMODEL DOCUMENTATION:**
-    """
-    rendered_components: Union[List[Rendered_Component], None]
-    hash: str
-
-
-class Action_Type(str, Enum):
+class Resource_Change_Type(str, Enum):
     CREATE='CREATE'
     UPDATE_IDENTITY='UPDATE_IDENTITY'
     UPDATE_NAME='UPDATE_NAME'
     DELETE='DELETE'
 
 
-class Resource_State_Difference(BaseModel):
-    action_type: Action_Type
-    previous_resource: Union[Rendered_Resource, None]
-    new_resource: Union[Rendered_Resource, None]
+class Resource_Difference(BaseModel):
+    action_type: Resource_Change_Type
+    previous_resource: Union[Resource, None]
+    new_resource: Union[Resource, None]
 
     class Config:  
         use_enum_values = True
 
 
 class Component_State_Difference(BaseModel):
-    action_type: Action_Type
-    previous_component: Union[Rendered_Component, None]
-    new_component: Union[Rendered_Component, None]
+    action_type: Resource_Change_Type
+    previous_component: Union[Component, None]
+    new_component: Union[Component, None]
 
-    resource_diffs: Union[List[Resource_State_Difference], None]
+    resource_diffs: Union[List[Resource_Difference], None]
 
     class Config:  
         use_enum_values = True
@@ -213,23 +197,8 @@ class Resource_State(BaseModel):
     Child namespaces of this one
     """
 
-    components: List[Rendered_Component]
+    components: List[Component]
     """
     The list of components owned by this namespace
     """
-
-
-class Project(Resource_State):
-    children: List['Environment']
-
-
-class Environment(Resource_State):
-    parent: Project
-
- 
-
-
-
-
-    
 
