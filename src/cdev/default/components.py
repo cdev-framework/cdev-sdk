@@ -1,9 +1,8 @@
-
 from cdev.utils.exceptions import Cdev_Error, Cdev_Warning
 from .fs_manager import finder
 
-from cdev.constructs import Cdev_Component
-from cdev.models import Rendered_Component 
+
+from cdev.core.constructs.components import ComponentModel, Cdev_Component
 from cdev.utils import hasher
 
 
@@ -18,12 +17,12 @@ class Cdev_FileSystem_Component(Cdev_Component):
         super().__init__(name)
         self.fp = fp
 
-    def render(self) -> Rendered_Component:
+    def render(self) -> ComponentModel:
         """Render this component based on the information in the files at the provided folder path"""
         resources_sorted = finder.parse_folder(self.fp, self.get_name())
         total_component_hash =  hasher.hash_list([x.hash for x in resources_sorted])
 
-        rv = Rendered_Component (
+        rv = ComponentModel (
             **{
                 "rendered_resources": resources_sorted,
                 "hash": total_component_hash,

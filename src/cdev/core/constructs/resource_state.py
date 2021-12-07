@@ -1,75 +1,37 @@
-"""
-Module doc string
-"""
+from typing import Dict, Union, List, Optional, Set
+
+from pydantic import BaseModel
+
+from cdev.core.constructs.components import ComponentModel, Cdev_Component
+from cdev.core.constructs.mapper import CloudMapper
 
 
-from typing import List, Dict, Set, Callable
-
-from .models import ComponentModel, Resource_State_Difference, Cloud_Output
-
-from ..utils import environment as cdev_environment
-
-
-class Cdev_Component():
+class Resource_State(BaseModel):
     """
-    A component is a logical collection of resources. This simple definition is intended to allow flexibility for different
-    styles of setup. It is up to the end user to decide on how they group the resources.
-
-    A component must override the `render` method, which returns the desired resources with configuration as a component model. 
-    The `render` method does not take any input parameters, therefore all configuration for the component should be done via the `__init__` 
-    method or other defined methods. 
-
-    Some properties that components exhibit that can help with determining the best way to group resources are:
-    
-    - __Information__: Config of other resources will by default be available within a component, but you will be able to explicitly 
-    define output that is available for other components to use. 
-    - __Triggered deployments__: Any change in a resource within the component will trigger the component to need to be revaluated 
-    for changes. This means in a monolothic component, all changes will trigger a re-evaluation on the whole state of the project
-    - __Parallelization__: (In the future) rendering components should be able to be parallelized, so using multiple non dependant 
-    components should lead to better total evaluation times.
+    Parent class that describes a namespace that can store resource states via components and also be higher level states for other Resource States 
     """
 
-
-
-    def __init__(self, name: str):
-        self.name = name
-        pass
-
-    def render(self)  -> ComponentModel:
-        """Abstract Class that must be implemented by the descendant that returns a component model"""
-        pass
-
-    def get_name(self) -> str:
-        return self.name
-
-
-
-
-class CloudMapper():
+    uuid: str
     """
-    A Cloud Mapper is the construct responsible for directly interacting with the Cloud Provider and managing resource state. 
+    Unique identifier for this state
     """
-    def __init__(self, resource_to_handler: Dict[str, Callable]) -> None:
-        self.resource_to_handler = resource_to_handler
-        pass
 
-    def get_namespaces(self) -> List[str]:
-        pass
+    parent: Optional['Resource_State']
+    """
+    The parent namespace above this one
+    """
 
-    def deploy_resource(self, resource_diff: Resource_State_Difference) -> bool:
-        pass
+    children: Optional[List['Resource_State']]
+    """
+    Child namespaces of this one
+    """
 
-    def get_available_resources(self) -> Set[str]:
-        return set(self.resource_to_handler.keys())
-
-    def get_resource_to_handler(self) -> Dict[str, Callable]:
-        return self.resource_to_handler
-
-    def render_resource_outputs(self, resource_diff: Resource_State_Difference) -> Resource_State_Difference:
-        return resource_diff
+    components: List[ComponentModel]
+    """
+    The list of components owned by this namespace
+    """
 
 
-        
 
 class Resource_State():
     """
@@ -87,8 +49,8 @@ class Resource_State():
     _INSTALLED_COMPONENTS = []
     _INSTALLED_MAPPERS = []
 
-    _parent: 'Resource_State' = None
-    _children: List['Resource_State'] = []
+    _parent: Resource_State = None
+    _children: List[Resource_State] = []
 
 
     def __new__(cls):
@@ -116,6 +78,7 @@ class Resource_State():
         self._INSTALLED_COMMANDS = []
         self._INSTALLED_COMPONENTS = []
         self._INSTALLED_MAPPERS = []
+
 
     #################
     ##### Components
@@ -197,25 +160,4 @@ class Resource_State():
         self._components = []
         self._mappers = []
         self._state = None  
-        self._outputs = {}      
-
-
-
-class Cdev_Resource():
-    RUUID = None
-
-    def __init__(self, name: str ) -> None:
-        self.name = name
-        pass
-
-    def render(self) -> str:
-        return "::"
-
-    def from_output(key: str) -> Cloud_Output:
-        return Cloud_Output()
-
-
-
-class Execution_Environment():
-    pass
-
+        self._outputs = {}    

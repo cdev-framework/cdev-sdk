@@ -1,7 +1,8 @@
 from typing import Dict, Optional, Any, List
 from pydantic import BaseModel
 
-from cdev.core.models import Resource_State, Resource, Resource_Difference
+from cdev.core.constructs.resource import ResourceModel, Resource_Difference
+from cdev.core.constructs.resource_state import Resource_State
 
 
 class Backend_Configuration(BaseModel):
@@ -23,23 +24,6 @@ class Backend_Configuration(BaseModel):
             "config": config
         })
     
-
-class Local_Backend_Configuration(Backend_Configuration):
-    def __init__(self, config: Dict) -> None:
-        """
-        Represents the data needed to create a new cdev workspace:
-        
-        Parameters:
-            python_module: The name of the python module to load as the backend 
-            config: configuration option for the backend
-            
-        """
-        
-        super().__init__(**{
-            "python_module": "cdev.core.constructs.backend.Local_Backend_Configuration", 
-            "config": config
-        })
-
 
 class Backend():
 
@@ -164,7 +148,7 @@ class Backend():
 
 
     # Api for getting information about a resource from the backend
-    def get_resource_by_name(self, resource_state_uuid: str, component_uuid: str, resource_type: str, resource_name: str) -> Resource:
+    def get_resource_by_name(self, resource_state_uuid: str, component_uuid: str, resource_type: str, resource_name: str) -> ResourceModel:
         """
         Get the state of a resource from a component based on the name of the resource
 
@@ -177,7 +161,7 @@ class Backend():
         pass
 
 
-    def get_resource_by_hash(self, resource_state_uuid: str, component_uuid: str, resource_type: str, resource_hash: str) -> Resource:
+    def get_resource_by_hash(self, resource_state_uuid: str, component_uuid: str, resource_type: str, resource_hash: str) -> ResourceModel:
         """
         Get the state of a resource from a component based on the hash of the resource
 
