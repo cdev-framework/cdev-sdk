@@ -1,3 +1,6 @@
+import importlib
+import inspect
+import sys
 from typing import Dict, Optional, Any, List
 from pydantic import BaseModel
 
@@ -7,9 +10,10 @@ from cdev.core.constructs.resource_state import Resource_State
 
 class Backend_Configuration(BaseModel):
     python_module: str
+    python_class: str
     config: Dict
 
-    def __init__(__pydantic_self__, python_module: str, config: Dict) -> None:
+    def __init__(__pydantic_self__, python_module: str, python_class: str, config: Dict) -> None:
         """
         Represents the data needed to create a new cdev workspace:
         
@@ -20,12 +24,16 @@ class Backend_Configuration(BaseModel):
         """
         
         super().__init__(**{
-            "python_module": python_module, 
+            "python_module": python_module,
+            "python_class": python_class,
             "config": config
         })
     
 
 class Backend():
+    def __init__(self, **kwargs) -> None:
+        print(f"Creating Backend from {kwargs}")
+        pass
 
     # Api for working with Resource States
     def create_resource_state(self, parent_resource_state_uuid: str, name: str) -> str:
@@ -247,5 +255,37 @@ class Backend():
 
 
 def load_backend(config: Backend_Configuration) -> Backend:
-    print(f'loaded backend {config}')
-    pass
+    # sometime the module is already loaded so just reload it to capture any changes
+    try:
+        if sys.modules.get(config.python_module):
+            backend_module = importlib.reload(sys.modules.get(config.python_module))
+
+        else:
+            backend_module = importlib.import_module(config.python_module)
+    except Exception as e:
+        print("Error loading backend module")
+        print(f'Error > {e}')
+        
+        raise e
+
+
+    backend_class = None
+    for item in dir(backend_module):  
+        potential_obj = getattr(backend_module,item)  
+        if inspect.isclass(potential_obj) and issubclass(potential_obj, Backend) and item == config.python_class:
+            backend_class = potential_obj
+            break
+    
+    
+    if not backend_class:
+        print(f"Could not find {config.python_class} in {config.python_module}")
+        raise Exception
+    
+    try:
+        # initialize the backend obj with the provided configuration values
+        initialized_obj = potential_obj(**config.config)
+    except Exception as e:
+        print(f"Could not initialize {potential_obj} Class from config {config.config}")
+        raise e
+
+    return initialized_obj

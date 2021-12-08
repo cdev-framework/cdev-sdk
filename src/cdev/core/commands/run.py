@@ -2,10 +2,6 @@ from cdev.core.management.base import BaseCommand, BaseCommandContainer
 
 from cdev.core.constructs.workspace import Workspace
 
-from cdev.core.utils import  logger
-
-
-log = logger.get_cdev_logger(__name__)
 
 
 WORKSPACE = Workspace.instance()
@@ -18,7 +14,7 @@ def run_command(args):
     format:
     cdev run <sub_command> <args> 
     """
-
+    print(f"CALLING RUN COMMAND")
     # Convert namespace into dict
     params = vars(args)
 
@@ -44,8 +40,10 @@ def run_command(args):
         else:
             if not isinstance(obj, BaseCommandContainer):
                 # Error message
+                print(f"ERROR IN INSTANCE CHECK {type(obj)}")
                 return
             obj.display_help_message()
+            print(f"printed messeage")
     except Exception as e:
         raise e
     

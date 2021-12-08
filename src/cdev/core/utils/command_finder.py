@@ -47,13 +47,16 @@ def find_specified_command(command_list: List[str], all_search_locations_list: L
                 initialized_object = initialize_command_module(f"{location}.{command_list[-1]}")
             except Exception as e:
                 print(e)
+                print("ERROR1")
                 return
                 
         else:
             try:
+                print(f"calling with {location}; {command_list}")
                 initialized_object = initialize_command_container_module(f"{location}.{command_list[-1]}")
             except Exception as e:
                 print(e)
+                print("ERROR2")
                 return
 
         if did_find:
@@ -88,6 +91,7 @@ def find_unspecified_command(command: str, all_search_locations_list: List[str])
 
 
     if not _found_at_least_one_possible:
+        print("ERROR3")
         raise NoCommandFound
 
 
@@ -99,25 +103,31 @@ def find_unspecified_command(command: str, all_search_locations_list: List[str])
         if is_command_local:
             try:
                 potential_objects.append(initialize_command_container_module(f"{potential_location}.{command}"))
+                valid_command_locations.append(potential_location)
             except Exception as e:
                 log.debug(e)
+                print("ERROR4")
                 continue
 
             is_command = is_command_local
         else:
             try:
                 potential_objects.append(initialize_command_container_module(f"{potential_location}"))
+                valid_command_locations.append(potential_location)
             except Exception as e:
                 log.debug(e)
+                print("ERROR5")
                 continue
 
             is_command = is_command_local
 
 
     if len(potential_objects) > 1:
+        print("ERROR6")
         raise AmbiguousCommandName
 
     if len(potential_objects) == 0:
+        print("ERROR7")
         raise NoCommandFound
 
 
@@ -147,7 +157,7 @@ def initialize_command_module(mod_path: str) -> BaseCommand:
             _has_found_a_valid_command = True
 
             # initialize an instance of the class
-            initialized_obj = potential_obj
+            initialized_obj = potential_obj()
 
     if not initialized_obj:
         raise NoCommandFound
@@ -156,8 +166,9 @@ def initialize_command_module(mod_path: str) -> BaseCommand:
 
 
 def initialize_command_container_module(mod_path: str) -> BaseCommandContainer:
+    print(f"fff {mod_path}")
     mod = importlib.import_module(mod_path)
-
+    print(f"----")
 
     # Check for the class that derives from BaseCommandContainer... if there is more then one class then throw error (note this is a current implementation detail)
     # because it is easier if their is only one command per file so that we can use the file name as the command name
@@ -173,11 +184,12 @@ def initialize_command_container_module(mod_path: str) -> BaseCommandContainer:
 
             _has_found_a_valid_command_container = True
 
-            initialized_obj  =  potential_obj
+            initialized_obj  =  potential_obj()
             
     if not initialized_obj:
-        raise NoCommandFound
+        raise NoCommandFound(f"Could not find command Container")
 
+    print(f"final rv {initialized_obj}")
     return initialized_obj
 
 

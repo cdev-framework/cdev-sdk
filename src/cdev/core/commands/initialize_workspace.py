@@ -11,9 +11,9 @@ WORKSPACE_INFO_FILENAME = cdev_settings.get("WORKSPACE_FILE_NAME")
 
 
 def initialize_workspace_cli(args):
-    print(args)
+    print(f"Initialize workspace cli args {args}")
 
-    workspace_config = args.workspace_config if args.workspace_config else load_workspace_configuration(os.getcwd())
+    workspace_config = load_workspace_configuration(os.getcwd())
     
     try:
         _initialize_workspace(workspace_config)
@@ -22,7 +22,7 @@ def initialize_workspace_cli(args):
 
 
 
-def _initialize_workspace(workspace_config: Workspace_Info, workspace_class: str=None):
+def _initialize_workspace(workspace_config: Workspace_Info):
     print("here")
     try:
         Workspace.instance().initialize_workspace(workspace_config)

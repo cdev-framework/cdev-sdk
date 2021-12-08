@@ -4,7 +4,7 @@ from ast import parse
 import os
 from typing import Callable, Any
 
-from cdev.core.commands import create_workspace, initialize_workspace
+from cdev.core.commands import create_workspace, initialize_workspace, run
 from cdev.core.constructs.workspace import Workspace
 
 parser = argparse.ArgumentParser(description='cdev cli')
@@ -32,7 +32,7 @@ def plan_command(args):
 
     myWorkspace = Workspace.instance()
 
-    print(f"is Workspace init -> {myWorkspace.get_isinitialized()}")
+    print(f"is Workspace init -> {myWorkspace.get_state()}")
 
 
 CDEV_COMMANDS = [
@@ -46,9 +46,18 @@ CDEV_COMMANDS = [
         "help": "Create a new instance of a workspace",
         "default": wrap_initialize_workspace(plan_command),
         "args": [
-            {"dest": "--workspace_config", "help": "run a simple follower instead of full development environment", "type": str}
+           
         ]
     }, 
+    {
+        "name": "run",
+        "help": "This command is used to run user defined and resource functions.",
+        "default": wrap_initialize_workspace(run.run_command),
+        "args": [
+            {"dest": "subcommand", "help": "the user defined command to call"},
+            {"dest": "args", "nargs": argparse.REMAINDER}
+        ]
+    },
     
 ]
 

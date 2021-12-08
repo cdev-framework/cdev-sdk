@@ -3,7 +3,7 @@ import importlib
 import json
 import os
 import sys
-from typing import List, Dict, Optional, Any, Tuple, Union
+from typing import Callable, List, Dict, Optional, Any, Tuple, Union
 from cdev.core.constructs.resource import Resource_Difference
 
 
@@ -93,7 +93,7 @@ def load_workspace_configuration(base_dir: DirectoryPath) -> Workspace_Info:
         raise e
 
 
-class WorkSpace_States(Enum, str):
+class WorkSpace_States(str, Enum):
     UNINITIALIZED = "UNINITIALIZED"
     INITIALIZING = "INITIALIZING"
     INITIALIZED = "INITIALIZED"
@@ -136,29 +136,41 @@ class Workspace():
         return cls._instance
 
 
-    def wrap_initialization_phase(func):
-       
-        def wrapper_func(workspace: 'Workspace'):
-            if not Workspace.instance().get_state():
-                raise Exception("NICECEEE")
+    def wrap_phase(phase: WorkSpace_States):
+        
+        def inner_wrap(func: Callable):
+            def wrapper_func(workspace: 'Workspace', *func_posargs , **func_kwargs):
+                print(*func_posargs)
+                current_state = Workspace.instance().get_state()
+                if not current_state == phase:
+                    raise Exception(f"Trying to call {func} while in workspace state {current_state} but need to be in {phase}")
 
-            else:
-                print(f"RIGHT HERE {func}")
-                func()
+                else:
+                    print(f"RIGHT HERE 22 {func} {func_posargs}")
+                    func(workspace, *func_posargs, **func_kwargs) 
 
-            
-        return wrapper_func
+            return wrapper_func
+        
+        return inner_wrap
 
 
 
     def initialize_workspace(self, workspace_configuration: Workspace_Info):
         self.set_state(WorkSpace_States.INITIALIZING)
+        self.clear_previous_state()
         
-        self._backend = load_backend(workspace_configuration.backend_configuration)
+        try:
+            self._backend = load_backend(workspace_configuration.backend_configuration)
+        except Exception as e:
+            print(f"Could not load the load backend")
+            raise e
+
+
         self._initialization_file = workspace_configuration.initialization_file
         
     
-        # sometime the module is already loaded so just reload it to capture any changes
+        # Sometimes the module is already loaded so just reload it to capture any changes
+        # Importing the initialization file should cause it to modify the state of the Workspace however is needed
         if sys.modules.get(self._initialization_file):
             importlib.reload(sys.modules.get(self._initialization_file))
 
@@ -168,7 +180,6 @@ class Workspace():
         self.set_state(WorkSpace_States.INITIALIZED)
         
 
-
     @classmethod
     def instance(cls):
         if cls._instance is None:
@@ -177,21 +188,16 @@ class Workspace():
         return cls._instance
 
     
-
     def clear_previous_state(self):
         self._COMMANDS = []
         self._MAPPERS = []
+        self._COMPONENTS = []
 
 
     #################
-    ##### Mapper
+    ##### Mappers
     #################
-    @wrap_initialization_phase
-    def tmp():
-        print("Dooing tmp in my project")
-
-
-    @wrap_initialization_phase
+    @wrap_phase(WorkSpace_States.INITIALIZING)
     def add_mapper(self, mapper: CloudMapper ) -> None:
         if not isinstance(mapper, CloudMapper):
             # TODO Throw error
@@ -201,7 +207,7 @@ class Workspace():
         self._MAPPERS.append(mapper)
 
 
-    @wrap_initialization_phase
+    @wrap_phase(WorkSpace_States.INITIALIZING)
     def add_mappers(self, mappers: List[CloudMapper] ) -> None:
         for mapper in mappers:
             self.add_mapper(mapper)
@@ -226,12 +232,17 @@ class Workspace():
     #################
     ##### Commands
     #################
-    @wrap_initialization_phase
+    @wrap_phase(WorkSpace_States.INITIALIZING)
     def add_command(self, command_location: str):
         self._COMMANDS.append(command_location)
 
-    @wrap_initialization_phase
+
+    @wrap_phase(WorkSpace_States.INITIALIZING)
     def add_commands(self, command_locations: List[str]):
+        """
+        This is the adds commands function
+        """
+        print(f"---- {command_locations}")
         for command_location in command_locations:
             self.add_command(command_location)
 
@@ -244,11 +255,11 @@ class Workspace():
     #################
     ##### Components
     #################
-    @wrap_initialization_phase
+    @wrap_phase(WorkSpace_States.INITIALIZING)
     def add_component(self, component: Component):
         self._COMPONENTS.append(component)
 
-    @wrap_initialization_phase
+    @wrap_phase(WorkSpace_States.INITIALIZING)
     def add_components(self, components: List[Component]):
         for component in components:
             self.add_component(component)
@@ -278,7 +289,7 @@ class Workspace():
         self._COMPONENTS = []
 
 
-    @wrap_initialization_phase
+    
     def execute_frontend(self) -> Tuple[List[ComponentModel], str]:
         """
         This is the function that executes the code to generate a desired state for the project. 
@@ -288,7 +299,6 @@ class Workspace():
         try:
             ALL_COMPONENTS = self.get_components()
             #log.info(f"Components in project -> {ALL_COMPONENTS}")
-
 
             components_sorted: SortedList[ComponentModel] = SortedList(key=lambda x: x.name)
             #log.debug(f"Sorted Components by name -> {project_components_sorted}")
@@ -311,12 +321,12 @@ class Workspace():
             end_process()
 
 
-    @wrap_initialization_phase
+    
     def deploy_differences(self, component_differences: List[Component_Difference], resource_differences: List[Resource_Difference]):
         pass
 
         
-    @wrap_initialization_phase
+    
     def find_command(self, command: str) -> Tuple[Union[BaseCommand, BaseCommandContainer], str, str, bool]:
         """
         Find the desired command based on the search path
@@ -330,7 +340,7 @@ class Workspace():
         Raises:
             KeyError: Raises an exception.
         """
-
+        print(f"in find command with {command}")
         # Command in list form
         command_list = command.split(".")
 
@@ -338,7 +348,9 @@ class Workspace():
         all_search_locations_list = self.get_commands()
 
         if len(command_list) == 1:
-            return find_unspecified_command(command_list[0], all_search_locations_list)
+            rv = find_unspecified_command(command_list[0], all_search_locations_list)
+            print(rv)
+            return rv
 
         else:
             return find_specified_command(command_list, all_search_locations_list)
