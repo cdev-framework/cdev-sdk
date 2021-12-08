@@ -21,12 +21,12 @@ class Resource_State(BaseModel):
     Unique identifier for this state
     """
 
-    parent: Optional['Resource_State']
+    parent_uuid: Optional[str]
     """
     The parent namespace above this one
     """
 
-    children: Optional[List['Resource_State']]
+    children: Optional[List[str]]
     """
     Child namespaces of this one
     """
@@ -36,12 +36,11 @@ class Resource_State(BaseModel):
     The list of components owned by this namespace
     """
 
-
-
-class Resource_State():
-    """
-    A singleton that encapsulates the configuration and high level information needed to construct the project. This singleton
-    can be used within the different components to gain information about the higher level project that it is within. Once constructed,
-    the object should remain a read only object to prevent components from changing configuration beyond their scope. 
-    """
-    pass
+    def __init__(__pydantic_self__, name: str, uuid: str, components: List[ComponentModel], parent_uuid: Optional[str]=None, children: Optional[List[str]]=None, ) -> None:
+        super().__init__(**{
+            "name": name,
+            "uuid": uuid,
+            "components": components,
+            "parent_uuid": parent_uuid,
+            "children": children
+        })

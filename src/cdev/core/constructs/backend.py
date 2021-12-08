@@ -33,7 +33,7 @@ class Backend_Configuration(BaseModel):
 class Backend():
     def __init__(self, **kwargs) -> None:
         print(f"Creating Backend from {kwargs}")
-        pass
+        raise NotImplementedError
 
     # Api for working with Resource States
     def create_resource_state(self, parent_resource_state_uuid: str, name: str) -> str:
@@ -47,7 +47,7 @@ class Backend():
         Returns:
             uuid (str): The uuid of the newly created resource state.
         """
-        pass
+        raise NotImplementedError
 
 
     def delete_resource_state(self, state_uuid: str):
@@ -57,7 +57,7 @@ class Backend():
         Arguments:
             state_uuid (str): The uuid of the resource state to delete
         """
-        pass
+        raise NotImplementedError
 
 
     def load_resource_state(self, state_uuid: str) -> Resource_State:
@@ -67,7 +67,7 @@ class Backend():
         Arguments:
             state_uuid (str): The uuid of the desired resource state
         """
-        pass
+        raise NotImplementedError
 
 
     def list_top_level_resource_states(self) -> List[Resource_State]:
@@ -77,7 +77,7 @@ class Backend():
         Returns:
             resource_states (List[Resource_States]): Top level resource states.
         """
-        pass
+        raise NotImplementedError
 
 
     # Api for working with components within a resource state
@@ -93,7 +93,7 @@ class Backend():
             uuid (str): The uuid for the new component
 
         """
-        pass
+        raise NotImplementedError
 
 
     def delete_component(self, resource_state_uuid: str, component_uuid: str):
@@ -104,7 +104,7 @@ class Backend():
             resource_state_uuid (str): The resource state that this component will be in.
             component_uuid (str): uuid of the component.
         """
-        pass
+        raise NotImplementedError
 
 
     # Api for changing individual Resources
@@ -124,7 +124,7 @@ class Backend():
             transaction_token (str): The transaction token to be used by the mapper when deploying the resource. This token can be used to give to a cloud 
             provider as a idempotency token.
         """
-        pass
+        raise NotImplementedError
 
 
     def complete_resource_change(self, resource_state_uuid: str, component_uuid: str, diff: Resource_Difference, transaction_token: str, cloud_output: Dict):
@@ -138,7 +138,7 @@ class Backend():
             transaction_token (str): Identifying token representing what transaction is being completed
             cloud_output (Dict): Output information from the cloud provider 
         """
-        pass
+        raise NotImplementedError
 
 
     def fail_resource_change(self, resource_state_uuid: str, component_uuid: str, diff: Resource_Difference, transaction_token: str, failed_state: Dict):
@@ -152,7 +152,7 @@ class Backend():
             transaction_token (str): Identifying token representing what transaction is being completed
             failed_state (Dict): A dictionary containing information a mapper could use to resolve the failed state
         """
-        pass
+        raise NotImplementedError
 
 
     # Api for getting information about a resource from the backend
@@ -166,7 +166,7 @@ class Backend():
             resource_type: The RUUID of the resource desired
             resource_name: The name of the resource desired
         """
-        pass
+        raise NotImplementedError
 
 
     def get_resource_by_hash(self, resource_state_uuid: str, component_uuid: str, resource_type: str, resource_hash: str) -> ResourceModel:
@@ -179,7 +179,7 @@ class Backend():
             resource_type (str): The RUUID of the resource desired
             resource_hash (str): The hash of the resource desired
         """
-        pass
+        raise NotImplementedError
 
     
     def get_cloud_output_value_by_name(self, resource_state_uuid: str, component_uuid: str, resource_type: str, resource_name: str, key: str) -> Any:
@@ -194,7 +194,7 @@ class Backend():
             resource_name (str): The hash of the resource desired
             key (str): The key for the desired value
         """
-        pass
+        raise NotImplementedError
 
     
     def get_cloud_output_value_by_hash(self, resource_state_uuid: str, component_uuid: str, resource_type: str, resource_hash: str, key: str) -> Any:
@@ -209,7 +209,7 @@ class Backend():
             resource_hash (str): The hash of the resource desired.
             key (str): The key for the desired value.
         """
-        pass
+        raise NotImplementedError
 
 
 
@@ -227,7 +227,7 @@ class Backend():
             transaction_token (str): Identifying token for the failed transaction.
             new_failed_state (Dict): The new failed state of the transaction.
         """
-        pass
+        raise NotImplementedError
 
     
     def recover_failed_resource_change(self, resource_state_uuid: str, transaction_token: str, to_previous_state: bool=True):
@@ -239,7 +239,7 @@ class Backend():
             transaction_token (str): Identifying token for the failed transaction.
             to_previous_state (bool): Bool to decide if the resource should be transitioned to the previous state or new state.
         """
-        pass
+        raise NotImplementedError
 
 
     def remove_failed_resource_change(self, resource_state_uuid: str, transaction_token: str): 
@@ -250,7 +250,7 @@ class Backend():
             resource_state_uuid (str): The resource state that this transaction is in.
             transaction_token (str): Identifying token for the failed transaction.
         """
-        pass
+        raise NotImplementedError
 
 
 

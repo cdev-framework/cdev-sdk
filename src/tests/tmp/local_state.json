@@ -1,0 +1,11 @@
+{
+    "resource_state_locations": {
+        "413e1301-dc81-4fbe-a6d1-ca5662d190d4": "src/tests/tmp/resource_state_413e1301-dc81-4fbe-a6d1-ca5662d190d4.json"
+    },
+    "top_level_states": [
+        "413e1301-dc81-4fbe-a6d1-ca5662d190d4"
+    ],
+    "resource_state_names": [
+        "project_state"
+    ]
+}
