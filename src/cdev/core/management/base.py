@@ -165,7 +165,6 @@ class BaseCommand():
         
         **This method should not be overridden**
         """
-        #TODO init project
 
         output = self.command(*args, **kwargs)
 

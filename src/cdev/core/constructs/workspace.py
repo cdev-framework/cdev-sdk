@@ -1,5 +1,6 @@
 import os
-from typing import List, Dict, Optional, Any, Tuple
+from typing import List, Dict, Optional, Any, Tuple, Union
+from cdev.core.constructs.resource import Resource_Difference
 
 
 from pydantic import BaseModel
@@ -8,12 +9,17 @@ from sortedcontainers.sortedlist import SortedList
 
 from cdev.core.constructs.backend import Backend, Backend_Configuration
 from cdev.core.constructs.mapper import CloudMapper
-from cdev.core.constructs.components import Component, ComponentModel
+from cdev.core.constructs.components import Component, Component_Difference, ComponentModel
+
+
+from cdev.core.management.base import BaseCommand, BaseCommandContainer
 
 from cdev.core.settings import SETTINGS as cdev_settings
 
 from cdev.core.utils.exceptions import Cdev_Error, end_process
 from cdev.core.utils import hasher as cdev_hasher
+from cdev.core.utils.command_finder import find_specified_command, find_unspecified_command
+
 
 
 WORKSPACE_INFO_DIR = cdev_settings.get("ROOT_FOLDER_NAME")
@@ -223,3 +229,41 @@ class Workspace():
             end_process()
 
 
+    def deploy_differences(self, component_differences: List[Component_Difference], resource_differences: List[Resource_Difference]):
+        pass
+
+
+    def find_command(self, command: str) -> Tuple[Union[BaseCommand, BaseCommandContainer], str, str, bool]:
+        """
+        Find the desired command based on the search path
+
+        Args:
+            command (str): The full command to search for. can be '.' seperated to denote search path. 
+
+        Returns:
+            command_obj (Union[BaseCommand, BaseCommandContainer]): Initialized command object
+
+        Raises:
+            KeyError: Raises an exception.
+        """
+
+        # Command in list form
+        command_list = command.split(".")
+
+        # Create list of all directories to start searching in
+        all_search_locations_list = self.get_commands()
+
+        if len(command_list) == 1:
+            return find_unspecified_command(command_list[0], all_search_locations_list)
+
+        else:
+            return find_specified_command(command_list, all_search_locations_list)
+
+
+        
+
+        
+
+
+
+    
