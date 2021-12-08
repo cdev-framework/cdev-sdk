@@ -4,7 +4,8 @@ from typing import Dict, List, Any
 import uuid
 
 from cdev.core.constructs.backend import Backend_Configuration, Backend
-from cdev.core.constructs.resource import Resource_Difference, ResourceModel
+from cdev.core.constructs.components import ComponentModel
+from cdev.core.constructs.resource import Resource_Change_Type, Resource_Difference, ResourceModel
 from cdev.core.constructs.resource_state import Resource_State
 from cdev.core.settings import SETTINGS as cdev_settings
 from pydantic.main import BaseModel
@@ -107,7 +108,29 @@ class LocalBackend(Backend):
 
 
     def delete_resource_state(self, state_uuid: str):
-        pass
+        if not state_uuid in self._central_state.resource_state_locations:
+            raise Exception
+
+        resource_state_to_delete = self.load_resource_state(state_uuid)
+
+        if resource_state_to_delete.children:
+            print(f"Can not delete resource state with children")
+            raise Exception
+
+        if resource_state_to_delete.parent_uuid:
+            # Need to remove this as child of parent
+            pass
+
+        else:
+            # if the resource state had no parent, then it was a top level resource state
+            self._central_state.top_level_states.remove(resource_state_to_delete.uuid)
+
+
+        self._central_state.resource_state_names.remove(resource_state_to_delete.name)
+        file_location = self._central_state.resource_state_locations.pop(resource_state_to_delete.uuid)
+
+        self._write_central_file()
+        os.remove(file_location)
 
 
     def load_resource_state(self, state_uuid: str) -> Resource_State:
@@ -128,50 +151,272 @@ class LocalBackend(Backend):
             raise e
 
     
-
-
     def list_top_level_resource_states(self) -> List[Resource_State]:
-        pass
+        rv = []
+        
+        for resource_id in self._central_state.top_level_states:
+            # Let any exception from loading a state pass up to caller
+            rv.append(self.load_resource_state(resource_id))
+
+        return rv
+            
+
+    # Components
+    def create_component(self, resource_state_uuid: str, component_name: str):
+        try:
+            resource_state = self.load_resource_state(resource_state_uuid)
+            resource_state_file_location = self._central_state.resource_state_locations.get(resource_state_uuid)
+        except Exception as e:
+            # Wrap in more informative error
+            raise e 
 
 
-    def create_component(self, resource_state_uuid: str, component_name: str) -> str:
-        pass
-
-
-    def delete_component(self, resource_state_uuid: str, component_uuid: str):
-        pass
-
-
-    def create_resource_change(self, resource_state_uuid: str, component_uuid: str, diff: Resource_Difference) -> str:
-        pass
-
-
-    def complete_resource_change(self, resource_state_uuid: str, component_uuid: str, diff: Resource_Difference, transaction_token: str, cloud_output: Dict):
-        pass
-
-
-    def fail_resource_change(self, resource_state_uuid: str, component_uuid: str, diff: Resource_Difference, transaction_token: str, failed_state: Dict):
-        pass
-
-
-    def get_resource_by_name(self, resource_state_uuid: str, component_uuid: str, resource_type: str, resource_name: str) -> ResourceModel:
-        pass
-
-
-    def get_resource_by_hash(self, resource_state_uuid: str, component_uuid: str, resource_type: str, resource_hash: str) -> ResourceModel:
-        pass
+        if component_name in set(x.name for x in resource_state.components):
+            # Cant not have two components of the same name in the same resource state
+            raise Exception
 
     
-    def get_cloud_output_value_by_name(self, resource_state_uuid: str, component_uuid: str, resource_type: str, resource_name: str, key: str) -> Any:
-        pass
+        new_component = ComponentModel(
+            component_name
+        )
+
+        resource_state.components.append(new_component)
+
+        self._write_resource_state_file(resource_state, resource_state_file_location)
+
+
+
+    def delete_component(self, resource_state_uuid: str, component_name: str):
+        try:
+            resource_state = self.load_resource_state(resource_state_uuid)
+            resource_state_file_location = self._central_state.resource_state_locations.get(resource_state_uuid)
+        except Exception as e:
+            # Wrap in more informative error
+            raise e 
+
+
+        if not component_name in set(x.name for x in resource_state.components):
+            # Component of that name does not exists
+            raise Exception
 
     
-    def get_cloud_output_value_by_hash(self, resource_state_uuid: str, component_uuid: str, resource_type: str, resource_hash: str, key: str) -> Any:
-        pass
+        resource_state.components = [x for x in resource_state.components if not x.name == component_name]
+
+        self._write_resource_state_file(resource_state, resource_state_file_location)
+        
+
+    def create_resource_change(self, resource_state_uuid: str, component_name: str, diff: Resource_Difference) -> str:
+        try:
+            resource_state = self.load_resource_state(resource_state_uuid)
+            resource_state_file_location = self._central_state.resource_state_locations.get(resource_state_uuid)
+        except Exception as e:
+            # Wrap in more informative error
+            raise e 
+
+        component = next((x for x in resource_state.components if x.name == component_name), None)
+
+        if not component:
+            raise Exception
+
+
+        transaction_token = str(uuid.uuid4())
+
+        resource_state.resource_changes[transaction_token] = (component_name, diff)
+
+        self._write_resource_state_file(resource_state, resource_state_file_location)
+
+        return transaction_token
+
+
+    def complete_resource_change(self, resource_state_uuid: str, component_name: str, diff: Resource_Difference, transaction_token: str, cloud_output: Dict=None):
+        try:
+            resource_state = self.load_resource_state(resource_state_uuid)
+            resource_state_file_location = self._central_state.resource_state_locations.get(resource_state_uuid)
+
+        except Exception as e:
+            # Wrap in more informative error
+            raise e 
+
+        if not transaction_token in resource_state.resource_changes:
+            raise Exception
+
+        component = next((x for x in resource_state.components if x.name == component_name), None)
+
+        if not component:
+            raise Exception
+
+        if diff.action_type == Resource_Change_Type.DELETE:
+            component.rendered_resources = [x for x in component.rendered_resources if x.ruuid == diff.previous_resource.ruuid and x.name == diff.previous_resource.name]
+
+        elif diff.action_type == Resource_Change_Type.UPDATE_IDENTITY or diff.action_type == Resource_Change_Type.UPDATE_NAME:
+            
+            component.rendered_resources = [x for x in component.rendered_resources if x.ruuid == diff.previous_resource.ruuid and x.name == diff.previous_resource.name].append(diff.new_resource)
+            
+            if cloud_output:
+                cloud_output_id = f"{diff.new_resource.ruuid};{diff.new_resource.name}"
+                component.cloud_output[cloud_output_id] = cloud_output
+
+        elif diff.action_type == Resource_Change_Type.CREATE:
+            component.rendered_resources.append(diff.new_resource)
+        
+            if cloud_output:
+                cloud_output_id = f"{diff.new_resource.ruuid};{diff.new_resource.name}"
+                component.cloud_output[cloud_output_id] = cloud_output
+        
+       
+        # recompute hash
+
+        resource_state.components = [x for x in resource_state.components if not x.name == component.name].append(component)
+
+        resource_state.resource_changes.pop(transaction_token)
+        
+
+        self._write_resource_state_file(resource_state, resource_state_file_location)
+
+
+    def fail_resource_change(self, resource_state_uuid: str, component_name: str, diff: Resource_Difference, transaction_token: str, failed_state: Dict):
+        try:
+            resource_state = self.load_resource_state(resource_state_uuid)
+            resource_state_file_location = self._central_state.resource_state_locations.get(resource_state_uuid)
+
+        except Exception as e:
+            # Wrap in more informative error
+            raise e 
+
+        if not transaction_token in resource_state.resource_changes:
+            raise Exception
+
+        resource_state.resource_changes.pop(transaction_token)
+        resource_state.failed_changes[transaction_token] = (component_name, diff, failed_state)
+
+        self._write_resource_state_file(resource_state, resource_state_file_location)
+
+
+    def get_resource_by_name(self, resource_state_uuid: str, component_name: str, resource_type: str, resource_name: str) -> ResourceModel:
+        try:
+            resource_state = self.load_resource_state(resource_state_uuid)
+            
+        except Exception as e:
+            # Wrap in more informative error
+            raise e 
+
+        component = next((x for x in resource_state.components if x.name == component_name), None)
+
+        if not component:
+            raise Exception
+
+        resource =  next((x for x in component.rendered_resources if x.ruuid == resource_type and x.name == resource_name), None)
+
+        if not resource:
+            raise Exception
+
+        return resource
+
+
+    def get_resource_by_hash(self, resource_state_uuid: str, component_name: str, resource_type: str, resource_hash: str) -> ResourceModel:
+        try:
+            resource_state = self.load_resource_state(resource_state_uuid)
+        except Exception as e:
+            # Wrap in more informative error
+            raise e 
+
+        component = next((x for x in resource_state.components if x.name == component_name), None)
+
+        if not component:
+            raise Exception
+
+        resource =  next((x for x in component.rendered_resources if x.ruuid == resource_type and x.hash == resource_hash), None)
+
+        if not resource:
+            raise Exception
+
+
+        return resource
+
+    
+    def get_cloud_output_value_by_name(self, resource_state_uuid: str, component_name: str, resource_type: str, resource_name: str, key: str) -> Any:
+        try:
+            resource_state = self.load_resource_state(resource_state_uuid)
+
+        except Exception as e:
+            # Wrap in more informative error
+            raise e 
+
+        component = next((x for x in resource_state.components if x.name == component_name), None)
+
+        if not component:
+            raise Exception
+
+        resource =  next((x for x in component.rendered_resources if x.ruuid == resource_type and x.name == resource_name), None)
+
+        if not resource:
+            raise Exception
+
+        cloud_output_id = f"{resource.ruuid};{resource.name}"
+
+        if not cloud_output_id in component.cloud_output:
+            raise Exception
+
+        cloud_output = component.cloud_output.get(cloud_output_id)
+
+        if not key in cloud_output:
+            raise Exception
+
+        return cloud_output.get(key)
+
+    
+    def get_cloud_output_value_by_hash(self, resource_state_uuid: str, component_name: str, resource_type: str, resource_hash: str, key: str) -> Any:
+        try:
+            resource_state = self.load_resource_state(resource_state_uuid)
+        except Exception as e:
+            # Wrap in more informative error
+            raise e 
+
+        component = next((x for x in resource_state.components if x.name == component_name), None)
+
+        if not component:
+            raise Exception
+
+        resource =  next((x for x in component.rendered_resources if x.ruuid == resource_type and x.hash == resource_hash), None)
+
+        if not resource:
+            raise Exception
+
+
+        cloud_output_id = f"{resource.ruuid};{resource.name}"
+
+
+        if not cloud_output_id in component.cloud_output:
+            raise Exception
+
+    
+        cloud_output = component.cloud_output.get(cloud_output_id)
+
+        if not key in cloud_output:
+            raise Exception
+
+        return cloud_output.get(key)
 
 
     def change_failed_state_of_resource_change(self, resource_state_uuid: str, transaction_token: str, new_failed_state: Dict):
-        pass
+        try:
+            resource_state = self.load_resource_state(resource_state_uuid)
+            resource_state_file_location = self._central_state.resource_state_locations.get(resource_state_uuid)
+
+        except Exception as e:
+            # Wrap in more informative error
+            raise e 
+
+
+        if not transaction_token in resource_state.failed_changes:
+            raise Exception
+
+
+        previous_component, previous_diff, _ = resource_state.failed_changes.get(transaction_token)
+
+        resource_state.failed_changes[transaction_token] = (previous_component, previous_diff, new_failed_state)
+
+        self._write_resource_state_file(resource_state, resource_state_file_location)
 
     
     def recover_failed_resource_change(self, resource_state_uuid: str, transaction_token: str, to_previous_state: bool=True):

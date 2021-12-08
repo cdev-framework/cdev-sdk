@@ -96,13 +96,13 @@ class Backend():
         raise NotImplementedError
 
 
-    def delete_component(self, resource_state_uuid: str, component_uuid: str):
+    def delete_component(self, resource_state_uuid: str, component_name: str):
         """
         Delete a component within a resource state. 
 
         Arguments:
             resource_state_uuid (str): The resource state that this component will be in.
-            component_uuid (str): uuid of the component.
+            component_name (str): uuid of the component.
         """
         raise NotImplementedError
 
@@ -110,30 +110,32 @@ class Backend():
     # Api for changing individual Resources
     # The resource state needs to know when a mapper will be attempting to update a cdev resource. It is in charge of
     # determing if the current resource state is capable of handling a change in the resource. 
-    def create_resource_change(self, resource_state_uuid: str, component_uuid: str, diff: Resource_Difference) -> str:
+    def create_resource_change(self, resource_state_uuid: str, component_name: str, diff: Resource_Difference) -> str:
         """
         Create in the Resource State the desire to change a particular resource. If the resource state can currently handle creating
         this change, it will return a base idempotency token that can be used to construct idempotency tokens for deploying the underlying
         cloud resources. If the resource state can not handle the change, it will throw an error. 
 
         Arguments:
-            diff (Resource_Difference): The desired change in the resource
+            resource_state_uuid (str): The resource state for this resource change.
+            component_name (str): The component this resource change is occuring in.
+            diff (Resource_Difference): The desired change in the resource.
 
         Returns:
-            resource_state_uuid (str): The resource state for this resource change.
             transaction_token (str): The transaction token to be used by the mapper when deploying the resource. This token can be used to give to a cloud 
             provider as a idempotency token.
         """
         raise NotImplementedError
 
 
-    def complete_resource_change(self, resource_state_uuid: str, component_uuid: str, diff: Resource_Difference, transaction_token: str, cloud_output: Dict):
+    def complete_resource_change(self, resource_state_uuid: str, component_name: str, diff: Resource_Difference, transaction_token: str, cloud_output: Dict):
         """
         Notify the resource state that all changes to a resource have completed successfully. This will cause the resource to
         update the state of the resource to the new state.
 
         Arguments:
             resource_state_uuid (str): The resource state for this resource change.
+            component_name (str): The component this resource change is occuring in.
             diff (Resource_Difference): The desired change in the resource
             transaction_token (str): Identifying token representing what transaction is being completed
             cloud_output (Dict): Output information from the cloud provider 
@@ -141,13 +143,14 @@ class Backend():
         raise NotImplementedError
 
 
-    def fail_resource_change(self, resource_state_uuid: str, component_uuid: str, diff: Resource_Difference, transaction_token: str, failed_state: Dict):
+    def fail_resource_change(self, resource_state_uuid: str, component_name: str, diff: Resource_Difference, transaction_token: str, failed_state: Dict):
         """
         Notify the resource state that an attempted change to a resource has failed. The provided failed state should encapsulate any needed information
         for a future mapper to recover the state of the resource back into a proper state.
 
         Arguments:
             resource_state_uuid (str): The resource state for this resource change.
+            component_name (str): The component this resource change is occuring in.
             diff (Resource_Difference): The desired change in the resource
             transaction_token (str): Identifying token representing what transaction is being completed
             failed_state (Dict): A dictionary containing information a mapper could use to resolve the failed state
@@ -156,40 +159,40 @@ class Backend():
 
 
     # Api for getting information about a resource from the backend
-    def get_resource_by_name(self, resource_state_uuid: str, component_uuid: str, resource_type: str, resource_name: str) -> ResourceModel:
+    def get_resource_by_name(self, resource_state_uuid: str, component_name: str, resource_type: str, resource_name: str) -> ResourceModel:
         """
         Get the state of a resource from a component based on the name of the resource
 
         Arguments:
             resource_state_uuid (str): The resource state for this resource.
-            component_uuid: The component that this resource is apart of
+            component_name (str): The component this resource is in.
             resource_type: The RUUID of the resource desired
             resource_name: The name of the resource desired
         """
         raise NotImplementedError
 
 
-    def get_resource_by_hash(self, resource_state_uuid: str, component_uuid: str, resource_type: str, resource_hash: str) -> ResourceModel:
+    def get_resource_by_hash(self, resource_state_uuid: str, component_name: str, resource_type: str, resource_hash: str) -> ResourceModel:
         """
         Get the state of a resource from a component based on the hash of the resource
 
         Arguments:
             resource_state_uuid (str): The resource state for this resource.
-            component_uuid (str): The component that this resource is apart of
-            resource_type (str): The RUUID of the resource desired
-            resource_hash (str): The hash of the resource desired
+            component_name (str): The component this resource is in.
+            resource_type (str): The RUUID of the resource desired.
+            resource_hash (str): The hash of the resource desired.
         """
         raise NotImplementedError
 
     
-    def get_cloud_output_value_by_name(self, resource_state_uuid: str, component_uuid: str, resource_type: str, resource_name: str, key: str) -> Any:
+    def get_cloud_output_value_by_name(self, resource_state_uuid: str, component_name: str, resource_type: str, resource_name: str, key: str) -> Any:
         """
         Get an output value from the cloud provider for a resource by the name of the resource. This function also takes an optional function as a parameter
         that will be executed on the output and should return a transformed version of the information. 
 
         Arguments:
             resource_state_uuid (str): The resource state for this resource.
-            component_uuid (str): The component that this resource is apart of
+            component_name (str): The component this resource is in.
             resource_type (str): The RUUID of the resource desired
             resource_name (str): The hash of the resource desired
             key (str): The key for the desired value
@@ -204,7 +207,7 @@ class Backend():
 
         Arguments:
             resource_state_uuid (str): The resource state for this resource.
-            component_uuid (str): The component that this resource is apart of.
+            component_name (str): The component this resource is in.
             resource_type (str): The RUUID of the resource desired.
             resource_hash (str): The hash of the resource desired.
             key (str): The key for the desired value.

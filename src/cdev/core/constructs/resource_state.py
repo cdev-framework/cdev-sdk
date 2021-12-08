@@ -1,4 +1,5 @@
-from typing import Dict, Union, List, Optional, Set
+from typing import Dict, Union, List, Optional, Set, Tuple
+from cdev.core.constructs.resource import Resource_Difference
 
 from pydantic import BaseModel
 
@@ -34,6 +35,16 @@ class Resource_State(BaseModel):
     components: List[ComponentModel]
     """
     The list of components owned by this namespace
+    """
+
+    resource_changes: Dict[str, Tuple[str, Resource_Difference]]
+    """
+    A dictionary of transaction tokens to a tuple of (component_name, diff)
+    """
+
+    failed_changes: Dict[str, Tuple[str, Resource_Difference, Dict]]
+    """
+    A dictionary of transaction tokens to a tuple of (component_name, diff, error_info) for the changes that failed
     """
 
     def __init__(__pydantic_self__, name: str, uuid: str, components: List[ComponentModel], parent_uuid: Optional[str]=None, children: Optional[List[str]]=None, ) -> None:

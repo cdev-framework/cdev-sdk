@@ -20,6 +20,14 @@ new_state_uuid = mybackend.create_resource_state("", "project_state")
 print(new_state_uuid)
 
 
-actual_state = mybackend.load_resource_state(new_state_uuid)
+actual_state = mybackend.list_top_level_resource_states()
 
 print(actual_state)
+
+#mybackend.delete_resource_state(new_state_uuid)
+
+#print(mybackend)
+
+mybackend.create_component(new_state_uuid, "component1")
+mybackend.create_component(new_state_uuid, "component1")
+

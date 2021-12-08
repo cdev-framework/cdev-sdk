@@ -22,18 +22,6 @@ class ComponentModel(BaseModel):
     - name  ->  a string that is the human readable name for this component
     """
 
-    rendered_resources: Union[List[ResourceModel], None]
-    """
-    List of Rendered Resources that make up the current state of this component
-    """
-
-    hash: str
-    """
-    A hash that is used to identify if changes in the resources have occurred. It should have the property:
-    - This value changes only if a there is a change in the resource. 
-    """
-
-
     name: str
     """
     A human readable logical name for the component. 
@@ -43,11 +31,37 @@ class ComponentModel(BaseModel):
     instead of update. 
     """
 
+    hash: str
+    """
+    A hash that is used to identify if changes in the resources have occurred. It should have the property:
+    - This value changes only if a there is a change in the resource. 
+    """
+
+    rendered_resources: Optional[List[ResourceModel]]
+    """
+    List of Rendered Resources that make up the current state of this component
+    """
+
     all_parent_resources: Optional[Set[str]]
     """
     A set of all resource identifications (ruuid:hash:<hash> or ruuid:name:<name>) that are a parent resource to some other resource in the component. This set serves as 
     a fast way of checking if we need to update descandants when a resource is updated 
     """
+
+    cloud_output: Optional[Dict[str, Dict]]
+    """
+    Output values from the cloud provider of deployed resources
+    """
+
+
+    def __init__(__pydantic_self__, name: str, hash: str="0", rendered_resources: List[ResourceModel]=None,  all_parent_resources: Set[str]=None, cloud_output: Dict[str,Dict]=None) -> None:
+        super().__init__(**{
+            "name": name,
+            "hash": hash,
+            "rendered_resources": rendered_resources,
+            "all_parent_resources": all_parent_resources,
+            "cloud_output": cloud_output
+        })
 
     
     def get_parent_resources(self):
