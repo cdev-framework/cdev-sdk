@@ -17,6 +17,7 @@ def wrap_initialize_workspace(command: Callable) -> Callable[[Any], Any]:
         try:
             initialize_workspace.initialize_workspace_cli(args)
         except Exception as e:
+            print(e)
             print(f"Could not initialize the workspace to call {command}")
             return
 
@@ -45,7 +46,7 @@ CDEV_COMMANDS = [
         "help": "Create a new instance of a workspace",
         "default": wrap_initialize_workspace(plan_command),
         "args": [
-            {"dest": "--backend_configuration", "help": "run a simple follower instead of full development environment", "type": str}
+            {"dest": "--workspace_config", "help": "run a simple follower instead of full development environment", "type": str}
         ]
     }, 
     

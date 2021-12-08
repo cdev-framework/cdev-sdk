@@ -1,4 +1,8 @@
+from enum import Enum
+import importlib
+import json
 import os
+import sys
 from typing import List, Dict, Optional, Any, Tuple, Union
 from cdev.core.constructs.resource import Resource_Difference
 
@@ -7,7 +11,7 @@ from pydantic import BaseModel
 from pydantic.types import DirectoryPath, FilePath
 from sortedcontainers.sortedlist import SortedList
 
-from cdev.core.constructs.backend import Backend, Backend_Configuration
+from cdev.core.constructs.backend import Backend, Backend_Configuration, load_backend
 from cdev.core.constructs.mapper import CloudMapper
 from cdev.core.constructs.components import Component, Component_Difference, ComponentModel
 
@@ -28,11 +32,11 @@ WORKSPACE_INFO_FILENAME = cdev_settings.get("WORKSPACE_FILE_NAME")
 
 class Workspace_Info(BaseModel):
     backend_configuration: Backend_Configuration
-    initialization_file: Optional[FilePath]
-    workspace_class: Optional[str]
+    initialization_file: Optional[str]
+    
 
 
-    def __init__(__pydantic_self__, backend_configuration: Backend_Configuration, initialization_file: FilePath=None, workspace_class: str=None) -> None:
+    def __init__(__pydantic_self__, backend_configuration: Backend_Configuration, initialization_file: FilePath=None,) -> None:
         """
         Represents the data needed to create a new cdev workspace:
         
@@ -45,7 +49,6 @@ class Workspace_Info(BaseModel):
         super().__init__(**{
             "backend_configuration": backend_configuration,
             "initialization_file": initialization_file,
-            "workspace_class": workspace_class
         })
 
 
@@ -74,6 +77,26 @@ def check_if_workspace_exists(base_dir: DirectoryPath) -> bool:
     return os.path.isfile(os.path.join(base_dir, WORKSPACE_INFO_DIR, WORKSPACE_INFO_FILENAME))
 
 
+def load_workspace_configuration(base_dir: DirectoryPath) -> Workspace_Info:
+    file_location = os.path.join(base_dir, WORKSPACE_INFO_DIR, WORKSPACE_INFO_FILENAME)
+
+    with open(file_location, 'r') as fh:
+        raw_data = json.load(fh)
+
+    try:
+        print(raw_data)
+        rv = Workspace_Info(**raw_data)
+
+        return rv
+    except Exception as e:
+        print(e)
+        raise e
+
+
+class WorkSpace_States(Enum, str):
+    UNINITIALIZED = "UNINITIALIZED"
+    INITIALIZING = "INITIALIZING"
+    INITIALIZED = "INITIALIZED"
 
 
 class Workspace():
@@ -91,8 +114,9 @@ class Workspace():
     _resource_state_uuid: str = None
 
     _backend: Backend = None
+    _initialization_file = None
 
-    _is_initialized = False
+    _state: WorkSpace_States = WorkSpace_States.UNINITIALIZED
 
 
 
@@ -111,17 +135,48 @@ class Workspace():
 
         return cls._instance
 
-    def initialize_workspace(self, backend_configuration: Backend_Configuration):
-        self._backend = backend_configuration
-        self.set_isinitialized(True)
-        #raise Exception("Could not init workspace")
+
+    def wrap_initialization_phase(func):
+       
+        def wrapper_func(workspace: 'Workspace'):
+            if not Workspace.instance().get_state():
+                raise Exception("NICECEEE")
+
+            else:
+                print(f"RIGHT HERE {func}")
+                func()
+
+            
+        return wrapper_func
+
+
+
+    def initialize_workspace(self, workspace_configuration: Workspace_Info):
+        self.set_state(WorkSpace_States.INITIALIZING)
+        
+        self._backend = load_backend(workspace_configuration.backend_configuration)
+        self._initialization_file = workspace_configuration.initialization_file
+        
+    
+        # sometime the module is already loaded so just reload it to capture any changes
+        if sys.modules.get(self._initialization_file):
+            importlib.reload(sys.modules.get(self._initialization_file))
+
+        else:
+            importlib.import_module(self._initialization_file)
+
+        self.set_state(WorkSpace_States.INITIALIZED)
+        
 
 
     @classmethod
     def instance(cls):
         if cls._instance is None:
-            pass
+            Workspace()
+
         return cls._instance
+
+    
 
     def clear_previous_state(self):
         self._COMMANDS = []
@@ -131,6 +186,12 @@ class Workspace():
     #################
     ##### Mapper
     #################
+    @wrap_initialization_phase
+    def tmp():
+        print("Dooing tmp in my project")
+
+
+    @wrap_initialization_phase
     def add_mapper(self, mapper: CloudMapper ) -> None:
         if not isinstance(mapper, CloudMapper):
             # TODO Throw error
@@ -140,6 +201,7 @@ class Workspace():
         self._MAPPERS.append(mapper)
 
 
+    @wrap_initialization_phase
     def add_mappers(self, mappers: List[CloudMapper] ) -> None:
         for mapper in mappers:
             self.add_mapper(mapper)
@@ -164,10 +226,11 @@ class Workspace():
     #################
     ##### Commands
     #################
+    @wrap_initialization_phase
     def add_command(self, command_location: str):
         self._COMMANDS.append(command_location)
 
-
+    @wrap_initialization_phase
     def add_commands(self, command_locations: List[str]):
         for command_location in command_locations:
             self.add_command(command_location)
@@ -181,10 +244,11 @@ class Workspace():
     #################
     ##### Components
     #################
+    @wrap_initialization_phase
     def add_component(self, component: Component):
         self._COMPONENTS.append(component)
 
-
+    @wrap_initialization_phase
     def add_components(self, components: List[Component]):
         for component in components:
             self.add_component(component)
@@ -197,12 +261,11 @@ class Workspace():
     ################
     ##### Initialized
     ################
+    def get_state(self) -> WorkSpace_States:
+        return self._state
 
-    def get_isinitialized(self) -> bool:
-        return self._is_initialized
-
-    def set_isinitialized(self, value: bool):
-        self._is_initialized = value
+    def set_state(self, value: WorkSpace_States):
+        self._state = value
 
     
  
@@ -215,6 +278,7 @@ class Workspace():
         self._COMPONENTS = []
 
 
+    @wrap_initialization_phase
     def execute_frontend(self) -> Tuple[List[ComponentModel], str]:
         """
         This is the function that executes the code to generate a desired state for the project. 
@@ -247,10 +311,12 @@ class Workspace():
             end_process()
 
 
+    @wrap_initialization_phase
     def deploy_differences(self, component_differences: List[Component_Difference], resource_differences: List[Resource_Difference]):
         pass
 
-
+        
+    @wrap_initialization_phase
     def find_command(self, command: str) -> Tuple[Union[BaseCommand, BaseCommandContainer], str, str, bool]:
         """
         Find the desired command based on the search path

@@ -244,3 +244,8 @@ class Backend():
         """
         pass
 
+
+
+def load_backend(config: Backend_Configuration) -> Backend:
+    print(f'loaded backend {config}')
+    pass
