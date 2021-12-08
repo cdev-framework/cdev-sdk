@@ -29,21 +29,23 @@ WORKSPACE_INFO_FILENAME = cdev_settings.get("WORKSPACE_FILE_NAME")
 class Workspace_Info(BaseModel):
     backend_configuration: Backend_Configuration
     initialization_file: Optional[FilePath]
+    workspace_class: Optional[str]
 
 
-    def __init__(__pydantic_self__, backend_configuration: Backend_Configuration, initialization_file: FilePath=None) -> None:
+    def __init__(__pydantic_self__, backend_configuration: Backend_Configuration, initialization_file: FilePath=None, workspace_class: str=None) -> None:
         """
         Represents the data needed to create a new cdev workspace:
         
         Parameters:
             backend_configuration (Backend_Configuration): configuration information about the backend for this workspaces
             initialization_file (FilePath): python file to load to initialize the workspace 
-            
+            workspace_class (str): python module name that will be loaded as the workspace
         """
         
         super().__init__(**{
             "backend_configuration": backend_configuration,
-            "initialization_file": initialization_file
+            "initialization_file": initialization_file,
+            "workspace_class": workspace_class
         })
 
 
@@ -90,22 +92,29 @@ class Workspace():
 
     _backend: Backend = None
 
+    _is_initialized = False
 
 
-    def __new__(cls, backend_configuration: str):
+
+    def __new__(cls):
         if cls._instance is None:
             #print(f'Creating the Resource State object -> {name}')
             cls._instance = super(Workspace, cls).__new__(cls)
             # Put any initialization here.
 
             # Load the backend 
-            cls._instance._backend = backend_configuration
+            cls._instance._backend = None
         else:
             # Raise Error
             pass
 
 
         return cls._instance
+
+    def initialize_workspace(self, backend_configuration: Backend_Configuration):
+        self._backend = backend_configuration
+        self.set_isinitialized(True)
+        #raise Exception("Could not init workspace")
 
 
     @classmethod
@@ -118,9 +127,6 @@ class Workspace():
         self._COMMANDS = []
         self._MAPPERS = []
 
-
-    def sayHi(self):
-        print(self._backend)
 
     #################
     ##### Mapper
@@ -186,6 +192,18 @@ class Workspace():
 
     def get_components(self) -> List[Component]:
         return self._COMPONENTS
+
+    
+    ################
+    ##### Initialized
+    ################
+
+    def get_isinitialized(self) -> bool:
+        return self._is_initialized
+
+    def set_isinitialized(self, value: bool):
+        self._is_initialized = value
+
     
  
     def clear(self) -> None:

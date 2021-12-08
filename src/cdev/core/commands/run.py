@@ -1,5 +1,3 @@
-
-
 from cdev.core.management.base import BaseCommand, BaseCommandContainer
 
 from cdev.core.constructs.workspace import Workspace
@@ -26,6 +24,7 @@ def run_command(args):
 
     # This is the command to run... It can be a single command or a path to the command where the path is '.' delimitated
     sub_command = params.get("subcommand")
+    cli_args = params.get("args") if params.get("args") else []
     
     try:
         obj, program_name, command_name, is_command = WORKSPACE.find_command(sub_command)
@@ -40,7 +39,7 @@ def run_command(args):
                 # Error message
                 return
 
-            args = [program_name, command_name, *params.get("args")]
+            args = [program_name, command_name, *cli_args]
             obj.run_from_command_line(args)
         else:
             if not isinstance(obj, BaseCommandContainer):

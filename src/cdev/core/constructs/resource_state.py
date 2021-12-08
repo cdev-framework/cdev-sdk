@@ -2,7 +2,7 @@ from typing import Dict, Union, List, Optional, Set
 
 from pydantic import BaseModel
 
-from cdev.core.constructs.components import ComponentModel, Cdev_Component
+from cdev.core.constructs.components import ComponentModel, Component
 from cdev.core.constructs.mapper import CloudMapper
 
 

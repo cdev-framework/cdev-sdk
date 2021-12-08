@@ -11,12 +11,27 @@ parser = argparse.ArgumentParser(description='cdev cli')
 subparsers = parser.add_subparsers(title='sub_command', description='valid subcommands')
 
 
+def wrap_initialize_workspace(command: Callable) -> Callable[[Any], Any]:
+
+    def wrapped_caller(args):
+        try:
+            initialize_workspace.initialize_workspace_cli(args)
+        except Exception as e:
+            print(f"Could not initialize the workspace to call {command}")
+            return
+
+        command(args)
+
+
+    return wrapped_caller
+
+
 def plan_command(args):
-    print("RUNNING PLAN COMMANF")
+    print(f"plan commands")
 
     myWorkspace = Workspace.instance()
 
-
+    print(f"is Workspace init -> {myWorkspace.get_isinitialized()}")
 
 
 CDEV_COMMANDS = [
@@ -28,8 +43,7 @@ CDEV_COMMANDS = [
     {
         "name": "plan",
         "help": "Create a new instance of a workspace",
-        "default": plan_command,
-        "in_workspace": True,
+        "default": wrap_initialize_workspace(plan_command),
         "args": [
             {"dest": "--backend_configuration", "help": "run a simple follower instead of full development environment", "type": str}
         ]
@@ -39,15 +53,6 @@ CDEV_COMMANDS = [
 
 
 
-
-def wrap_initialize_workspace(command: Callable) -> Callable[[Any], Any]:
-
-    def wrapped(args):
-        initialize_workspace.initialize_workspace_cli(args)
-        return command(args)
-
-
-    return wrapped
 
 
 def subcommand_function_wrapper(name, subcommand):
@@ -88,10 +93,9 @@ for command in CDEV_COMMANDS:
                 tmp.add_argument(dest, **arg)
                 
 
-        if not command.get("in_workspace"):
-            tmp.set_defaults(func=command.get("default"))
-        else:
-            tmp.set_defaults(func=wrap_initialize_workspace(command.get("default")))
+        
+        tmp.set_defaults(func=command.get("default"))
+        
 
         
 
