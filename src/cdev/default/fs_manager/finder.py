@@ -6,13 +6,11 @@ from sortedcontainers.sortedlist import SortedKeyList
 from typing import Dict, List
 
 
-from cdev.constructs import Cdev_Resource
-from cdev.models import Rendered_Resource
+from cdev.core.constructs.resource import Cdev_Resource, ResourceModel
 
-from cdev.resources.simple.xlambda import simple_lambda
+from cdev.resources.simple.xlambda import simple_lambda, simple_aws_lambda_function_model
 
-from cdev.utils import hasher, paths, logger
-from cdev.settings import set_setting as set_cdev_setting
+from cdev.core.utils import hasher, paths, logger
 
 from ..cparser import cdev_parser as cparser
 
@@ -47,13 +45,11 @@ def _get_module_name_from_path(fp):
     return full_module_path_from_project
 
 
-def _find_resources_information_from_file(fp: FilePath) -> List[Rendered_Resource]:
+def _find_resources_information_from_file(fp: FilePath) -> List[ResourceModel]:
     # Input: filepath
     if not os.path.isfile(fp):
         print("OH NO")
         return
-
-    set_cdev_setting("CURRENT_PARSING_DIR", os.path.dirname(fp))
 
     mod_name = _get_module_name_from_path(fp)
     
@@ -68,7 +64,7 @@ def _find_resources_information_from_file(fp: FilePath) -> List[Rendered_Resourc
     rv = []
     
     functions_to_parse = []
-    function_name_to_rendered_resource = {}
+    function_name_to_resource_model: Dict[str, simple_aws_lambda_function_model ] = {}
 
     for i in dir(mod):
         if isinstance(getattr(mod,i), Cdev_Resource):
@@ -81,7 +77,7 @@ def _find_resources_information_from_file(fp: FilePath) -> List[Rendered_Resourc
                 pre_parsed_info = obj.render()
 
                 functions_to_parse.append(pre_parsed_info.configuration.Handler)
-                function_name_to_rendered_resource[_clean_function_name(pre_parsed_info.configuration.Handler)] = pre_parsed_info
+                function_name_to_resource_model[_clean_function_name(pre_parsed_info.configuration.Handler)] = pre_parsed_info
                 log.info(f"PREPROCESS {pre_parsed_info}")
 
             else:
@@ -93,18 +89,18 @@ def _find_resources_information_from_file(fp: FilePath) -> List[Rendered_Resourc
         log.info(parsed_function_info)
 
         for parsed_function_name in parsed_function_info:
-            if not parsed_function_name in function_name_to_rendered_resource:
+            if not parsed_function_name in function_name_to_resource_model:
                 log.error("ERROR UNKNOWN FUNCTION NAME RETURNED")
                 raise Exception
 
-            tmp = function_name_to_rendered_resource.get(parsed_function_name)
+            tmp = function_name_to_resource_model.get(parsed_function_name)
             tmp.src_code_hash = parsed_function_info.get(parsed_function_name).get("src_code_hash")
             
             if parsed_function_info.get(parsed_function_name).get("external_dependencies_info"):
-                tmp.external_dependencies_info = parsed_function_info.get(parsed_function_name).get("external_dependencies_info")
+                tmp.external_dependencies = parsed_function_info.get(parsed_function_name).get("external_dependencies_info")
                 tmp.external_dependencies_hash = parsed_function_info.get(parsed_function_name).get("external_dependencies_info").get("hash")
             else:
-                tmp.external_dependencies_info = None
+                tmp.external_dependencies = None
                 tmp.external_dependencies_hash = None
 
 
@@ -172,7 +168,7 @@ def _clean_function_name(potential_name: str) -> str:
 
 
 
-def parse_folder(folder_path, prefix=None) -> List[Rendered_Resource]:
+def parse_folder(folder_path, prefix=None) -> List[ResourceModel]:
     """
     This function takes a folder and goes through it looking for cdev resources. Specifically, it loads all available python files
     and uses the loaded module to determine the resources defined in the files. Most resources are simple, but there is extra work

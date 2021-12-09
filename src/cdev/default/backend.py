@@ -1,15 +1,16 @@
 import json
 import os
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 import uuid
 
 from cdev.core.constructs.backend import Backend_Configuration, Backend
-from cdev.core.constructs.components import ComponentModel
+from cdev.core.constructs.components import Component, ComponentModel
 from cdev.core.constructs.resource import Resource_Change_Type, Resource_Difference, ResourceModel
 from cdev.core.constructs.resource_state import Resource_State
 from cdev.core.settings import SETTINGS as cdev_settings
+from cdev.core.utils import hasher as cdev_hasher
 from pydantic.main import BaseModel
-from pydantic.types import FilePath
+from pydantic.types import DirectoryPath, FilePath
 
 
 DEFAULT_CENTRAL_STATE_FOLDER = os.path.join(cdev_settings.get('ROOT_FOLDER_NAME'), "state")
@@ -46,27 +47,34 @@ class LocalCentralFile(BaseModel):
         })
 
 
-class LocalBackend(Backend):
-    """
-    Implementation of a Backend using locally stored json files as the peristent storage medium. This backend should only be used for small project as it does not provide any mechanisms 
-    to work well when multiple people edit the state. Also this is a single threaded implementation.
-
-    *** For now, we will not use any kind of WAL for make changes to underlying state files, so it can be bad if you kill the process unexpectedly. In the future, it will use some mechanism
-    to prevent this. ***
-    """
-    
+class LocalBackend(Backend):    
     # Structurally, this implementation will have a central json that can be used as an index into more precise json files. For example, each resource state will be its own json file, but 
     # the central file will keep track of each one. 
-    def __init__(self, **kwargs) -> None:
-        print("right here")
-        if not os.path.isdir(DEFAULT_CENTRAL_STATE_FOLDER):
-            os.mkdir(DEFAULT_CENTRAL_STATE_FOLDER)
+    def __init__(self, base_folder: DirectoryPath= None, central_state_file: FilePath= None) -> None:
+        """
+        Implementation of a Backend using locally stored json files as the peristent storage medium. This backend should only be used for small project as it does not provide any mechanisms 
+        to work well when multiple people edit the state. Also this is a single threaded implementation.
 
-        if not os.path.isfile(DEFAULT_CENTRAL_STATE_FILE):
+        *** For now, we will not use any kind of WAL for make changes to underlying state files, so it can be bad if you kill the process unexpectedly. In the future, it will use some mechanism
+        to prevent this. ***
+
+        Arguments:
+            base_folder (DirectoryPath): Path to a folder to use for storing local json files. Defaults to cdev setting if not provided.
+            central_state_file (FilePath): Path to the central state file. Defaults to cdev setting if not provided.
+        """
+    
+
+        base_folder = base_folder if base_folder else DEFAULT_CENTRAL_STATE_FOLDER
+        central_state_file = central_state_file if central_state_file else DEFAULT_CENTRAL_STATE_FOLDER
+
+        if not os.path.isdir(base_folder):
+            raise Exception
+
+        if not os.path.isfile(central_state_file):
             self._central_state = LocalCentralFile({}, [], [])
 
         else:
-            with open(DEFAULT_CENTRAL_STATE_FILE, 'r') as fh:
+            with open(central_state_file, 'r') as fh:
                 self._central_state = LocalCentralFile(**json.load(fh))
 
         
@@ -93,7 +101,7 @@ class LocalBackend(Backend):
             self._central_state.top_level_states.append(new_resource_state.uuid)
 
         else:
-            new_resource_state = Resource_State(name, resource_state_uuid, [], parent_resource_state_uuid)
+            new_resource_state = Resource_State(name=name, uuid=resource_state_uuid, components=[], parent_uuid=parent_resource_state_uuid)
 
         filename = os.path.join(DEFAULT_CENTRAL_STATE_FOLDER, f"resource_state_{new_resource_state.uuid}.json")
 
@@ -107,11 +115,11 @@ class LocalBackend(Backend):
         return new_resource_state.uuid
 
 
-    def delete_resource_state(self, state_uuid: str):
-        if not state_uuid in self._central_state.resource_state_locations:
+    def delete_resource_state(self, resource_state_uuid: str):
+        if not resource_state_uuid in self._central_state.resource_state_locations:
             raise Exception
 
-        resource_state_to_delete = self.load_resource_state(state_uuid)
+        resource_state_to_delete = self.load_resource_state(resource_state_uuid)
 
         if resource_state_to_delete.children:
             print(f"Can not delete resource state with children")
@@ -133,11 +141,11 @@ class LocalBackend(Backend):
         os.remove(file_location)
 
 
-    def load_resource_state(self, state_uuid: str) -> Resource_State:
-        if not state_uuid in self._central_state.resource_state_locations:
+    def load_resource_state(self, resource_state_uuid: str) -> Resource_State:
+        if not resource_state_uuid in self._central_state.resource_state_locations:
             raise Exception
 
-        file_location = self._central_state.resource_state_locations.get(state_uuid)
+        file_location = self._central_state.resource_state_locations.get(resource_state_uuid)
 
         if not os.path.isfile(file_location):
             raise Exception
@@ -183,7 +191,6 @@ class LocalBackend(Backend):
         resource_state.components.append(new_component)
 
         self._write_resource_state_file(resource_state, resource_state_file_location)
-
 
 
     def delete_component(self, resource_state_uuid: str, component_name: str):
@@ -245,28 +252,10 @@ class LocalBackend(Backend):
         if not component:
             raise Exception
 
-        if diff.action_type == Resource_Change_Type.DELETE:
-            component.rendered_resources = [x for x in component.rendered_resources if x.ruuid == diff.previous_resource.ruuid and x.name == diff.previous_resource.name]
-
-        elif diff.action_type == Resource_Change_Type.UPDATE_IDENTITY or diff.action_type == Resource_Change_Type.UPDATE_NAME:
-            
-            component.rendered_resources = [x for x in component.rendered_resources if x.ruuid == diff.previous_resource.ruuid and x.name == diff.previous_resource.name].append(diff.new_resource)
-            
-            if cloud_output:
-                cloud_output_id = f"{diff.new_resource.ruuid};{diff.new_resource.name}"
-                component.cloud_output[cloud_output_id] = cloud_output
-
-        elif diff.action_type == Resource_Change_Type.CREATE:
-            component.rendered_resources.append(diff.new_resource)
-        
-            if cloud_output:
-                cloud_output_id = f"{diff.new_resource.ruuid};{diff.new_resource.name}"
-                component.cloud_output[cloud_output_id] = cloud_output
-        
        
-        # recompute hash
+        new_component = self._update_component(component, diff, cloud_output)
 
-        resource_state.components = [x for x in resource_state.components if not x.name == component.name].append(component)
+        resource_state.components = [x for x in resource_state.components if not x.name == component.name].append(new_component)
 
         resource_state.resource_changes.pop(transaction_token)
         
@@ -352,7 +341,7 @@ class LocalBackend(Backend):
         if not resource:
             raise Exception
 
-        cloud_output_id = f"{resource.ruuid};{resource.name}"
+        cloud_output_id = self._get_cloud_output_id(resource)
 
         if not cloud_output_id in component.cloud_output:
             raise Exception
@@ -383,7 +372,7 @@ class LocalBackend(Backend):
             raise Exception
 
 
-        cloud_output_id = f"{resource.ruuid};{resource.name}"
+        cloud_output_id = self._get_cloud_output_id(resource)
 
 
         if not cloud_output_id in component.cloud_output:
@@ -412,16 +401,138 @@ class LocalBackend(Backend):
             raise Exception
 
 
-        previous_component, previous_diff, _ = resource_state.failed_changes.get(transaction_token)
+        previous_component_name, previous_diff, _ = resource_state.failed_changes.get(transaction_token)
 
-        resource_state.failed_changes[transaction_token] = (previous_component, previous_diff, new_failed_state)
+        resource_state.failed_changes[transaction_token] = (previous_component_name, previous_diff, new_failed_state)
 
         self._write_resource_state_file(resource_state, resource_state_file_location)
 
     
-    def recover_failed_resource_change(self, resource_state_uuid: str, transaction_token: str, to_previous_state: bool=True):
-        pass
+    def recover_failed_resource_change(self, resource_state_uuid: str, transaction_token: str, to_previous_state: bool=True, cloud_output: Dict=None):
+        try:
+            resource_state = self.load_resource_state(resource_state_uuid)
+            resource_state_file_location = self._central_state.resource_state_locations.get(resource_state_uuid)
+
+        except Exception as e:
+            # Wrap in more informative error
+            raise e 
+
+
+        if not transaction_token in resource_state.failed_changes:
+            raise Exception
+
+
+        component_name, diff, _ = resource_state.failed_changes.pop(transaction_token)
+
+        if not to_previous_state:
+            component = next((x for x in resource_state.components if x.name == component_name), None)
+
+            if not component:
+                raise Exception
+
+            new_component = self._update_component(component, diff, cloud_output)
+
+            resource_state.components = [x for x in resource_state.components if not x.name == component.name].append(new_component)
+        
+        
+        self._write_resource_state_file(resource_state, resource_state_file_location)
 
 
     def remove_failed_resource_change(self, resource_state_uuid: str, transaction_token: str): 
-        pass
+        try:
+            resource_state = self.load_resource_state(resource_state_uuid)
+            resource_state_file_location = self._central_state.resource_state_locations.get(resource_state_uuid)
+
+        except Exception as e:
+            # Wrap in more informative error
+            raise e 
+
+
+        if not transaction_token in resource_state.failed_changes:
+            raise Exception
+
+
+        resource_state.failed_changes.pop(transaction_token)
+
+        self._write_resource_state_file(resource_state, resource_state_file_location)
+
+
+    def _update_component(self, component: ComponentModel, diff: Resource_Difference, cloud_output: Dict=None) -> ComponentModel:
+        """
+        Apply a resource difference over a component model and return the updated component model
+
+        Arguments:
+            component(ComponentModel): The component to update
+            diff (Resource_Difference): The difference to apply
+            cloud_output (Dict): The updated output if needed
+
+        Returns:
+            new_component(ComponentModel): The update component model
+
+        """
+        if diff.action_type == Resource_Change_Type.DELETE:
+            component.rendered_resources = [x for x in component.rendered_resources if x.ruuid == diff.previous_resource.ruuid and x.name == diff.previous_resource.name]
+
+            # remove the previous resource's cloud output
+            previous_resource_cloud_output_id = self._get_cloud_output_id(diff.previous_resource)
+
+            if previous_resource_cloud_output_id in component.cloud_output:
+                cloud_output.pop(previous_resource_cloud_output_id)
+
+        elif diff.action_type == Resource_Change_Type.UPDATE_IDENTITY or diff.action_type == Resource_Change_Type.UPDATE_NAME:
+            
+            component.rendered_resources = [x for x in component.rendered_resources if x.ruuid == diff.previous_resource.ruuid and x.name == diff.previous_resource.name].append(diff.new_resource)
+            
+            # remove the previous resource's cloud output
+            previous_resource_cloud_output_id = self._get_cloud_output_id(diff.previous_resource)
+
+            if previous_resource_cloud_output_id in component.cloud_output:
+                cloud_output.pop(previous_resource_cloud_output_id)
+
+            # Add the new resources cloud output
+            if cloud_output:
+                cloud_output_id = self._get_cloud_output_id(diff.new_resource)
+                component.cloud_output[cloud_output_id] = cloud_output
+
+        elif diff.action_type == Resource_Change_Type.CREATE:
+            component.rendered_resources.append(diff.new_resource)
+        
+            if cloud_output:
+                cloud_output_id = self._get_cloud_output_id(diff.new_resource)
+                component.cloud_output[cloud_output_id] = cloud_output
+
+        # recompute hash
+        component.hash = self._compute_component_hash(component)
+
+        return component
+
+
+    def _get_cloud_output_id(self, resource: ResourceModel) -> str:
+        """
+        Uniform way of generating cloud mapping id's
+
+        Arguments:
+            resource (ResourceModel): resource to get id of
+
+        Returns:
+            cloud_output_id (str): id for the resource
+        """
+        return f"{resource.ruuid};{resource.name}"
+
+
+    def _compute_component_hash(component: ComponentModel) -> str:
+        """
+        Uniform way of computing a component's identity hash
+
+        Argument:
+            component (ComponentModel): The component to compute the hash of
+
+        Returns:
+            hash (str): identity hash for the component
+        """
+        resources = [x for x in component.rendered_resources]
+        resources.sort(key=lambda x: x.name)
+
+        resource_hashes = [x.hash for x in resources]
+
+        return cdev_hasher.hash_list(resource_hashes)

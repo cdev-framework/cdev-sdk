@@ -1,0 +1,17 @@
+{
+    "name": "project_state",
+    "uuid": "c13973d6-8ac1-4146-a240-4dbd64e512d3",
+    "parent_uuid": null,
+    "children": [],
+    "components": [
+        {
+            "name": "component1",
+            "hash": "0",
+            "rendered_resources": null,
+            "all_parent_resources": null,
+            "cloud_output": null
+        }
+    ],
+    "resource_changes": {},
+    "failed_changes": {}
+}

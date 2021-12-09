@@ -1,5 +1,5 @@
 from typing import Dict, List
-from cdev.constructs import Cloud_Output
+from cdev.core.constructs.resource import Cloud_Output
 
 
 def find_cloud_output(obj: dict) -> List[Cloud_Output]:

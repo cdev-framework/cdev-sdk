@@ -1,5 +1,6 @@
 from enum import Enum
 import importlib
+import inspect
 import json
 import os
 import sys
@@ -31,25 +32,27 @@ WORKSPACE_INFO_FILENAME = cdev_settings.get("WORKSPACE_FILE_NAME")
 
 
 class Workspace_Info(BaseModel):
-    backend_configuration: Backend_Configuration
-    initialization_file: Optional[str]
-    
+    python_module: str
+    python_class: str
+    config: Dict
 
-
-    def __init__(__pydantic_self__, backend_configuration: Backend_Configuration, initialization_file: FilePath=None,) -> None:
+    def __init__(__pydantic_self__, python_module: str, python_class: str, config: Dict) -> None:
         """
         Represents the data needed to create a new cdev workspace:
         
         Parameters:
-            backend_configuration (Backend_Configuration): configuration information about the backend for this workspaces
-            initialization_file (FilePath): python file to load to initialize the workspace 
-            workspace_class (str): python module name that will be loaded as the workspace
+            python_module: The name of the python module to load as the backend 
+            config: configuration option for the backend
+            
         """
         
         super().__init__(**{
-            "backend_configuration": backend_configuration,
-            "initialization_file": initialization_file,
+            "python_module": python_module,
+            "python_class": python_class,
+            "config": config
         })
+
+
 
 
 
@@ -122,7 +125,6 @@ class Workspace():
 
     def __new__(cls):
         if cls._instance is None:
-            #print(f'Creating the Resource State object -> {name}')
             cls._instance = super(Workspace, cls).__new__(cls)
             # Put any initialization here.
 
@@ -289,45 +291,8 @@ class Workspace():
         self._COMPONENTS = []
 
 
-    
-    def execute_frontend(self) -> Tuple[List[ComponentModel], str]:
-        """
-        This is the function that executes the code to generate a desired state for the project. 
 
-        """
-
-        try:
-            ALL_COMPONENTS = self.get_components()
-            #log.info(f"Components in project -> {ALL_COMPONENTS}")
-
-            components_sorted: SortedList[ComponentModel] = SortedList(key=lambda x: x.name)
-            #log.debug(f"Sorted Components by name -> {project_components_sorted}")
-
-            # Generate the local states
-            for component in ALL_COMPONENTS:
-                if isinstance(component, Component):
-                    rendered_state = component.render()
-                    #log.debug(f"component {component} rendered to -> {rendered_state}")
-                    components_sorted.add(rendered_state)
-                else:
-                    raise Cdev_Error(f"{component} is not of type Cdev_Component; Type is {type(Component)} ")
-
-            total_hash = cdev_hasher.hash_list([x.hash for x in components_sorted])
-
-
-            return components_sorted, total_hash
-        except Cdev_Error as e:
-            #log.error(e.msg)
-            end_process()
-
-
-    
-    def deploy_differences(self, component_differences: List[Component_Difference], resource_differences: List[Resource_Difference]):
-        pass
-
-        
-    
-    def find_command(self, command: str) -> Tuple[Union[BaseCommand, BaseCommandContainer], str, str, bool]:
+    def execute_command(self, command: str) -> Tuple[Union[BaseCommand, BaseCommandContainer], str, str, bool]:
         """
         Find the desired command based on the search path
 
@@ -340,7 +305,7 @@ class Workspace():
         Raises:
             KeyError: Raises an exception.
         """
-        print(f"in find command with {command}")
+        
         # Command in list form
         command_list = command.split(".")
 
@@ -361,5 +326,38 @@ class Workspace():
         
 
 
+def load_workspace(config: Workspace_Info) -> Workspace:
+    try:
+        if sys.modules.get(config.python_module):
+            backend_module = importlib.reload(sys.modules.get(config.python_module))
 
+        else:
+            backend_module = importlib.import_module(config.python_module)
+    except Exception as e:
+        print("Error loading backend module")
+        print(f'Error > {e}')
+        
+        raise e
+
+
+    backend_class = None
+    for item in dir(backend_module):  
+        potential_obj = getattr(backend_module, item)  
+        if inspect.isclass(potential_obj) and issubclass(potential_obj, Workspace) and item == config.python_class:
+            backend_class = potential_obj
+            break
+    
+    
+    if not backend_class:
+        print(f"Could not find {config.python_class} in {config.python_module}")
+        raise Exception
+    
+    try:
+        # initialize the backend obj with the provided configuration values
+        initialized_obj = potential_obj(**config.config)
+    except Exception as e:
+        print(f"Could not initialize {potential_obj} Class from config {config.config}")
+        raise e
+
+    return initialized_obj
     

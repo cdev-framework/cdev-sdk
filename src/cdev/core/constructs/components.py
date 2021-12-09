@@ -42,7 +42,7 @@ class ComponentModel(BaseModel):
     List of Rendered Resources that make up the current state of this component
     """
 
-    all_parent_resources: Optional[Set[str]]
+    references: Optional[Set[str]]
     """
     A set of all resource identifications (ruuid:hash:<hash> or ruuid:name:<name>) that are a parent resource to some other resource in the component. This set serves as 
     a fast way of checking if we need to update descandants when a resource is updated 
@@ -58,14 +58,10 @@ class ComponentModel(BaseModel):
         super().__init__(**{
             "name": name,
             "hash": hash,
-            "rendered_resources": rendered_resources,
-            "all_parent_resources": all_parent_resources,
+            "resources": rendered_resources,
+            "references": all_parent_resources,
             "cloud_output": cloud_output
         })
-
-    
-    def get_parent_resources(self):
-        return self.all_parent_resources
 
 
 
@@ -85,6 +81,7 @@ class Component_Difference(BaseModel):
         use_enum_values = True
 
 
+
 class Component():
     """
     A component is a logical collection of resources. This simple definition is intended to allow flexibility for different
@@ -99,7 +96,7 @@ class Component():
         self.name = name
         pass
 
-    def render(self)  -> ComponentModel:
+    def render(self) -> ComponentModel:
         """Abstract Class that must be implemented by the descendant that returns a component model"""
         pass
 

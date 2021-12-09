@@ -47,11 +47,15 @@ class Resource_State(BaseModel):
     A dictionary of transaction tokens to a tuple of (component_name, diff, error_info) for the changes that failed
     """
 
-    def __init__(__pydantic_self__, name: str, uuid: str, components: List[ComponentModel], parent_uuid: Optional[str]=None, children: Optional[List[str]]=None, ) -> None:
+    def __init__(__pydantic_self__, name: str, uuid: str, components: List[ComponentModel], parent_uuid: Optional[str]=None, 
+                children: List[str]=[], resource_changes: Dict[str, Tuple[str, Resource_Difference]]={},
+                failed_changes: Dict[str, Tuple[str, Resource_Difference, Dict]]={} ) -> None:
         super().__init__(**{
             "name": name,
             "uuid": uuid,
             "components": components,
             "parent_uuid": parent_uuid,
-            "children": children
+            "children": children,
+            "resource_changes": resource_changes,
+            "failed_changes": failed_changes
         })

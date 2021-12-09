@@ -1,12 +1,10 @@
 from enum import Enum
 from typing_extensions import Literal
-from cdev.constructs import Cdev_Resource
 from typing import Dict, List, Optional, Union
 
 from pydantic.main import BaseModel
 from pydantic import FilePath
 from pydantic.types import DirectoryPath
-from ...models import Rendered_Resource, Cloud_Output
 
 from sortedcontainers.sorteddict import SortedDict
 
@@ -15,7 +13,10 @@ import inspect
 import os
 
 from pathlib import PosixPath, WindowsPath
-from cdev.utils import hasher, logger, parent_resources, environment as cdev_environment
+
+from cdev.core.constructs.resource import ResourceModel, Cloud_Output, Cdev_Resource
+from cdev.core.utils import hasher, logger
+from cdev.utils import parent_resources, environment as cdev_environment
 
 log = logger.get_cdev_logger(__name__)
 
@@ -48,7 +49,7 @@ class LambdaLayerArtifact(Cdev_Resource):
         return Cloud_Output(**{"resource": f"{self.ruuid}::{self.hash}", "key": key.value, "type": "cdev_output"})
 
 
-class LambdaLayerArn(Rendered_Resource):
+class LambdaLayerArn(ResourceModel):
     arn: str
 
     def get_hash(self) -> str:
@@ -145,7 +146,7 @@ class lambda_function_configuration(BaseModel):
         return rv
 
 
-class simple_aws_lambda_function_model(Rendered_Resource):
+class simple_aws_lambda_function_model(ResourceModel):
     """
     An aws lambda function
     """
@@ -157,7 +158,7 @@ class simple_aws_lambda_function_model(Rendered_Resource):
     permissions: List[Union[Permission,PermissionArn]]
     src_code_hash: str
     external_dependencies_hash: Optional[str]
-    external_dependencies: Optional[List[Union[LambdaLayerArn, Cloud_Output]]]
+    external_dependencies: Optional[List[Union[LambdaLayerArn, LambdaLayerArtifact, Cloud_Output]]]
     config_hash: str
     events_hash: str
     permissions_hash: str
@@ -255,28 +256,6 @@ def simple_lambda_function_annotation(name: str, function_name: str="", events: 
                 elif item[0] == "__module__":
                     mod_name = item[1]
 
-                # Attempt to validate the function signature of the handler, but it has breaking changes between python versions so exclude at the moment
-                #elif item[0] == "__code__":
-                #    code_prop_names = set(["co_varnames", "co_argcount", "co_posonlyargcount"])
-                    #code_props = [(z[0],z[1]) for z in inspect.getmembers(item[1]) if z[0] in code_prop_names]
-
-                    #is_valid_signature = True
-
-                    #for prop in code_props:
-                    #    if prop[0] == "co_argcount":
-                    #        if not prop[1] == 2:
-                    #            is_valid_signature = False
-                    #            print(f'bad sig argcnt {prop[1]}')
-                    #            break
-                    #    elif prop[0] == "co_posonlyargcount":
-                    #        if not prop[1] == 2:
-                    #            is_valid_signature = False
-                    #            print(f'bad sig poscnt -> {prop[1]}')
-                    #    elif prop[0] == "co_varnames":
-                    #        if not ("context" in prop[1] and "event" in prop[1]):
-                    #            is_valid_signature = False
-                    #            print(f'bad sig names')
-                    #            break
 
         base_config = {
         
