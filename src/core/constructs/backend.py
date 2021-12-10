@@ -10,9 +10,6 @@ from .resource import Resource_Reference_Difference, ResourceModel, Resource_Dif
 from .resource_state import Resource_State
 
 
-
-
-
 class Backend_Configuration(BaseModel):
     python_module: str
     python_class: str

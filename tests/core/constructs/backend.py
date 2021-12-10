@@ -3,6 +3,7 @@ import pytest
 from typing import Dict, List, Tuple
 
 from core.constructs.backend import Backend
+from core.constructs.backend_exceptions import *
 
 from . import sample_data
 
@@ -115,6 +116,54 @@ def simple_get_resource(test_backend: Backend):
     desired_final_state = [(resource_change.new_resource, original_output, "arn") for resource_change, original_output in final_state]
 
     _check_final_resources_and_output(test_backend, resource_state_uuid, component_name, desired_final_state)
+
+
+################################
+#### Failure Tests
+################################
+
+def conflicting_names_resource_state(test_backend: Backend):
+    """
+    Create a single component and add some resources. Then delete the resources and 
+    component.
+    """
+    resource_state_name = "demo_state"
+    component_name = "demo_component"
+
+    _create_simple_resource_state_and_component(test_backend,  resource_state_name, component_name)
+    
+    with pytest.raises(ResourceStateAlreadyExists):
+        _create_simple_resource_state_and_component(test_backend,  resource_state_name, component_name)
+
+
+def conflicting_names_component(test_backend: Backend):
+    """
+    Create a single component and add some resources. Then delete the resources and 
+    component.
+    """
+    resource_state_name = "demo_state"
+    component_name = "demo_component"
+
+    resource_state_uuid = _create_simple_resource_state_and_component(test_backend,  resource_state_name, component_name)
+    
+    with pytest.raises(ComponentAlreadyExists):
+        test_backend.create_component(resource_state_uuid, component_name)
+
+
+def conflicting_names_resource(test_backend: Backend):
+    pass
+
+
+def get_missing_component(test_backend: Backend):
+    pass
+
+
+def get_missing_resource(test_backend: Backend):
+    pass
+
+
+def get_missing_cloud_output(test_backend: Backend):
+    pass
 
 
 

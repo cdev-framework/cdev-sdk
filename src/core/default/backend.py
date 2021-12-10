@@ -135,7 +135,7 @@ class LocalBackend(Backend):
 
     def delete_resource_state(self, resource_state_uuid: str):
         if not resource_state_uuid in self._central_state.resource_state_locations:
-            raise ResourceStateDoesNotExist
+            raise ResourceStateDoesNotExist(f"Resource state: {resource_state_uuid} does not exist")
 
         resource_state_to_delete = self.get_resource_state(resource_state_uuid)
 
@@ -166,19 +166,19 @@ class LocalBackend(Backend):
 
     def get_resource_state(self, resource_state_uuid: str) -> Resource_State:
         if not resource_state_uuid in self._central_state.resource_state_locations:
-            raise ResourceStateDoesNotExist
+            raise ResourceStateDoesNotExist(f"Resource State: {resource_state_uuid} does not exists")
 
         file_location = self._central_state.resource_state_locations.get(resource_state_uuid)
 
         if not os.path.isfile(file_location):
-            raise CanNotFindResourceStateFile
+            raise CanNotFindResourceStateFile(f"Can not find resource state file for {resource_state_uuid}")
 
         try:
             with open(file_location, 'r') as fh:
                 return Resource_State(**json.load(fh))
 
         except Exception as e:
-            raise InvalidResourceStateData
+            raise InvalidResourceStateData(f"Ivalid data for Resource State from file {file_location} for resource state {resource_state_uuid}")
 
     
     def get_top_level_resource_states(self) -> List[Resource_State]:
@@ -200,7 +200,7 @@ class LocalBackend(Backend):
 
         if component_name in set(x.name for x in resource_state.components):
             # Cant not have two components of the same name in the same resource state
-            raise ComponentAlreadyExists
+            raise ComponentAlreadyExists(f"Component already exists with name {component_name} in Resource State {resource_state_uuid}")
 
     
         new_component = ComponentModel(
@@ -219,12 +219,12 @@ class LocalBackend(Backend):
         
         if not component_name in set(x.name for x in resource_state.components):
             # Component of that name does not exists
-            raise ComponentDoesNotExist(component_name)
+            raise ComponentDoesNotExist(f"Could not find component {component_name} in Resource State {resource_state_uuid}")
 
         deleteing_component = next(x for x in resource_state.components if x.name == component_name)
 
         if not len(deleteing_component.resources) == 0:
-            raise ComponentNotEmpty
+            raise ComponentNotEmpty(f"Can not delete Component {component_name} in Resource State {resource_state_uuid} because the component is not empty")
 
         resource_state.components = [x for x in resource_state.components if not x.name == component_name]
 
@@ -237,7 +237,7 @@ class LocalBackend(Backend):
 
         if not component_name in set(x.name for x in resource_state.components):
             # Component of that name does not exists
-            raise ComponentDoesNotExist(component_name)
+            raise ComponentDoesNotExist(f"Can not find Component {component_name} in Resource State {resource_state_uuid}")
 
     
         return next(x for x in resource_state.components if x.name == component_name)
@@ -248,11 +248,7 @@ class LocalBackend(Backend):
         resource_state = self.get_resource_state(resource_state_uuid)
         resource_state_file_location = self._get_resource_state_file_location(resource_state_uuid)
         
-        component = next((x for x in resource_state.components if x.name == component_name), None)
-
-        if not component:
-            raise ComponentDoesNotExist
-
+        self.get_component(resource_state_uuid, component_name)
 
         transaction_token = str(uuid.uuid4())
 
@@ -269,13 +265,9 @@ class LocalBackend(Backend):
         resource_state_file_location = self._get_resource_state_file_location(resource_state_uuid)
 
         if not transaction_token in resource_state.resource_changes:
-            raise ResourceChangeTransactionDoesNotExist
+            raise ResourceChangeTransactionDoesNotExist(f"Transaction {transaction_token} does not exist in Resource State {resource_state_uuid}")
 
-        component = next((x for x in resource_state.components if x.name == component_name), None)
-
-        if not component:
-            raise ComponentDoesNotExist
-
+        component = self.get_component(resource_state_uuid, component_name)
        
         new_component = self._update_component(component, diff, cloud_output)
 
@@ -293,7 +285,7 @@ class LocalBackend(Backend):
 
 
         if not transaction_token in resource_state.resource_changes:
-            raise ResourceChangeTransactionDoesNotExist
+            raise ResourceChangeTransactionDoesNotExist(f"Transaction {transaction_token} does not exist in Resource State {resource_state_uuid}")
 
         resource_state.resource_changes.pop(transaction_token)
         resource_state.failed_changes[transaction_token] = (component_name, diff, failed_state)
@@ -307,7 +299,7 @@ class LocalBackend(Backend):
         resource_state_file_location = self._get_resource_state_file_location(resource_state_uuid)
 
         if not transaction_token in resource_state.failed_changes:
-            raise ResourceChangeTransactionDoesNotExist
+            raise ResourceChangeTransactionDoesNotExist(f"Transaction {transaction_token} does not exist in Resource State {resource_state_uuid}")
 
         previous_component_name, previous_diff, _ = resource_state.failed_changes.get(transaction_token)
 
@@ -322,7 +314,7 @@ class LocalBackend(Backend):
         resource_state_file_location = self._get_resource_state_file_location(resource_state_uuid)
 
         if not transaction_token in resource_state.failed_changes:
-            raise ResourceChangeTransactionDoesNotExist
+            raise ResourceChangeTransactionDoesNotExist(f"Transaction {transaction_token} does not exist in Resource State {resource_state_uuid}")
 
 
         component_name, diff, _ = resource_state.failed_changes.pop(transaction_token)
@@ -344,7 +336,7 @@ class LocalBackend(Backend):
         resource_state_file_location = self._get_resource_state_file_location(resource_state_uuid)        
 
         if not transaction_token in resource_state.failed_changes:
-            raise ResourceChangeTransactionDoesNotExist
+            raise ResourceChangeTransactionDoesNotExist(f"Transaction {transaction_token} does not exist in Resource State {resource_state_uuid}")
 
 
         resource_state.failed_changes.pop(transaction_token)
@@ -360,7 +352,7 @@ class LocalBackend(Backend):
         resource =  next((x for x in component.resources if x.ruuid == resource_type and x.name == resource_name), None)
 
         if not resource:
-            raise ResourceDoesNotExist
+            raise ResourceDoesNotExist(f"Resource {resource_type}::{resource_name} does not exist in Component {component_name} in Resource State {resource_state_uuid}")
 
         return resource
 
@@ -372,7 +364,7 @@ class LocalBackend(Backend):
         resource =  next((x for x in component.resources if x.ruuid == resource_type and x.hash == resource_hash), None)
 
         if not resource:
-            raise ResourceDoesNotExist
+            raise ResourceDoesNotExist(f"Resource {resource_type}::{resource_hash} does not exist in Component {component_name} in Resource State {resource_state_uuid}")
 
 
         return resource
@@ -386,12 +378,12 @@ class LocalBackend(Backend):
         cloud_output_id = self._get_cloud_output_id(resource)
 
         if not cloud_output_id in component.cloud_output:
-            raise CloudOutputDoesNotExist
+            raise CloudOutputDoesNotExist(f"Can not find Cloud Output for {resource_type}::{resource_name} in Component {component_name} in Resource State {resource_state_uuid}")
 
         cloud_output = component.cloud_output.get(cloud_output_id)
 
         if not key in cloud_output:
-            raise KeyNotInCloudOutput
+            raise KeyNotInCloudOutput(f"Can not find Key {key} in Cloud Output for {resource_type}::{resource_name} in Component {component_name} in Resource State {resource_state_uuid}")
 
         return cloud_output.get(key)
 
@@ -404,25 +396,17 @@ class LocalBackend(Backend):
         cloud_output_id = self._get_cloud_output_id(resource)
 
         if not cloud_output_id in component.cloud_output:
-            raise CloudOutputDoesNotExist
+            raise CloudOutputDoesNotExist(f"Can not find Cloud Output for {resource_type}::{resource_hash} in Component {component_name} in Resource State {resource_state_uuid}")
     
         cloud_output = component.cloud_output.get(cloud_output_id)
 
         if not key in cloud_output:
-            raise KeyNotInCloudOutput
+            raise KeyNotInCloudOutput(f"Can not find Key {key} in Cloud Output for {resource_type}::{resource_hash} in Component {component_name} in Resource State {resource_state_uuid}")
 
         return cloud_output.get(key)
 
 
     def create_differences(self, resource_state_uuid: str, new_components: List[ComponentModel], old_components: List[str]) -> Tuple[Component_Difference, Resource_Reference_Difference, Resource_Difference]:
-        previous_state = self.get_resource_state(resource_state_uuid)
-        log.info(f"previous local state -> {previous_state}")
-
-        if not previous_state:
-            #raise Cdev_Error(f"no previous local state. Run `cdev init` to solve issue.")
-            raise Exception
-
-
         try:
             # Load the previous components
             previous_components: List[ComponentModel] = [self.get_component(x) for x in old_components]

@@ -36,3 +36,9 @@ def test_sample():
 
 def test_simple_get_resources():
     backend_tests.simple_get_resource(local_backend_factory())
+
+
+def test_simple_exceptions():
+    backend_tests.conflicting_names_resource_state(local_backend_factory())
+    backend_tests.conflicting_names_component(local_backend_factory())
+    
