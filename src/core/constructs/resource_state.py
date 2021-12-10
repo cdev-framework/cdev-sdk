@@ -22,7 +22,7 @@ class Resource_State(BaseModel):
     Unique identifier for this state
     """
 
-    components: List[ComponentModel]
+    components: Optional[List[ComponentModel]]
     """
     The list of components owned by this namespace
     """
@@ -47,7 +47,7 @@ class Resource_State(BaseModel):
     A dictionary of transaction tokens to a tuple of (component_name, diff, error_info) for the changes that failed
     """
 
-    def __init__(__pydantic_self__, name: str, uuid: str, components: List[ComponentModel], parent_uuid: Optional[str]=None, 
+    def __init__(__pydantic_self__, name: str, uuid: str, components: List[ComponentModel]=[], parent_uuid: Optional[str]=None, 
                 children: List[str]=[], resource_changes: Dict[str, Tuple[str, Resource_Difference]]={},
                 failed_changes: Dict[str, Tuple[str, Resource_Difference, Dict]]={} ) -> None:
         super().__init__(**{

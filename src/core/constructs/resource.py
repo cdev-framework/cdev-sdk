@@ -57,11 +57,14 @@ class ResourceModel(BaseModel):
         extra = 'allow'
 
 
-    def get_parent_resources(self) -> List[str]:
-        """
-        This function returns any resources that this resources depends on via the Output mechanism
-        """
-        return None
+    def __init__(__pydantic_self__, ruuid: str, hash: str, name: str, parent_resources: List[str] = None ) -> None:
+        super().__init__(**{
+            "ruuid": ruuid,
+            "hash": hash,
+            "name": name,
+            "parent_resources": parent_resources
+        })
+
 
 
 class ResourceReferenceModel(BaseModel):
@@ -130,14 +133,14 @@ class Resource_Reference_Change_Type(str, Enum):
 
 class Resource_Difference(BaseModel):
     action_type: Resource_Change_Type
-    component_uuid: str
+    component_name: str
     previous_resource:  Optional[ResourceModel]
     new_resource: Optional[ResourceModel]
 
-    def __init__(__pydantic_self__, action_type: Resource_Change_Type, component_uuid: str, previous_resource: ResourceModel=None, new_resource: ResourceModel=None) -> None:
-        super().__init__({
+    def __init__(__pydantic_self__, action_type: Resource_Change_Type, component_name: str, previous_resource: ResourceModel=None, new_resource: ResourceModel=None) -> None:
+        super().__init__(**{
             "action_type": action_type,
-            "component_uuid": component_uuid,
+            "component_name": component_name,
             "previous_resource": previous_resource,
             "new_resource": new_resource,
         })

@@ -62,7 +62,7 @@ class Backend():
         raise NotImplementedError
 
 
-    def load_resource_state(self, resource_state_uuid: str) -> Resource_State:
+    def get_resource_state(self, resource_state_uuid: str) -> Resource_State:
         """
         Load a resource state from the stored state.
 
@@ -72,7 +72,7 @@ class Backend():
         raise NotImplementedError
 
 
-    def list_top_level_resource_states(self) -> List[Resource_State]:
+    def get_top_level_resource_states(self) -> List[Resource_State]:
         """
         List all the top level resource states for this stored state
 
@@ -83,7 +83,7 @@ class Backend():
 
 
     # Api for working with components within a resource state
-    def create_component(self, resource_state_uuid: str, component_name: str) -> str:
+    def create_component(self, resource_state_uuid: str, component_name: str):
         """
         Create a component within a resource state.
 

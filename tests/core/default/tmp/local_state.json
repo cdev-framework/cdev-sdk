@@ -1,11 +1,11 @@
 {
     "resource_state_locations": {
-        "61a18e5d-4df5-4b7f-8a58-26efcd55f991": "/home/daniel/cdev-org/cdev-frontend/tests/core/default/tmp/resource_state_61a18e5d-4df5-4b7f-8a58-26efcd55f991.json"
+        "f773b25b-f2aa-4b82-83f3-1b0a0fd7d40a": "/home/daniel/cdev-org/cdev-frontend/tests/core/default/tmp/resource_state_f773b25b-f2aa-4b82-83f3-1b0a0fd7d40a.json"
     },
     "top_level_states": [
-        "61a18e5d-4df5-4b7f-8a58-26efcd55f991"
+        "f773b25b-f2aa-4b82-83f3-1b0a0fd7d40a"
     ],
     "resource_state_names": [
-        "1"
+        "demo_state"
     ]
 }

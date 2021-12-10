@@ -18,4 +18,8 @@ mybackend = LocalBackend(base_dir, state_file)
 
 
 def test_sample():
-    backend_tests.sample(mybackend)
+    backend_tests.simple_actions(mybackend)
+
+
+def test_simple_get_resources():
+    backend_tests.simple_get_resource(mybackend)

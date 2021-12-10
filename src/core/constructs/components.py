@@ -53,7 +53,7 @@ class ComponentModel(BaseModel):
     """
 
 
-    def __init__(__pydantic_self__, name: str, hash: str="0", resources: List[ResourceModel]=None, references: List[ResourceReferenceModel]=None, cloud_output: Dict[str,Dict]=None) -> None:
+    def __init__(__pydantic_self__, name: str, hash: str="0", resources: List[ResourceModel]=[], references: List[ResourceReferenceModel]=[], cloud_output: Dict[str,Dict]={}) -> None:
         super().__init__(**{
             "name": name,
             "hash": hash,
