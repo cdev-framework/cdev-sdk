@@ -117,9 +117,6 @@ def simple_get_resource(test_backend: Backend):
     _check_final_resources_and_output(test_backend, resource_state_uuid, component_name, desired_final_state)
     
 
-    
-    
-    
 
 def _create_simple_resource_state_and_component(
         test_backend: Backend, 
