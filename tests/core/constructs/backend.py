@@ -115,7 +115,7 @@ def simple_get_resource(test_backend: Backend):
     desired_final_state = [(resource_change.new_resource, original_output, "arn") for resource_change, original_output in final_state]
 
     _check_final_resources_and_output(test_backend, resource_state_uuid, component_name, desired_final_state)
-    
+
 
 
 def _create_simple_resource_state_and_component(

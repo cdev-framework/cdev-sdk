@@ -10,6 +10,9 @@ from .resource import Resource_Reference_Difference, ResourceModel, Resource_Dif
 from .resource_state import Resource_State
 
 
+
+
+
 class Backend_Configuration(BaseModel):
     python_module: str
     python_class: str
@@ -48,6 +51,10 @@ class Backend():
 
         Returns:
             uuid (str): The uuid of the newly created resource state.
+
+        Raises:
+            ResourceStateAlreadyExists
+
         """
         raise NotImplementedError
 
@@ -58,6 +65,10 @@ class Backend():
 
         Arguments:
             resource_state_uuid (str): The uuid of the resource state to delete
+
+        Raises:
+            ResourceStateDoesNotExist
+            ResourceStateNotEmpty
         """
         raise NotImplementedError
 
@@ -68,6 +79,9 @@ class Backend():
 
         Arguments:
             resource_state_uuid (str): The uuid of the desired resource state
+        
+        Raises:
+            ResourceStateDoesNotExist
         """
         raise NotImplementedError
 
@@ -78,6 +92,10 @@ class Backend():
 
         Returns:
             resource_states (List[Resource_States]): Top level resource states.
+        
+        Raises:
+            ResourceStateDoesNotExist
+        
         """
         raise NotImplementedError
 
@@ -94,6 +112,9 @@ class Backend():
         Returns:
             uuid (str): The uuid for the new component
 
+        Raises:
+            ComponentAlreadyExists
+
         """
         raise NotImplementedError
 
@@ -105,11 +126,30 @@ class Backend():
         Arguments:
             resource_state_uuid (str): The resource state that this component will be in.
             component_name (str): uuid of the component.
+        
+        Raises:
+            ResourceStateDoesNotExist
+            ComponentDoesNotExist
+            ComponentNotEmpty
         """
         raise NotImplementedError
 
 
     def get_component(self, resource_state_uuid: str, component_name: str) -> ComponentModel:
+        """
+        Get a component from the resource state
+
+        Arguments:
+            resource_state_uuid (str): The resource state that this component will be in.
+            component_name (str): Name of the component
+        
+        Returns: 
+            component (ComponentModel): The data for the requested component
+
+        Raises:
+            ResourceStateDoesNotExist
+            ComponentDoesNotExist
+        """
         raise NotImplementedError 
 
 
@@ -130,6 +170,10 @@ class Backend():
         Returns:
             transaction_token (str): The transaction token to be used by the mapper when deploying the resource. This token can be used to give to a cloud 
             provider as a idempotency token.
+        
+        Raises:
+            ResourceStateDoesNotExist
+            ComponentDoesNotExist
         """
         raise NotImplementedError
 
@@ -145,6 +189,12 @@ class Backend():
             diff (Resource_Difference): The desired change in the resource
             transaction_token (str): Identifying token representing what transaction is being completed
             cloud_output (Dict): Output information from the cloud provider 
+        
+        
+        Raises:
+            ResourceChangeTransactionDoesNotExist
+            ComponentDoesNotExist
+
         """
         raise NotImplementedError
 
@@ -160,6 +210,62 @@ class Backend():
             diff (Resource_Difference): The desired change in the resource
             transaction_token (str): Identifying token representing what transaction is being completed
             failed_state (Dict): A dictionary containing information a mapper could use to resolve the failed state
+        
+        Raises:
+            ResourceStateDoesNotExist
+            ResourceChangeTransactionDoesNotExist
+        """
+        raise NotImplementedError
+
+    # Api for working with a resource states failed resource updates 
+    # We can either update the failed state by the mapper attempting to fix the underlying issue, or
+    # We can recover the resource to either the new state or previous state by the mapper fixing the issues, or
+    # We can just delete the failure from our failed state (not recommended unless you know what you are doing because it can leave resources in the cloud)
+    def change_failed_state_of_resource_change(self, resource_state_uuid: str, transaction_token: str, new_failed_state: Dict):
+        """
+        Update the failed state of a 'resource change'.
+
+        Arguments:
+            resource_state_uuid (str): The resource state that this transaction is in.
+            transaction_token (str): Identifying token for the failed transaction.
+            new_failed_state (Dict): The new failed state of the transaction.
+        
+        Raises:
+            ResourceStateDoesNotExist
+            ResourceChangeTransactionDoesNotExist
+        
+        """
+        raise NotImplementedError
+
+    
+    def recover_failed_resource_change(self, resource_state_uuid: str, transaction_token: str, to_previous_state: bool=True):
+        """
+        Recover the state of the change back to the previous state or forward to the new state. Note this will result in the failed resource change being removed from the stored state.
+        
+        Arguments:
+            resource_state_uuid (str): The resource state that this transaction is in.
+            transaction_token (str): Identifying token for the failed transaction.
+            to_previous_state (bool): Bool to decide if the resource should be transitioned to the previous state or new state.
+        
+        Raises:
+            ResourceStateDoesNotExist
+            ComponentDoesNotExist
+            ResourceChangeTransactionDoesNotExist
+        """
+        raise NotImplementedError
+
+
+    def remove_failed_resource_change(self, resource_state_uuid: str, transaction_token: str): 
+        """
+        Completely remove the failed resource change from the stored state. Note that this should be used with caution as it can lead to hanging cloud resources. 
+        
+        Arguments:
+            resource_state_uuid (str): The resource state that this transaction is in.
+            transaction_token (str): Identifying token for the failed transaction.
+        
+        Raises:
+            ResourceStateDoesNotExist
+            ResourceChangeTransactionDoesNotExist
         """
         raise NotImplementedError
 
@@ -174,6 +280,11 @@ class Backend():
             component_name (str): The component this resource is in.
             resource_type: The RUUID of the resource desired
             resource_name: The name of the resource desired
+        
+        Raises:
+            ResourceStateDoesNotExist 
+            ComponentDoesNotExist
+            ResourceDoesNotExist
         """
         raise NotImplementedError
 
@@ -187,6 +298,11 @@ class Backend():
             component_name (str): The component this resource is in.
             resource_type (str): The RUUID of the resource desired.
             resource_hash (str): The hash of the resource desired.
+        
+        Raises:
+            ResourceStateDoesNotExist 
+            ComponentDoesNotExist
+            ResourceDoesNotExist
         """
         raise NotImplementedError
 
@@ -202,6 +318,13 @@ class Backend():
             resource_type (str): The RUUID of the resource desired
             resource_name (str): The hash of the resource desired
             key (str): The key for the desired value
+        
+        Raises:
+            ResourceStateDoesNotExist 
+            ComponentDoesNotExist
+            CloudOutputDoesNotExist
+            KeyNotInCloudOutput
+        
         """
         raise NotImplementedError
 
@@ -217,49 +340,16 @@ class Backend():
             resource_type (str): The RUUID of the resource desired.
             resource_hash (str): The hash of the resource desired.
             key (str): The key for the desired value.
-        """
-        raise NotImplementedError
-
-
-
-
-    # Api for working with a resource states failed resource updates 
-    # We can either update the failed state by the mapper attempting to fix the underlying issue, or
-    # We can recover the resource to either the new state or previous state by the mapper fixing the issues, or
-    # We can just delete the failure from our failed state (not recommended unless you know what you are doing because it can leave resources in the cloud)
-    def change_failed_state_of_resource_change(self, resource_state_uuid: str, transaction_token: str, new_failed_state: Dict):
-        """
-        Update the failed state of a 'resource change'.
-
-        Arguments:
-            resource_state_uuid (str): The resource state that this transaction is in.
-            transaction_token (str): Identifying token for the failed transaction.
-            new_failed_state (Dict): The new failed state of the transaction.
-        """
-        raise NotImplementedError
-
-    
-    def recover_failed_resource_change(self, resource_state_uuid: str, transaction_token: str, to_previous_state: bool=True):
-        """
-        Recover the state of the change back to the previous state or forward to the new state. Note this will result in the failed resource change being removed from the stored state.
         
-        Arguments:
-            resource_state_uuid (str): The resource state that this transaction is in.
-            transaction_token (str): Identifying token for the failed transaction.
-            to_previous_state (bool): Bool to decide if the resource should be transitioned to the previous state or new state.
-        """
-        raise NotImplementedError
-
-
-    def remove_failed_resource_change(self, resource_state_uuid: str, transaction_token: str): 
-        """
-        Completely remove the failed resource change from the stored state. Note that this should be used with caution as it can lead to hanging cloud resources. 
+        Raises:
+            ResourceStateDoesNotExist 
+            ComponentDoesNotExist
+            KeyNotInCloudOutput
+            CloudOutputDoesNotExist
         
-        Arguments:
-            resource_state_uuid (str): The resource state that this transaction is in.
-            transaction_token (str): Identifying token for the failed transaction.
         """
         raise NotImplementedError
+
 
 
     # Api for creating differences between workspace and the backend
@@ -267,7 +357,6 @@ class Backend():
     # is the one that has to implement the changes.
     # In the future, this will also allow for the backend to manage IAM permissions for creating, updating, referencing, etc
     # the actual cdev resources.
-
     def create_differences(self, resource_state_uuid: str, new_components: List[ComponentModel], old_components: List[str]) -> Tuple[Component_Difference, Resource_Reference_Difference, Resource_Difference]:
         """
         Create the set of differences from a proposed set of components to a provided set of current components identified by their name. This allows the flexibility for working on a particular 
