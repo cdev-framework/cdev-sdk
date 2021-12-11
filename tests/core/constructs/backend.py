@@ -1,5 +1,6 @@
+from os import rename
 from core.constructs import backend
-from core.constructs.resource import Cloud_Output, Resource_Change_Type, Resource_Difference, ResourceModel
+from core.constructs.resource import Cloud_Output, Resource_Change_Type, Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference, ResourceModel
 import pytest
 from typing import Dict, List, Tuple
 
@@ -287,20 +288,29 @@ def simple_differences(test_backend: Backend):
                 {}
             )
 
+        for reference in component.references:
+            reference_change = Resource_Reference_Difference(
+                Resource_Reference_Change_Type.CREATE,
+                reference
+            )
+
+            test_backend.resolve_reference_change(resource_state_uuid, component.name, reference_change)
+
+
+    new_components.insert(0, test_backend.get_component(resource_state_uuid, previous_components[0].name))
+
+    rename_component =  test_backend.get_component(resource_state_uuid, previous_components[-1].name)
+
+    rename_component.name =  f"{ rename_component.name}{ rename_component.name}"
+
+    new_components.append(rename_component)
     
-    component_diffs, _, resource_diffs = test_backend.create_differences(resource_state_uuid, new_components, [x.name for x in previous_components])
-
-    
-    assert len(resource_diffs) == 4
+    component_diffs, reference_diffs, resource_diffs = test_backend.create_differences(resource_state_uuid, new_components, [x.name for x in previous_components])
 
 
-    for x in component_diffs:
-        print(x)
-
-
-    assert False
-    
-
+    assert 4 == len(resource_diffs)
+    assert 4 == len(component_diffs)
+    assert 2 == len(reference_diffs)
 
 
 

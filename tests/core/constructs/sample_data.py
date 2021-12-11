@@ -1,7 +1,7 @@
 from typing import Dict, Tuple, List
 from core.constructs.components import Component, ComponentModel
 
-from core.constructs.resource import Resource_Difference, ResourceModel, Resource_Change_Type
+from core.constructs.resource import Resource_Difference, ResourceModel, Resource_Change_Type, ResourceReferenceModel
 
 
 def simple_resource_data():
@@ -127,8 +127,8 @@ def simple_component_differences() -> Tuple[List[ComponentModel], List[Component
                 "hash": "4",
             }
         ),
-        
     ]
+
 
     new_component2_resources = [
         ResourceModel(
@@ -160,24 +160,51 @@ def simple_component_differences() -> Tuple[List[ComponentModel], List[Component
             }
         ),
     ]
-    
 
+    basic_reference_set = [
+        ResourceReferenceModel(
+            **{
+                "component_name": "comp1",
+                "ruuid": "cdev::resource",
+                "name": "resource1",
+                "hash": "1",
+            }
+        ),
+        ResourceReferenceModel(
+            **{
+                "component_name": "comp1",
+                "ruuid": "cdev::resource",
+                "name": "resource2",
+                "hash": "2",
+            }
+        ),
+    ]
 
-    new_component1 = ComponentModel(
-        **{
-            "name": "comp1",
-            "hash": "123",
-            "resources": basic_resource_set,
-            "references": [],
-        }
-    )
+    new_component2_reference_set = [
+        ResourceReferenceModel(
+            **{
+                "component_name": "comp1",
+                "ruuid": "cdev::resource",
+                "name": "resource1",
+                "hash": "1",
+            }
+        ),
+        ResourceReferenceModel(
+            **{
+                "component_name": "comp1",
+                "ruuid": "cdev::resource",
+                "name": "resource3",
+                "hash": "3",
+            }
+        ),
+    ]
 
     new_component2 = ComponentModel(
         **{
             "name": "comp2",
             "hash": "1234",
             "resources": new_component2_resources,
-            "references": [],
+            "references": new_component2_reference_set
         }
     )
 
@@ -191,7 +218,6 @@ def simple_component_differences() -> Tuple[List[ComponentModel], List[Component
     )
 
 
-
     previous_component1 = ComponentModel(
         **{
             "name": "comp1",
@@ -201,12 +227,13 @@ def simple_component_differences() -> Tuple[List[ComponentModel], List[Component
         }
     )
 
+
     previous_component2 = ComponentModel(
         **{
             "name": "comp2",
             "hash": "1234",
             "resources": basic_resource_set,
-            "references": [],
+            "references": basic_reference_set,
         }
     )
 
@@ -219,4 +246,20 @@ def simple_component_differences() -> Tuple[List[ComponentModel], List[Component
         }
     )
 
-    return [new_component1, new_component2, new_component4], [previous_component1, previous_component2, previous_component3]
+
+    previous_component5 = ComponentModel(
+        **{
+            "name": "comp5",
+            "hash": "123456",
+            "resources": [],
+            "references": [],
+        }
+    )
+
+    # Component Diffs:
+        # Component1 -> Same (This component should be read from the state and added to the new components during the test)
+        # Component2 -> Update Identity
+        # Component3 -> Delete
+        # Component4 -> Create
+        # Component5 -> Update Name (This component should be read from the state and then modify its name)
+    return [new_component2, new_component4], [previous_component1, previous_component2, previous_component3, previous_component5]

@@ -43,3 +43,7 @@ class CloudOutputDoesNotExist(BackendError):
 
 class KeyNotInCloudOutput(BackendError):
     pass
+
+
+class ResourceReferenceError(BackendError):
+    pass

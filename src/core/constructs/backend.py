@@ -214,6 +214,25 @@ class Backend():
         """
         raise NotImplementedError
 
+
+    # Api for getting references from other components
+    # Components can have references to resources that are managed in other components and it is the responsibility of the backend to resolve those references
+    # The backend should be in charge of handling IAM to determine if resolving the reference is possible
+    def resolve_reference_change(self, resource_state_uuid: str, component_name: str, diff: Resource_Reference_Difference):
+        """
+        Either reference or dereference a resource from a different component. 
+
+        Arguments:
+            resource_state_uuid (str): The resource state for this resource change.
+            component_name (str): The component this resource change is occuring in.
+            diff (Resource_Difference): The desired change in the resource
+
+        Raises:
+            ResourceReferenceError
+        """
+        raise NotImplementedError
+
+
     # Api for working with a resource states failed resource updates 
     # We can either update the failed state by the mapper attempting to fix the underlying issue, or
     # We can recover the resource to either the new state or previous state by the mapper fixing the issues, or

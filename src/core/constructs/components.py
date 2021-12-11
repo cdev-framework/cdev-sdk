@@ -44,7 +44,7 @@ class ComponentModel(BaseModel):
 
     references: Optional[List[ResourceReferenceModel]]
     """
-    A list of the referenced resources from this component
+    A list of the referenced resources used by this component
     """
 
     cloud_output: Optional[Dict[str, Dict]]
@@ -52,14 +52,20 @@ class ComponentModel(BaseModel):
     Output values from the cloud provider of deployed resources
     """
 
+    external_references: Optional[Dict[str, Dict]]
+    """
+    Dictionary of the resources to information about references to them from other components
+    """
 
-    def __init__(__pydantic_self__, name: str, hash: str="0", resources: List[ResourceModel]=[], references: List[ResourceReferenceModel]=[], cloud_output: Dict[str,Dict]={}) -> None:
+
+    def __init__(__pydantic_self__, name: str, hash: str="0", resources: List[ResourceModel]=[], references: List[ResourceReferenceModel]=[], cloud_output: Dict[str,Dict]={}, external_references: Dict[str,Dict]={} ) -> None:
         super().__init__(**{
             "name": name,
             "hash": hash,
             "resources": resources,
             "references": references,
-            "cloud_output": cloud_output
+            "cloud_output": cloud_output,
+            "external_references": external_references
         })
 
 

@@ -345,6 +345,82 @@ class LocalBackend(Backend):
         self._write_resource_state_file(resource_state, resource_state_file_location)
 
 
+    def resolve_reference_change(self, resource_state_uuid: str, component_name: str, diff: Resource_Reference_Difference):
+        resource_state = self.get_resource_state(resource_state_uuid)
+        resource_state_file_location = self._get_resource_state_file_location(resource_state_uuid)
+
+        component = self.get_component(resource_state_uuid, component_name)
+
+        _reference_resource_state = resource_state
+        if diff.resource_reference.is_in_parent_resource_state:
+            if not resource_state.parent_uuid:
+                raise ResourceReferenceError(f"Current Resource State {resource_state_uuid} does not have a Parent Resource State to resolve {diff} to")
+
+            _reference_resource_state = self.get_resource_state(resource_state.parent_uuid)
+
+
+        try:
+            _referenced_component = self.get_component(_reference_resource_state.uuid, diff.resource_reference.component_name)
+        except ComponentDoesNotExist:
+            raise ResourceReferenceError(f"Resource State {_reference_resource_state.uuid} does not contain component {diff.resource_reference.component_name} for {diff}")
+
+        
+        all_parent_resources = set([f"{x.ruuid}{x.name}" for x in _referenced_component.resources])
+
+        if not f"{diff.resource_reference.ruuid}{diff.resource_reference.name}" in all_parent_resources:
+            raise ResourceReferenceError(f"Could not find resource {diff.resource_reference.ruuid};{diff.resource_reference.name} in parent component")
+
+
+        if diff.action_type == Resource_Reference_Change_Type.CREATE:
+            # TODO Change to hash
+            reference_id = f"{diff.resource_reference.ruuid}{diff.resource_reference.name}"
+
+            # resolve the reference by adding a count to the reference counter in the referenced component
+            if not reference_id in _referenced_component.external_references:
+                _referenced_component.external_references[reference_id] = {"cnt": 1}
+
+            else:
+                previous_cnt = _referenced_component.external_references[reference_id].get("cnt")
+                _referenced_component.external_references[reference_id] = {"cnt": previous_cnt + 1}
+
+            # Add this to the references for this component
+            component.references.append(diff.resource_reference)
+
+            
+        elif diff.action_type == Resource_Reference_Change_Type.DELETE:
+            # TODO Change to hash
+            reference_id = f"{diff.resource_reference.ruuid}{diff.resource_reference.name}"
+
+            # resolve the dereference by subtracting a count to the reference counter in the referenced component
+            if not reference_id in _referenced_component.external_references:
+                raise ResourceReferenceError(f"Trying to deference resource that does not have reference info")
+
+            else:
+                previous_cnt = _referenced_component.external_references[reference_id].get("cnt")
+                _referenced_component.external_references[reference_id] = {"cnt": previous_cnt - 1}
+
+                
+            if _referenced_component.external_references[reference_id] == 0:
+                _referenced_component.external_references.pop(reference_id)
+
+            # Pop this references for this component
+            component.references.pop(diff.resource_reference) 
+        
+        
+        _reference_resource_state.components = [x for x in resource_state.components if not x.name == _referenced_component.name] + [_referenced_component]
+        resource_state.components = [x for x in resource_state.components if not x.name == component.name] + [component]
+           
+
+        if diff.resource_reference.is_in_parent_resource_state:
+            # if the reference is from the parent resource state then we need to update it so that it knows that the reference was resolved
+            _reference_resource_state_fp = self._get_resource_state_file_location(_reference_resource_state.uuid)
+
+            self._write_resource_state_file(_reference_resource_state, _reference_resource_state_fp)
+
+        self._write_resource_state_file(resource_state, resource_state_file_location)
+        
+
+        
     # Get resources and cloud output
     def get_resource_by_name(self, resource_state_uuid: str, component_name: str, resource_type: str, resource_name: str) -> ResourceModel:
 
@@ -419,7 +495,7 @@ class LocalBackend(Backend):
         try:
             # Load the previous components
             previous_components: List[ComponentModel] = [self.get_component(resource_state_uuid, x) for x in old_components]
-            print(f"++{previous_components}")
+            
         except Exception as e:
             raise e
 
@@ -604,7 +680,7 @@ def _create_reference_diffs(new_references: List[ResourceReferenceModel], old_re
     else:
         old_name_to_references = {}
 
-    log.debug(f"old_name_to_resource -> {old_name_to_references}")
+    print(f"old_name_to_resource -> {old_name_to_references}")
 
     rv = []
     for reference in new_references:
@@ -649,9 +725,6 @@ def _create_differences(new_components: List[ComponentModel], previous_component
         previous_hash_to_component = {}
         previous_name_to_component = {}
         previous_components_to_remove = []
-
-    print(f"previous_hash_to_component -> {previous_hash_to_component}")
-    print(f"previous_name_to_component -> {previous_name_to_component}")
 
 
     if new_components:
@@ -729,10 +802,7 @@ def _create_differences(new_components: List[ComponentModel], previous_component
                 tmp_reference_diff = _create_reference_diffs(component.references, previous_component.references)
                 reference_diffs.extend(tmp_reference_diff)
 
-                print(f"---------")
-                print(f"{component} -> {component.hash} {component.name}")
-                print(f".......................")
-                print(f"{previous_hash_to_component}")
+                
                 component_diffs.append(
                     Component_Difference(
                         Component_Change_Type.UPDATE_IDENTITY,
