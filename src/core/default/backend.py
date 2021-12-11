@@ -404,7 +404,7 @@ class LocalBackend(Backend):
                 _referenced_component.external_references.pop(reference_id)
 
             # Pop this references for this component
-            component.references.pop(diff.resource_reference) 
+            component.references.remove(diff.resource_reference) 
         
         
         _reference_resource_state.components = [x for x in resource_state.components if not x.name == _referenced_component.name] + [_referenced_component]

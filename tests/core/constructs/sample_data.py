@@ -1,7 +1,7 @@
 from typing import Dict, Tuple, List
 from core.constructs.components import Component, ComponentModel
 
-from core.constructs.resource import Resource_Difference, ResourceModel, Resource_Change_Type, ResourceReferenceModel
+from core.constructs.resource import Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference, ResourceModel, Resource_Change_Type, ResourceReferenceModel
 
 
 def simple_resource_data():
@@ -12,7 +12,6 @@ def simple_resource_data():
         ResourceModel("cdev::resource::x", "4", "resource4"),
         ResourceModel("cdev::resource::x", "5", "resource5")
     ]
-
 
 
 def simple_create_resource_changes(component_name: str):
@@ -48,6 +47,38 @@ def simple_create_resource_changes(component_name: str):
             previous_resource=None,
             new_resource=simple_resources[4]
         )
+    ]
+
+
+def simple_create_references(parent_component_name: str, component_name: str):
+    simple_resources = simple_resource_data()
+
+    return [
+        Resource_Reference_Difference(
+            Resource_Reference_Change_Type.CREATE,
+            ResourceReferenceModel(
+                parent_component_name,
+                x.ruuid,
+                x.name,
+                "1"
+            )
+        ) for x in simple_resources
+    ]
+
+
+def simple_delete_references(parent_component_name: str, component_name: str):
+    simple_resources = simple_resource_data()
+
+    return [
+        Resource_Reference_Difference(
+            Resource_Reference_Change_Type.DELETE,
+            ResourceReferenceModel(
+                parent_component_name,
+                x.ruuid,
+                x.name,
+                "1"
+            )
+        ) for x in simple_resources
     ]
 
 

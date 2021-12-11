@@ -1,6 +1,7 @@
 from os import rename
 from core.constructs import backend
 from core.constructs.resource import Cloud_Output, Resource_Change_Type, Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference, ResourceModel
+from core.constructs.components import ComponentModel
 import pytest
 from typing import Dict, List, Tuple
 
@@ -47,7 +48,7 @@ def simple_actions(test_backend: Backend):
     assert len(final_state) == len(returned_component.resources)
     
     # Try deleting a component that still has resources
-    with pytest.raises(Exception):
+    with pytest.raises(ComponentNotEmpty):
         test_backend.delete_component(resource_state_uuid, component_name)
 
     # Delete resources
@@ -116,12 +117,66 @@ def simple_get_resource(test_backend: Backend):
             cloud_output
         )
 
-    
 
     desired_final_state = [(resource_change.new_resource, original_output, "arn") for resource_change, original_output in final_state]
 
     _check_final_resources_and_output(test_backend, resource_state_uuid, component_name, desired_final_state)
 
+
+def simple_references(test_backend: Backend):
+    """
+    Create a single component and add some resources. Then delete the resources and 
+    component.
+    """
+    resource_state_name = "demo_state"
+    component1_name = "demo_component"
+    component2_name = "demo_component2"
+
+    resource_state_uuid = _create_simple_resource_state_and_component(test_backend,  resource_state_name, component1_name)
+
+    test_backend.create_component(resource_state_uuid, component2_name)
+
+    sample_create_resources = sample_data.simple_create_resource_changes(component1_name)
+    sample_create_references = sample_data.simple_create_references(component1_name, component2_name)
+    sample_delete_references = sample_data.simple_delete_references(component1_name, component2_name)
+
+    for resource_change in sample_create_resources:
+        tmp_transaction = test_backend.create_resource_change(
+                                resource_state_uuid, 
+                                component1_name, 
+                                resource_change
+                            )
+
+        # no cloud output
+        test_backend.complete_resource_change(
+            resource_state_uuid,
+            component1_name,
+            resource_change, 
+            tmp_transaction, 
+            {}
+        )
+
+
+    for reference_change in sample_create_references:
+        test_backend.resolve_reference_change(resource_state_uuid, component2_name, reference_change)
+
+
+    comp2 = test_backend.get_component(resource_state_uuid, component2_name)
+    
+    
+    assert len(sample_create_references) == len(comp2.references)
+
+
+    for reference_change in sample_delete_references:
+        test_backend.resolve_reference_change(resource_state_uuid, component2_name, reference_change)
+
+
+    comp2 = test_backend.get_component(resource_state_uuid, component2_name)
+
+
+    assert 0 == len(comp2.references)
+
+    
 
 ################################
 #### Simple Failure Tests
@@ -308,13 +363,11 @@ def simple_differences(test_backend: Backend):
     component_diffs, reference_diffs, resource_diffs = test_backend.create_differences(resource_state_uuid, new_components, [x.name for x in previous_components])
 
 
+    # TODO do more in depth testing of the actual diffs
     assert 4 == len(resource_diffs)
     assert 4 == len(component_diffs)
     assert 2 == len(reference_diffs)
 
-
-
-    
 
 def _create_simple_resource_state_and_component(
         test_backend: Backend, 

@@ -112,6 +112,15 @@ class ResourceReferenceModel(BaseModel):
     Boolean to determine if the reference should be resolved in the same resource state or from the parent resource state.
     """
 
+    def __init__(__pydantic_self__, component_name: str, ruuid: str, name: str, hash: str,  is_in_parent_resource_state: bool = False ) -> None:
+        super().__init__(**{
+            "component_name": component_name,
+            "ruuid": ruuid,
+            "name": name,
+            "hash": hash,
+            "is_in_parent_resource_state": is_in_parent_resource_state
+        })
+
 
     class Config:
         validate_assignment = True
