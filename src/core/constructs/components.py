@@ -4,7 +4,7 @@ from typing import Dict, Union, List, Optional, Set
 
 from pydantic import BaseModel
 
-from .resource import ResourceModel, Resource_Change_Type, Resource_Difference
+from .resource import  ResourceReferenceModel, ResourceModel
 
 
 class ComponentModel(BaseModel):
@@ -14,7 +14,7 @@ class ComponentModel(BaseModel):
 
     --- Attributes ---
 
-    - rendered_resources ->  a list of rendered resources that make up this resource
+    - resources ->  a list of rendered resources that make up this resource
 
     - hash  ->  a string that is the hash of this component. This hash must be computed such that 
                 it changes only if a change in the state is desired.
@@ -37,15 +37,14 @@ class ComponentModel(BaseModel):
     - This value changes only if a there is a change in the resource. 
     """
 
-    rendered_resources: Optional[List[ResourceModel]]
+    resources: Optional[List[ResourceModel]]
     """
     List of Rendered Resources that make up the current state of this component
     """
 
-    references: Optional[Set[str]]
+    references: Optional[List[ResourceReferenceModel]]
     """
-    A set of all resource identifications (ruuid:hash:<hash> or ruuid:name:<name>) that are a parent resource to some other resource in the component. This set serves as 
-    a fast way of checking if we need to update descandants when a resource is updated 
+    A list of the referenced resources from this component
     """
 
     cloud_output: Optional[Dict[str, Dict]]
@@ -54,11 +53,11 @@ class ComponentModel(BaseModel):
     """
 
 
-    def __init__(__pydantic_self__, name: str, hash: str="0", rendered_resources: List[ResourceModel]=None,  all_parent_resources: Set[str]=None, cloud_output: Dict[str,Dict]=None) -> None:
+    def __init__(__pydantic_self__, name: str, hash: str="0", resources: List[ResourceModel]=None,  all_parent_resources: Set[str]=None, cloud_output: Dict[str,Dict]=None) -> None:
         super().__init__(**{
             "name": name,
             "hash": hash,
-            "resources": rendered_resources,
+            "resources": resources,
             "references": all_parent_resources,
             "cloud_output": cloud_output
         })
@@ -94,11 +93,11 @@ class Component():
 
     def __init__(self, name: str):
         self.name = name
-        pass
+        
 
     def render(self) -> ComponentModel:
         """Abstract Class that must be implemented by the descendant that returns a component model"""
-        pass
+        raise NotImplementedError
 
     def get_name(self) -> str:
         return self.name

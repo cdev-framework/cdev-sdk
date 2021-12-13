@@ -3,12 +3,12 @@ import os
 from typing import Dict, List, Any, Optional
 import uuid
 
-from cdev.core.constructs.backend import Backend_Configuration, Backend
-from cdev.core.constructs.components import Component, ComponentModel
-from cdev.core.constructs.resource import Resource_Change_Type, Resource_Difference, ResourceModel
-from cdev.core.constructs.resource_state import Resource_State
-from cdev.core.settings import SETTINGS as cdev_settings
-from cdev.core.utils import hasher as cdev_hasher
+from core.constructs.backend import Backend_Configuration, Backend
+from core.constructs.components import Component, ComponentModel
+from core.constructs.resource import Resource_Change_Type, Resource_Difference, ResourceModel
+from core.constructs.resource_state import Resource_State
+from core.settings import SETTINGS as cdev_settings
+from core.utils import hasher as cdev_hasher
 from pydantic.main import BaseModel
 from pydantic.types import DirectoryPath, FilePath
 

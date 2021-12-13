@@ -1,10 +1,12 @@
 import importlib
 import inspect
 import sys
-from typing import Dict, Optional, Any, List
+from typing import Dict, Tuple, Any, List
 from pydantic import BaseModel
 
-from .resource import ResourceModel, Resource_Difference
+from src.core.constructs.components import Component_Difference, ComponentModel
+
+from .resource import Resource_Reference_Difference, ResourceModel, Resource_Difference
 from .resource_state import Resource_State
 
 
@@ -50,22 +52,22 @@ class Backend():
         raise NotImplementedError
 
 
-    def delete_resource_state(self, state_uuid: str):
+    def delete_resource_state(self, resource_state_uuid: str):
         """
         Delete a resource state within this store state.
 
         Arguments:
-            state_uuid (str): The uuid of the resource state to delete
+            resource_state_uuid (str): The uuid of the resource state to delete
         """
         raise NotImplementedError
 
 
-    def load_resource_state(self, state_uuid: str) -> Resource_State:
+    def load_resource_state(self, resource_state_uuid: str) -> Resource_State:
         """
         Load a resource state from the stored state.
 
         Arguments:
-            state_uuid (str): The uuid of the desired resource state
+            resource_state_uuid (str): The uuid of the desired resource state
         """
         raise NotImplementedError
 
@@ -255,6 +257,26 @@ class Backend():
         """
         raise NotImplementedError
 
+
+    # Api for creating differences between workspace and the backend
+    # The backend must be responsible for determining the differences to get to a new potential state because the backend
+    # is the one that has to implement the changes.
+    # In the future, this will also allow for the backend to manage IAM permissions for creating, updating, referencing, etc
+    # the actual cdev resources.
+
+    def create_differences(self, resource_state_uuid: str, new_components: List[ComponentModel], old_components: List[str]) -> Tuple[Component_Difference, Resource_Reference_Difference, Resource_Difference]:
+        """
+        Create the set of differences from a proposed set of components to a provided set of current components identified by their name. This allows the flexibility for working on a particular 
+        set of components within a resource state. 
+        """
+        raise NotImplementedError
+
+
+    def validate_differences(self, resource_state_uuid: str, component_differences: List[Component_Difference], resource_differences: List[Resource_Difference]):
+        """
+        Validate the proposed differences. Raise an error if they should not be deployed. 
+        """
+        raise NotImplementedError
 
 
 def load_backend(config: Backend_Configuration) -> Backend:

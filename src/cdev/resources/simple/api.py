@@ -10,7 +10,7 @@ from .xlambda import Event as lambda_event, EventTypes
 
 RUUID = "cdev::simple::api"
 
-class simple_api_model(Rendered_Resource):
+class simple_api_model(Resource):
     api_name: str
     routes: List[lambda_event]
     allow_cors: bool
