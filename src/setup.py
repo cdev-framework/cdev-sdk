@@ -2,10 +2,10 @@ import setuptools
 setuptools.setup(
     name='cdev',
     version='0.0',
-    scripts=['./cdev/scripts/cdev', './cdev/scripts/cdev_core' ],
+    scripts=['./cdev/scripts/cdev', './core/scripts/cdev_core' ],
     author='CDEV LLC',
     description='CLI for cdev',
-    packages=['cdev'],
+    packages=['cdev', 'core'],
     install_requires=[
         "setuptools",
         "sortedcontainers==2.3.0",

@@ -4,8 +4,8 @@ from ast import parse
 import os
 from typing import Callable, Any
 
-from cdev.core.commands import create_workspace, initialize_workspace, run
-from cdev.core.constructs.workspace import Workspace
+from ..commands import create_workspace, initialize_workspace, run
+from ..constructs.workspace import Workspace
 
 parser = argparse.ArgumentParser(description='cdev cli')
 subparsers = parser.add_subparsers(title='sub_command', description='valid subcommands')

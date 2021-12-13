@@ -1,6 +1,6 @@
 from typing import Dict, Union, List, Optional, Set, Callable
 
-from cdev.core.constructs.resource import Resource_Difference
+from .resource import Resource_Difference
 
 class CloudMapper():
     """

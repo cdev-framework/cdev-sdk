@@ -4,7 +4,7 @@ from typing import Dict, Union, List, Optional, Set
 
 from pydantic import BaseModel
 
-from cdev.core.constructs.resource import ResourceModel, Resource_Change_Type, Resource_Difference
+from .resource import ResourceModel, Resource_Change_Type, Resource_Difference
 
 
 class ComponentModel(BaseModel):

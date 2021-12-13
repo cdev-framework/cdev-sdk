@@ -1,10 +1,10 @@
 from typing import Dict, Union, List, Optional, Set, Tuple
-from cdev.core.constructs.resource import Resource_Difference
+from .resource import Resource_Difference
 
 from pydantic import BaseModel
 
-from cdev.core.constructs.components import ComponentModel, Component
-from cdev.core.constructs.mapper import CloudMapper
+from .components import ComponentModel, Component
+from .mapper import CloudMapper
 
 
 class Resource_State(BaseModel):

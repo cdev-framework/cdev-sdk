@@ -4,10 +4,10 @@ import os
 import sys
 from typing import List, Tuple, Union
 
-from cdev.core.management.base import BaseCommand, BaseCommandContainer
+from ..management.base import BaseCommand, BaseCommandContainer
 
 
-from cdev.core.utils import logger
+from . import logger
 
 
 log = logger.get_cdev_logger(__name__)

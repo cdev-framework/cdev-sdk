@@ -1,7 +1,7 @@
 import os
 
-from cdev.core.constructs import workspace as cdev_workspace
-from cdev.core.constructs.backend import Backend_Configuration
+from ..constructs import workspace as cdev_workspace
+from ..constructs.backend import Backend_Configuration
 
 def create_workspace(args):
     base_project_dir = os.getcwd()

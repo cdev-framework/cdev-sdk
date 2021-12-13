@@ -1,10 +1,10 @@
 import os
 from pydantic.types import DirectoryPath, FilePath
 
-from cdev.core.constructs.backend import Backend_Configuration
-from cdev.core.constructs.workspace import Workspace, Workspace_Info, load_workspace_configuration
+from ..constructs.backend import Backend_Configuration
+from ..constructs.workspace import Workspace, Workspace_Info, load_workspace_configuration
 
-from cdev.core.settings import SETTINGS as cdev_settings
+from ..settings import SETTINGS as cdev_settings
 
 WORKSPACE_INFO_DIR = cdev_settings.get("ROOT_FOLDER_NAME")
 WORKSPACE_INFO_FILENAME = cdev_settings.get("WORKSPACE_FILE_NAME")

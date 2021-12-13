@@ -1,10 +1,10 @@
 import networkx as nx
 from typing import List, Tuple, Generator, Any, Dict
 
-from cdev.core.constructs.resource import Resource_Change_Type, Resource_Difference, ResourceModel
+from ..constructs.resource import Resource_Change_Type, Resource_Difference, ResourceModel
 
-from cdev.core.constructs.components import  Component_Change_Type, ComponentModel, Component_Difference
-from cdev.core.utils import  logger
+from ..constructs.components import  Component_Change_Type, ComponentModel, Component_Difference
+from ..utils import  logger
 
 log = logger.get_cdev_logger(__name__)
 

@@ -5,25 +5,27 @@ import json
 import os
 import sys
 from typing import Callable, List, Dict, Optional, Any, Tuple, Union
-from cdev.core.constructs.resource import Resource_Difference
+
 
 
 from pydantic import BaseModel
 from pydantic.types import DirectoryPath, FilePath
 from sortedcontainers.sortedlist import SortedList
 
-from cdev.core.constructs.backend import Backend, Backend_Configuration, load_backend
-from cdev.core.constructs.mapper import CloudMapper
-from cdev.core.constructs.components import Component, Component_Difference, ComponentModel
+
+from .resource import Resource_Difference
+from .backend import Backend, Backend_Configuration, load_backend
+from .mapper import CloudMapper
+from .components import Component, Component_Difference, ComponentModel
 
 
-from cdev.core.management.base import BaseCommand, BaseCommandContainer
+from ..management.base import BaseCommand, BaseCommandContainer
 
-from cdev.core.settings import SETTINGS as cdev_settings
+from ..settings import SETTINGS as cdev_settings
 
-from cdev.core.utils.exceptions import Cdev_Error, end_process
-from cdev.core.utils import hasher as cdev_hasher
-from cdev.core.utils.command_finder import find_specified_command, find_unspecified_command
+from ..utils.exceptions import Cdev_Error, end_process
+from ..utils import hasher as cdev_hasher
+from ..utils.command_finder import find_specified_command, find_unspecified_command
 
 
 

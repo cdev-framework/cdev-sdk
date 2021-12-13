@@ -1,6 +1,6 @@
-from cdev.core.management.base import BaseCommand, BaseCommandContainer
+from ..management.base import BaseCommand, BaseCommandContainer
 
-from cdev.core.constructs.workspace import Workspace
+from ..constructs.workspace import Workspace
 
 
 

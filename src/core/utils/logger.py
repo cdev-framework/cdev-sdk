@@ -2,7 +2,7 @@ import logging.config
 import logging
 import os
 
-from cdev.core.settings import SETTINGS as cdev_settings
+from ..settings import SETTINGS as cdev_settings
 
 
 #logging.config.fileConfig(os.path.join(os.path.dirname(__file__), "..","logging.ini"), disable_existing_loggers=False)

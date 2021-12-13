@@ -2,7 +2,7 @@ import os
 
 from pydantic.types import FilePath
 
-from cdev import settings as cdev_settings
+from .. import settings as cdev_settings
 
 
 INTERMEDIATE_FOLDER = cdev_settings.SETTINGS.get("CDEV_INTERMEDIATE_FOLDER_LOCATION")

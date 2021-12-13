@@ -1,6 +1,6 @@
 {
     "name": "project_state",
-    "uuid": "c13973d6-8ac1-4146-a240-4dbd64e512d3",
+    "uuid": "31f0779f-79c7-4e5e-86e1-74f21c9dc93d",
     "parent_uuid": null,
     "children": [],
     "components": [
@@ -8,7 +8,7 @@
             "name": "component1",
             "hash": "0",
             "rendered_resources": null,
-            "all_parent_resources": null,
+            "references": null,
             "cloud_output": null
         }
     ],

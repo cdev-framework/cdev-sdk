@@ -4,8 +4,8 @@ import sys
 from typing import Dict, Optional, Any, List
 from pydantic import BaseModel
 
-from cdev.core.constructs.resource import ResourceModel, Resource_Difference
-from cdev.core.constructs.resource_state import Resource_State
+from .resource import ResourceModel, Resource_Difference
+from .resource_state import Resource_State
 
 
 class Backend_Configuration(BaseModel):
