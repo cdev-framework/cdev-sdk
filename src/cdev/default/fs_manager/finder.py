@@ -1,16 +1,15 @@
 import importlib
 import os
-import sys
 from pydantic.types import FilePath
 from sortedcontainers.sortedlist import SortedKeyList
-from typing import Dict, List
+import sys
+from typing import Dict, List, Tuple
 
-
-from cdev.core.constructs.resource import Cdev_Resource, ResourceModel
+from core.constructs.resource import Resource, ResourceModel, ResourceReferenceModel, Resource_Reference
 
 from cdev.resources.simple.xlambda import simple_lambda, simple_aws_lambda_function_model
 
-from cdev.core.utils import hasher, paths, logger
+from core.utils import hasher, paths, logger
 
 from ..cparser import cdev_parser as cparser
 
@@ -24,6 +23,35 @@ log = logger.get_cdev_logger(__name__)
 
 
 ANNOTATION_LABEL = "lambda_function_annotation"
+
+
+def parse_folder(folder_path, prefix=None) -> Tuple[List[ResourceModel], List[ResourceReferenceModel]]:
+    """
+    This function takes a folder and goes through it looking for cdev resources. Specifically, it loads all available python files
+    and uses the loaded module to determine the resources defined in the files. Most resources are simple, but there is extra work
+    needed to handle the serverless functions. Serverless functions are parsed to optimized the actual deployed artifact using the 
+    cparser library.
+    """
+    if not os.path.isdir(folder_path):
+        raise Exception
+
+    python_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f)) and f[-3:]==".py"]
+
+
+    # [{<resource>}]
+    resources_rv = SortedKeyList(key=lambda x: x.hash)
+
+    reference_rv = SortedKeyList(key=lambda x: f"{x.component_name};{x.ruuid};{x.name};{x.is_in_parent_resource_state}")
+
+
+    for pf in python_files:
+        final_function_info = _find_resources_information_from_file(os.path.join(folder_path,pf))
+        if final_function_info:
+            resources_rv.update(final_function_info)
+
+
+    return resources_rv
+
 
 
 def _get_module_name_from_path(fp):
@@ -67,10 +95,10 @@ def _find_resources_information_from_file(fp: FilePath) -> List[ResourceModel]:
     function_name_to_resource_model: Dict[str, simple_aws_lambda_function_model ] = {}
 
     for i in dir(mod):
-        if isinstance(getattr(mod,i), Cdev_Resource):
-            # Find all the Cdev_Resources in the module and render them
+        if isinstance(getattr(mod,i), Resource):
+            # Find all the Resources in the module and render them
             obj = getattr(mod,i)
-            log.info(f"FOUND {obj} as Cdev_Resource in {mod}")
+            log.info(f"FOUND {obj} as Resource in {mod}")
 
             if isinstance(obj, simple_lambda):
                 log.info(f"FOUND FUNCTION TO PARSE {obj}")
@@ -167,28 +195,3 @@ def _clean_function_name(potential_name: str) -> str:
     return potential_name.replace(" ", "_")
 
 
-
-def parse_folder(folder_path, prefix=None) -> List[ResourceModel]:
-    """
-    This function takes a folder and goes through it looking for cdev resources. Specifically, it loads all available python files
-    and uses the loaded module to determine the resources defined in the files. Most resources are simple, but there is extra work
-    needed to handle the serverless functions. Serverless functions are parsed to optimized the actual deployed artifact using the 
-    cparser library.
-    """
-    if not os.path.isdir(folder_path):
-        return None
-
-    python_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f)) and f[-3:]==".py"]
-
-
-    # [{<resource>}]
-    rv = SortedKeyList(key=lambda x: x.hash)
-
-
-    for pf in python_files:
-        final_function_info = _find_resources_information_from_file(os.path.join(folder_path,pf))
-        if final_function_info:
-            rv.update(final_function_info)
-
-
-    return list(rv)

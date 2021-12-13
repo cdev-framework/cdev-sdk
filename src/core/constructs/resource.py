@@ -5,6 +5,8 @@ from enum import Enum
 
 from pydantic import BaseModel
 
+from src.core.utils.hasher import hash_list
+
 
 class ResourceModel(BaseModel):
     """
@@ -96,14 +98,11 @@ class ResourceReferenceModel(BaseModel):
     instead of update. 
     """
 
-    hash: Optional[str]
+    hash: str
     """
     This is a hash that is used to identify if changes in the resources have occurred. It should have the property:
     - This value changes only if a there is a change in the resource. 
     """
-
-
-
 
     is_in_parent_resource_state: Optional[bool]
     """
@@ -132,8 +131,17 @@ class Resource_Reference_Change_Type(str, Enum):
 class Resource_Difference(BaseModel):
     action_type: Resource_Change_Type
     component_uuid: str
-    previous_resource: Union[ResourceModel, None]
-    new_resource: Union[ResourceModel, None]
+    previous_resource:  Optional[ResourceModel]
+    new_resource: Optional[ResourceModel]
+
+    def __init__(__pydantic_self__, action_type: Resource_Change_Type, component_uuid: str, previous_resource: ResourceModel=None, new_resource: ResourceModel=None) -> None:
+        super().__init__({
+            "action_type": action_type,
+            "component_uuid": component_uuid,
+            "previous_resource": previous_resource,
+            "new_resource": new_resource,
+        })
+
 
     class Config:  
         use_enum_values = True
@@ -142,6 +150,12 @@ class Resource_Difference(BaseModel):
 class Resource_Reference_Difference(BaseModel):
     action_type: Resource_Reference_Change_Type
     resource_reference: ResourceReferenceModel
+
+    def __init__(__pydantic_self__, action_type: Resource_Reference_Change_Type, resource_reference: ResourceReferenceModel) -> None:
+        super().__init__(**{
+            "action_type": action_type,
+            "resource_reference": resource_reference,
+        })
 
     class Config:  
         use_enum_values = True
@@ -188,11 +202,13 @@ class Resource():
 
 
 
-class Referenced_Resource():
+class Resource_Reference():
     RUUID: str = None
 
-    def __init__(self, component_name: str, name: str, hash: str=None, is_in_parent_resource_state: bool = False):
-        raise NotImplementedError
+    def __init__(self, component_name: str, name: str, is_in_parent_resource_state: bool = False):
+        self.component_name = component_name
+        self.name = name
+        self.is_in_parent_resource_state = is_in_parent_resource_state
     
 
     def render(self) -> ResourceReferenceModel:
@@ -201,3 +217,7 @@ class Referenced_Resource():
 
     def from_output(key: str) -> Cloud_Output:
         raise NotImplementedError
+
+    
+    def compute_hash(self) -> str:
+        return hash_list([self.component_name, self.RUUID, self.name, str(self.is_in_parent_resource_state)])

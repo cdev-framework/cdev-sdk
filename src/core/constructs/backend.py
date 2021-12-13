@@ -109,6 +109,10 @@ class Backend():
         raise NotImplementedError
 
 
+    def get_component(self, resource_state_uuid: str, component_name: str) -> ComponentModel:
+        raise NotImplementedError 
+
+
     # Api for changing individual Resources
     # The resource state needs to know when a mapper will be attempting to update a cdev resource. It is in charge of
     # determing if the current resource state is capable of handling a change in the resource. 

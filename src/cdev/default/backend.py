@@ -1,20 +1,22 @@
 import json
 import os
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Tuple
 import uuid
 
 from core.constructs.backend import Backend_Configuration, Backend
-from core.constructs.components import Component, ComponentModel
-from core.constructs.resource import Resource_Change_Type, Resource_Difference, ResourceModel
+from core.constructs.components import Component_Change_Type, ComponentModel, Component_Difference
+from core.constructs.resource import Resource_Change_Type, Resource_Difference, Resource_Reference_Change_Type, ResourceModel, Resource_Reference_Difference, ResourceReferenceModel
 from core.constructs.resource_state import Resource_State
 from core.settings import SETTINGS as cdev_settings
-from core.utils import hasher as cdev_hasher
+from core.utils import hasher as cdev_hasher, logger
 from pydantic.main import BaseModel
 from pydantic.types import DirectoryPath, FilePath
 
 
 DEFAULT_CENTRAL_STATE_FOLDER = os.path.join(cdev_settings.get('ROOT_FOLDER_NAME'), "state")
 DEFAULT_CENTRAL_STATE_FILE = os.path.join(DEFAULT_CENTRAL_STATE_FOLDER, "local_state.json")
+
+log = logger.get_cdev_logger(__name__)
 
 class Local_Backend_Configuration(Backend_Configuration):
     def __init__(self, config: Dict) -> None:
@@ -167,7 +169,7 @@ class LocalBackend(Backend):
             rv.append(self.load_resource_state(resource_id))
 
         return rv
-            
+
 
     # Components
     def create_component(self, resource_state_uuid: str, component_name: str):
@@ -212,6 +214,24 @@ class LocalBackend(Backend):
         self._write_resource_state_file(resource_state, resource_state_file_location)
         
 
+    def get_component(self, resource_state_uuid: str, component_name: str) -> ComponentModel:
+        try:
+            resource_state = self.load_resource_state(resource_state_uuid)
+
+        except Exception as e:
+            # Wrap in more informative error
+            raise e 
+
+
+        if not component_name in set(x.name for x in resource_state.components):
+            # Component of that name does not exists
+            raise Exception
+
+    
+        return next([x for x in resource_state.components if x.name == component_name])
+
+
+    # Resource Changes
     def create_resource_change(self, resource_state_uuid: str, component_name: str, diff: Resource_Difference) -> str:
         try:
             resource_state = self.load_resource_state(resource_state_uuid)
@@ -279,112 +299,6 @@ class LocalBackend(Backend):
         resource_state.failed_changes[transaction_token] = (component_name, diff, failed_state)
 
         self._write_resource_state_file(resource_state, resource_state_file_location)
-
-
-    def get_resource_by_name(self, resource_state_uuid: str, component_name: str, resource_type: str, resource_name: str) -> ResourceModel:
-        try:
-            resource_state = self.load_resource_state(resource_state_uuid)
-            
-        except Exception as e:
-            # Wrap in more informative error
-            raise e 
-
-        component = next((x for x in resource_state.components if x.name == component_name), None)
-
-        if not component:
-            raise Exception
-
-        resource =  next((x for x in component.rendered_resources if x.ruuid == resource_type and x.name == resource_name), None)
-
-        if not resource:
-            raise Exception
-
-        return resource
-
-
-    def get_resource_by_hash(self, resource_state_uuid: str, component_name: str, resource_type: str, resource_hash: str) -> ResourceModel:
-        try:
-            resource_state = self.load_resource_state(resource_state_uuid)
-        except Exception as e:
-            # Wrap in more informative error
-            raise e 
-
-        component = next((x for x in resource_state.components if x.name == component_name), None)
-
-        if not component:
-            raise Exception
-
-        resource =  next((x for x in component.rendered_resources if x.ruuid == resource_type and x.hash == resource_hash), None)
-
-        if not resource:
-            raise Exception
-
-
-        return resource
-
-    
-    def get_cloud_output_value_by_name(self, resource_state_uuid: str, component_name: str, resource_type: str, resource_name: str, key: str) -> Any:
-        try:
-            resource_state = self.load_resource_state(resource_state_uuid)
-
-        except Exception as e:
-            # Wrap in more informative error
-            raise e 
-
-        component = next((x for x in resource_state.components if x.name == component_name), None)
-
-        if not component:
-            raise Exception
-
-        resource =  next((x for x in component.rendered_resources if x.ruuid == resource_type and x.name == resource_name), None)
-
-        if not resource:
-            raise Exception
-
-        cloud_output_id = self._get_cloud_output_id(resource)
-
-        if not cloud_output_id in component.cloud_output:
-            raise Exception
-
-        cloud_output = component.cloud_output.get(cloud_output_id)
-
-        if not key in cloud_output:
-            raise Exception
-
-        return cloud_output.get(key)
-
-    
-    def get_cloud_output_value_by_hash(self, resource_state_uuid: str, component_name: str, resource_type: str, resource_hash: str, key: str) -> Any:
-        try:
-            resource_state = self.load_resource_state(resource_state_uuid)
-        except Exception as e:
-            # Wrap in more informative error
-            raise e 
-
-        component = next((x for x in resource_state.components if x.name == component_name), None)
-
-        if not component:
-            raise Exception
-
-        resource =  next((x for x in component.rendered_resources if x.ruuid == resource_type and x.hash == resource_hash), None)
-
-        if not resource:
-            raise Exception
-
-
-        cloud_output_id = self._get_cloud_output_id(resource)
-
-
-        if not cloud_output_id in component.cloud_output:
-            raise Exception
-
-    
-        cloud_output = component.cloud_output.get(cloud_output_id)
-
-        if not key in cloud_output:
-            raise Exception
-
-        return cloud_output.get(key)
 
 
     def change_failed_state_of_resource_change(self, resource_state_uuid: str, transaction_token: str, new_failed_state: Dict):
@@ -457,6 +371,131 @@ class LocalBackend(Backend):
         self._write_resource_state_file(resource_state, resource_state_file_location)
 
 
+    # Get resources and cloud output
+    def get_resource_by_name(self, resource_state_uuid: str, component_name: str, resource_type: str, resource_name: str) -> ResourceModel:
+        try:
+            resource_state = self.load_resource_state(resource_state_uuid)
+            
+        except Exception as e:
+            # Wrap in more informative error
+            raise e 
+
+        component = next((x for x in resource_state.components if x.name == component_name), None)
+
+        if not component:
+            raise Exception
+
+        resource =  next((x for x in component.resources if x.ruuid == resource_type and x.name == resource_name), None)
+
+        if not resource:
+            raise Exception
+
+        return resource
+
+
+    def get_resource_by_hash(self, resource_state_uuid: str, component_name: str, resource_type: str, resource_hash: str) -> ResourceModel:
+        try:
+            resource_state = self.load_resource_state(resource_state_uuid)
+        except Exception as e:
+            # Wrap in more informative error
+            raise e 
+
+        component = next((x for x in resource_state.components if x.name == component_name), None)
+
+        if not component:
+            raise Exception
+
+        resource =  next((x for x in component.resources if x.ruuid == resource_type and x.hash == resource_hash), None)
+
+        if not resource:
+            raise Exception
+
+
+        return resource
+
+    
+    def get_cloud_output_value_by_name(self, resource_state_uuid: str, component_name: str, resource_type: str, resource_name: str, key: str) -> Any:
+        try:
+            resource_state = self.load_resource_state(resource_state_uuid)
+
+        except Exception as e:
+            # Wrap in more informative error
+            raise e 
+
+        component = next((x for x in resource_state.components if x.name == component_name), None)
+
+        if not component:
+            raise Exception
+
+        resource =  next((x for x in component.resources if x.ruuid == resource_type and x.name == resource_name), None)
+
+        if not resource:
+            raise Exception
+
+        cloud_output_id = self._get_cloud_output_id(resource)
+
+        if not cloud_output_id in component.cloud_output:
+            raise Exception
+
+        cloud_output = component.cloud_output.get(cloud_output_id)
+
+        if not key in cloud_output:
+            raise Exception
+
+        return cloud_output.get(key)
+
+    
+    def get_cloud_output_value_by_hash(self, resource_state_uuid: str, component_name: str, resource_type: str, resource_hash: str, key: str) -> Any:
+        try:
+            resource_state = self.load_resource_state(resource_state_uuid)
+        except Exception as e:
+            # Wrap in more informative error
+            raise e 
+
+        component = next((x for x in resource_state.components if x.name == component_name), None)
+
+        if not component:
+            raise Exception
+
+        resource =  next((x for x in component.resources if x.ruuid == resource_type and x.hash == resource_hash), None)
+
+        if not resource:
+            raise Exception
+
+
+        cloud_output_id = self._get_cloud_output_id(resource)
+
+
+        if not cloud_output_id in component.cloud_output:
+            raise Exception
+
+    
+        cloud_output = component.cloud_output.get(cloud_output_id)
+
+        if not key in cloud_output:
+            raise Exception
+
+        return cloud_output.get(key)
+
+
+    def create_differences(self, resource_state_uuid: str, new_components: List[ComponentModel], old_components: List[str]) -> Tuple[Component_Difference, Resource_Reference_Difference, Resource_Difference]:
+        previous_state = self.load_resource_state(resource_state_uuid)
+        log.info(f"previous local state -> {previous_state}")
+
+        if not previous_state:
+            #raise Cdev_Error(f"no previous local state. Run `cdev init` to solve issue.")
+            raise Exception
+
+
+        try:
+            # Load the previous components
+            previous_components: List[ComponentModel] = [self.get_component(x) for x in old_components]
+        except Exception as e:
+            raise e
+
+        return _create_differences(new_components, previous_components)
+        
+
     def _update_component(self, component: ComponentModel, diff: Resource_Difference, cloud_output: Dict=None) -> ComponentModel:
         """
         Apply a resource difference over a component model and return the updated component model
@@ -471,7 +510,7 @@ class LocalBackend(Backend):
 
         """
         if diff.action_type == Resource_Change_Type.DELETE:
-            component.rendered_resources = [x for x in component.rendered_resources if x.ruuid == diff.previous_resource.ruuid and x.name == diff.previous_resource.name]
+            component.resources = [x for x in component.resources if x.ruuid == diff.previous_resource.ruuid and x.name == diff.previous_resource.name]
 
             # remove the previous resource's cloud output
             previous_resource_cloud_output_id = self._get_cloud_output_id(diff.previous_resource)
@@ -481,7 +520,7 @@ class LocalBackend(Backend):
 
         elif diff.action_type == Resource_Change_Type.UPDATE_IDENTITY or diff.action_type == Resource_Change_Type.UPDATE_NAME:
             
-            component.rendered_resources = [x for x in component.rendered_resources if x.ruuid == diff.previous_resource.ruuid and x.name == diff.previous_resource.name].append(diff.new_resource)
+            component.resources = [x for x in component.resources if x.ruuid == diff.previous_resource.ruuid and x.name == diff.previous_resource.name].append(diff.new_resource)
             
             # remove the previous resource's cloud output
             previous_resource_cloud_output_id = self._get_cloud_output_id(diff.previous_resource)
@@ -495,14 +534,14 @@ class LocalBackend(Backend):
                 component.cloud_output[cloud_output_id] = cloud_output
 
         elif diff.action_type == Resource_Change_Type.CREATE:
-            component.rendered_resources.append(diff.new_resource)
+            component.resources.append(diff.new_resource)
         
             if cloud_output:
                 cloud_output_id = self._get_cloud_output_id(diff.new_resource)
                 component.cloud_output[cloud_output_id] = cloud_output
 
         # recompute hash
-        component.hash = self._compute_component_hash(component)
+        component.hash = _compute_component_hash(component)
 
         return component
 
@@ -520,7 +559,11 @@ class LocalBackend(Backend):
         return f"{resource.ruuid};{resource.name}"
 
 
-    def _compute_component_hash(component: ComponentModel) -> str:
+    
+
+
+# Helper functions
+def _compute_component_hash(component: ComponentModel) -> str:
         """
         Uniform way of computing a component's identity hash
 
@@ -530,9 +573,248 @@ class LocalBackend(Backend):
         Returns:
             hash (str): identity hash for the component
         """
-        resources = [x for x in component.rendered_resources]
+        resources = [x for x in component.resources]
         resources.sort(key=lambda x: x.name)
 
         resource_hashes = [x.hash for x in resources]
 
-        return cdev_hasher.hash_list(resource_hashes)
+
+        references = [x for x in component.references]
+        references.sort(key=lambda x: x.hash)
+
+        references_hashes = [x.hash for x in references]
+
+        all_hashes = references_hashes + resource_hashes
+
+        return cdev_hasher.hash_list(all_hashes)
+
+
+def _create_resource_diffs(new_resources: List[ResourceModel], old_resource: List[ResourceModel]) -> List[Resource_Difference]:
+    
+    if old_resource:
+        # build map<hash,resource>
+        old_hash_to_resource: Dict[str, ResourceModel] = {x.hash: x for x in old_resource}
+        # build map<name,resource>
+        old_name_to_resource: Dict[str, ResourceModel] = {x.name: x for x in old_resource}
+    else:
+        old_hash_to_resource = {}
+        old_name_to_resource = {}
+
+    log.debug(f"old_hash_to_resource -> {old_hash_to_resource}")
+    log.debug(f"old_name_to_resource -> {old_name_to_resource}")
+
+    rv = []
+    for resource in new_resources:
+        if resource.hash in old_hash_to_resource and resource.name in old_name_to_resource:
+            
+            log.info(f"same resource diff {old_hash_to_resource.get(resource.hash).name}")
+            # POP the seen previous resources as we go so only remaining resources will be deletes
+            old_resource.remove(old_hash_to_resource.get(resource.hash))
+            continue
+
+        elif resource.hash in old_hash_to_resource and not resource.name in old_name_to_resource:
+            print(f"update resource diff {old_hash_to_resource.get(resource.hash)} name {old_hash_to_resource.get(resource.hash).name} -> {resource.name}")
+            rv.append(Resource_Difference(
+                **{
+                    "action_type": Resource_Change_Type.UPDATE_NAME,
+                    "previous_resource": old_hash_to_resource.get(resource.hash),
+                    "new_resource": resource
+                }
+            ))
+            # POP the seen previous resources as we go so only remaining resources will be deletes
+            old_resource.remove(old_hash_to_resource.get(resource.hash))
+
+        elif not resource.hash in old_hash_to_resource and resource.name in old_name_to_resource:
+            log.info(f"update resource diff {old_name_to_resource.get(resource.name)} hash {old_name_to_resource.get(resource.name).hash} -> {resource.hash}")
+            rv.append(Resource_Difference(
+                **{
+                    "action_type": Resource_Change_Type.UPDATE_IDENTITY,
+                    "previous_resource": old_name_to_resource.get(resource.name),
+                    "new_resource": resource
+                }
+            ))
+            # POP the seen previous resources as we go so only remaining resources will be deletes
+            old_resource.remove(old_name_to_resource.get(resource.name))
+
+        elif not resource.hash in old_hash_to_resource and not resource.name in old_name_to_resource:
+            log.info(f"create resource diff {resource}")
+            rv.append(Resource_Difference(
+                **{
+                    "action_type": Resource_Change_Type.CREATE,
+                    "previous_resource": None,
+                    "new_resource": resource
+                }
+            ))
+
+    if old_resource:
+        for resource in old_resource:
+            log.info(f"delete resource diff {resource}")
+            rv.append(Resource_Difference(
+                    **{
+                        "action_type": Resource_Change_Type.DELETE,
+                        "previous_resource": resource,
+                        "new_resource": None
+                    }
+                )
+            )
+
+    return rv
+
+
+def _create_reference_diffs(new_references: List[ResourceReferenceModel], old_references: List[ResourceReferenceModel]) -> List[Resource_Reference_Difference]:
+    
+    if old_references:
+        # build map<name,resource>
+        old_name_to_references: Dict[str, ResourceReferenceModel] = {x.hash: x for x in old_references}
+    else:
+        old_name_to_references = {}
+
+    log.debug(f"old_name_to_resource -> {old_name_to_references}")
+
+    rv = []
+    for reference in new_references:
+       
+        if reference.hash in old_name_to_references:
+            # POP the seen previous resources as we go so only remaining resources will be deletes
+            old_references.remove(old_name_to_references.get(reference.hash))
+            
+        else:
+            rv.append(
+                Resource_Reference_Difference(
+                    Resource_Reference_Change_Type.CREATE,
+                    reference
+                )
+            )
+
+    for old_reference in old_references:
+        log.info(f"delete resource diff {old_reference}")
+        rv.append(
+            Resource_Reference_Difference(
+                Resource_Reference_Change_Type.DELETE,
+                old_reference
+            )
+        )
+
+    return rv
+
+
+def _create_differences(new_components: List[ComponentModel], previous_components: List[ComponentModel]) -> Tuple[Component_Difference, Resource_Reference_Difference, Resource_Difference]:
+    
+    component_diffs = []
+    resource_diffs = []
+    reference_diffs = []
+
+    if previous_components:
+        # build map<hash,resource>
+        previous_hash_to_component = {x.hash: x for x in previous_components}
+        # build map<name,resource>
+        previous_name_to_component = {x.name: x for x in previous_components}
+        previous_components_to_remove = [x for x in previous_components]
+    else:
+        previous_hash_to_component = {}
+        previous_name_to_component = {}
+        previous_components_to_remove = []
+
+    log.debug(f"previous_hash_to_component -> {previous_hash_to_component}")
+    log.debug(f"previous_name_to_component -> {previous_name_to_component}")
+
+
+    if new_components:
+        for component in new_components:
+
+            if not component.hash in previous_hash_to_component and not component.name in previous_name_to_component:
+                # Create component and all resources and all references 
+                log.info(f"CREATE COMPONENT -> {component.name}")
+                component_diffs.append( 
+                    Component_Difference(
+                        Component_Change_Type.CREATE,
+                        new_name=component.name
+                    )
+                )
+
+                tmp_resource_diff = _create_resource_diffs(component.resources,[])
+                resource_diffs.extend( tmp_resource_diff )
+
+                tmp_reference_diff = _create_reference_diffs(component.references, [])
+                reference_diffs.extend(tmp_reference_diff)
+                        
+
+            elif component.hash in previous_hash_to_component and component.name in previous_name_to_component:
+                # Since the hash is the same we can infer all the resource hashes and reference hashes are the same
+                # Even though the hash has remained the same we need to check for name changes in the resources
+
+                previous_component = previous_name_to_component.get(component.name)
+
+                # Should only output resource name changes
+                tmp_resource_diff = _create_resource_diffs(component.resources, previous_component.resources)
+
+                if any([not x.action_type == Resource_Change_Type.UPDATE_NAME for x in tmp_resource_diff]):
+                    # if there is a resource change that is not an update name raise an exception
+                    raise Exception
+
+                resource_diffs.extend(tmp_resource_diff)
+
+                # POP the seen previous component as we go so only remaining resources will be deletes
+                previous_components_to_remove.remove(previous_component)
+
+            elif component.hash in previous_hash_to_component and not component.name in previous_name_to_component:
+                # hash of the component has stayed the same but the user has renamed the component name
+                # Even though the hash has remained the same we need to check for name changes in the resources
+                previous_component = previous_hash_to_component.get(component.hash)
+
+                component_diffs.append(
+                    Component_Difference(
+                        Component_Change_Type.UPDATE_NAME,
+                        previous_name=previous_component.name,
+                        new_name=component.name
+                    )
+                )
+
+                # Should only output resource name changes
+                tmp_resource_diff = _create_resource_diffs(component.resources, previous_component.resources)
+
+                if any([not x.action_type == Resource_Change_Type.UPDATE_NAME for x in tmp_resource_diff]):
+                    # if there is a resource change that is not an update name raise an exception
+                    raise Exception
+
+                resource_diffs.extend(tmp_resource_diff)
+
+
+                # POP the seen previous component as we go so only remaining resources will be deletes
+                previous_components_to_remove.remove(previous_component)
+
+            elif not component.hash in previous_hash_to_component and component.name in previous_name_to_component:
+                # hash of the component has changed but not the name
+                # This means a resource or reference has updated its identity hash
+                previous_component = previous_name_to_component.get(component.name)
+
+                tmp_resource_diff = _create_resource_diffs(component.resources, previous_component.resources)
+                resource_diffs.extend(tmp_resource_diff)
+
+                tmp_reference_diff = _create_reference_diffs(component.references, previous_component.references)
+                reference_diffs.extend(tmp_reference_diff)
+
+            
+                # POP the seen previous component as we go so only remaining resources will be deletes
+                previous_components_to_remove.remove(previous_component)
+
+
+    
+    for removed_component in previous_components_to_remove:
+
+        component_diffs.append(
+            Component_Difference(
+                Component_Change_Type.DELETE,
+                previous_name=removed_component.name,
+            )
+        )
+
+        tmp_resource_diff = _create_resource_diffs([], removed_component.resources)
+        resource_diffs.extend(tmp_resource_diff)
+
+
+        tmp_reference_diff = _create_reference_diffs([], removed_component.references)
+        reference_diffs.extend(tmp_reference_diff)
+
+
+    return component_diffs, reference_diffs, resource_diffs

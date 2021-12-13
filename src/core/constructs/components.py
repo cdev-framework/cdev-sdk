@@ -76,6 +76,13 @@ class Component_Difference(BaseModel):
     previous_name: Optional[str]
     new_name: Optional[str]
 
+    def __init__(__pydantic_self__, action_type: Component_Change_Type, previous_name: str=None, new_name: str=None) -> None:
+        super().__init__(**{
+            "action_type": action_type,
+            "previous_name": previous_name,
+            "new_name": new_name
+        })
+
     class Config:  
         use_enum_values = True
 
