@@ -3,14 +3,13 @@ import sys
 
 sys.path.append(os.path.join("."))
 
-import src.cdev.cparser.cdev_parser as cp
 
 EXAMPLE_PATH = os.path.join(".", "tests", "example_python_files")
 
 ADVANCED_PATH = os.path.join(EXAMPLE_PATH, "advanced")
 SIMPLE_PATH = os.path.join(EXAMPLE_PATH, "simple")
 
-def test_example1_all_functions():
+""" def test_example1_all_functions():
     test_file_name = "example1.py"
     fp = os.path.join(ADVANCED_PATH , test_file_name)
 
@@ -100,4 +99,4 @@ def test_import_symbols_basic():
         assert rv.parsed_functions[0].get_line_numbers() == [[1,1], [2,4], [5,9]]
 
     except Exception as e:
-        assert False
+        assert False """

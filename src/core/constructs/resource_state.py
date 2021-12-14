@@ -22,6 +22,11 @@ class Resource_State(BaseModel):
     Unique identifier for this state
     """
 
+    components: List[ComponentModel]
+    """
+    The list of components owned by this namespace
+    """
+
     parent_uuid: Optional[str]
     """
     The parent namespace above this one
@@ -32,17 +37,12 @@ class Resource_State(BaseModel):
     Child namespaces of this one
     """
 
-    components: List[ComponentModel]
-    """
-    The list of components owned by this namespace
-    """
-
-    resource_changes: Dict[str, Tuple[str, Resource_Difference]]
+    resource_changes: Optional[Dict[str, Tuple[str, Resource_Difference]]]
     """
     A dictionary of transaction tokens to a tuple of (component_name, diff)
     """
 
-    failed_changes: Dict[str, Tuple[str, Resource_Difference, Dict]]
+    failed_changes: Optional[Dict[str, Tuple[str, Resource_Difference, Dict]]]
     """
     A dictionary of transaction tokens to a tuple of (component_name, diff, error_info) for the changes that failed
     """
@@ -59,3 +59,4 @@ class Resource_State(BaseModel):
             "resource_changes": resource_changes,
             "failed_changes": failed_changes
         })
+    

@@ -1,4 +1,4 @@
-from cdev.default.fs_manager import external_dependencies_index 
+""" from cdev.default.fs_manager import external_dependencies_index 
 from cdev.default.fs_manager.utils import ModulePackagingInfo, PackageTypes
 
  
@@ -165,4 +165,4 @@ complex_index = external_dependencies_index.compute_index(complex_graph, 2)
 
 print(complex_index)
 
-print(f"----------------------")
+print(f"----------------------") """

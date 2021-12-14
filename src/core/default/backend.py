@@ -16,8 +16,8 @@ from ..utils import hasher as cdev_hasher, logger
 
 
 
-DEFAULT_CENTRAL_STATE_FOLDER = os.path.join(cdev_settings.get('ROOT_FOLDER_NAME'), "state")
-DEFAULT_CENTRAL_STATE_FILE = os.path.join(DEFAULT_CENTRAL_STATE_FOLDER, "local_state.json")
+DEFAULT_BASE = os.path.join(cdev_settings.get('ROOT_FOLDER_NAME'), "state")
+DEFAULT_CENTRAL_STATE_FILE = os.path.join(DEFAULT_BASE, "local_state.json")
 
 log = logger.get_cdev_logger(__name__)
 
@@ -69,23 +69,23 @@ class LocalBackend(Backend):
         """
     
 
-        base_folder = base_folder if base_folder else DEFAULT_CENTRAL_STATE_FOLDER
-        central_state_file = central_state_file if central_state_file else DEFAULT_CENTRAL_STATE_FOLDER
+        self.base_folder = base_folder if base_folder else DEFAULT_BASE
+        self.central_state_file = central_state_file if central_state_file else DEFAULT_CENTRAL_STATE_FILE
 
-        if not os.path.isdir(base_folder):
+        if not os.path.isdir(self.base_folder):
             print(f"ERROR HERE")
             raise Exception
 
-        if not os.path.isfile(central_state_file):
+        if not os.path.isfile(self.central_state_file):
             self._central_state = LocalCentralFile({}, [], [])
 
         else:
-            with open(central_state_file, 'r') as fh:
+            with open(self.central_state_file, 'r') as fh:
                 self._central_state = LocalCentralFile(**json.load(fh))
 
         
     def _write_central_file(self):
-        with open(DEFAULT_CENTRAL_STATE_FILE, 'w') as fh:
+        with open(self.central_state_file, 'w') as fh:
             json.dump(self._central_state.dict(), fh, indent=4)
 
 
@@ -95,7 +95,7 @@ class LocalBackend(Backend):
         
 
     # Api for working with Resource States
-    def create_resource_state(self, parent_resource_state_uuid: str, name: str) -> str:
+    def create_resource_state(self, name: str, parent_resource_state_uuid: str=None)  -> str:
         # Create the new resource state 
         if name in set(self._central_state.resource_state_names):
             raise Exception("Creating resource state with taken name")
@@ -109,7 +109,7 @@ class LocalBackend(Backend):
         else:
             new_resource_state = Resource_State(name=name, uuid=resource_state_uuid, components=[], parent_uuid=parent_resource_state_uuid)
 
-        filename = os.path.join(DEFAULT_CENTRAL_STATE_FOLDER, f"resource_state_{new_resource_state.uuid}.json")
+        filename = os.path.join(self.base_folder, f"resource_state_{new_resource_state.uuid}.json")
 
         self._central_state.resource_state_locations[new_resource_state.uuid] = filename
         self._central_state.resource_state_names.append(new_resource_state.name)
@@ -232,7 +232,7 @@ class LocalBackend(Backend):
             raise Exception
 
     
-        return next([x for x in resource_state.components if x.name == component_name])
+        return next(x for x in resource_state.components if x.name == component_name)
 
 
     # Resource Changes

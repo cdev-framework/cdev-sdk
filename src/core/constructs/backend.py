@@ -38,7 +38,7 @@ class Backend():
         raise NotImplementedError
 
     # Api for working with Resource States
-    def create_resource_state(self, parent_resource_state_uuid: str, name: str) -> str:
+    def create_resource_state(self, name: str, parent_resource_state_uuid: str=None) -> str:
         """
         Create a new resource state within this stored state. 
 
