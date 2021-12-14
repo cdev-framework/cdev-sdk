@@ -12,7 +12,7 @@ from .utils import PackageTypes, ModulePackagingInfo, ExternalDependencyWriteInf
 from zipfile import ZipFile
 from cdev.settings import SETTINGS as cdev_settings
 from cdev.utils import paths as cdev_paths, hasher as cdev_hasher
-from cdev.resources.simple.xlambda import LambdaLayerArn, LambdaLayerArtifact
+from cdev.resources.simple.xlambda import LambdaLayerArn, DependencyLayer
 import json
 import shutil
 import heapq
@@ -104,7 +104,7 @@ def create_full_deployment_package(original_path : FilePath, needed_lines: List[
             print(f"composite layers -> {composite_layer}")
 
             archive_dir = os.path.join(INTERMEDIATE_FOLDER, os.path.dirname(parsed_path))
-            dependencies_info: List[LambdaLayerArtifact] = []
+            dependencies_info: List[DependencyLayer] = []
             #dependencies_info = _make_layers_zips(archive_dir, filename[:-3], layer_dependencies )
 
             if single_dependency_layers:
@@ -464,7 +464,7 @@ def _make_intermediate_handler_zip(zip_archive_location: str, paths: List[FilePa
     return cdev_hasher.hash_list(hashes)
 
 
-def _make_single_dependency_archive( module_info: ModulePackagingInfo, archive_dir: DirectoryPath) -> LambdaLayerArtifact:
+def _make_single_dependency_archive( module_info: ModulePackagingInfo, archive_dir: DirectoryPath) -> DependencyLayer:
     needed_info: List[ExternalDependencyWriteInfo]  = []
     print(f"Making single dependency {module_info}")
 
@@ -500,7 +500,7 @@ def _make_single_dependency_archive( module_info: ModulePackagingInfo, archive_d
     # convert to json string then back to python object because it has a Filepath type in it and that is always handled weird. 
     #LAYER_CACHE.add_item(_id_hashes, (archive_path, archive_hash))
 
-    rv = LambdaLayerArtifact(**{
+    rv = DependencyLayer(**{
         "name": layer_name,
         "artifact_path": archive_path 
     })
@@ -509,7 +509,7 @@ def _make_single_dependency_archive( module_info: ModulePackagingInfo, archive_d
 
 
 
-def _make_composite_dependency_archive(module_info: List[ModulePackagingInfo], archive_dir: DirectoryPath) -> LambdaLayerArtifact:
+def _make_composite_dependency_archive(module_info: List[ModulePackagingInfo], archive_dir: DirectoryPath) -> DependencyLayer:
     needed_info: Set[ExternalDependencyWriteInfo]  = set()
 
     print(f"Making Composite layer")
@@ -546,7 +546,7 @@ def _make_composite_dependency_archive(module_info: List[ModulePackagingInfo], a
     # convert to json string then back to python object because it has a Filepath type in it and that is always handled weird. 
     #LAYER_CACHE.add_item(_id_hashes, (archive_path, archive_hash))
 
-    rv = LambdaLayerArtifact(**{
+    rv = DependencyLayer(**{
         "name": layer_name,
         "artifact_path": archive_path 
     })

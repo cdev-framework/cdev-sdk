@@ -4,13 +4,13 @@ import os
 import sys
 from typing import List, Tuple, Union
 
-from ..management.base import BaseCommand, BaseCommandContainer
+from ..constructs.commands import BaseCommand, BaseCommandContainer
 
 
 from . import logger
 
 
-log = logger.get_cdev_logger(__name__)
+#log = logger.get_cdev_logger(__name__)
 
 
 COMMANDS_DIR = "commands"

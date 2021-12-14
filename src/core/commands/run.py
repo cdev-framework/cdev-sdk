@@ -1,4 +1,4 @@
-from ..management.base import BaseCommand, BaseCommandContainer
+from ..constructs.commands import BaseCommand, BaseCommandContainer
 
 from ..constructs.workspace import Workspace
 
@@ -23,29 +23,13 @@ def run_command(args):
     cli_args = params.get("args") if params.get("args") else []
     
     try:
-        obj, program_name, command_name, is_command = WORKSPACE.find_command(sub_command)
+        WORKSPACE.execute_command(sub_command, cli_args)
     except Exception as e:
         print(e)
         return
         
 
-    try:
-        if is_command:
-            if not isinstance(obj, BaseCommand):
-                # Error message
-                return
-
-            args = [program_name, command_name, *cli_args]
-            obj.run_from_command_line(args)
-        else:
-            if not isinstance(obj, BaseCommandContainer):
-                # Error message
-                print(f"ERROR IN INSTANCE CHECK {type(obj)}")
-                return
-            obj.display_help_message()
-            print(f"printed messeage")
-    except Exception as e:
-        raise e
+    
     
 
 

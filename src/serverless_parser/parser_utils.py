@@ -8,7 +8,7 @@ from pydantic.types import DirectoryPath, FilePath
 import tokenize 
 
 from .parser_objects import *
-from .cdev_parser_exceptions import InvalidParamError, CouldNotParseFileError, CdevFileNotFoundError, InvalidDataError
+from .parser_exceptions import InvalidParamError, CouldNotParseFileError, CdevFileNotFoundError, InvalidDataError
 
 EXCLUDED_SYMBOLS = set(["os", "print", "sss"])
 

@@ -4,7 +4,7 @@ import sys
 from typing import Dict, Tuple, Any, List
 from pydantic import BaseModel
 
-from src.core.constructs.components import Component_Difference, ComponentModel
+from .components import Component_Difference, ComponentModel
 
 from .resource import Resource_Reference_Difference, ResourceModel, Resource_Difference
 from .resource_state import Resource_State

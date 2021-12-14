@@ -24,12 +24,16 @@ class cdev_logger:
         fp = log_info.get("handlers").get("fileHandler").get("filename")
         
         if not os.path.isfile(fp):
+            if not os.path.isdir(os.path.dirname(os.path.dirname(fp))):
+                os.mkdir(os.path.dirname(os.path.dirname(fp)))
             
-            os.mkdir(os.path.dirname(os.path.dirname(fp)))
-            os.mkdir(os.path.dirname(fp))
+            if not os.path.isdir(os.path.dirname(fp)):  
+                os.mkdir(os.path.dirname(fp))
+            
+            
             with open(fp, 'a'):
                 os.utime(fp,None)
-        #
+        
         logging.config.dictConfig(log_info)
         self._json_logger = logging.getLogger(module_name)
         self._simple_logger = logging.getLogger(f"{module_name}_simple")

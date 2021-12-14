@@ -1,16 +1,19 @@
 import json
 import os
+from pydantic.main import BaseModel
+from pydantic.types import DirectoryPath, FilePath
 from typing import Dict, List, Any, Tuple
 import uuid
 
-from core.constructs.backend import Backend_Configuration, Backend
-from core.constructs.components import Component_Change_Type, ComponentModel, Component_Difference
-from core.constructs.resource import Resource_Change_Type, Resource_Difference, Resource_Reference_Change_Type, ResourceModel, Resource_Reference_Difference, ResourceReferenceModel
-from core.constructs.resource_state import Resource_State
-from core.settings import SETTINGS as cdev_settings
-from core.utils import hasher as cdev_hasher, logger
-from pydantic.main import BaseModel
-from pydantic.types import DirectoryPath, FilePath
+
+
+from ..constructs.backend import Backend_Configuration, Backend
+from ..constructs.components import Component_Change_Type, ComponentModel, Component_Difference
+from ..constructs.resource import Resource_Change_Type, Resource_Difference, Resource_Reference_Change_Type, ResourceModel, Resource_Reference_Difference, ResourceReferenceModel
+from ..constructs.resource_state import Resource_State
+from ..settings import SETTINGS as cdev_settings
+from ..utils import hasher as cdev_hasher, logger
+
 
 
 DEFAULT_CENTRAL_STATE_FOLDER = os.path.join(cdev_settings.get('ROOT_FOLDER_NAME'), "state")
@@ -70,6 +73,7 @@ class LocalBackend(Backend):
         central_state_file = central_state_file if central_state_file else DEFAULT_CENTRAL_STATE_FOLDER
 
         if not os.path.isdir(base_folder):
+            print(f"ERROR HERE")
             raise Exception
 
         if not os.path.isfile(central_state_file):

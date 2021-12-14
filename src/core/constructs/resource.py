@@ -5,7 +5,7 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-from src.core.utils.hasher import hash_list
+from ..utils.hasher import hash_list
 
 
 class ResourceModel(BaseModel):

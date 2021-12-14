@@ -15,10 +15,11 @@ def wrap_initialize_workspace(command: Callable) -> Callable[[Any], Any]:
 
     def wrapped_caller(args):
         try:
+            #print("Calling init workspace")
             initialize_workspace.initialize_workspace_cli(args)
         except Exception as e:
-            print(e)
             print(f"Could not initialize the workspace to call {command}")
+            print(e)
             return
 
         command(args)
@@ -30,9 +31,7 @@ def wrap_initialize_workspace(command: Callable) -> Callable[[Any], Any]:
 def plan_command(args):
     print(f"plan commands")
 
-    myWorkspace = Workspace.instance()
 
-    print(f"is Workspace init -> {myWorkspace.get_state()}")
 
 
 CDEV_COMMANDS = [

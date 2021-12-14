@@ -1,6 +1,6 @@
 import os
 
-from cdev.default import backend
+from core.default import backend
 
 # Monkey patch the file location to be ./tmp
 backend.DEFAULT_CENTRAL_STATE_FOLDER = os.path.join(os.path.dirname(__file__), "tmp")

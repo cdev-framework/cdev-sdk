@@ -8,7 +8,7 @@ from typing import Dict, List, Tuple
 
 from core.constructs.resource import Resource, ResourceModel, ResourceReferenceModel, Resource_Reference
 
-from cdev.resources.simple.xlambda import LambdaLayerArtifact, simple_lambda, simple_aws_lambda_function_model
+from cdev.resources.simple.xlambda import DependencyLayer, simple_lambda, simple_aws_lambda_function_model
 
 from core.utils import hasher, paths, logger
 
@@ -167,9 +167,9 @@ class parsed_serverless_function_info(BaseModel):
     src_code_hash: str
     archivepath: FilePath
     handler: str
-    external_dependencies_info: List[LambdaLayerArtifact]
+    external_dependencies_info: List[DependencyLayer]
 
-    def __init__(__pydantic_self__, src_code_hash: str, archivepath: FilePath, handler: str, external_dependencies_info: List[LambdaLayerArtifact]) -> None:
+    def __init__(__pydantic_self__, src_code_hash: str, archivepath: FilePath, handler: str, external_dependencies_info: List[DependencyLayer]) -> None:
         super().__init__(**{
             "src_code_hash": src_code_hash,
             "archivepath": archivepath,
