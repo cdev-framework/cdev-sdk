@@ -1,5 +1,6 @@
 import importlib
 import os
+from pydantic.main import BaseModel
 from pydantic.types import FilePath
 from sortedcontainers.sortedlist import SortedKeyList
 import sys
@@ -7,11 +8,11 @@ from typing import Dict, List, Tuple
 
 from core.constructs.resource import Resource, ResourceModel, ResourceReferenceModel, Resource_Reference
 
-from cdev.resources.simple.xlambda import simple_lambda, simple_aws_lambda_function_model
+from cdev.resources.simple.xlambda import LambdaLayerArtifact, simple_lambda, simple_aws_lambda_function_model
 
 from core.utils import hasher, paths, logger
 
-from ..cparser import cdev_parser as cparser
+from src.serverless_parser import parser as serverless_parser
 
 
 
@@ -41,7 +42,7 @@ def parse_folder(folder_path, prefix=None) -> Tuple[List[ResourceModel], List[Re
     # [{<resource>}]
     resources_rv = SortedKeyList(key=lambda x: x.hash)
 
-    reference_rv = SortedKeyList(key=lambda x: f"{x.component_name};{x.ruuid};{x.name};{x.is_in_parent_resource_state}")
+    reference_rv = SortedKeyList(key=lambda x: x.hash)
 
 
     for pf in python_files:
@@ -73,7 +74,7 @@ def _get_module_name_from_path(fp):
     return full_module_path_from_project
 
 
-def _find_resources_information_from_file(fp: FilePath) -> List[ResourceModel]:
+def _find_resources_information_from_file(fp: FilePath) -> Tuple[List[ResourceModel], List[ResourceReferenceModel]]:
     # Input: filepath
     if not os.path.isfile(fp):
         print("OH NO")
@@ -89,15 +90,18 @@ def _find_resources_information_from_file(fp: FilePath) -> List[ResourceModel]:
     # When the python file is imported and executed all the Cdev resources are created
     mod = importlib.import_module(mod_name)
     print("-------")
-    rv = []
     
+    resource_rv = []
+    reference_rv = []
+
     functions_to_parse = []
     function_name_to_resource_model: Dict[str, simple_aws_lambda_function_model ] = {}
 
     for i in dir(mod):
-        if isinstance(getattr(mod,i), Resource):
+        obj = getattr(mod,i)
+        if isinstance(obj, Resource):
             # Find all the Resources in the module and render them
-            obj = getattr(mod,i)
+            
             log.info(f"FOUND {obj} as Resource in {mod}")
 
             if isinstance(obj, simple_lambda):
@@ -105,11 +109,15 @@ def _find_resources_information_from_file(fp: FilePath) -> List[ResourceModel]:
                 pre_parsed_info = obj.render()
 
                 functions_to_parse.append(pre_parsed_info.configuration.Handler)
-                function_name_to_resource_model[_clean_function_name(pre_parsed_info.configuration.Handler)] = pre_parsed_info
+                function_name_to_resource_model[pre_parsed_info.configuration.Handler] = pre_parsed_info
                 log.info(f"PREPROCESS {pre_parsed_info}")
 
             else:
-                rv.append(obj.render())
+                resource_rv.append(obj.render())
+
+        elif isinstance(obj, Resource_Reference):
+            reference_rv.append(obj.render())
+
 
     log.info(f"FUNCTIONS TO PARSE: {functions_to_parse}")
     if functions_to_parse:
@@ -124,9 +132,13 @@ def _find_resources_information_from_file(fp: FilePath) -> List[ResourceModel]:
             tmp = function_name_to_resource_model.get(parsed_function_name)
             tmp.src_code_hash = parsed_function_info.get(parsed_function_name).get("src_code_hash")
             
-            if parsed_function_info.get(parsed_function_name).get("external_dependencies_info"):
-                tmp.external_dependencies = parsed_function_info.get(parsed_function_name).get("external_dependencies_info")
-                tmp.external_dependencies_hash = parsed_function_info.get(parsed_function_name).get("external_dependencies_info").get("hash")
+            if parsed_function_info.get(parsed_function_name).external_dependencies_info:
+                tmp.external_dependencies = parsed_function_info.get(parsed_function_name).external_dependencies_info
+                tmp.external_dependencies_hash = [x.render().hash for x in parsed_function_info.get(parsed_function_name).external_dependencies_info]
+
+                for dependency in tmp.external_dependencies:
+                    reference_rv.append(dependency.render())
+
             else:
                 tmp.external_dependencies = None
                 tmp.external_dependencies_hash = None
@@ -146,17 +158,32 @@ def _find_resources_information_from_file(fp: FilePath) -> List[ResourceModel]:
 
 
             log.info(f"updated to {tmp}")
-            rv.append(tmp)
+            resource_rv.append(tmp)
 
-    return rv
+    return resource_rv, reference_rv
 
 
-def _create_serverless_function_resources(filepath: FilePath, functions_names_to_parse: List[str], manual_includes: Dict = {}, global_includes: List = [] ) -> Dict:
+class parsed_serverless_function_info(BaseModel):
+    src_code_hash: str
+    archivepath: FilePath
+    handler: str
+    external_dependencies_info: List[LambdaLayerArtifact]
+
+    def __init__(__pydantic_self__, src_code_hash: str, archivepath: FilePath, handler: str, external_dependencies_info: List[LambdaLayerArtifact]) -> None:
+        super().__init__(**{
+            "src_code_hash": src_code_hash,
+            "archivepath": archivepath,
+            "handler": handler,
+            "external_dependencies_info":  external_dependencies_info
+        })
+
+
+def _create_serverless_function_resources(filepath: FilePath, functions_names_to_parse: List[str], manual_includes: Dict = {}, global_includes: List = [] ) -> Dict[str, parsed_serverless_function_info]:
 
 
     include_functions_list = functions_names_to_parse
 
-    parsed_file_info = cparser.parse_functions_from_file(filepath, include_functions=include_functions_list, remove_top_annotation=True)
+    parsed_file_info = serverless_parser.parse_functions_from_file(filepath, include_functions=include_functions_list, remove_top_annotation=True)
 
     rv = {}
     for parsed_function in parsed_file_info.parsed_functions:
@@ -176,14 +203,15 @@ def _create_serverless_function_resources(filepath: FilePath, functions_names_to
                                                                                 intermediate_path, 
                                                                                 needed_module_information)
         
-        final_handler_path = base_handler_path + "." + parsed_function.name
+        handler_path = base_handler_path + "." + parsed_function.name
                     
-        final_info["src_code_hash"] = src_code_hash
-        final_info["file_path"] = paths.get_relative_to_project_path(archive_path)
-        final_info["Handler"] = final_handler_path
-
-        
-        final_info['external_dependencies_info'] = dependencies_info
+       
+        final_info = parsed_serverless_function_info(
+            src_code_hash=src_code_hash,
+            archivepath=paths.get_relative_to_project_path(archive_path),
+            handler=handler_path,
+            external_dependencies_info=dependencies_info
+        )
 
         
         rv[cleaned_name] = final_info
@@ -193,5 +221,6 @@ def _create_serverless_function_resources(filepath: FilePath, functions_names_to
 
 def _clean_function_name(potential_name: str) -> str:
     return potential_name.replace(" ", "_")
+
 
 

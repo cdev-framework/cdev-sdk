@@ -14,8 +14,8 @@ import os
 
 from pathlib import PosixPath, WindowsPath
 
-from cdev.core.constructs.resource import ResourceModel, Cloud_Output, Cdev_Resource
-from cdev.core.utils import hasher, logger
+from core.constructs.resource import ResourceModel, Cloud_Output, Resource
+from core.utils import hasher, logger
 from cdev.utils import parent_resources, environment as cdev_environment
 
 log = logger.get_cdev_logger(__name__)
@@ -29,33 +29,47 @@ class simple_lambda_layer_output(str, Enum):
     arn = "arn"
 
 
-class LambdaLayerFromFiles(Cdev_Resource):
+class DependencyLayerModel(ResourceModel):
+    artifact_path: Optional[FilePath]
     
-    def __init__(self, name: str, files: List[Union[FilePath, DirectoryPath]]) -> None:
+    def __init__(__pydantic_self__, name: str, ruuid: str, artifact_path: FilePath=None) -> None:
+        super().__init__(**{
+            "name": name,
+            "ruuid": ruuid,
+            "artifact_path": artifact_path
+        })
+
+    
+
+
+
+
+
+class DependencyLayer(Resource):
+    RUUID = "cdev::simple::dependencylayer"
+    
+    def __init__(self, name: str, artifact_path: FilePath = None) -> None:
         super().__init__(name)
+        self.artifact_path = artifact_path
 
     
     def from_output(self, key: simple_lambda_layer_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"{self.ruuid}::{self.hash}", "key": key.value, "type": "cdev_output"})
+        return Cloud_Output(**{"resource": f"{self.RUUID}::{self.name}", "key": key.value, "type": "cdev_output"})
 
 
-class LambdaLayerArtifact(Cdev_Resource):
+    def render(self) -> DependencyLayerModel:
+        return DependencyLayerModel(
+            self.name,
+            self.RUUID,
+            self.artifact_path
+        )
     
-    def __init__(self, name: str, artifact_path: FilePath) -> None:
-        super().__init__(name)
-
-    
-    def from_output(self, key: simple_lambda_layer_output) -> Cloud_Output:
-        return Cloud_Output(**{"resource": f"{self.ruuid}::{self.hash}", "key": key.value, "type": "cdev_output"})
 
 
 class LambdaLayerArn(ResourceModel):
     arn: str
 
-    def get_hash(self) -> str:
-        return hasher.hash_string(self.arn)
 
-    
 
 
 class EventTypes(Enum):
@@ -158,7 +172,7 @@ class simple_aws_lambda_function_model(ResourceModel):
     permissions: List[Union[Permission,PermissionArn]]
     src_code_hash: str
     external_dependencies_hash: Optional[str]
-    external_dependencies: Optional[List[Union[LambdaLayerArn, LambdaLayerArtifact, Cloud_Output]]]
+    external_dependencies: Optional[List[Union[LambdaLayerArn, DependencyLayer, Cloud_Output]]]
     config_hash: str
     events_hash: str
     permissions_hash: str
@@ -172,7 +186,7 @@ class simple_aws_lambda_function_model(ResourceModel):
         extra='ignore'
 
 
-class simple_lambda(Cdev_Resource):
+class simple_lambda(Resource):
     def __init__(self, cdev_name: str, filepath: str, function_name: str="" ,events: List[Event]=[], configuration: lambda_function_configuration={}, function_permissions: List[Union[Permission,PermissionArn]]=[] ,includes: List[str]=[]) -> None:
         super().__init__(cdev_name)
 

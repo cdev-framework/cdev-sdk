@@ -559,9 +559,6 @@ class LocalBackend(Backend):
         return f"{resource.ruuid};{resource.name}"
 
 
-    
-
-
 # Helper functions
 def _compute_component_hash(component: ComponentModel) -> str:
         """

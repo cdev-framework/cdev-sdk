@@ -7,13 +7,12 @@ from sortedcontainers import SortedDict
 
 from .parser_objects import *
 from .import parser_utils as p_utils
-from .cdev_parser_exceptions import *
+from .parser_exceptions import *
 
-from cdev.utils import logger as cdev_logger
+
 
 ## This file has the highest level functions for use by other modules. Only this file will expose functionality to other modules.
 
-log = cdev_logger.get_cdev_logger(__name__)
 
 def parse_functions_from_file(file_loc, include_functions=[], function_manual_includes={}, global_manual_includes=[], remove_top_annotation=False):
     try:
