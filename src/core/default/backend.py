@@ -252,6 +252,7 @@ class LocalBackend(Backend):
 
         transaction_token = str(uuid.uuid4())
 
+
         resource_state.resource_changes[transaction_token] = (component_name, diff)
 
         self._write_resource_state_file(resource_state, resource_state_file_location)
@@ -378,10 +379,15 @@ class LocalBackend(Backend):
         cloud_output_id = self._get_cloud_output_id(resource)
 
         if not cloud_output_id in component.cloud_output:
+
             raise CloudOutputDoesNotExist(f"Can not find Cloud Output for {resource_type}::{resource_name} in Component {component_name} in Resource State {resource_state_uuid}")
 
         cloud_output = component.cloud_output.get(cloud_output_id)
 
+        if not cloud_output:
+            raise CloudOutputDoesNotExist(f"None value for Cloud Output for {resource_type}::{resource_name} in Component {component_name} in Resource State {resource_state_uuid}")
+
+        
         if not key in cloud_output:
             raise KeyNotInCloudOutput(f"Can not find Key {key} in Cloud Output for {resource_type}::{resource_name} in Component {component_name} in Resource State {resource_state_uuid}")
 
@@ -399,6 +405,9 @@ class LocalBackend(Backend):
             raise CloudOutputDoesNotExist(f"Can not find Cloud Output for {resource_type}::{resource_hash} in Component {component_name} in Resource State {resource_state_uuid}")
     
         cloud_output = component.cloud_output.get(cloud_output_id)
+
+        if not cloud_output:
+            raise CloudOutputDoesNotExist(f"None value for Cloud Output for {resource_type}::{resource_hash} in Component {component_name} in Resource State {resource_state_uuid}")
 
         if not key in cloud_output:
             raise KeyNotInCloudOutput(f"Can not find Key {key} in Cloud Output for {resource_type}::{resource_hash} in Component {component_name} in Resource State {resource_state_uuid}")

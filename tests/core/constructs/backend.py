@@ -150,21 +150,98 @@ def conflicting_names_component(test_backend: Backend):
         test_backend.create_component(resource_state_uuid, component_name)
 
 
-def conflicting_names_resource(test_backend: Backend):
-    pass
-
-
 def get_missing_component(test_backend: Backend):
-    pass
+    resource_state_name = "demo_state"
+    component_name = "demo_component"
+
+    resource_state_uuid = _create_simple_resource_state_and_component(test_backend,  resource_state_name, component_name)
+
+    test_backend.delete_component(resource_state_uuid, component_name)
+
+    with pytest.raises(ComponentDoesNotExist):
+        test_backend.get_component(resource_state_uuid, component_name)
 
 
 def get_missing_resource(test_backend: Backend):
-    pass
+    resource_state_name = "demo_state"
+    component_name = "demo_component"
+    
+    resource_state_uuid = _create_simple_resource_state_and_component(test_backend,  resource_state_name, component_name)
+    # Create a resource change then automatically complete the transaction
+    
+    with pytest.raises(ResourceDoesNotExist):
+        test_backend.get_resource_by_name(resource_state_uuid, component_name, "cdev::resource", "demo_name")
+
+
+    with pytest.raises(ResourceDoesNotExist):
+        test_backend.get_resource_by_hash(resource_state_uuid, component_name, "cdev::resource", "1 ")
 
 
 def get_missing_cloud_output(test_backend: Backend):
-    pass
+    resource_state_name = "demo_state"
+    component_name = "demo_component"
+    no_cloud_output_resource = sample_data.simple_create_resource_changes(component_name)[0]
+    cloud_output_resource =  sample_data.simple_create_resource_change_with_output(component_name)[1]
 
+    changes = [(no_cloud_output_resource, {}), cloud_output_resource]
+
+    resource_state_uuid = _create_simple_resource_state_and_component(test_backend,  resource_state_name, component_name)
+    # Create a resource change then automatically complete the transaction
+    for resource_change, cloud_output in changes:
+        tmp_transaction = test_backend.create_resource_change(
+                                resource_state_uuid, 
+                                component_name, 
+                                resource_change
+                            )
+
+        # no cloud output
+        test_backend.complete_resource_change(
+            resource_state_uuid,
+            component_name,
+            resource_change, 
+            tmp_transaction, 
+            cloud_output
+        )
+
+
+    with pytest.raises(CloudOutputDoesNotExist):
+        test_backend.get_cloud_output_value_by_name(
+            resource_state_uuid, 
+            component_name, 
+            changes[0][0].new_resource.ruuid, 
+            changes[0][0].new_resource.name, 
+            "any"
+        )
+
+
+    with pytest.raises(KeyNotInCloudOutput):
+        test_backend.get_cloud_output_value_by_name(
+            resource_state_uuid, 
+            component_name, 
+            changes[1][0].new_resource.ruuid, 
+            changes[1][0].new_resource.name, 
+            "incorrect_key"
+        )
+    
+    
+    with pytest.raises(CloudOutputDoesNotExist):
+        test_backend.get_cloud_output_value_by_hash(
+            resource_state_uuid, 
+            component_name, 
+            changes[0][0].new_resource.ruuid, 
+            changes[0][0].new_resource.hash, 
+            "any"
+        )
+
+
+    with pytest.raises(KeyNotInCloudOutput):
+        test_backend.get_cloud_output_value_by_hash(
+            resource_state_uuid, 
+            component_name, 
+            changes[1][0].new_resource.ruuid, 
+            changes[1][0].new_resource.hash, 
+            "incorrect_key"
+        )
 
 
 def _create_simple_resource_state_and_component(
