@@ -49,3 +49,8 @@ def test_simple_exceptions():
     backend_tests.get_missing_component(local_backend_factory())
     backend_tests.get_missing_resource(local_backend_factory())
     backend_tests.get_missing_cloud_output(local_backend_factory())
+
+
+
+def test_simple_differencing():
+    backend_tests.simple_differences(local_backend_factory())

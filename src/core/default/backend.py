@@ -418,7 +418,8 @@ class LocalBackend(Backend):
     def create_differences(self, resource_state_uuid: str, new_components: List[ComponentModel], old_components: List[str]) -> Tuple[Component_Difference, Resource_Reference_Difference, Resource_Difference]:
         try:
             # Load the previous components
-            previous_components: List[ComponentModel] = [self.get_component(x) for x in old_components]
+            previous_components: List[ComponentModel] = [self.get_component(resource_state_uuid, x) for x in old_components]
+            print(f"++{previous_components}")
         except Exception as e:
             raise e
 
@@ -519,7 +520,7 @@ def _compute_component_hash(component: ComponentModel) -> str:
         return cdev_hasher.hash_list(all_hashes)
 
 
-def _create_resource_diffs(new_resources: List[ResourceModel], old_resource: List[ResourceModel]) -> List[Resource_Difference]:
+def _create_resource_diffs(component_name: str, new_resources: List[ResourceModel], old_resource: List[ResourceModel]) -> List[Resource_Difference]:
     
     if old_resource:
         # build map<hash,resource>
@@ -543,10 +544,11 @@ def _create_resource_diffs(new_resources: List[ResourceModel], old_resource: Lis
             continue
 
         elif resource.hash in old_hash_to_resource and not resource.name in old_name_to_resource:
-            print(f"update resource diff {old_hash_to_resource.get(resource.hash)} name {old_hash_to_resource.get(resource.hash).name} -> {resource.name}")
+            log.info(f"update resource diff {old_hash_to_resource.get(resource.hash)} name {old_hash_to_resource.get(resource.hash).name} -> {resource.name}")
             rv.append(Resource_Difference(
                 **{
                     "action_type": Resource_Change_Type.UPDATE_NAME,
+                    "component_name": component_name,
                     "previous_resource": old_hash_to_resource.get(resource.hash),
                     "new_resource": resource
                 }
@@ -559,6 +561,7 @@ def _create_resource_diffs(new_resources: List[ResourceModel], old_resource: Lis
             rv.append(Resource_Difference(
                 **{
                     "action_type": Resource_Change_Type.UPDATE_IDENTITY,
+                    "component_name": component_name,
                     "previous_resource": old_name_to_resource.get(resource.name),
                     "new_resource": resource
                 }
@@ -571,6 +574,7 @@ def _create_resource_diffs(new_resources: List[ResourceModel], old_resource: Lis
             rv.append(Resource_Difference(
                 **{
                     "action_type": Resource_Change_Type.CREATE,
+                    "component_name": component_name,
                     "previous_resource": None,
                     "new_resource": resource
                 }
@@ -582,6 +586,7 @@ def _create_resource_diffs(new_resources: List[ResourceModel], old_resource: Lis
             rv.append(Resource_Difference(
                     **{
                         "action_type": Resource_Change_Type.DELETE,
+                        "component_name": component_name,
                         "previous_resource": resource,
                         "new_resource": None
                     }
@@ -628,7 +633,7 @@ def _create_reference_diffs(new_references: List[ResourceReferenceModel], old_re
     return rv
 
 
-def _create_differences(new_components: List[ComponentModel], previous_components: List[ComponentModel]) -> Tuple[Component_Difference, Resource_Reference_Difference, Resource_Difference]:
+def _create_differences(new_components: List[ComponentModel], previous_components: List[ComponentModel]) -> Tuple[List[Component_Difference], List[Resource_Reference_Difference], List[Resource_Difference]]:
     
     component_diffs = []
     resource_diffs = []
@@ -645,8 +650,8 @@ def _create_differences(new_components: List[ComponentModel], previous_component
         previous_name_to_component = {}
         previous_components_to_remove = []
 
-    log.debug(f"previous_hash_to_component -> {previous_hash_to_component}")
-    log.debug(f"previous_name_to_component -> {previous_name_to_component}")
+    print(f"previous_hash_to_component -> {previous_hash_to_component}")
+    print(f"previous_name_to_component -> {previous_name_to_component}")
 
 
     if new_components:
@@ -662,7 +667,7 @@ def _create_differences(new_components: List[ComponentModel], previous_component
                     )
                 )
 
-                tmp_resource_diff = _create_resource_diffs(component.resources,[])
+                tmp_resource_diff = _create_resource_diffs(component.name, component.resources, [])
                 resource_diffs.extend( tmp_resource_diff )
 
                 tmp_reference_diff = _create_reference_diffs(component.references, [])
@@ -676,7 +681,7 @@ def _create_differences(new_components: List[ComponentModel], previous_component
                 previous_component = previous_name_to_component.get(component.name)
 
                 # Should only output resource name changes
-                tmp_resource_diff = _create_resource_diffs(component.resources, previous_component.resources)
+                tmp_resource_diff = _create_resource_diffs(component.name, component.resources, previous_component.resources)
 
                 if any([not x.action_type == Resource_Change_Type.UPDATE_NAME for x in tmp_resource_diff]):
                     # if there is a resource change that is not an update name raise an exception
@@ -701,7 +706,7 @@ def _create_differences(new_components: List[ComponentModel], previous_component
                 )
 
                 # Should only output resource name changes
-                tmp_resource_diff = _create_resource_diffs(component.resources, previous_component.resources)
+                tmp_resource_diff = _create_resource_diffs(component.name, component.resources, previous_component.resources)
 
                 if any([not x.action_type == Resource_Change_Type.UPDATE_NAME for x in tmp_resource_diff]):
                     # if there is a resource change that is not an update name raise an exception
@@ -718,11 +723,23 @@ def _create_differences(new_components: List[ComponentModel], previous_component
                 # This means a resource or reference has updated its identity hash
                 previous_component = previous_name_to_component.get(component.name)
 
-                tmp_resource_diff = _create_resource_diffs(component.resources, previous_component.resources)
+                tmp_resource_diff = _create_resource_diffs(component.name, component.resources, previous_component.resources)
                 resource_diffs.extend(tmp_resource_diff)
 
                 tmp_reference_diff = _create_reference_diffs(component.references, previous_component.references)
                 reference_diffs.extend(tmp_reference_diff)
+
+                print(f"---------")
+                print(f"{component} -> {component.hash} {component.name}")
+                print(f".......................")
+                print(f"{previous_hash_to_component}")
+                component_diffs.append(
+                    Component_Difference(
+                        Component_Change_Type.UPDATE_IDENTITY,
+                        previous_name=previous_component.name,
+                        new_name=component.name
+                    )
+                )
 
             
                 # POP the seen previous component as we go so only remaining resources will be deletes
@@ -739,7 +756,7 @@ def _create_differences(new_components: List[ComponentModel], previous_component
             )
         )
 
-        tmp_resource_diff = _create_resource_diffs([], removed_component.resources)
+        tmp_resource_diff = _create_resource_diffs(removed_component.name, [], removed_component.resources)
         resource_diffs.extend(tmp_resource_diff)
 
 

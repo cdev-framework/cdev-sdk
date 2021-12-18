@@ -68,6 +68,7 @@ class Component_Change_Type(str, Enum):
     CREATE='CREATE'
     UPDATE_NAME='UPDATE_NAME'
     DELETE='DELETE'
+    UPDATE_IDENTITY='UPDATE_IDENTITY'
  
 
 

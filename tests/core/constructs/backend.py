@@ -1,4 +1,5 @@
-from core.constructs.resource import Cloud_Output, ResourceModel
+from core.constructs import backend
+from core.constructs.resource import Cloud_Output, Resource_Change_Type, Resource_Difference, ResourceModel
 import pytest
 from typing import Dict, List, Tuple
 
@@ -7,6 +8,9 @@ from core.constructs.backend_exceptions import *
 
 from . import sample_data
 
+################################
+##### Simple Tests
+################################
 
 def simple_actions(test_backend: Backend):
     """
@@ -119,7 +123,7 @@ def simple_get_resource(test_backend: Backend):
 
 
 ################################
-#### Failure Tests
+#### Simple Failure Tests
 ################################
 
 def conflicting_names_resource_state(test_backend: Backend):
@@ -243,6 +247,64 @@ def get_missing_cloud_output(test_backend: Backend):
             "incorrect_key"
         )
 
+
+################################
+#### Simple Difference Tests
+################################
+
+def simple_differences(test_backend: Backend):
+    new_components, previous_components = sample_data.simple_component_differences()
+
+    resource_state_uuid = test_backend.create_resource_state("demo")
+
+    
+    [test_backend.create_component(resource_state_uuid, x.name) for x in previous_components]
+
+
+    # Create the previous resource states:
+    for component in previous_components:
+        for resource in component.resources:
+            resource_change = Resource_Difference(
+                Resource_Change_Type.CREATE,
+                component.name,
+                None,
+                resource
+            )
+
+
+            tmp_transaction = test_backend.create_resource_change(
+                                resource_state_uuid, 
+                                component.name, 
+                                resource_change
+                            )
+
+            # no cloud output
+            test_backend.complete_resource_change(
+                resource_state_uuid,
+                component.name,
+                resource_change, 
+                tmp_transaction, 
+                {}
+            )
+
+    
+    component_diffs, _, resource_diffs = test_backend.create_differences(resource_state_uuid, new_components, [x.name for x in previous_components])
+
+    
+    assert len(resource_diffs) == 4
+
+
+    for x in component_diffs:
+        print(x)
+
+
+    assert False
+    
+
+
+
+
+    
 
 def _create_simple_resource_state_and_component(
         test_backend: Backend, 

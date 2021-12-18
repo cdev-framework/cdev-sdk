@@ -1,4 +1,5 @@
 from typing import Dict, Tuple, List
+from core.constructs.components import Component, ComponentModel
 
 from core.constructs.resource import Resource_Difference, ResourceModel, Resource_Change_Type
 
@@ -53,7 +54,9 @@ def simple_create_resource_changes(component_name: str):
 def simple_create_resource_change_with_output(component_name: str) -> List[Tuple[Resource_Difference, Dict]]:
     return [(x,{"arn": f"{x.new_resource.ruuid}::{x.new_resource.name}"}) for x in simple_create_resource_changes(component_name) ]
 
+
 def simple_delete_resource_changes(component_name: str):
+
     simple_resources = simple_resource_data()
     return [
         Resource_Difference(
@@ -87,3 +90,133 @@ def simple_delete_resource_changes(component_name: str):
             new_resource=None
         )
     ]
+
+
+def simple_component_differences() -> Tuple[List[ComponentModel], List[ComponentModel]]:
+    """
+    Return two lists of components that can be used for testing the differencing engine of a backend. The first list is the new
+    desired component state and the second list is the previous state of the components.
+    """
+
+    basic_resource_set = [
+        ResourceModel(
+            **{
+                "ruuid": "cdev::resource",
+                "name": "resource1",
+                "hash": "1",
+            }
+        ),
+        ResourceModel(
+            **{
+                "ruuid": "cdev::resource",
+                "name": "resource2",
+                "hash": "2",
+            }
+        ),
+        ResourceModel(
+            **{
+                "ruuid": "cdev::resource",
+                "name": "resource3",
+                "hash": "3",
+            }
+        ),
+        ResourceModel(
+            **{
+                "ruuid": "cdev::resource",
+                "name": "resource4",
+                "hash": "4",
+            }
+        ),
+        
+    ]
+
+    new_component2_resources = [
+        ResourceModel(
+            **{
+                "ruuid": "cdev::resource",
+                "name": "resource1",
+                "hash": "1",
+            }
+        ),
+        ResourceModel(
+            **{
+                "ruuid": "cdev::resource",
+                "name": "resource2",
+                "hash": "22",
+            }
+        ),
+        ResourceModel(
+            **{
+                "ruuid": "cdev::resource",
+                "name": "resource44",
+                "hash": "4",
+            }
+        ),
+        ResourceModel(
+            **{
+                "ruuid": "cdev::resource",
+                "name": "resource5",
+                "hash": "5",
+            }
+        ),
+    ]
+    
+
+
+    new_component1 = ComponentModel(
+        **{
+            "name": "comp1",
+            "hash": "123",
+            "resources": basic_resource_set,
+            "references": [],
+        }
+    )
+
+    new_component2 = ComponentModel(
+        **{
+            "name": "comp2",
+            "hash": "1234",
+            "resources": new_component2_resources,
+            "references": [],
+        }
+    )
+
+    new_component4 = ComponentModel(
+        **{
+            "name": "comp4",
+            "hash": "123456",
+            "resources": [],
+            "references": [],
+        }
+    )
+
+
+
+    previous_component1 = ComponentModel(
+        **{
+            "name": "comp1",
+            "hash": "123",
+            "resources": basic_resource_set,
+            "references": [],
+        }
+    )
+
+    previous_component2 = ComponentModel(
+        **{
+            "name": "comp2",
+            "hash": "1234",
+            "resources": basic_resource_set,
+            "references": [],
+        }
+    )
+
+    previous_component3 = ComponentModel(
+        **{
+            "name": "comp3",
+            "hash": "12345",
+            "resources": [],
+            "references": [],
+        }
+    )
+
+    return [new_component1, new_component2, new_component4], [previous_component1, previous_component2, previous_component3]
