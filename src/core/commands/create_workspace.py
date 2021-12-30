@@ -14,11 +14,20 @@ def create_workspace(args):
         print("Workspace already initialized")
 
     workspace_info = cdev_workspace.Workspace_Info(
-        "cdev.default.backend",
-        "Local_Backend",
+        "core.default.workspace",
+        "local_workspace",
         {
-            
+            "backend_configuration": {
+                "python_module": "core.default.backend",
+                "python_class": "LocalBackend",
+                "config": {
+                    "base_folder": base_project_dir,
+                    "central_state_file": "centralstate.json"
+                }
+            },
+            "initialization_file": "cdev_project"
         }
+    
     )
 
     manager.create_new_workspace(workspace_info)

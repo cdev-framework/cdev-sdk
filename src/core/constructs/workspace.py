@@ -44,8 +44,9 @@ class Workspace_Info(BaseModel):
         Represents the data needed to create a new cdev workspace:
         
         Parameters:
-            python_module: The name of the python module to load as the backend 
-            config: configuration option for the backend
+            python_module: The name of the python module to load as the workspace 
+            python_class: The name of the class in the python module to initialize
+            config: configuration option for the workspace
             
         """
         
@@ -84,6 +85,9 @@ class Workspace():
 
     @classmethod
     def instance(cls):
+        if not _GLOBAL_WORKSPACE:
+            raise Exception("Currently No Global Workspace")
+
         return _GLOBAL_WORKSPACE
 
 

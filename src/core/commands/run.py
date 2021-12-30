@@ -4,7 +4,7 @@ from ..constructs.workspace import Workspace
 
 
 
-WORKSPACE = Workspace.instance()
+
 
 
 def run_command(args):
@@ -14,6 +14,7 @@ def run_command(args):
     format:
     cdev run <sub_command> <args> 
     """
+    WORKSPACE = Workspace.instance()
     print(f"CALLING RUN COMMAND")
     # Convert namespace into dict
     params = vars(args)
