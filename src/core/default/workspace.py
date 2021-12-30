@@ -18,13 +18,11 @@ from ..constructs.backend import Backend, Backend_Configuration, load_backend
 from ..constructs.mapper import CloudMapper
 from ..constructs.components import Component, Component_Difference, ComponentModel
 from ..constructs.commands import BaseCommand, BaseCommandContainer
-from ..constructs.workspace import WorkSpace_State, Workspace_Info, Workspace, WorkspaceManager
+from ..constructs.workspace import Workspace_State, Workspace_Info, Workspace, WorkspaceManager, wrap_phase
 
 from ..settings import SETTINGS as cdev_settings
 
 from ..utils.command_finder import find_specified_command, find_unspecified_command
-
-
 
 
 class local_workspace(Workspace):
@@ -44,7 +42,7 @@ class local_workspace(Workspace):
     _backend: Backend = None
     _initialization_file = None
 
-    _state: WorkSpace_State = WorkSpace_State.UNINITIALIZED
+    _state: Workspace_State = Workspace_State.UNINITIALIZED
 
 
 
@@ -52,6 +50,8 @@ class local_workspace(Workspace):
         if cls._instance is None:
             cls._instance = super(Workspace, cls).__new__(cls)
             # Put any initialization here.
+
+            cls._instance.set_state(Workspace_State.UNINITIALIZED)
 
             # Load the backend 
             cls._instance._backend = None
@@ -61,33 +61,12 @@ class local_workspace(Workspace):
         return cls._instance
 
 
-    def wrap_phase(phase: WorkSpace_State):
-        
-        def inner_wrap(func: Callable):
-            def wrapper_func(workspace: 'Workspace', *func_posargs , **func_kwargs):
-                print(*func_posargs)
-                current_state = workspace.get_state()
-                if not current_state == phase:
-                    raise Exception(f"Trying to call {func} while in workspace state {current_state} but need to be in {phase}")
-
-                else:
-                    
-                    return func(workspace, *func_posargs, **func_kwargs) 
-
-            return wrapper_func
-        
-        return inner_wrap
-
-
-
     def initialize_workspace(self, workspace_configuration: Dict):
-        self.set_state(WorkSpace_State.INITIALIZING)
-        #self.clear_previous_state()
-
-
+        self.set_state(Workspace_State.INITIALIZING)
+        
         try:
             backend_config = Backend_Configuration( **workspace_configuration.get("backend_configuration"))
-            self._backend = load_backend(backend_config)
+            self.set_backend(load_backend(backend_config))
         except Exception as e:
             print(f"Could not load the load backend")
             raise e
@@ -101,24 +80,36 @@ class local_workspace(Workspace):
             importlib.reload(sys.modules.get(self._initialization_file))
 
         else:
-        
             importlib.import_module(self._initialization_file)
             
 
         
-        self.set_state(WorkSpace_State.INITIALIZED)
+        self.set_state(Workspace_State.INITIALIZED)
         
         
     def clear_previous_state(self):
+        self._instance = None
+        self._outputs = {}
+
         self._COMMANDS = []
         self._MAPPERS = []
         self._COMPONENTS = []
 
 
+    ################
+    ##### State
+    ################
+    def set_state(self, value: Workspace_State):
+        self._state = value
+
+    def get_state(self) -> Workspace_State:
+        return self._state
+
+ 
     #################
     ##### Mappers
     #################
-    @wrap_phase(WorkSpace_State.INITIALIZING)
+    @wrap_phase(Workspace_State.INITIALIZING)
     def add_mapper(self, mapper: CloudMapper ) -> None:
         if not isinstance(mapper, CloudMapper):
             # TODO Throw error
@@ -128,7 +119,7 @@ class local_workspace(Workspace):
         self._MAPPERS.append(mapper)
 
 
-    @wrap_phase(WorkSpace_State.INITIALIZING)
+    @wrap_phase(Workspace_State.INITIALIZING)
     def add_mappers(self, mappers: List[CloudMapper] ) -> None:
         for mapper in mappers:
             self.add_mapper(mapper)
@@ -136,14 +127,17 @@ class local_workspace(Workspace):
         self._MAPPERS.append(mapper)
 
 
+    @wrap_phase(Workspace_State.INITIALIZED)
     def get_mappers(self) -> List[CloudMapper]:
         return self._MAPPERS
 
 
+    @wrap_phase(Workspace_State.INITIALIZED)
     def get_mapper_namespace(self) -> Dict:
         rv = {}
+        mappers: List[CloudMapper] = self.get_mappers()
 
-        for mapper in self.get_mappers():
+        for mapper in mappers:
             for namespace in mapper.get_namespaces():
                 rv[namespace] = mapper
 
@@ -153,22 +147,18 @@ class local_workspace(Workspace):
     #################
     ##### Commands
     #################
-    @wrap_phase(WorkSpace_State.INITIALIZING)
+    @wrap_phase(Workspace_State.INITIALIZING)
     def add_command(self, command_location: str):
         self._COMMANDS.append(command_location)
 
 
-    @wrap_phase(WorkSpace_State.INITIALIZING)
+    @wrap_phase(Workspace_State.INITIALIZING)
     def add_commands(self, command_locations: List[str]):
-        """
-        This is the adds commands function
-        """
-        print(f"---- {command_locations}")
         for command_location in command_locations:
             self.add_command(command_location)
 
 
-    @wrap_phase(WorkSpace_State.INITIALIZED)
+    @wrap_phase(Workspace_State.INITIALIZED)
     def get_commands(self) -> List[str]:
         return self._COMMANDS
 
@@ -177,106 +167,40 @@ class local_workspace(Workspace):
     #################
     ##### Components
     #################
-    @wrap_phase(WorkSpace_State.INITIALIZING)
+    @wrap_phase(Workspace_State.INITIALIZING)
     def add_component(self, component: Component):
+        print(f"hererere")
         self._COMPONENTS.append(component)
 
-    @wrap_phase(WorkSpace_State.INITIALIZING)
+
+    @wrap_phase(Workspace_State.INITIALIZING)
     def add_components(self, components: List[Component]):
         for component in components:
             self.add_component(component)
 
 
-    @wrap_phase(WorkSpace_State.INITIALIZED)
+    @wrap_phase(Workspace_State.INITIALIZED)
     def get_components(self) -> List[Component]:
         return self._COMPONENTS
 
-    
-    ################
-    ##### Initialized
-    ################
-    
-    def set_state(self, value: WorkSpace_State):
-        self._state = value
+
+    #################
+    ##### Backend
+    #################
+    @wrap_phase(Workspace_State.INITIALIZING)
+    def set_backend(self, backend: Backend):
+        if not isinstance(backend, Backend):
+            raise Exception("Not a backend object")
+
+        self._backend = backend
 
 
-    
-    def get_state(self) -> WorkSpace_State:
-        return self._state
-
- 
-    def clear(self) -> None:
-        self._instance = None
-        self._outputs = {}
-
-        self._MAPPERS = []
-        self._COMMANDS = []
-        self._COMPONENTS = []
-
-
-    @wrap_phase(WorkSpace_State.INITIALIZED)
-    def execute_command(self, command: str, args: List):
-        """
-        Find the desired command based on the search path and execute it with the given arguments.
-
-        Args:
-            command (str): The full command to search for. can be '.' seperated to denote search path.
-            args (List): The command lines arguments to pass to the command.
-
-        Raises:
-            KeyError: Raises an exception.
-        """
-        
-        # Command in list form
-        command_list = command.split(".")
-
-        # Create list of all directories to start searching in
-        all_search_locations_list = self.get_commands()
-
-        if len(command_list) == 1:
-            obj, program_name, command_name, is_command = find_unspecified_command(command_list[0], all_search_locations_list)
-
-        else:
-            obj, program_name, command_name, is_command = find_specified_command(command_list, all_search_locations_list)
-
-
-        
-        if is_command:
-            if not isinstance(obj, BaseCommand):
-                raise Exception
-
-            try:
-                args = [program_name, command_name, *args]
-                obj.run_from_command_line(args)
-            except Exception as e:
-                raise e
-
-        else:
-            if not isinstance(obj, BaseCommandContainer):
-                raise Exception
-            
-            try:
-                obj.display_help_message()
-            except Exception as e:
-                raise e
+    @wrap_phase(Workspace_State.INITIALIZED)
+    def get_backend(self) -> Backend:
+        return self._backend
                 
     
-    @wrap_phase(WorkSpace_State.INITIALIZED)
-    def generate_current_state(self) -> List[ComponentModel]:
-        """
-        Execute the components of this workspace to generate the current desired state of the resources.
-
-        Returns:
-            Current State (List[ComponentModel]): The current state generated by the components.
-        """
         
-        rv = []
-        components: List[Component] = self.get_components()
-
-        for component in components:
-            rv.append(component.render())
-
-        return rv
 
 
 class local_workspace_manager(WorkspaceManager):

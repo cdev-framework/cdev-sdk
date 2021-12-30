@@ -4,6 +4,19 @@ from core.constructs.components import Component, ComponentModel
 from core.constructs.resource import Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference, ResourceModel, Resource_Change_Type, ResourceReferenceModel
 
 
+class simple_component(Component):
+    def __init__(self, name: str):
+        super().__init__(name)
+
+
+    def render(self) -> ComponentModel:
+        return ComponentModel(
+            self.name,
+            "111"
+        )
+
+
+
 def simple_resource_data():
     return [
         ResourceModel("cdev::resource::x", "1", "resource1"),
@@ -294,3 +307,23 @@ def simple_component_differences() -> Tuple[List[ComponentModel], List[Component
         # Component4 -> Create
         # Component5 -> Update Name (This component should be read from the state and then modify its name)
     return [new_component2, new_component4], [previous_component1, previous_component2, previous_component3, previous_component5]
+
+
+def simple_components() -> List[Component]:
+    component1 = simple_component("component1")
+    component2 = simple_component("component2")
+    component3 = simple_component("component3")
+
+
+    return [
+        component1,
+        component2,
+        component3
+    ]
+
+def simple_commands() -> List[str]:
+    return [
+        "data_sync",
+        "logs",
+        "price"
+    ]
