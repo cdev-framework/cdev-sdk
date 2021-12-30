@@ -381,13 +381,6 @@ class Backend():
         raise NotImplementedError
 
 
-    def validate_differences(self, resource_state_uuid: str, component_differences: List[Component_Difference], resource_differences: List[Resource_Difference]):
-        """
-        Validate the proposed differences. Raise an error if they should not be deployed. 
-        """
-        raise NotImplementedError
-
-
 def load_backend(config: Backend_Configuration) -> Backend:
     # sometime the module is already loaded so just reload it to capture any changes
     try:

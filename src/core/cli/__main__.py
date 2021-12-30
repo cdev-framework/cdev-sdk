@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 import argparse
 from ast import parse
-import os
 from typing import Callable, Any
 
-from ..commands import create_workspace, initialize_workspace, run
+from ..commands import create_workspace, initialize_workspace, run, execute_frontend
 from ..constructs.workspace import Workspace
 
 parser = argparse.ArgumentParser(description='cdev cli')
@@ -28,12 +27,6 @@ def wrap_initialize_workspace(command: Callable) -> Callable[[Any], Any]:
     return wrapped_caller
 
 
-def plan_command(args):
-    print(f"plan commands")
-
-
-
-
 CDEV_COMMANDS = [
     {
         "name": "init",
@@ -43,7 +36,7 @@ CDEV_COMMANDS = [
     {
         "name": "plan",
         "help": "Create a new instance of a workspace",
-        "default": wrap_initialize_workspace(plan_command),
+        "default": wrap_initialize_workspace(execute_frontend.execute_frontend),
         "args": [
            
         ]

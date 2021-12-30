@@ -24,8 +24,10 @@ def run_command(args):
     
     try:
         WORKSPACE.execute_command(sub_command, cli_args)
+        print(f"done")
     except Exception as e:
         print(e)
+        print(f"wpefkwpo")
         return
         
 

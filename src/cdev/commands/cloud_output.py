@@ -1,5 +1,5 @@
 from typing_extensions import final
-from ..backend import cloud_mapper_manager
+from core.backend import cloud_mapper_manager
 from ..frontend import executer as frontend_executer
 from .. import output as cdev_output
 from ..utils import project, logger

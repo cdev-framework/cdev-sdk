@@ -1,4 +1,4 @@
-from typing import List, Tuple
+"""from typing import List, Tuple
 import threading
 from rich.console import Console
 from rich.prompt import Prompt,Confirm
@@ -123,3 +123,4 @@ def get_messages_from_buffer(start_index: int, end_index: int, buffer_name: str 
 
 
     return (messages, start_line_no, hasher.hash_list(messages))
+"""

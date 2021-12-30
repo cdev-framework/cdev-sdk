@@ -1,33 +1,30 @@
-from typing import List
+"""from typing import List
 
-from cdev.core.models import Action_Type, Resource_State_Difference
-from cdev.core.constructs import CloudMapper
-from cdev.settings import SETTINGS
+from ..constructs.resource import Resource_Change_Type, Resource_Reference_Difference, Resource_Difference
+from ..constructs.mapper import CloudMapper
+from ..settings import SETTINGS
 
-from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
+from .mappers.aws import aws_lambda, dynamodb, iam, s3, sqs, apigatewayv2, apigateway
 
-
-from .backend.aws import aws_lambda, dynamodb, iam, s3, sqs, apigatewayv2, apigateway
-
-from .backend.simple import api_deployer, lambda_deployer, dynamodb_deployer, bucket_deployer
-from .backend.simple import queue_deployer, topic_deployer, relational_db_deployer, static_site_deployer
+from .mappers.simple import api_deployer, lambda_deployer, dynamodb_deployer, bucket_deployer
+from .mappers.simple import queue_deployer, topic_deployer, relational_db_deployer, static_site_deployer
 
 
 class DefaultMapper(CloudMapper):
-    """
+    
     This is the class documentation 
 
     ---------------------------------
-    """
+    
     def __init__(self) -> None:
         super().__init__(RESOURCE_TO_HANDLER_FUNCTION)
 
     def get_namespaces(self) -> List[str]:
         return ["cdev"]
 
-    def deploy_resource(self, resource_diff: Resource_State_Difference) -> bool:
+    def deploy_resource(self, resource_diff: Resource_Difference) -> bool:
         try:
-            if not resource_diff.action_type == Action_Type.DELETE:
+            if not resource_diff.action_type == Resource_Change_Type.DELETE:
                 if not resource_diff.new_resource.ruuid in self.get_resource_to_handler():
                     # TODO throw error
                     print(f"PROVIDER CAN NOT CREATE RESOURCE: {resource_diff.new_resource.ruuid}")
@@ -44,13 +41,15 @@ class DefaultMapper(CloudMapper):
             return False
         
 
-    def render_resource_outputs(self, resource_diff)-> Resource_State_Difference:
-        if resource_diff.new_resource:
 
-            replaced_output = replace_output(resource_diff.new_resource.dict())
-           
-            resource_diff.new_resource = type(resource_diff.new_resource).parse_obj(replaced_output)
-        return resource_diff
+
+def render_resource_outputs(resource_diff: Resource_Difference)-> Resource_Difference:
+    if resource_diff.new_resource:
+
+        replaced_output = replace_output(resource_diff.new_resource.dict())
+        
+        resource_diff.new_resource = type(resource_diff.new_resource).parse_obj(replaced_output)
+    return resource_diff
 
 
 
@@ -129,3 +128,4 @@ RESOURCE_TO_HANDLER_FUNCTION = {
     "cdev::simple::staticsite": static_site_deployer.handle_simple_static_site_deployment
 }
 
+"""
