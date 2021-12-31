@@ -5,31 +5,27 @@ import json
 import os
 import sys
 from typing import Callable, List, Dict, Optional, Any, Tuple, Union
+from pydantic.main import BaseModel
 
-
-
-from pydantic import BaseModel
 from pydantic.types import DirectoryPath, FilePath
-from sortedcontainers.sortedlist import SortedList
 
-
-from ..constructs.resource import Resource_Difference
 from ..constructs.backend import Backend, Backend_Configuration, load_backend
 from ..constructs.mapper import CloudMapper
-from ..constructs.components import Component, Component_Difference, ComponentModel
-from ..constructs.commands import BaseCommand, BaseCommandContainer
+from ..constructs.components import Component
 from ..constructs.workspace import Workspace_State, Workspace_Info, Workspace, WorkspaceManager, wrap_phase
 
 from ..settings import SETTINGS as cdev_settings
 
-from ..utils.command_finder import find_specified_command, find_unspecified_command
 
+class local_workspace_configuration(BaseModel):
+    initialization_module: str
+    backend_configuration: Backend_Configuration
+    resource_state_uuid: Optional[str]
 
 class local_workspace(Workspace):
     """
-    A singleton that encapsulates the configuration and high level information needed to construct the project. This singleton
-    can be used within the different components to gain information about the higher level project that it is within. Once constructed,
-    the object should remain a read only object to prevent components from changing configuration beyond their scope. 
+    A singleton that encapsulates the configuration of a workspace that is implemented on the local filesystem. The singleton can be accessed during different
+    parts of the lifecycle of a cdev core command execution. When this singleton is created, it is registered as the global workspace for that execution.  
     """
     _instance = None
 
@@ -40,7 +36,7 @@ class local_workspace(Workspace):
     _resource_state_uuid: str = None
 
     _backend: Backend = None
-    _initialization_file = None
+    
 
     _state: Workspace_State = Workspace_State.UNINITIALIZED
 
@@ -61,27 +57,28 @@ class local_workspace(Workspace):
         return cls._instance
 
 
-    def initialize_workspace(self, workspace_configuration: Dict):
+    def initialize_workspace(self, workspace_configuration_dict: local_workspace_configuration):
+        workspace_configuration = local_workspace_configuration(**workspace_configuration_dict)
         self.set_state(Workspace_State.INITIALIZING)
         
         try:
-            backend_config = Backend_Configuration( **workspace_configuration.get("backend_configuration"))
+            backend_config = workspace_configuration.backend_configuration
             self.set_backend(load_backend(backend_config))
         except Exception as e:
             print(f"Could not load the load backend")
             raise e
 
-        self._initialization_file = workspace_configuration.get("initialization_file")
-        
         
         # Sometimes the module is already loaded so just reload it to capture any changes
         # Importing the initialization file should cause it to modify the state of the Workspace however is needed
-        if sys.modules.get(self._initialization_file):
-            importlib.reload(sys.modules.get(self._initialization_file))
+        if sys.modules.get(workspace_configuration.initialization_module):
+            importlib.reload(sys.modules.get(workspace_configuration.initialization_module))
 
         else:
-            importlib.import_module(self._initialization_file)
+            importlib.import_module(workspace_configuration.initialization_module)
             
+
+        self.set_resource_state_uuid(workspace_configuration.resource_state_uuid)
 
         
         self.set_state(Workspace_State.INITIALIZED)
@@ -169,7 +166,6 @@ class local_workspace(Workspace):
     #################
     @wrap_phase(Workspace_State.INITIALIZING)
     def add_component(self, component: Component):
-        print(f"hererere")
         self._COMPONENTS.append(component)
 
 
@@ -199,6 +195,14 @@ class local_workspace(Workspace):
     def get_backend(self) -> Backend:
         return self._backend
                 
+    @wrap_phase(Workspace_State.INITIALIZING)
+    def set_resource_state_uuid(self, resource_state_uuid: str):
+        self._resource_state_uuid = resource_state_uuid 
+    
+    
+    @wrap_phase(Workspace_State.INITIALIZED)
+    def get_resource_state_uuid(self) -> str:
+        raise self._resource_state_uuid
     
         
 
@@ -207,8 +211,6 @@ class local_workspace_manager(WorkspaceManager):
 
     def __init__(self, base_dir: DirectoryPath, workspace_dir: str=None, workspace_filename: str=None) -> None:
         self.base_dir = base_dir
-
-        
         self.workspace_dir = workspace_dir if workspace_dir else cdev_settings.get("ROOT_FOLDER_NAME")
         self.workspace_filename = workspace_filename if workspace_filename else cdev_settings.get("WORKSPACE_FILE_NAME")
 
@@ -288,4 +290,6 @@ class local_workspace_manager(WorkspaceManager):
         except Exception as e:
             print(f"Could not initialize {workspace_class} Class from config {config.config}")
             raise e
+
+
 
