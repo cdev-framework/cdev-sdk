@@ -23,12 +23,12 @@ CDEV_COMMANDS = [
         "help": "Open an interactive development environment",
         "default": local_development.develop,
         "args": [
-            {"dest": "--simple", "help": "run a simple follower instead of full development environment", "action":"store_true"}
+            {"dest": "--complex", "help": "run a simple follower instead of full development environment", "action":"store_true"}
         ]
     },
     {
         "name": "destroy",
-        "help": "See the differences that have been made since the last deployment",
+        "help": "Destroy all the resources in the current environment",
         "default": destroy.destroy_command
     }, 
     {
@@ -38,7 +38,7 @@ CDEV_COMMANDS = [
     }, 
     {
         "name": "output",
-        "help": "See the generate cloud output",
+        "help": "See the generated cloud output",
         "default": cloud_output.cloud_output_command
     }, 
     {

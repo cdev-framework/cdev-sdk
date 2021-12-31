@@ -34,7 +34,6 @@ class Backend_Configuration(BaseModel):
 
 class Backend():
     def __init__(self, **kwargs) -> None:
-        print(f"Creating Backend from {kwargs}")
         raise NotImplementedError
 
     # Api for working with Resource States

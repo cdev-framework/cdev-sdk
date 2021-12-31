@@ -3,7 +3,7 @@ import argparse
 from ast import parse
 from typing import Callable, Any
 
-from ..commands import create_workspace, initialize_workspace, run, execute_frontend
+from ..commands import create_workspace, initialize_workspace, run, execute_frontend, create_resource_state
 from ..constructs.workspace import Workspace
 
 parser = argparse.ArgumentParser(description='cdev cli')
@@ -36,7 +36,15 @@ CDEV_COMMANDS = [
     {
         "name": "plan",
         "help": "Create a new instance of a workspace",
-        "default": wrap_initialize_workspace(execute_frontend.execute_frontend),
+        "default": wrap_initialize_workspace(execute_frontend.execute_frontend_cli),
+        "args": [
+           
+        ]
+    },
+    {
+        "name": "create_resource_state",
+        "help": "Create a new resource state",
+        "default": wrap_initialize_workspace(create_resource_state.create_resource_state_cli),
         "args": [
            
         ]

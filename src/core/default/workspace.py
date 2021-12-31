@@ -16,6 +16,8 @@ from ..constructs.workspace import Workspace_State, Workspace_Info, Workspace, W
 
 from ..settings import SETTINGS as cdev_settings
 
+from ..utils import module_loader
+
 
 class local_workspace_configuration(BaseModel):
     initialization_module: str
@@ -68,15 +70,12 @@ class local_workspace(Workspace):
             print(f"Could not load the load backend")
             raise e
 
+        module_loader.import_module(workspace_configuration.initialization_module)
         
-        # Sometimes the module is already loaded so just reload it to capture any changes
-        # Importing the initialization file should cause it to modify the state of the Workspace however is needed
-        if sys.modules.get(workspace_configuration.initialization_module):
-            importlib.reload(sys.modules.get(workspace_configuration.initialization_module))
+        if workspace_configuration.resource_state_uuid:
+            if not workspace_configuration.resource_state_uuid in set([ x.uuid for x in self._backend.get_top_level_resource_states()]):
+                raise Exception(f"{workspace_configuration.resource_state_uuid} not in loaded backend ({self._backend.get_top_level_resource_states()})")
 
-        else:
-            importlib.import_module(workspace_configuration.initialization_module)
-            
 
         self.set_resource_state_uuid(workspace_configuration.resource_state_uuid)
 

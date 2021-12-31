@@ -2,9 +2,9 @@ from enum import Enum
 from typing import List, Dict, Union
 
 
-from ...constructs import Cdev_Resource
-from ...models import Cloud_Output, Rendered_Resource
-from ...utils import hasher, environment as cdev_environment
+from core.constructs.resource import Resource, ResourceModel, Cloud_Output
+from core.utils import hasher 
+from ...utils import environment as cdev_environment
 
 from .xlambda import Event as lambda_event, EventTypes, Permission
 
@@ -57,7 +57,7 @@ class QueuePermissions():
         )
 
 
-class simple_queue_model(Rendered_Resource):
+class simple_queue_model(ResourceModel):
     queue_name: str
     fifo: bool
     
@@ -69,7 +69,7 @@ class simple_queue_output(str, Enum):
 
 
 
-class Queue(Cdev_Resource):
+class Queue(Resource):
     RUUID = 'cdev::simple::queue'
 
     def __init__(self, cdev_name: str, queue_name: str, is_fifo: bool = False) -> None:
