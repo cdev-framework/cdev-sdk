@@ -24,6 +24,7 @@ class local_workspace_configuration(BaseModel):
     backend_configuration: Backend_Configuration
     resource_state_uuid: Optional[str]
 
+
 class local_workspace(Workspace):
     """
     A singleton that encapsulates the configuration of a workspace that is implemented on the local filesystem. The singleton can be accessed during different
@@ -256,39 +257,6 @@ class local_workspace_manager(WorkspaceManager):
 
 
 
-    def load_workspace(self, config: Workspace_Info) -> local_workspace:
-        try:
-            if sys.modules.get(config.python_module):
-                workspace_module = importlib.reload(sys.modules.get(config.python_module))
-
-            else:
-                workspace_module = importlib.import_module(config.python_module)
-        except Exception as e:
-            print("Error loading workspace module")
-            print(f'Error > {e}')
-
-            raise e
-
-
-        workspace_class = None
-        for item in dir(workspace_module):  
-            potential_obj = getattr(workspace_module, item)  
-            if inspect.isclass(potential_obj) and issubclass(potential_obj, Workspace) and item == config.python_class:
-                workspace_class = potential_obj
-                break
-            
-            
-        if not workspace_class:
-            print(f"Could not find {config.python_class} in {config.python_module}")
-            raise Exception
-
-        try:
-            # initialize the backend obj with the provided configuration values
-            workspace_class().initialize_workspace(config.config)
-
-        except Exception as e:
-            print(f"Could not initialize {workspace_class} Class from config {config.config}")
-            raise e
 
 
 

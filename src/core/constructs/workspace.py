@@ -63,26 +63,6 @@ class Workspace_State(str, Enum):
     INITIALIZED = "INITIALIZED"
 
 
-def wrap_phase(phase: Workspace_State):
-    """
-    Annotation that denotes when a function can be executed within the life cycle of a workspace. Throws excpetion if the workspace is not in the correct
-    phase. 
-    """
-    def inner_wrap(func: Callable)  :
-        def wrapper_func(workspace: 'Workspace', *func_posargs , **func_kwargs):
-            print(func.__annotations__.get("return"))
-            current_state = workspace.get_state()
-            if not current_state == phase:
-                raise Exception(f"Trying to call {func} while in workspace state {current_state} but need to be in {phase}")
-
-            else:
-                
-                return func(workspace, *func_posargs, **func_kwargs) 
-
-        return wrapper_func
-    
-    return inner_wrap
-
 
 class Workspace():
     """
@@ -321,3 +301,41 @@ class WorkspaceManager:
     
     def load_workspace(self, *posargs, **kwargs) -> Workspace:
         raise NotImplementedError
+
+
+def load_and_initialize_workspace(config: Workspace_Info):
+    """
+    Load and initialize the workspace from the given configuration 
+    """
+    try:
+        if sys.modules.get(config.python_module):
+            workspace_module = importlib.reload(sys.modules.get(config.python_module))
+
+        else:
+            workspace_module = importlib.import_module(config.python_module)
+    except Exception as e:
+        print("Error loading workspace module")
+        print(f'Error > {e}')
+
+        raise e
+
+
+    workspace_class = None
+    for item in dir(workspace_module):  
+        potential_obj = getattr(workspace_module, item)  
+        if inspect.isclass(potential_obj) and issubclass(potential_obj, Workspace) and item == config.python_class:
+            workspace_class = potential_obj
+            break
+        
+        
+    if not workspace_class:
+        print(f"Could not find {config.python_class} in {config.python_module}")
+        raise Exception
+
+    try:
+        # initialize the backend obj with the provided configuration values
+        workspace_class().initialize_workspace(config.config)
+
+    except Exception as e:
+        print(f"Could not initialize {workspace_class} Class from config {config.config}")
+        raise e

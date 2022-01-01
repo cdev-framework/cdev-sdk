@@ -39,10 +39,14 @@ class Environment():
     """
     A logically isolated instance of a project. 
     """
-    def __init__(self) -> None:
+    def __init__(self, info: environment_info) -> None:
         pass
 
 
     def get_workspace(self) -> Workspace:
         raise NotImplementedError
+
+    
+    def initialize_environment(self):
+        pass
 

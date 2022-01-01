@@ -57,6 +57,9 @@ class Project():
 
 
     def create_environment(self, environment_info: environment_info):
+        """
+        Create a new environment for this project.
+        """
         raise NotImplementedError
 
 
@@ -75,6 +78,8 @@ class Project():
     def get_environment(self, environment_name: str) -> Environment:
         raise NotImplementedError
 
+    def get_current_environment(self) -> Environment:
+        raise NotImplementedError
 
     def destroy_environment(self, environment_name: str):
         raise NotImplementedError
