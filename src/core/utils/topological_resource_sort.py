@@ -1,14 +1,15 @@
 from typing import Dict, List, Tuple
 
-from numpy.lib.function_base import diff
 from core.constructs.resource import Cloud_Output, Resource_Change_Type, Resource_Reference_Change_Type, ResourceModel, Resource_Difference, Resource_Reference_Difference
 from core.constructs.components import Component_Change_Type, Component_Difference
 import networkx as nx
 
+
+
 deliminator = '+'
 
 def find_parents(resource: ResourceModel) -> List[Cloud_Output]:
-    print(resource)
+    
     resource_as_obj = resource.dict()
 
     cloud_outputs = find_cloud_output(resource_as_obj)
@@ -75,17 +76,17 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
     reference_ids = {_create_reference_id(x.originating_component_name, x.resource_reference.component_name, x.resource_reference.ruuid, x.resource_reference.name):x for x in reference_differences}
 
     
-    for component_id, component_diff in component_ids.items():
-        change_dag.add_node(component_id)
+    for component_id, component in component_ids.items():
+        change_dag.add_node(component)
 
 
     for resource_id, resource in resource_ids.items():
-        change_dag.add_node(resource_id)
+        change_dag.add_node(resource)
 
         component_id = _create_component_id(resource.component_name)
 
         if component_id in component_ids:
-            change_dag.add_edge(component_id, resource_id)
+            change_dag.add_edge(component_ids.get(component_id), resource)
 
         else:
             raise Exception(f"There should always be a change in a component for a resource change {resource}")
@@ -107,7 +108,7 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
                         raise Exception(f"Attemping to use output of Resource that is going to be deleted {resource} {parent_cloudoutput}")
 
                     # Make this resource change a child of the parent resource change
-                    change_dag.add_edge(parent_resource_id, resource_id)
+                    change_dag.add_edge(resource_ids.get(parent_resource_id), resource)
 
             elif parent_cloudoutput.type == 'reference':
                 parent_reference_id = _create_reference_id(resource.component_name, parent_cloudoutput.component_name, parent_cloudoutput.ruuid, parent_cloudoutput.name)
@@ -116,10 +117,10 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
                     if reference_ids.get(parent_reference_id).action_type == Resource_Reference_Change_Type.DELETE:
                         raise Exception(f"Attempting to use output of a Reference that is going to be deleted {resource} {parent_cloudoutput}")
 
-                    change_dag.add_edge(parent_reference_id, resource_id)
+                    change_dag.add_edge(resource_ids.get(parent_reference_id), resource)
 
     for reference_id, reference in reference_ids.items():
-        change_dag.add_node(reference_id)
+        change_dag.add_node(reference)
 
         resource_id = _create_resource_id(reference.resource_reference.component_name, reference.resource_reference.ruuid, reference.resource_reference.name)
         if resource_id in resource_ids:
@@ -131,21 +132,16 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
 
 
                 # Since the reference is being created, we should perform the operation after the changes to the underlying resource 
-                change_dag.add_edge(resource_id, reference_id)
+                change_dag.add_edge(resource_ids.get(resource_id), reference)
 
             else:
-                change_dag.add_edge(reference_id, resource_id)
+                change_dag.add_edge(reference, resource_ids.get(resource_id))
 
         else:
             # Since the original resource is not in the change set, it should be checked to be sure that it is accessible from the backend
             pass
             
-    #sorted_resources = []
-    #resource_dag_list = list(nx.topological_sort(resource_dag))
-    #for resource_id in resource_dag_list:
-    #    sorted_resources.append(all_resource_id_to_resource_diff.get(resource_id))
 
-    #return sorted_resources
     return change_dag
 
 

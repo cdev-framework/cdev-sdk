@@ -106,6 +106,9 @@ class Component_Difference(BaseModel):
 
     class Config:
         use_enum_values = True
+        # Beta Feature but should be fine since this is simple data 
+        frozen = True
+
 
 
 class Component:

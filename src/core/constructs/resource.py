@@ -43,9 +43,7 @@ class ResourceModel(BaseModel):
     instead of update. 
     """
 
-    class Config:
-        validate_assignment = True
-        extra = "allow"
+
 
     def __init__(
         __pydantic_self__,
@@ -60,6 +58,10 @@ class ResourceModel(BaseModel):
                 "name": name,
             }
         )
+
+    class Config:
+        extra = "allow"
+        frozen = True
 
 
 class ResourceReferenceModel(BaseModel):
@@ -118,8 +120,8 @@ class ResourceReferenceModel(BaseModel):
         )
 
     class Config:
-        validate_assignment = True
         extra = "allow"
+        frozen = True
 
 
 class Resource_Change_Type(str, Enum):
@@ -158,6 +160,8 @@ class Resource_Difference(BaseModel):
 
     class Config:
         use_enum_values = True
+        # Beta Feature but should be fine since this is simple data 
+        frozen = True
 
 
 class Resource_Reference_Difference(BaseModel):
@@ -181,6 +185,7 @@ class Resource_Reference_Difference(BaseModel):
 
     class Config:
         use_enum_values = True
+        frozen = True
 
     
 Output_Type = Union[Literal['resource'], Literal['reference']]
