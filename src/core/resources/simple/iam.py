@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union, Literal
+from typing import Dict, List, Optional, Union
 
 from pydantic.main import BaseModel
 
@@ -11,14 +11,14 @@ from core.utils import hasher
 class Permission(BaseModel):
     actions: List[str]
     resource: str
-    effect: Union[Literal["Allow"], Literal["Deny"]]
+    effect: str
     resource_suffix: Optional[str]
 
     def __init__(
         self,
         actions: List[str],
         resource: str,
-        effect: Union[Literal["Allow"], Literal["Deny"]],
+        effect: str,
         resource_suffix: Optional[str] = "",
     ):
         """

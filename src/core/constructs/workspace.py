@@ -391,9 +391,23 @@ class Workspace:
 
             ruuid = change.new_resource.ruuid if change.new_resource else change.previous_resource.ruuid
 
-            self.get_mapper_namespace().get(ruuid).deploy_resource(transaction_token, namespace_token, change)
+            previous_output = (
+                self.get_backend().get_cloud_output_by_name(self.get_resource_state_uuid(), change.component_name, ruuid, change.previous_resource.name)
+                if not change.action_type == Resource_Change_Type.CREATE else
+                {}
+            )
 
-            self.get_backend().complete_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, {})
+            try:
+                mapper = self.get_mapper_namespace().get(ruuid)
+                print(mapper)
+                cloud_output = mapper.deploy_resource(transaction_token, namespace_token, change, previous_output)
+
+            except Exception as e:
+                print(f'failed deployment of diff {change}')
+                self.get_backend().fail_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, {"message": "error"})
+                raise e
+
+            self.get_backend().complete_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, cloud_output)
 
         elif isinstance(change, Resource_Reference):
             pass

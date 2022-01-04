@@ -126,8 +126,8 @@ class LocalBackend(Backend):
         file_writer.safe_json_write(self._central_state.dict(), self.central_state_file)
 
     def _write_resource_state_file(self, resource_state: Resource_State, fp: FilePath):
-        with open(fp, "w") as fh:
-            json.dump(resource_state.dict(), fh, indent=4)
+        file_writer.safe_json_write(resource_state.dict(), fp)
+    
 
     # Api for working with Resource States
     def create_resource_state(
@@ -771,6 +771,37 @@ class LocalBackend(Backend):
             )
 
         return cloud_output.get(key)
+
+
+    def get_cloud_output_by_name(
+        self,
+        resource_state_uuid: str,
+        component_name: str,
+        resource_type: str,
+        resource_name: str,
+    ) -> Any:
+
+        component = self.get_component(resource_state_uuid, component_name)
+        resource = self.get_resource_by_name(
+            resource_state_uuid, component_name, resource_type, resource_name
+        )
+
+        cloud_output_id = self._get_cloud_output_id(resource)
+
+        if not cloud_output_id in component.cloud_output:
+
+            raise CloudOutputDoesNotExist(
+                f"Can not find Cloud Output for {resource_type}::{resource_name} in Component {component_name} in Resource State {resource_state_uuid}"
+            )
+
+        cloud_output = component.cloud_output.get(cloud_output_id)
+
+        if not cloud_output:
+            raise CloudOutputDoesNotExist(
+                f"None value for Cloud Output for {resource_type}::{resource_name} in Component {component_name} in Resource State {resource_state_uuid}"
+            )
+
+        return cloud_output
 
     def create_differences(
         self,

@@ -1,21 +1,21 @@
-from typing import Dict
+from os import name
+from typing import Any, Dict, List
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
+from core.constructs.workspace import Workspace
 from core.utils import logger
 
 from core.resources.simple import api as simple_api
 from core.resources.simple.xlambda import Event as lambda_event
 
-
 from .. import aws_client 
-
 
 log = logger.get_cdev_logger(__name__)
 
 
-def _create_simple_api(identifier: str, resource: simple_api.simple_api_model) -> Dict:
+def _create_simple_api(transaction_token: str, namespace_token: str, resource: simple_api.simple_api_model) -> Dict:
     base_args = {
-        "Name": resource.api_name,
+        "Name": f"{resource.api_name}_{namespace_token}",
         "ProtocolType": "HTTP",
     }
 
@@ -34,12 +34,11 @@ def _create_simple_api(identifier: str, resource: simple_api.simple_api_model) -
         }
     }
 
-    _ = base_args.update(cors_args) if resource.allow_cors else None
+    if resource.allow_cors:
+        base_args.update(cors_args) 
 
-    log.debug(base_args)
     rv = aws_client.run_client_function("apigatewayv2", "create_api", base_args)
     
-
     info = {
         "cloud_id": rv.get("ApiId"),
         "arn": "",
@@ -80,9 +79,9 @@ def _create_simple_api(identifier: str, resource: simple_api.simple_api_model) -
     return True
 
 
-def _remove_simple_api(identifier: str, resource: simple_api.simple_api_model) -> bool:
+def _remove_simple_api(transaction_token: str, namespace_token: str, resource: simple_api.simple_api_model, previous_output: Dict) -> bool:
 
-    api_id = cdev_cloud_mapper.get_output_value_by_hash(identifier, "cloud_id")
+    api_id = previous_output.get("cloud_id")
 
     aws_client.run_client_function("apigatewayv2", "delete_api", {"ApiId": api_id})
 
@@ -91,7 +90,7 @@ def _remove_simple_api(identifier: str, resource: simple_api.simple_api_model) -
     return True
 
 
-def _create_route(api_id, route) -> str:
+def _create_route(api_id: str, route: lambda_event) -> str:
     _route_args = {
         "ApiId": api_id,
         "RouteKey": f"{route.config.get('verb')} {route.config.get('path')}",
@@ -103,7 +102,7 @@ def _create_route(api_id, route) -> str:
     return rv.get("RouteId")
 
 
-def _delete_route(api_id, route_id) -> bool:
+def _delete_route(api_id: str, route_id: str) -> bool:
 
     aws_client.run_client_function(
         "apigatewayv2", "delete_route", {"ApiId": api_id, "RouteId": route_id}
@@ -113,8 +112,11 @@ def _delete_route(api_id, route_id) -> bool:
 
 
 def _update_simple_api(
+    transaction_token: str, 
+    namespace_token: str,
     previous_resource: simple_api.simple_api_model,
     new_resource: simple_api.simple_api_model,
+    previous_output: Dict
 ):
     # Check routes
     previous_routes_hashes = set(
@@ -122,7 +124,7 @@ def _update_simple_api(
     )
     new_routes_hashes = set([x.get_hash() for x in new_resource.routes])
 
-    routes_to_be_created = []
+    routes_to_be_created: List[lambda_event] = []
     routes_to_be_deleted = []
 
     for route in new_resource.routes:
@@ -136,10 +138,8 @@ def _update_simple_api(
     log.debug(f"Routes to be created -> {routes_to_be_created}")
     log.debug(f"Routes to be deleted -> {routes_to_be_deleted}")
 
-    previous_cloud_id = cdev_cloud_mapper.get_output_value_by_hash(
-        previous_resource.hash, "cloud_id"
-    )
-
+    previous_cloud_id = previous_output.get('cloud_id')
+    
     new_output_info = {}
     for route in routes_to_be_created:
         route_cloud_id = _create_route(previous_cloud_id, route)
@@ -155,10 +155,8 @@ def _update_simple_api(
 
         log.debug(f"Created Route -> {route}")
 
-    previous_route_info = cdev_cloud_mapper.get_output_value_by_hash(
-        previous_resource.hash, "endpoints"
-    )
-
+    previous_route_info: Dict[str,str] = previous_output.get('endpoints')
+    
     previous_route_info.update(new_output_info)
 
     for route in routes_to_be_deleted:
@@ -177,22 +175,35 @@ def _update_simple_api(
     return True
 
 
-def handle_simple_api_deployment(transaction_token: str, namespace_token: str, resource_diff: Resource_Difference) -> bool:
+def handle_simple_api_deployment(
+        transaction_token: str, 
+        namespace_token: str, 
+        resource_diff: Resource_Difference, 
+        previous_output: Dict[simple_api.simple_api_output, Any]) -> Dict:
     try:
         if resource_diff.action_type == Resource_Change_Type.CREATE:
 
             return _create_simple_api(
-                resource_diff.new_resource.hash, resource_diff.new_resource
+                transaction_token,
+                namespace_token,
+                resource_diff.new_resource
             )
         elif resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY:
 
             return _update_simple_api(
-                resource_diff.previous_resource, resource_diff.new_resource
+                transaction_token,
+                namespace_token,
+                resource_diff.previous_resource,
+                resource_diff.new_resource,
+                previous_output
             )
         elif resource_diff.action_type == Resource_Change_Type.DELETE:
 
             return _remove_simple_api(
-                resource_diff.previous_resource.hash, resource_diff.previous_resource
+                transaction_token,
+                namespace_token,
+                resource_diff.previous_resource,
+                previous_output
             )
 
     except Exception as e:

@@ -14,7 +14,7 @@ class CloudMapper:
     def get_namespaces(self) -> List[str]:
         raise NotImplementedError
 
-    def deploy_resource(self, transaction_token: str, namespace_token: str, resource_diff: Resource_Difference):
+    def deploy_resource(self, transaction_token: str, namespace_token: str, resource_diff: Resource_Difference, previous_output: Dict) -> Dict:
         raise NotImplementedError
 
     def get_available_resources(self) -> Set[str]:

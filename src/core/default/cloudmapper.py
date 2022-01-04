@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 
 from ..constructs.resource import Resource_Change_Type, Resource_Reference_Difference, Resource_Difference
 from ..constructs.mapper import CloudMapper
@@ -18,23 +18,11 @@ class DefaultMapper(CloudMapper):
     def get_namespaces(self) -> List[str]:
         return ["cdev"]
 
-    def deploy_resource(self, transaction_token: str, namespace_token: str, resource_diff: Resource_Difference) -> bool:
-        try:
-            if not resource_diff.action_type == Resource_Change_Type.DELETE:
-                if not resource_diff.new_resource.ruuid in self.get_resource_to_handler():
-                    # TODO throw error
-                    print(f"PROVIDER CAN NOT CREATE RESOURCE: {resource_diff.new_resource.ruuid}")
-                    return False
+    def deploy_resource(self, transaction_token: str, namespace_token: str, resource_diff: Resource_Difference, previous_output: Dict) -> Dict:
+        ruuid = resource_diff.new_resource.ruuid if resource_diff.new_resource else resource_diff.previous_resource.ruuid
 
-                rv = self.get_resource_to_handler()[resource_diff.new_resource.ruuid](transaction_token, namespace_token, resource_diff)
-            else:                
-                rv = self.get_resource_to_handler()[resource_diff.previous_resource.ruuid](transaction_token, namespace_token, resource_diff)
-                
-            return rv
-
-        except Exception as e:
-            print(e)
-            return False
+        return self.get_resource_to_handler()[ruuid](transaction_token, namespace_token, resource_diff, previous_output)
+        
         
 
 

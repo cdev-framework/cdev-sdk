@@ -2,12 +2,12 @@ from enum import Enum
 from types import new_class
 from typing import Dict, List
 
-from cdev.models import Resource_State_Difference, Action_Type
-from cdev.utils import hasher, logger
-from cdev.resources.simple import object_store as simple_object_store
-from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
-from cdev.output import print_deployment_step
-from ..aws import aws_client as raw_aws_client
+from core.constructs.resource import Resource_Difference, Resource_Change_Type
+from core.resources.simple import object_store as simple_object_store
+from core.utils import hasher, logger
+
+
+from .. import aws_client as raw_aws_client
 
 log = logger.get_cdev_logger(__name__)
 RUUID = "cdev::simple::bucket"
@@ -21,13 +21,13 @@ class event_hander_types(Enum):
 
 def _create_simple_bucket(
     identifier: str, resource: simple_object_store.simple_bucket_model
-) -> bool:
+) -> Dict:
     # TODO create buckets in different region
     raw_aws_client.run_client_function(
         "s3", "create_bucket", {"Bucket": resource.bucket_name}
     )
 
-    print_deployment_step("CREATE", f"Created bucket {resource.name}")
+    
 
     output_info = {
         "bucket_name": resource.bucket_name,
@@ -37,48 +37,39 @@ def _create_simple_bucket(
         "ruuid": RUUID,
     }
 
-    cdev_cloud_mapper.add_identifier(identifier),
-    cdev_cloud_mapper.update_output_value(identifier, output_info)
 
-    return True
+    return output_info
 
 
 def _update_simple_bucket(
     previous_resource: simple_object_store.simple_bucket_model,
     new_resource: simple_object_store.simple_bucket_model,
-) -> bool:
+) -> Dict:
     _remove_simple_bucket(previous_resource.hash, previous_resource)
-    _create_simple_bucket(new_resource.hash, new_resource)
+    new_info =  _create_simple_bucket(new_resource.hash, new_resource)
 
-    return True
+    return new_info
 
 
 def _remove_simple_bucket(
     identifier: str, resource: simple_object_store.simple_bucket_model
-) -> bool:
+):
     raw_aws_client.run_client_function(
         "s3", "delete_bucket", {"Bucket": resource.bucket_name}
     )
 
-    print_deployment_step("DELETE", f"Removed bucket {resource.name}")
 
-    cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
-    cdev_cloud_mapper.remove_identifier(identifier)
-    log.debug(f"Delete information in resource and cloud state")
-    return True
-
-
-def handle_simple_bucket_deployment(resource_diff: Resource_State_Difference) -> bool:
+def handle_simple_bucket_deployment(resource_diff: Resource_Difference) -> bool:
     try:
-        if resource_diff.action_type == Action_Type.CREATE:
+        if resource_diff.action_type == Resource_Change_Type.CREATE:
             return _create_simple_bucket(
                 resource_diff.new_resource.hash, resource_diff.new_resource
             )
-        elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
+        elif resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY:
             return _update_simple_bucket(
                 resource_diff.previous_resource, resource_diff.new_resource
             )
-        elif resource_diff.action_type == Action_Type.DELETE:
+        elif resource_diff.action_type == Resource_Change_Type.DELETE:
             return _remove_simple_bucket(
                 resource_diff.previous_resource.hash, resource_diff.previous_resource
             )

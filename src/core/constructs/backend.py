@@ -388,6 +388,33 @@ class Backend:
         """
         raise NotImplementedError
 
+
+    def get_cloud_output_by_name(
+        self,
+        resource_state_uuid: str,
+        component_name: str,
+        resource_type: str,
+        resource_name: str,
+    ) -> Dict:
+        """
+        Get full output from the cloud provider for a resource by the name of the resource.
+
+        Arguments:
+            resource_state_uuid (str): The resource state for this resource.
+            component_name (str): The component this resource is in.
+            resource_type (str): The RUUID of the resource desired
+            resource_name (str): The hash of the resource desired
+            key (str): The key for the desired value
+
+        Raises:
+            ResourceStateDoesNotExist
+            ComponentDoesNotExist
+            CloudOutputDoesNotExist
+            KeyNotInCloudOutput
+
+        """
+        raise NotImplementedError
+
     def get_cloud_output_value_by_hash(
         self,
         resource_state_uuid: str,
