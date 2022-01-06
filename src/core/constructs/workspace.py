@@ -25,6 +25,7 @@ from ..settings import SETTINGS as cdev_settings
 
 
 from ..utils.command_finder import find_specified_command, find_unspecified_command
+from ..utils import module_loader
 
 
 
@@ -61,6 +62,29 @@ class Workspace_State(str, Enum):
     UNINITIALIZED = "UNINITIALIZED"
     INITIALIZING = "INITIALIZING"
     INITIALIZED = "INITIALIZED"
+
+
+
+
+def wrap_phase(phase: Workspace_State):
+    """
+    Annotation that denotes when a function can be executed within the life cycle of a workspace. Throws excpetion if the workspace is not in the correct
+    phase. 
+    """
+    def inner_wrap(func: Callable):
+        def wrapper_func(workspace: 'Workspace', *func_posargs , **func_kwargs):
+    
+            current_state = workspace.get_state()
+            if not current_state == phase:
+                raise Exception(f"Trying to call {func} while in workspace state {current_state} but need to be in {phase}")
+
+            else:
+                
+                return func(workspace, *func_posargs, **func_kwargs) 
+
+        return wrapper_func
+    
+    return inner_wrap
 
 
 
@@ -308,11 +332,7 @@ def load_and_initialize_workspace(config: Workspace_Info):
     Load and initialize the workspace from the given configuration 
     """
     try:
-        if sys.modules.get(config.python_module):
-            workspace_module = importlib.reload(sys.modules.get(config.python_module))
-
-        else:
-            workspace_module = importlib.import_module(config.python_module)
+        workspace_module = module_loader.import_module(config.python_module)
     except Exception as e:
         print("Error loading workspace module")
         print(f'Error > {e}')

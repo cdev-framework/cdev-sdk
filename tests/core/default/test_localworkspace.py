@@ -30,7 +30,7 @@ def local_workspace_config_factory() -> Dict:
                 "central_state_file": new_state_file
             }
         },
-        "initialization_file": "example_init"
+        "initialization_module": "example_init"
     }
         
 

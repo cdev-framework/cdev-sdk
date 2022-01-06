@@ -1,5 +1,5 @@
 #!/bin/bash
 
-export PYTHONPATH=$PYTHONPATH:~/cdev-org/cdev-frontend/src/
+export PYTHONPATH=$PYTHONPATH:~/cdev-org/cdev-sdk/src/
 
 . ./.venv/bin/activate
