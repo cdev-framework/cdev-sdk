@@ -9,6 +9,8 @@ from .components import Component_Difference, ComponentModel
 from .resource import Resource_Reference_Difference, ResourceModel, Resource_Difference
 from .resource_state import Resource_State
 
+from ..utils.module_loader import import_module
+
 
 class Backend_Configuration(BaseModel):
     python_module: str
@@ -383,11 +385,7 @@ class Backend():
 def load_backend(config: Backend_Configuration) -> Backend:
     # sometime the module is already loaded so just reload it to capture any changes
     try:
-        if sys.modules.get(config.python_module):
-            backend_module = importlib.reload(sys.modules.get(config.python_module))
-
-        else:
-            backend_module = importlib.import_module(config.python_module)
+        backend_module = import_module(config.python_module)
     except Exception as e:
         print("Error loading backend module")
         print(f'Error > {e}')

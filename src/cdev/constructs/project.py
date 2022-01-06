@@ -1,6 +1,10 @@
+import json
+import os
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel
+from pydantic.types import DirectoryPath
+from core.constructs.backend import Backend_Configuration
 
 from core.constructs.mapper import CloudMapper
 from core.constructs.components import Component
@@ -13,10 +17,11 @@ _GLOBAL_PROJECT = None
 class project_info(BaseModel):
     project_name: str
     environments: List[environment_info]
+    backend_info: Backend_Configuration
     current_environment: Optional[str]
     settings: Optional[Dict]
 
-    def __init__(__pydantic_self__, project_name: str, environments: List[environment_info], current_environment: str=None, settings: Dict={}) -> None:
+    def __init__(__pydantic_self__, project_name: str, environments: List[environment_info], backend_info: Backend_Configuration, current_environment: str=None, settings: Dict={}) -> None:
         """
         Represents the data about a cdev project object:
         
@@ -30,7 +35,8 @@ class project_info(BaseModel):
         
         super().__init__(**{
             "project_name": project_name,
-            "environment_names": environments,
+            "environments": environments,
+            "backend_info": backend_info,
             "current_environment": current_environment,
             "settings": settings
         })
@@ -56,14 +62,18 @@ class Project():
         _GLOBAL_PROJECT = workspace
 
 
-    def create_environment(self, environment_info: environment_info):
+    def initialize_project(self):
+        raise NotImplementedError
+
+
+    def create_environment(self, environment_name: str):
         """
         Create a new environment for this project.
         """
         raise NotImplementedError
 
 
-    def get_all_environments(self) -> List[str]:
+    def get_all_environment_names(self) -> List[str]:
         raise NotImplementedError
 
 
@@ -142,7 +152,37 @@ def create_new_project(project_info: project_info) -> bool:
     pass
 
 
-def check_if_project_exists() -> bool:
-    pass
+def check_if_project_exists(base_directory: DirectoryPath) -> bool:
+    """
+    This function checks for an existing Cdev project at the given directory. A Cdev project is defined by the existence of a valid
+    'cdev_project.json' file (can be loaded as project_info) at the location of <base_directory>/.cdev/. 
+
+    Arguments:
+        base_directory: Directory to start search from
+    """
+    
+    CDEV_FOLDER = ".cdev"
+    CDEV_PROJECT_FILE = "cdev_project.json"
+
+    if not os.path.isdir(base_directory):
+        raise Exception(f"Given base directory is not a directory {base_directory}")
+
+    if not os.path.isdir(os.path.join(base_directory, CDEV_FOLDER)):
+        return False
+
+    if not os.path.isfile(os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)):
+        return False
+    
+
+    try:
+        with open(os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE), 'r') as fh:
+            project_info(**json.load(fh))
+
+        return True        
+
+    except Exception as e:
+        return False
+
+
 
 

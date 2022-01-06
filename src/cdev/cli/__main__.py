@@ -3,16 +3,16 @@ import argparse
 from ast import parse
 import os
 
-from cdev import output
+#from cdev import output
 
-from ..commands import plan, deploy, destroy, environment, cloud_output, local_development, initializer
-
+#from ..commands import plan, deploy, destroy, environment, cloud_output, local_development, initializer
+from ..commands import initializer
 
 parser = argparse.ArgumentParser(description='cdev cli')
 subparsers = parser.add_subparsers(title='sub_command', description='valid subcommands')
 
 
-CDEV_COMMANDS = [
+"""CDEV_COMMANDS = [
     {
         "name": "plan",
         "help": "See the differences that have been made since the last deployment",
@@ -79,6 +79,18 @@ CDEV_COMMANDS = [
                     {"dest": "env", "type": str, "help": "name of environment you want to create"}
                 ]
             }
+        ]
+    },
+]"""
+
+
+CDEV_COMMANDS = [
+    {
+        "name": "init",
+        "help": "Create a new project",
+        "default": initializer.init_project_cli,
+        "args": [
+            {"dest": "name", "type": str, "help": "Name of the new project"}
         ]
     },
 ]

@@ -1,4 +1,4 @@
-from ..backend import resource_state_manager, executer as backend_executer
+"""from ..backend import resource_state_manager, executer as backend_executer
 from ..frontend import executer as frontend_executer
 from .. import output as cdev_output
 from ..utils import project, logger
@@ -52,3 +52,4 @@ def local_deploy_command(args) -> bool:
     backend_executer.deploy_diffs(project_diffs)
     
     return True
+"""

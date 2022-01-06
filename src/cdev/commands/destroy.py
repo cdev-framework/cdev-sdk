@@ -1,4 +1,4 @@
-import os
+"""import os
 import shutil
 
 
@@ -32,3 +32,4 @@ def destroy_command(args):
     #shutil.rmtree(os.path.join(SETTINGS.get("INTERNAL_FOLDER_NAME")))
 
 
+"""

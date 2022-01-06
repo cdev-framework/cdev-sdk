@@ -1,6 +1,7 @@
 import json
-from typing import Dict, List, Callable
+from typing import Dict, List, Callable, Any, TypeVar
 from cdev.constructs.project import Project, project_info
+from cdev.default.environment import local_environment
 
 from core.constructs.mapper import CloudMapper
 from core.constructs.components import Component
@@ -9,14 +10,14 @@ from pydantic.types import FilePath
 
 from ..constructs.environment import environment_info, Environment
 
+F = TypeVar('F', bound=Callable[..., Any])
 
-
-def wrap_phase(phase: Workspace_State):
+def wrap_phase(phase: Workspace_State) -> Callable[[F], F]:
     """
     Annotation that denotes when a function can be executed within the life cycle of a workspace. Throws excpetion if the workspace is not in the correct
     phase. 
     """
-    def inner_wrap(func: Callable):
+    def inner_wrap(func: F) -> F:
         def wrapper_func(project: 'Project', *func_posargs , **func_kwargs):
             
 
@@ -59,21 +60,24 @@ class local_project(Project):
         return cls._instance
 
 
-    def initialize_environment(self):
+    def initialize_project(self):
         pass
 
 
 
-    def create_environment(self, environment_info: environment_info):
+    def create_environment(self, environment_name: str):
 
         raise NotImplementedError
 
 
-    def get_all_environments(self) -> List[str]:
+    def get_all_environment_names(self) -> List[str]:
         """
         Get the list of all the environments for this project
         """
-        raise NotImplementedError
+        self._load_state()
+
+
+        return self._central_state.environments
 
 
     def set_current_environment(self, environment_name: str):
@@ -85,19 +89,31 @@ class local_project(Project):
 
 
     def get_environment(self, environment_name: str) -> Environment:
-        raise NotImplementedError
+        self._load_state()
+
+        environment_info =  next([x for x in self._central_state.environments if x.name == environment_name])
+
+        return local_environment(**environment_info)
 
 
     def get_current_environment_name(self) -> str:
-        raise NotImplementedError
+        self._load_state()
+
+        return self._central_state.current_environment
 
 
     def get_current_environment(self) -> Environment:
-        raise NotImplementedError
+        self._load_state()
+
+        return self.get_environment(self._central_state.current_environment)
 
 
-    def destroy_environment(self, environment_name: str):
-        raise NotImplementedError
+    def destroy_environment(self, environment_name: str) -> None:
+        self._load_state()
+
+        self._central_state.environments = [x for x in self._central_state.environments if x.name != environment_name]
+
+        self._write_state()
 
 
     def _get_environment_info(self, name: str) -> environment_info:
@@ -116,6 +132,7 @@ class local_project(Project):
     #################
     ##### Mappers
     #################
+    @wrap_phase(Workspace_State.INITIALIZING)
     def add_mapper(self, mapper: CloudMapper ) -> None:
         ws = self.get_current_environment().get_workspace()
         ws.add_mapper(mapper)

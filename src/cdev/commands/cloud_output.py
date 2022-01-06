@@ -1,4 +1,4 @@
-from typing_extensions import final
+"""from typing_extensions import final
 from core.backend import cloud_mapper_manager
 from ..frontend import executer as frontend_executer
 from .. import output as cdev_output
@@ -40,3 +40,4 @@ def cloud_output_command(args):
     cdev_output.print(f"---OUTPUTS---")
     for rendered_output in rendered_outputs:
         print(rendered_output)
+"""

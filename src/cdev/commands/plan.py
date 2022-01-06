@@ -1,4 +1,4 @@
-from ..backend import resource_state_manager, executer as backend_executer
+"""from ..backend import resource_state_manager, executer as backend_executer
 from ..frontend import executer as frontend_executer
 from ..output import print_plan
 from ..utils import project, logger
@@ -21,3 +21,4 @@ def plan_command(args):
     log.debug(f"Are project diffs valid -> {diffs_valid}")
 
     print_plan(rendered_frontend, project_diffs)
+"""

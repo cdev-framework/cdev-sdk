@@ -1,4 +1,4 @@
-from ..utils.logger import get_cdev_logger
+"""from ..utils.logger import get_cdev_logger
 from ..utils import environment as cdev_environment
 from .. import output as cdev_output
 
@@ -26,3 +26,4 @@ def environment(command, args):
         cdev_environment.set_current_environment(parsed_args.get("env"))
     elif command == 'create':
         cdev_environment.create_environment(parsed_args.get("env"))
+"""

@@ -4,7 +4,7 @@ import inspect
 import json
 import os
 import sys
-from typing import Callable, List, Dict, Optional, Any, Tuple, Union
+from typing import Callable, List, Dict, Optional, Any, Tuple, Union, TypeVar
 
 
 
@@ -34,6 +34,7 @@ WORKSPACE_INFO_FILENAME = cdev_settings.get("WORKSPACE_FILE_NAME")
 
 _GLOBAL_WORKSPACE: 'Workspace' = None
 
+F = TypeVar('F', bound=Callable[..., Any])
 
 class Workspace_Info(BaseModel):
     python_module: str
@@ -66,12 +67,12 @@ class Workspace_State(str, Enum):
 
 
 
-def wrap_phase(phase: Workspace_State):
+def wrap_phase(phase: Workspace_State) -> Callable[[F], F]:
     """
     Annotation that denotes when a function can be executed within the life cycle of a workspace. Throws excpetion if the workspace is not in the correct
     phase. 
     """
-    def inner_wrap(func: Callable):
+    def inner_wrap(func: F) -> F:
         def wrapper_func(workspace: 'Workspace', *func_posargs , **func_kwargs):
     
             current_state = workspace.get_state()
