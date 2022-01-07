@@ -113,7 +113,7 @@ class Workspace():
     @classmethod
     def remove_global_instance(cls, caller: 'Workspace'):
         """
-        Method to reset the Global Project object. This should be the final cleanup step for a Cdev process. 
+        Method to reset the Global Workspace object. This should be the final cleanup step for a Cdev process. 
         """
         global _GLOBAL_WORKSPACE
 
@@ -122,7 +122,7 @@ class Workspace():
 
 
         if not _GLOBAL_WORKSPACE == caller:
-            raise Exception("Only the current Project object can remove itself")
+            raise Exception("Only the current Workspace object can remove itself")
 
         _GLOBAL_WORKSPACE = None
 
@@ -139,22 +139,81 @@ class Workspace():
     def destroy_workspace(self):
         raise NotImplementedError
 
+
+        
+    ################
+    ##### Initialized
+    ################
+    def get_state(self) -> Workspace_State:
+        """
+        Get the current lifecycle state of the Workspace. 
+
+        Returns:
+            state (Workspace_State)
+        """
+        raise NotImplementedError
+
+
+    def set_state(self, value: Workspace_State):
+        """
+        Set the current lifecycle state of the Workspace. 
+
+        Arguments:
+            value (Workspace_State)
+        """
+        raise NotImplementedError
+
+
     #################
     ##### Mappers
     #################
     def add_mapper(self, mapper: CloudMapper ) -> None:
+        """
+        Add a CloudMapper to the project. The order that the Mappers are added to the Workspace defines the precedence give when
+        determining which CloudMapper to use. 
+        
+        Note that this function should only be called during the `Workspace Initialization` part of the Cdev lifecycle.
+
+        Arguments:
+            mapper (CloudMapper): The mapper to add
+        """
         raise NotImplementedError
 
 
     def add_mappers(self, mappers: List[CloudMapper] ) -> None:
-       raise NotImplementedError
+        """
+        Add a List of CloudMappers to the project. The order that the Mappers are added to the Workspace defines the precedence
+        give when determining which CloudMapper to use. 
+        
+        Note that this function should only be called during the `Workspace Initialization` part of the Cdev lifecycle.
+
+        Arguments:
+            mappers (List[CloudMapper]): The mapper to add
+        """
+        raise NotImplementedError
 
 
     def get_mappers(self) -> List[CloudMapper]:
+        """
+        Return the List of CloudMappers for this Workspace. 
+
+        Note that this function should only be called during the `Workspace Initialized` part of the Cdev lifecycle.
+
+        Returns:
+            mappers (List[CloudMapper]): mappers for this Workspace
+        """
         raise NotImplementedError
 
 
     def get_mapper_namespace(self) -> Dict:
+        """
+        Return the Dictionary that maps Resource ID's (ruuid) to the mapper that will be used to deploy the resource into the cloud.
+
+        Note that this function should only be called during the `Workspace Initialized` part of the Cdev lifecycle.
+
+        Returns:
+            ruuid_to_mapper (Dict[str, CloudMapper]): Resource ID to CloudMapper
+        """
         raise NotImplementedError
 
 
@@ -162,39 +221,83 @@ class Workspace():
     ##### Commands
     #################
     def add_command(self, command_location: str):
+        """
+        Add a Command Location to the Workspace. The order that the Command is added to the Workspace defines the precedence
+        give when searching for Commands. Command Locations should adhere to the defined form to ensure that they can be 
+        found within the Workspace. 
+        
+        Note that this function should only be called during the `Workspace Initialization` part of the Cdev lifecycle.
+
+        Arguments:
+            command_location (Command): The command location to add
+        """
         raise NotImplementedError
 
 
     def add_commands(self, command_locations: List[str]):
+        """
+        Add a List of Command Locations to the Workspace. The order that the Commands are added to the Workspace defines the precedence
+        give when searching for a Command. Command Locations should adhere to the defined form to ensure that they can be
+        found within the Workspace. 
+        
+        Note that this function should only be called during the `Workspace Initialization` part of the Cdev lifecycle.
+
+        Arguments:
+            command_locations (Command): The command location to add
+        """
         raise NotImplementedError
+
 
     def get_commands(self) -> List[str]:
-        raise NotImplementedError
+        """
+        Get the Command Locations for this Workspace. 
 
+        Note that this function should only be called during the `Workspace Initialized` part of the Cdev lifecycle.
+
+        Returns:
+            command_locations (List[str])
+        """
+        raise NotImplementedError
 
     
     #################
     ##### Components
     #################
     def add_component(self, component: Component):
+        """
+        Add a Component to the Workspace. Components are used to determine the desired state of the Workspace. They should represent
+        a logical separation for the Resources in a project. 
+
+        Note that this function should only be called during the `Workspace Initialization` part of the Cdev lifecycle.
+
+        Arguments:
+            component (Component): Component to add
+        """
         raise NotImplementedError
 
 
     def add_components(self, components: List[Component]):
+        """
+        Add a List of Components to the Workspace. Components are used to determine the desired state of the Workspace. They 
+        should represent a logical separation for the Resources in a project. 
+
+        Note that this function should only be called during the `Workspace Initialization` part of the Cdev lifecycle.
+
+        Arguments:
+            component (Component): Component to add
+        """
         raise NotImplementedError
 
 
     def get_components(self) -> List[Component]:
-        raise NotImplementedError
+        """
+        Return the Components for this Workspace. 
 
-    
-    ################
-    ##### Initialized
-    ################
-    def get_state(self) -> Workspace_State:
-        raise NotImplementedError
+        Note that this function should only be called during the `Workspace Initialized` part of the Cdev lifecycle.
 
-    def set_state(self, value: Workspace_State):
+        Returns:
+            components (List[Component])
+        """
         raise NotImplementedError
 
 
@@ -208,16 +311,33 @@ class Workspace():
     def set_backend(self, backend: Backend):
         raise NotImplementedError
 
+    
+    def set_resource_state_uuid(self, resource_state_uuid: str):
+        """
+        Set the Resource State UUID to denote the Resource State that this Workspace will execute over. 
+
+        Note that this function should only be called during the `Workspace Initialization` part of the Cdev lifecycle.
+
+        Arguments:
+            resource_state_uuid (str): Resource State UUID from the Backend 
+        """
+        raise NotImplementedError
+
+
 
     def get_resource_state_uuid(self) -> str:
+        """
+        Get the Resource State UUID that this Workspace is executing over. 
+
+        Note that this function should only be called during the `Workspace Initialized` part of the Cdev lifecycle.
+
+        Returns:
+            resource_state_uuid (str): Resource State UUID from the Backend 
+        """
         raise NotImplementedError
 
     
-    def set_resource_state_uuid(self, resource_state_uuid: str):
-        raise NotImplementedError
-
-
-
+    
     @wrap_phase(Workspace_State.INITIALIZED)
     def generate_current_state(self) -> List[ComponentModel]:
         """

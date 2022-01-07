@@ -159,7 +159,6 @@ class Project():
         raise NotImplementedError
 
 
-    
     def destroy_environment(self, environment_name: str):
         """
         Destroy an environment. This function should only be called when the project is in the Initialized state, so that
@@ -215,6 +214,7 @@ class Project():
         """
         raise NotImplementedError
 
+
     def get_current_environment(self) -> Environment:
         """
         Get the environment object for the currently active Environment. Note that the Environment will be in a state 
@@ -229,24 +229,56 @@ class Project():
         raise NotImplementedError
 
 
-
-    
     #################
     ##### Mappers
     #################
     def add_mapper(self, mapper: CloudMapper ) -> None:
+        """
+        Add a CloudMapper to the project. The order that the Mappers are added to the Project defines the precedence give when
+        determining which CloudMapper to use. 
+        
+        Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
+
+        Arguments:
+            mapper (CloudMapper): The mapper to add
+        """
         raise NotImplementedError
 
 
     def add_mappers(self, mappers: List[CloudMapper] ) -> None:
-       raise NotImplementedError
+        """
+        Add a List of CloudMappers to the project. The order that the Mappers are added to the Project defines the precedence
+        give when determining which CloudMapper to use. 
+        
+        Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
 
-
-    def get_mappers(self) -> List[CloudMapper]:
+        Arguments:
+            mappers (List[CloudMapper]): The mapper to add
+        """
         raise NotImplementedError
 
 
-    def get_mapper_namespace(self) -> Dict:
+    def get_mappers(self) -> List[CloudMapper]:
+        """
+        Return the List of CloudMappers for this Project. 
+
+        Note that this function should only be called during the `Project Initialized` part of the Cdev lifecycle.
+
+        Returns:
+            mappers (List[CloudMapper]): mappers for this Project
+        """
+        raise NotImplementedError
+
+
+    def get_mapper_namespace(self) -> Dict[str, CloudMapper]:
+        """
+        Return the Dictionary that maps Resource ID's (ruuid) to the mapper that will be used to deploy the resource into the cloud.
+
+        Note that this function should only be called during the `Project Initialized` part of the Cdev lifecycle.
+
+        Returns:
+            ruuid_to_mapper (Dict[str, CloudMapper]): Resource ID to CloudMapper
+        """
         raise NotImplementedError
 
 
@@ -255,29 +287,83 @@ class Project():
     ##### Commands
     #################
     def add_command(self, command_location: str):
+        """
+        Add a Command Location to the Project. The order that the Command is added to the Project defines the precedence
+        give when searching for Commands. Command Locations should adhere to the defined form to ensure that they can be 
+        found within the Project. 
+        
+        Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
+
+        Arguments:
+            command_location (Command): The command location to add
+        """
         raise NotImplementedError
 
 
     def add_commands(self, command_locations: List[str]):
+        """
+        Add a List of Command Locations to the Project. The order that the Commands are added to the Project defines the precedence
+        give when searching for a Command. Command Locations should adhere to the defined form to ensure that they can be
+        found within the Project. 
+        
+        Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
+
+        Arguments:
+            command_locations (Command): The command location to add
+        """
         raise NotImplementedError
+
 
     def get_commands(self) -> List[str]:
-        raise NotImplementedError
+        """
+        Get the Command Locations for this Project. 
 
+        Note that this function should only be called during the `Project Initialized` part of the Cdev lifecycle.
+
+        Returns:
+            command_locations (List[str])
+        """
+        raise NotImplementedError
 
     
     #################
     ##### Components
     #################
     def add_component(self, component: Component):
+        """
+        Add a Component to the Project. Components are used to determine the desired state of the Project. They should represent
+        a logical separation for the Resources in a project. 
+
+        Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
+
+        Arguments:
+            component (Component): Component to add
+        """
         raise NotImplementedError
 
 
     def add_components(self, components: List[Component]):
+        """
+        Add a List of Components to the Project. Components are used to determine the desired state of the Project. They 
+        should represent a logical separation for the Resources in a project. 
+
+        Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
+
+        Arguments:
+            component (Component): Component to add
+        """
         raise NotImplementedError
 
 
     def get_components(self) -> List[Component]:
+        """
+        Return the Components for this Project. 
+
+        Note that this function should only be called during the `Project Initialized` part of the Cdev lifecycle.
+
+        Returns:
+            components (List[Component])
+        """
         raise NotImplementedError
 
 
