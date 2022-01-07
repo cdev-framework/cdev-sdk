@@ -7,7 +7,7 @@ from typing import Callable, Any
 #from cdev import output
 
 #from ..commands import plan, deploy, destroy, environment, cloud_output, local_development, initializer
-from ..commands import initializer, environment
+from ..commands import initializer, environment, plan
 
 parser = argparse.ArgumentParser(description='cdev cli')
 subparsers = parser.add_subparsers(title='sub_command', description='valid subcommands')
@@ -92,7 +92,23 @@ def wrap_load_project(command: Callable) -> Callable[[Any], Any]:
             
             initializer.load_project(args)
         except Exception as e:
-            print(f"Could not initialize the workspace to call {command}")
+            print(f"Could not load the project to call {command}")
+            print(e)
+            return
+
+        command(args)
+
+
+    return wrapped_caller
+
+
+def wrap_load_and_initialize_project(command: Callable) -> Callable[[Any], Any]:
+
+    def wrapped_caller(*args, **kwargs):
+        try:
+            initializer.load_and_initialize_project(args)
+        except Exception as e:
+            print(f"Could not load and initialize the project to call {command}")
             print(e)
             return
 
@@ -103,6 +119,11 @@ def wrap_load_project(command: Callable) -> Callable[[Any], Any]:
 
 
 CDEV_COMMANDS = [
+    {
+        "name": "plan",
+        "help": "See the differences that have been made since the last deployment",
+        "default": wrap_load_and_initialize_project(plan.plan_command)
+    }, 
     {
         "name": "init",
         "help": "Create a new project",

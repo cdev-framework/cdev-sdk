@@ -110,6 +110,24 @@ class Workspace():
         _GLOBAL_WORKSPACE = workspace
 
 
+    @classmethod
+    def remove_global_instance(cls, caller: 'Workspace'):
+        """
+        Method to reset the Global Project object. This should be the final cleanup step for a Cdev process. 
+        """
+        global _GLOBAL_WORKSPACE
+
+        if not _GLOBAL_WORKSPACE:
+            raise Exception("Global Workspace is not set")
+
+
+        if not _GLOBAL_WORKSPACE == caller:
+            raise Exception("Only the current Project object can remove itself")
+
+        _GLOBAL_WORKSPACE = None
+
+
+
     def initialize_workspace(self, workspace_configuration: Workspace_Info):
         """
         Run the configuration needed to initialize a workspace. This should generally only be called by the Core framework itself to ensure that the
@@ -118,7 +136,7 @@ class Workspace():
         raise NotImplementedError
         
 
-    def clear_previous_state(self):
+    def destroy_workspace(self):
         raise NotImplementedError
 
     #################
@@ -198,20 +216,6 @@ class Workspace():
     def set_resource_state_uuid(self, resource_state_uuid: str):
         raise NotImplementedError
 
-
-    def execute_command(self, command: str, args: List) -> None:
-        """
-        Find the desired command based on the search path
-
-        Args:
-            command (str): The full command to search for. Can be '.' seperated to denote search path. 
-            
-
-        Raises:
-            KeyError: Raises an exception.
-        """
-        
-        raise NotImplementedError
 
 
     @wrap_phase(Workspace_State.INITIALIZED)

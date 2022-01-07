@@ -55,9 +55,19 @@ class local_workspace(Workspace):
             # Load the backend 
             cls._instance._backend = None
 
+            cls._instance._COMMANDS = []
+            cls._instance._MAPPERS = []
+            cls._instance._COMPONENTS = []
+            cls._instance._resource_state_uuid = None
+
             Workspace.set_global_instance(cls._instance)
 
         return cls._instance
+
+
+    @classmethod
+    def terminate_singleton(cls):
+        cls._instance = None
 
 
     def initialize_workspace(self, workspace_configuration_dict: local_workspace_configuration):
@@ -84,14 +94,9 @@ class local_workspace(Workspace):
         self.set_state(Workspace_State.INITIALIZED)
         
         
-    def clear_previous_state(self):
-        self._instance = None
-        self._outputs = {}
-
-        self._COMMANDS = []
-        self._MAPPERS = []
-        self._COMPONENTS = []
-
+    def destroy_workspace(self):
+        Workspace.destroy_workspace(self)
+        local_workspace.terminate_singleton()
 
     ################
     ##### State

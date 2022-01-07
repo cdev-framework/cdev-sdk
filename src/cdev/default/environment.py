@@ -22,4 +22,5 @@ class local_environment(Environment):
 
     
     def initialize_environment(self):
+        print(f"initializing environment")
         load_and_initialize_workspace(self.workspace_info)

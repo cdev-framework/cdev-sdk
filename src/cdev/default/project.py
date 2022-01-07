@@ -1,48 +1,32 @@
 import json
+from pydantic.types import FilePath
 from typing import Dict, List, Callable, Any, TypeVar
-from cdev.constructs.project import Project, project_info
+
+
+from cdev.constructs.project import Project, Project_State, project_info, wrap_phase
 from cdev.default.environment import local_environment
 from core.constructs.backend import Backend, load_backend
 
 from core.constructs.mapper import CloudMapper
 from core.constructs.components import Component
 from core.constructs.workspace import Workspace_State
-from pydantic.types import FilePath
+
 
 from core.constructs.workspace import Workspace_Info
 from core.utils import file_writer
 
 from ..constructs.environment import environment_info, Environment
 
-F = TypeVar('F', bound=Callable[..., Any])
-
-def wrap_phase(phase: Workspace_State) -> Callable[[F], F]:
-    """
-    Annotation that denotes when a function can be executed within the life cycle of a workspace. Throws excpetion if the workspace is not in the correct
-    phase. 
-    """
-    def inner_wrap(func: F) -> F:
-        def wrapper_func(project: 'Project', *func_posargs , **func_kwargs):
-            
-
-            environment = project.get_current_environment()
-            current_state = environment.get_workspace().get_state()
-            if not current_state == phase:
-                raise Exception(f"Trying to call {func} while in workspace state {current_state} but need to be in {phase}")
-
-            else:
-                
-                return func(project, *func_posargs, **func_kwargs) 
-
-        return wrapper_func
-    
-    return inner_wrap
+WORKSPACE_STATE_TO_PROJECT_STATE = {
+    Workspace_State.UNINITIALIZED: Project_State.UNINITIALIZED,
+    Workspace_State.INITIALIZING: Project_State.INITIALIZING,
+    Workspace_State.INITIALIZED: Project_State.INITIALIZED,
+}
 
 
 class local_project(Project):
     """
-    A singleton that encapsulates the configuration and high level information needed to construct a project. This singleton
-    can be used within the different components to gain information about the higher level project that it is within. 
+    An implementation of the Project API that works for simple local development. 
 
     Arguments:
         project_info_location (FilePath): Path the configuration json file
@@ -74,11 +58,25 @@ class local_project(Project):
         return cls._instance
 
 
+    @classmethod
+    def terminate_singleton(cls):
+        cls._instance = None
+
     def initialize_project(self):
         current_env = self.get_current_environment()
         current_env.initialize_environment()
 
 
+    def terminate_project(self):
+        Project.remove_global_instance(self)
+
+
+    def get_state(self) -> Project_State:
+        environment = self.get_current_environment()
+        return WORKSPACE_STATE_TO_PROJECT_STATE.get(environment.get_workspace().get_state())
+
+
+    @wrap_phase(Project_State.INITIALIZED)
     def create_environment(self, environment_name: str):
         self._load_state()
         resource_state_id = self._backend.create_resource_state(environment_name)
@@ -86,6 +84,7 @@ class local_project(Project):
         workspace_config = {
             'backend_configuration': self._central_state.backend_info
         }
+
         workspace_config['resource_state_uuid'] = resource_state_id
         workspace_config['initialization_module'] = 'cdev_project'
 
@@ -103,6 +102,16 @@ class local_project(Project):
         self._write_state()
 
 
+    @wrap_phase(Project_State.INITIALIZED)
+    def destroy_environment(self, environment_name: str) -> None:
+        self._load_state()
+
+        self._central_state.environments = [x for x in self._central_state.environments if x.name != environment_name]
+
+        self._write_state()
+
+
+    @wrap_phase(Project_State.UNINITIALIZED)
     def get_all_environment_names(self) -> List[str]:
         """
         Get the list of all the environments for this project
@@ -112,7 +121,7 @@ class local_project(Project):
 
         return [x.name for x in self._central_state.environments]
 
-
+    @wrap_phase(Project_State.UNINITIALIZED)
     def set_current_environment(self, environment_name: str):
         self._load_state()
 
@@ -124,9 +133,9 @@ class local_project(Project):
     def get_environment(self, environment_name: str) -> Environment:
         self._load_state()
 
-        environment_info =  next([x for x in self._central_state.environments if x.name == environment_name])
+        environment_info =  next(x for x in self._central_state.environments if x.name == environment_name)
 
-        return local_environment(**environment_info)
+        return local_environment(environment_info)
 
 
     def get_current_environment_name(self) -> str:
@@ -141,17 +150,9 @@ class local_project(Project):
         return self.get_environment(self._central_state.current_environment)
 
 
-    def destroy_environment(self, environment_name: str) -> None:
-        self._load_state()
-
-        self._central_state.environments = [x for x in self._central_state.environments if x.name != environment_name]
-
-        self._write_state()
-
-
     def _get_environment_info(self, name: str) -> environment_info:
         self._load_state()
-
+        
         lookup_dict = {x.name:x for x in self._central_state.environments}
 
         if not name in lookup_dict:
@@ -171,16 +172,19 @@ class local_project(Project):
         ws.add_mapper(mapper)
 
 
+    @wrap_phase(Workspace_State.INITIALIZING)
     def add_mappers(self, mappers: List[CloudMapper] ) -> None:
        ws = self.get_current_environment().get_workspace()
        ws.add_mappers(mappers)
 
 
+    @wrap_phase(Workspace_State.INITIALIZED)
     def get_mappers(self) -> List[CloudMapper]:
         ws = self.get_current_environment().get_workspace()
         return ws.get_mappers()
 
 
+    @wrap_phase(Workspace_State.INITIALIZED)
     def get_mapper_namespace(self) -> Dict:
         ws = self.get_current_environment().get_workspace()
         return ws.get_mapper_namespace()
@@ -190,15 +194,19 @@ class local_project(Project):
     #################
     ##### Commands
     #################
+    @wrap_phase(Workspace_State.INITIALIZING)
     def add_command(self, command_location: str):
         ws = self.get_current_environment().get_workspace()
         ws.add_command(command_location)
 
 
+    @wrap_phase(Workspace_State.INITIALIZING)
     def add_commands(self, command_locations: List[str]):
         ws = self.get_current_environment().get_workspace()
         ws.add_commands(command_locations)
+    
 
+    @wrap_phase(Workspace_State.INITIALIZED)
     def get_commands(self) -> List[str]:
         ws = self.get_current_environment().get_workspace()
         return ws.get_commands()
@@ -208,16 +216,19 @@ class local_project(Project):
     #################
     ##### Components
     #################
+    @wrap_phase(Workspace_State.INITIALIZING)
     def add_component(self, component: Component):
         ws = self.get_current_environment().get_workspace()
         ws.add_component(component)
 
 
+    @wrap_phase(Workspace_State.INITIALIZING)
     def add_components(self, components: List[Component]):
         ws = self.get_current_environment().get_workspace()
         ws.add_components(components)
 
 
+    @wrap_phase(Workspace_State.INITIALIZED)
     def get_components(self) -> List[Component]:
         ws = self.get_current_environment().get_workspace()
         return ws.get_components()

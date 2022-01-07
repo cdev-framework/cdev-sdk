@@ -16,3 +16,13 @@ This tool is designed to improve the developer experience for Serverless develop
 
 __pdoc__ = {}
 __pdoc__['.venv'] = False
+
+
+
+from . import constructs
+
+
+# Ergonomic mapping so that the global project instance is in a more logical place for end developers.
+Project = constructs.project.Project
+
+
