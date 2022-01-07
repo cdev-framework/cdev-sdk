@@ -225,8 +225,6 @@ class local_project(Project):
 
     def _write_state(self):
         file_writer.safe_json_write(self._central_state.dict(), self._project_info_location)
-        #with open(self._project_info_location, 'w') as fh:
-        #    json.dump(self._central_state.dict(), fh, indent=4)
 
 
     def _load_state(self) -> project_info:

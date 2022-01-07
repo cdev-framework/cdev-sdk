@@ -232,14 +232,10 @@ class local_workspace_manager(WorkspaceManager):
 
         
         file_writer.safe_json_write(workspace_info.dict(), os.path.join(base_cdev_dir, self.workspace_filename))
-        #with open(os.path.join(base_cdev_dir, self.workspace_filename), 'w') as fh:
-        #    json.dump(workspace_info.dict(), fh, indent=4)
-
 
 
     def check_if_workspace_exists(self) -> bool:
         return os.path.isfile(os.path.join(self.base_dir, self.workspace_dir, self.workspace_filename))
-
 
 
     def load_workspace_configuration(self) -> Workspace_Info:

@@ -102,8 +102,6 @@ class LocalBackend(Backend):
         
     def _write_central_file(self):
         file_writer.safe_json_write(self._central_state.dict(), self.central_state_file )
-        #with open(self.central_state_file, 'w') as fh:
-        #    json.dump(self._central_state.dict(), fh, indent=4)
 
 
     def _write_resource_state_file(self, resource_state: Resource_State, fp: FilePath):
