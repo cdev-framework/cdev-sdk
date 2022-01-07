@@ -16,7 +16,7 @@ from ..constructs.workspace import Workspace_State, Workspace_Info, Workspace, W
 
 from ..settings import SETTINGS as cdev_settings
 
-from ..utils import module_loader
+from ..utils import module_loader, file_writer
 
 
 class local_workspace_configuration(BaseModel):
@@ -230,9 +230,10 @@ class local_workspace_manager(WorkspaceManager):
         if not os.path.isdir(base_cdev_dir):
             os.mkdir(base_cdev_dir)
 
-
-        with open(os.path.join(base_cdev_dir, self.workspace_filename), 'w') as fh:
-            json.dump(workspace_info.dict(), fh, indent=4)
+        
+        file_writer.safe_json_write(workspace_info.dict(), os.path.join(base_cdev_dir, self.workspace_filename))
+        #with open(os.path.join(base_cdev_dir, self.workspace_filename), 'w') as fh:
+        #    json.dump(workspace_info.dict(), fh, indent=4)
 
 
 

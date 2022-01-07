@@ -17,7 +17,7 @@ from ..constructs.components import Component_Change_Type, ComponentModel, Compo
 from ..constructs.resource import Resource_Change_Type, Resource_Difference, Resource_Reference_Change_Type, ResourceModel, Resource_Reference_Difference, ResourceReferenceModel
 from ..constructs.resource_state import Resource_State
 from ..settings import SETTINGS as cdev_settings
-from ..utils import hasher as cdev_hasher, logger
+from ..utils import hasher as cdev_hasher, logger, file_writer
 
 
 class LocalBackendError(BackendError):
@@ -101,8 +101,9 @@ class LocalBackend(Backend):
 
         
     def _write_central_file(self):
-        with open(self.central_state_file, 'w') as fh:
-            json.dump(self._central_state.dict(), fh, indent=4)
+        file_writer.safe_json_write(self._central_state.dict(), self.central_state_file )
+        #with open(self.central_state_file, 'w') as fh:
+        #    json.dump(self._central_state.dict(), fh, indent=4)
 
 
     def _write_resource_state_file(self, resource_state: Resource_State, fp: FilePath):

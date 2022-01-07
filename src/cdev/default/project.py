@@ -10,6 +10,7 @@ from core.constructs.workspace import Workspace_State
 from pydantic.types import FilePath
 
 from core.constructs.workspace import Workspace_Info
+from core.utils import file_writer
 
 from ..constructs.environment import environment_info, Environment
 
@@ -44,7 +45,7 @@ class local_project(Project):
     can be used within the different components to gain information about the higher level project that it is within. 
 
     Arguments:
-            project_info_location (FilePath): Path the configuration json file
+        project_info_location (FilePath): Path the configuration json file
             
     """
     _instance = None
@@ -223,8 +224,9 @@ class local_project(Project):
 
 
     def _write_state(self):
-        with open(self._project_info_location, 'w') as fh:
-            json.dump(self._central_state.dict(), fh, indent=4)
+        file_writer.safe_json_write(self._central_state.dict(), self._project_info_location)
+        #with open(self._project_info_location, 'w') as fh:
+        #    json.dump(self._central_state.dict(), fh, indent=4)
 
 
     def _load_state(self) -> project_info:
