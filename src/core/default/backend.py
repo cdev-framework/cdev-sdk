@@ -1,7 +1,10 @@
 import json
 import os
+
+from pathlib import PosixPath, WindowsPath
 from pydantic.main import BaseModel
 from pydantic.types import DirectoryPath, FilePath
+
 from typing import Dict, List, Any, Tuple
 import uuid
 
@@ -45,23 +48,24 @@ class Local_Backend_Configuration(Backend_Configuration):
         """
         
         super().__init__(**{
-            "python_module": "cdev.default.backend",
-            "python_class": "Local_Backend",
+            "python_module": "core.default.backend",
+            "python_class": "LocalBackend",
             "config": config
         })
 
 
 class LocalCentralFile(BaseModel):
-    resource_state_locations: Dict[str, FilePath] # uuid -> file location
+    resource_state_locations: Dict[str, str] # uuid -> file location
     top_level_states: List[str] # uuid
     resource_state_names: List[str]
 
-    def __init__(__pydantic_self__, resource_state_locations: Dict[str, FilePath], top_level_states: List[str], resource_state_names: List[str] ) -> None:
+    def __init__(__pydantic_self__, resource_state_locations: Dict[str, str], top_level_states: List[str], resource_state_names: List[str] ) -> None:
         super().__init__(**{
             "resource_state_locations": resource_state_locations,
             "top_level_states": top_level_states,
             "resource_state_names": resource_state_names,
         })
+
 
 
 class LocalBackend(Backend):    

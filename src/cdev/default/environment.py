@@ -18,7 +18,7 @@ class local_environment(Environment):
 
 
     def get_workspace(self) -> Workspace:
-        raise NotImplementedError
+        return Workspace.instance()
 
     
     def initialize_environment(self):

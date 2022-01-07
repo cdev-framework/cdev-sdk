@@ -2,11 +2,14 @@ import json
 from typing import Dict, List, Callable, Any, TypeVar
 from cdev.constructs.project import Project, project_info
 from cdev.default.environment import local_environment
+from core.constructs.backend import Backend, load_backend
 
 from core.constructs.mapper import CloudMapper
 from core.constructs.components import Component
 from core.constructs.workspace import Workspace_State
 from pydantic.types import FilePath
+
+from core.constructs.workspace import Workspace_Info
 
 from ..constructs.environment import environment_info, Environment
 
@@ -39,35 +42,64 @@ class local_project(Project):
     """
     A singleton that encapsulates the configuration and high level information needed to construct a project. This singleton
     can be used within the different components to gain information about the higher level project that it is within. 
+
+    Arguments:
+            project_info_location (FilePath): Path the configuration json file
+            
     """
+    _instance = None
 
     _current_environment: Environment = None
-    _state_file_location: FilePath = None
+    _project_info_location: FilePath = None
 
     _central_state: project_info
+    _backend: Backend = None
     
-    
-    def __new__(cls, state_file_location: FilePath):
+    def __new__(cls, project_info_location: FilePath):
         if cls._instance is None:
             cls._instance = super(Project, cls).__new__(cls)
             # Put any initialization here.
-            cls._instance._state_file_location = state_file_location
+            cls._instance._project_info_location = project_info_location
 
+            cls._instance._load_state()
+
+            cls._instance._backend = load_backend(cls._instance._central_state.backend_info)
 
             # Load the backend 
             cls._instance._current_environment = None
+
+            Project.set_global_instance(cls._instance)
 
         return cls._instance
 
 
     def initialize_project(self):
-        pass
-
+        current_env = self.get_current_environment()
+        current_env.initialize_environment()
 
 
     def create_environment(self, environment_name: str):
+        self._load_state()
+        resource_state_id = self._backend.create_resource_state(environment_name)
 
-        raise NotImplementedError
+        workspace_config = {
+            'backend_configuration': self._central_state.backend_info
+        }
+        workspace_config['resource_state_uuid'] = resource_state_id
+        workspace_config['initialization_module'] = 'cdev_project'
+
+        self._central_state.environments.append( 
+            environment_info(
+                environment_name,
+                Workspace_Info(
+                    "core.default.workspace",
+                    "local_workspace",
+                    workspace_config
+                )
+            )
+        )
+
+        self._write_state()
 
 
     def get_all_environment_names(self) -> List[str]:
@@ -77,7 +109,7 @@ class local_project(Project):
         self._load_state()
 
 
-        return self._central_state.environments
+        return [x.name for x in self._central_state.environments]
 
 
     def set_current_environment(self, environment_name: str):
@@ -191,10 +223,10 @@ class local_project(Project):
 
 
     def _write_state(self):
-        with open(self._state_file_location, 'w') as fh:
+        with open(self._project_info_location, 'w') as fh:
             json.dump(self._central_state.dict(), fh, indent=4)
 
 
     def _load_state(self) -> project_info:
-        with open(self._state_file_location, 'r') as fh:
-            self._central_state = project_info(**json.loads(fh))
+        with open(self._project_info_location, 'r') as fh:
+            self._central_state = project_info(**json.load(fh))

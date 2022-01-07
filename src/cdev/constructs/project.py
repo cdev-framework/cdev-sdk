@@ -57,9 +57,9 @@ class Project():
 
 
     @classmethod
-    def set_global_instance(cls, workspace: 'Project'):
+    def set_global_instance(cls, project: 'Project'):
         global _GLOBAL_PROJECT
-        _GLOBAL_PROJECT = workspace
+        _GLOBAL_PROJECT = project
 
 
     def initialize_project(self):
@@ -145,11 +145,6 @@ class Project():
     def get_components(self) -> List[Component]:
         raise NotImplementedError
 
-
-
-
-def create_new_project(project_info: project_info) -> bool:
-    pass
 
 
 def check_if_project_exists(base_directory: DirectoryPath) -> bool:

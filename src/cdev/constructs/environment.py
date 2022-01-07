@@ -48,5 +48,5 @@ class Environment():
 
     
     def initialize_environment(self):
-        pass
+        raise NotImplementedError
 

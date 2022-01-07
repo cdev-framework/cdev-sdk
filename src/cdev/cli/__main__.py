@@ -1,12 +1,13 @@
-#!/usr/bin/env python
+
 import argparse
 from ast import parse
 import os
+from typing import Callable, Any
 
 #from cdev import output
 
 #from ..commands import plan, deploy, destroy, environment, cloud_output, local_development, initializer
-from ..commands import initializer
+from ..commands import initializer, environment
 
 parser = argparse.ArgumentParser(description='cdev cli')
 subparsers = parser.add_subparsers(title='sub_command', description='valid subcommands')
@@ -83,14 +84,66 @@ subparsers = parser.add_subparsers(title='sub_command', description='valid subco
     },
 ]"""
 
+def wrap_load_project(command: Callable) -> Callable[[Any], Any]:
+
+    def wrapped_caller(*args, **kwargs):
+        try:
+            print(args)
+            
+            initializer.load_project(args)
+        except Exception as e:
+            print(f"Could not initialize the workspace to call {command}")
+            print(e)
+            return
+
+        command(args)
+
+
+    return wrapped_caller
+
 
 CDEV_COMMANDS = [
     {
         "name": "init",
         "help": "Create a new project",
-        "default": initializer.init_project_cli,
+        "default": initializer.create_project_cli,
         "args": [
             {"dest": "name", "type": str, "help": "Name of the new project"}
+        ]
+    },
+    {
+        "name": "environment",
+        "help": "Change and create environments for deployment",
+        "default": wrap_load_project(environment.environment_cli),
+        "subcommands": [
+            {
+                "command": "ls",
+                "help": "Show all available environments",
+                "args": [
+                    {"dest": "--all", "help": "show more details", "action":"store_true"}
+                ]
+            },
+            {
+                "command": "set",
+                "help": "Set the current working environment",
+                "args": [
+                    {"dest": "env", "type": str, "help": "environment you want set as the new working environment"}
+                ]
+            },
+            {
+                "command": "get",
+                "help": "Get information about an environment",
+                "args": [
+                    {"dest": "env", "type": str, "help": "environment you want info about"}
+                ]
+            },
+            {
+                "command": "create",
+                "help": "Create a new environment",
+                "args": [
+                    {"dest": "env", "type": str, "help": "name of environment you want to create"}
+                ]
+            }
         ]
     },
 ]

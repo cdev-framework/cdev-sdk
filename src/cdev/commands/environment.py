@@ -1,29 +1,56 @@
-"""from ..utils.logger import get_cdev_logger
-from ..utils import environment as cdev_environment
-from .. import output as cdev_output
+from typing import List, Tuple
+
+from ..constructs.project import Project
 
 
-
-log = get_cdev_logger(__name__)
-
-
-def environment(command, args):
-    parsed_args = vars(args)
+def environment_cli(args):
+    command = args[0]
+    parsed_args = vars(args[1])
     
     if command == '':
-        cdev_output.print("You must provide a sub-command. run `cdev environment --help` for more information on available subcommands")
+        print("You must provide a sub-command. run `cdev environment --help` for more information on available subcommands")
     elif command == 'ls':
-        current_env = cdev_environment.get_current_environment()
-
-        for env in cdev_environment.get_environment_info_object().environments:
-            if env.name == current_env:
-                cdev_output.print(f"> {env.name}")
-            else:
-                cdev_output.print(env.name)
+        print(list_environments())
     elif command == 'get':
-        cdev_output.print(cdev_environment.get_environment_info(parsed_args.get("env")))
+        pass
     elif command == 'set':
-        cdev_environment.set_current_environment(parsed_args.get("env"))
+        set_current_environment(parsed_args.get('env'))
     elif command == 'create':
-        cdev_environment.create_environment(parsed_args.get("env"))
-"""
+
+        print(parsed_args)
+        create_environment(parsed_args.get('env'))
+
+
+
+def list_environments() -> Tuple[ List[str], str]:
+    """
+    Get the current list of environments and the current environment from the Project object.
+    Must be called when the Project is in the UNINITIALIZED phase.
+    """
+    
+    myProject = Project.instance()
+
+    return myProject.get_all_environment_names(), myProject.get_current_environment_name()
+
+
+
+def set_current_environment(new_current_environment: str): 
+    print(new_current_environment)
+    myProject = Project.instance()
+
+
+    myProject.set_current_environment(new_current_environment)
+
+
+
+
+
+
+def create_environment(new_environment_name: str):
+    print(new_environment_name)
+    myProject = Project.instance()
+
+
+    myProject.create_environment(new_environment_name)
+
+
