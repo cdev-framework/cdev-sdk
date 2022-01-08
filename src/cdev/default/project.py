@@ -77,6 +77,9 @@ class local_project(Project):
             environment.get_workspace().get_state()
         )
 
+    # Note that the class methods should not include doc strings so that they inherit the doc string of the 
+    # parent class. 
+
     @wrap_phase(Project_State.INITIALIZED)
     def create_environment(self, environment_name: str):
         self._load_state()
@@ -110,9 +113,6 @@ class local_project(Project):
 
     @wrap_phase(Project_State.UNINITIALIZED)
     def get_all_environment_names(self) -> List[str]:
-        """
-        Get the list of all the environments for this project
-        """
         self._load_state()
 
         return [x.name for x in self._central_state.environments]
