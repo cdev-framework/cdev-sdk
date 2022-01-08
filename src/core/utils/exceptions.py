@@ -10,6 +10,7 @@ Error: Something has reached a state that should terminate the process.
 """
 import sys
 
+
 class Cdev_Warning(Exception):
     def __init__(self, msg: str) -> None:
         self.msg = msg

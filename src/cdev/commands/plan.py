@@ -12,7 +12,6 @@ def plan_command(args):
 
     myProject = Project.instance()
 
-
     ws = myProject.get_current_environment().get_workspace()
 
     execute_frontend(ws)

@@ -1,5 +1,3 @@
-
-
 import time
 import re
 from typing import Dict
@@ -33,6 +31,7 @@ def create_lambdafunction(identifier: str, resource: lambdafunction_model) -> bo
         print(e)
         raise Exception("COULD NOT DEPLOY")
 
+
 def remove_lambdafunction(identifier: str, resource: lambdafunction_model) -> bool:
     try:
         _remove_lambdafunction(identifier, resource)
@@ -48,19 +47,18 @@ def remove_lambdafunction(identifier: str, resource: lambdafunction_model) -> bo
 
 
 # Low level function to call actual clieant call and return response
-def _create_lambdafunction(identifier: str, resource: lambdafunction_model) -> lambdafunction_output:
+def _create_lambdafunction(
+    identifier: str, resource: lambdafunction_model
+) -> lambdafunction_output:
     try:
 
         args = lambdafunction_model(**resource.dict()).filter_to_create(identifier)
 
-        response = run_client_function('lambda', 'create_function', args)
+        response = run_client_function("lambda", "create_function", args)
 
         rv = response
 
-
-
-        #print(rv)
-
+        # print(rv)
 
         return rv
 
@@ -75,14 +73,11 @@ def _remove_lambdafunction(identifier: str, resource: lambdafunction_model):
 
         args = lambdafunction_model(**resource.dict()).filter_to_remove(identifier)
 
-        response = run_client_function('lambda', 'delete_function', args)
+        response = run_client_function("lambda", "delete_function", args)
 
         rv = response
 
-
-
-        #print(rv)
-
+        # print(rv)
 
         return rv
 
@@ -95,17 +90,22 @@ def handle_lambdafunction_deployment(resource_diff: Resource_State_Difference) -
     try:
         if resource_diff.action_type == Action_Type.CREATE:
 
-            return create_lambdafunction(resource_diff.new_resource.hash, resource_diff.new_resource)
+            return create_lambdafunction(
+                resource_diff.new_resource.hash, resource_diff.new_resource
+            )
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
 
             return True
         elif resource_diff.action_type == Action_Type.DELETE:
-            
-            return remove_lambdafunction(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+            return remove_lambdafunction(
+                resource_diff.previous_resource.hash, resource_diff.previous_resource
+            )
 
     except Exception as e:
         print(e)
         raise Exception("COULD NOT DEPLOY")
+
 
 ################################################
 ##########
@@ -127,6 +127,7 @@ def create_permission(identifier: str, resource: permission_model) -> bool:
         print(e)
         raise Exception("COULD NOT DEPLOY")
 
+
 def remove_permission(identifier: str, resource: permission_model) -> bool:
     try:
         _remove_permission(identifier, resource)
@@ -142,19 +143,18 @@ def remove_permission(identifier: str, resource: permission_model) -> bool:
 
 
 # Low level function to call actual clieant call and return response
-def _create_permission(identifier: str, resource: permission_model) -> permission_output:
+def _create_permission(
+    identifier: str, resource: permission_model
+) -> permission_output:
     try:
 
         args = permission_model(**resource.dict()).filter_to_create(identifier)
 
-        response = run_client_function('lambda', 'add_permission', args)
+        response = run_client_function("lambda", "add_permission", args)
 
         rv = response
 
-
-
         print(rv)
-
 
         return rv
 
@@ -169,14 +169,11 @@ def _remove_permission(identifier: str, resource: permission_model):
 
         args = permission_model(**resource.dict()).filter_to_remove(identifier)
 
-        response = run_client_function('lambda', 'remove_permission', args)
+        response = run_client_function("lambda", "remove_permission", args)
 
         rv = response
 
-
-
         print(rv)
-
 
         return rv
 
@@ -189,15 +186,18 @@ def handle_permission_deployment(resource_diff: Resource_State_Difference) -> bo
     try:
         if resource_diff.action_type == Action_Type.CREATE:
 
-            return create_permission(resource_diff.new_resource.hash, resource_diff.new_resource)
+            return create_permission(
+                resource_diff.new_resource.hash, resource_diff.new_resource
+            )
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
 
             return True
         elif resource_diff.action_type == Action_Type.DELETE:
-            
-            return remove_permission(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+            return remove_permission(
+                resource_diff.previous_resource.hash, resource_diff.previous_resource
+            )
 
     except Exception as e:
         print(e)
         raise Exception("COULD NOT DEPLOY")
-

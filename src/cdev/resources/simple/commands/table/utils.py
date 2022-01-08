@@ -1,27 +1,28 @@
-from typing import Dict,List
+from typing import Dict, List
 
-_attribute_types_to_python_type = {
-    "S": [str],
-    "N": [int, float],
-    "B": [bytes]
-}
+_attribute_types_to_python_type = {"S": [str], "N": [int, float], "B": [bytes]}
+
 
 def _validate_data(data: Dict, attributes: Dict, keys: List[Dict]) -> bool:
     for key in keys:
-        if not key.get('AttributeName') in data:
+        if not key.get("AttributeName") in data:
             return (False, f"Table key {key.get('AttributeName')} not in data")
 
-        valid_types = _attribute_types_to_python_type.get(attributes.get(key.get('AttributeName')))
+        valid_types = _attribute_types_to_python_type.get(
+            attributes.get(key.get("AttributeName"))
+        )
 
-        
         is_val_valid_type = False
         for attribute_type in valid_types:
-            if isinstance(data.get(key.get('AttributeName')), attribute_type):
+            if isinstance(data.get(key.get("AttributeName")), attribute_type):
                 is_val_valid_type = True
                 break
 
         if not is_val_valid_type:
-            return (False, f"Table key {key.get('AttributeName')} ({valid_types}) not correct type in data ({type(data.get(key.get('AttributeName')))})")
+            return (
+                False,
+                f"Table key {key.get('AttributeName')} ({valid_types}) not correct type in data ({type(data.get(key.get('AttributeName')))})",
+            )
 
     return (True, "")
 
@@ -50,7 +51,7 @@ def recursive_translate_data(value) -> Dict:
             transformed_val = {"L": [recursive_translate_data(value)]}
 
     elif isinstance(value, dict):
-        transformed_val = {k:recursive_translate_data(v) for k,v in value.items()}
+        transformed_val = {k: recursive_translate_data(v) for k, v in value.items()}
 
     else:
         raise Exception

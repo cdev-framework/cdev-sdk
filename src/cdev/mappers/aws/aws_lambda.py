@@ -14,7 +14,7 @@ from . import aws_client
 from .aws_lambda_models import *
 from . import aws_s3, aws_s3_models
 
-#client = aws_client.get_boto_client("lambda")
+# client = aws_client.get_boto_client("lambda")
 
 
 def upload_lambda_function_code(identifier: str, lambda_resource: aws_lambda_function):
@@ -22,20 +22,23 @@ def upload_lambda_function_code(identifier: str, lambda_resource: aws_lambda_fun
     keyname = filename[:-3] + f"-{lambda_resource.hash}" + ".zip"
 
     original_zipname = filename[:-3] + ".zip"
-    zip_location = os.path.join(os.path.dirname(lambda_resource.FPath), original_zipname )
+    zip_location = os.path.join(
+        os.path.dirname(lambda_resource.FPath), original_zipname
+    )
 
-
-    aws_s3.put_object(put_object_event=aws_s3_models.put_object_event(**{
+    aws_s3.put_object(
+        put_object_event=aws_s3_models.put_object_event(
+            **{
                 "Filename": zip_location,
                 "Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"),
-                "Key": keyname
-    }))
+                "Key": keyname,
+            }
+        )
+    )
 
-
-    cdev_cloud_mapper.add_cloud_resource(identifier, {
-            "Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"),
-            "Key": keyname
-    })
+    cdev_cloud_mapper.add_cloud_resource(
+        identifier, {"Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"), "Key": keyname}
+    )
 
 
 def create_lambda_function(identifier: str, lambda_resource: aws_lambda_function):
@@ -43,15 +46,15 @@ def create_lambda_function(identifier: str, lambda_resource: aws_lambda_function
     keyname = filename[:-3] + f"-{lambda_resource.hash}" + ".zip"
     function_name = lambda_resource.FunctionName
 
+    base_config = {k: v for (k, v) in lambda_resource.Configuration.dict().items() if v}
 
-    base_config = { k:v for (k,v) in lambda_resource.Configuration.dict().items() if v }
-
-
-    event = create_aws_lambda_function_event(function_name, s3_object(**{
-                                                "S3Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"),
-                                                "S3Key": keyname
-                                                }),
-                                               base_config)
+    event = create_aws_lambda_function_event(
+        function_name,
+        s3_object(
+            **{"S3Bucket": SETTINGS.get("S3_ARTIFACTS_BUCKET"), "S3Key": keyname}
+        ),
+        base_config,
+    )
 
     _create_lambda_function(event)
     lambda_resource.Configuration = base_config
@@ -63,67 +66,93 @@ def update_lambda_function_code(lambda_resource: aws_lambda_function):
     filename = os.path.split(lambda_resource.FPath)[1]
     keyname = filename[:-3] + f"-{lambda_resource.hash}" + ".zip"
 
-    _update_lambda_function_code(update_lambda_function_code_event(
-        FunctionName=lambda_resource.FunctionName,
-        S3Bucket=SETTINGS.get("S3_ARTIFACTS_BUCKET"),
-        S3Key=keyname
-    ))
-
-def update_lambda_function_configuration(lambda_resource: aws_lambda_function):
-
-    base_config = { k:v for (k,v) in lambda_resource.Configuration.dict().items() if v }
-    _update_lambda_function_configuration(
-        update_lambda_configuration_event(
+    _update_lambda_function_code(
+        update_lambda_function_code_event(
             FunctionName=lambda_resource.FunctionName,
-            Configuration=base_config
+            S3Bucket=SETTINGS.get("S3_ARTIFACTS_BUCKET"),
+            S3Key=keyname,
         )
     )
 
-def update_lambda_function_permission(previous_lambda_resource: aws_lambda_function, new_lambda_resource: aws_lambda_function):
 
-    previous_statement_ids = set([x.get("StatementId") for x in previous_lambda_resource.permissions]) if previous_lambda_resource.permissions else set()
-    new_statement_ids = set([x.StatementId for x in new_lambda_resource.permissions]) if new_lambda_resource.permissions else set()
+def update_lambda_function_configuration(lambda_resource: aws_lambda_function):
 
-    previous_statement_statementid_to_obj = {x.get("StatementId"):x for x in previous_lambda_resource.permissions} if previous_lambda_resource.permissions else {}
-    next_statement_statementid_to_obj = {x.StatementId:x for x in new_lambda_resource.permissions} if new_lambda_resource.permissions else {}
+    base_config = {k: v for (k, v) in lambda_resource.Configuration.dict().items() if v}
+    _update_lambda_function_configuration(
+        update_lambda_configuration_event(
+            FunctionName=lambda_resource.FunctionName, Configuration=base_config
+        )
+    )
+
+
+def update_lambda_function_permission(
+    previous_lambda_resource: aws_lambda_function,
+    new_lambda_resource: aws_lambda_function,
+):
+
+    previous_statement_ids = (
+        set([x.get("StatementId") for x in previous_lambda_resource.permissions])
+        if previous_lambda_resource.permissions
+        else set()
+    )
+    new_statement_ids = (
+        set([x.StatementId for x in new_lambda_resource.permissions])
+        if new_lambda_resource.permissions
+        else set()
+    )
+
+    previous_statement_statementid_to_obj = (
+        {x.get("StatementId"): x for x in previous_lambda_resource.permissions}
+        if previous_lambda_resource.permissions
+        else {}
+    )
+    next_statement_statementid_to_obj = (
+        {x.StatementId: x for x in new_lambda_resource.permissions}
+        if new_lambda_resource.permissions
+        else {}
+    )
 
     adds = new_statement_ids.difference(previous_statement_ids)
     removes = previous_statement_ids.difference(new_statement_ids)
 
-
     for statement_id in adds:
         if statement_id in next_statement_statementid_to_obj:
-            print(f"ADD STATEMENT {next_statement_statementid_to_obj.get(statement_id)}")
-            _add_lambda_permission(next_statement_statementid_to_obj.get(statement_id).dict())
-    
+            print(
+                f"ADD STATEMENT {next_statement_statementid_to_obj.get(statement_id)}"
+            )
+            _add_lambda_permission(
+                next_statement_statementid_to_obj.get(statement_id).dict()
+            )
+
     for statement_id in removes:
         if statement_id in previous_statement_statementid_to_obj:
-            print(f"REMOVE STATEMENT {previous_statement_statementid_to_obj.get(statement_id)}")
+            print(
+                f"REMOVE STATEMENT {previous_statement_statementid_to_obj.get(statement_id)}"
+            )
 
 
 def _add_lambda_permission(new_lambda_permission_args: dict):
     try:
-        args = {k:v for k,v in new_lambda_permission_args.items() if v}
+        args = {k: v for k, v in new_lambda_permission_args.items() if v}
         response = client.add_permission(**args)
         print(f"AWS RESPONSE -> {json.dumps(response)}")
     except botocore.exceptions.ClientError as e:
         print(e.response)
         return False
 
-
     return True
 
 
 def delete_lambda_function(identifier: str, lambda_resource: aws_lambda_function):
 
-    _delete_lambda_function(delete_aws_lambda_function_event(
-        **{"FunctionName": lambda_resource.FunctionName}
-    ))
+    _delete_lambda_function(
+        delete_aws_lambda_function_event(
+            **{"FunctionName": lambda_resource.FunctionName}
+        )
+    )
 
-
-    base_config = { k:v for (k,v) in lambda_resource.Configuration.items() if v }
+    base_config = {k: v for (k, v) in lambda_resource.Configuration.items() if v}
     lambda_resource.Configuration = base_config
-
 
     cdev_cloud_mapper.remove_cloud_resource(identifier, lambda_resource)
 
@@ -131,7 +160,7 @@ def delete_lambda_function(identifier: str, lambda_resource: aws_lambda_function
 def _create_lambda_function(create_event: create_aws_lambda_function_event) -> bool:
     """
     https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda.html#Lambda.Client.create_functio
-    
+
     REQUIRED PARAMS
     ["FunctionName", "Role", "Code"]
     """
@@ -145,26 +174,24 @@ def _create_lambda_function(create_event: create_aws_lambda_function_event) -> b
     args["FunctionName"] = create_event.FunctionName
     try:
         response = client.create_function(**args)
-        #print(f"AWS RESPONSE -> {json.dumps(response)}")
+        # print(f"AWS RESPONSE -> {json.dumps(response)}")
     except botocore.exceptions.ClientError as e:
         print(e.response)
         return False
 
-
     return True
 
 
-
-def _update_lambda_function_code(update_code_event: update_lambda_function_code_event) -> bool:
+def _update_lambda_function_code(
+    update_code_event: update_lambda_function_code_event,
+) -> bool:
     """
     https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda.html#Lambda.Client.update_function_code
-    
-    
+
+
     REQUIRED PARAMS
     ["FunctionName", "Code"]
     """
-
-
 
     try:
         response = client.update_function_code(**update_code_event.dict())
@@ -173,14 +200,15 @@ def _update_lambda_function_code(update_code_event: update_lambda_function_code_
         print(e.response)
         return False
 
-
     return True
 
 
-def _update_lambda_function_configuration(update_configuration_event: update_lambda_configuration_event) -> bool:
+def _update_lambda_function_configuration(
+    update_configuration_event: update_lambda_configuration_event,
+) -> bool:
     """
     https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda.html#Lambda.Client.update_function_configuratio
-    
+
     REQUIRED PARAMS
     ["FunctionName"]
     """
@@ -190,7 +218,6 @@ def _update_lambda_function_configuration(update_configuration_event: update_lam
         print(e)
         return False
     args["FunctionName"] = update_configuration_event.FunctionName
-
 
     try:
         response = client.update_function_configuration(**args)
@@ -208,9 +235,9 @@ def _delete_lambda_function(delete_event: delete_aws_lambda_function_event):
 
     REQUIRED PARAMS
     ["FunctionName"]
-    
+
     """
-    args ={}
+    args = {}
     args["FunctionName"] = delete_event.FunctionName
 
     try:
@@ -222,11 +249,15 @@ def _delete_lambda_function(delete_event: delete_aws_lambda_function_event):
 
     return
 
-def _replace_old_lambda_object(identifier: str, previous_resource: aws_lambda_function, new_resource: aws_lambda_function):
+
+def _replace_old_lambda_object(
+    identifier: str,
+    previous_resource: aws_lambda_function,
+    new_resource: aws_lambda_function,
+):
     cdev_cloud_mapper.remove_cloud_resource(identifier, previous_resource.dict())
 
     cdev_cloud_mapper.add_cloud_resource(identifier, new_resource)
-
 
 
 def handle_aws_lambda_deployment(resource_diff: Resource_State_Difference) -> bool:
@@ -234,41 +265,62 @@ def handle_aws_lambda_deployment(resource_diff: Resource_State_Difference) -> bo
     try:
         if resource_diff.action_type == Action_Type.CREATE:
 
-            upload_lambda_function_code(resource_diff.new_resource.hash, resource_diff.new_resource)
+            upload_lambda_function_code(
+                resource_diff.new_resource.hash, resource_diff.new_resource
+            )
 
-            create_lambda_function(resource_diff.new_resource.hash, resource_diff.new_resource)
+            create_lambda_function(
+                resource_diff.new_resource.hash, resource_diff.new_resource
+            )
 
         elif resource_diff.action_type == Action_Type.DELETE:
-            delete_lambda_function(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+            delete_lambda_function(
+                resource_diff.previous_resource.hash, resource_diff.previous_resource
+            )
             cdev_cloud_mapper.remove_identifier(resource_diff.previous_resource.hash)
 
-
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
-            
-            if not resource_diff.new_resource.src_code_hash == resource_diff.previous_resource.src_code_hash:
-                # IF the source code hash is different than redeploy lambda code 
-                upload_lambda_function_code(resource_diff.previous_resource.hash, resource_diff.new_resource)
+
+            if (
+                not resource_diff.new_resource.src_code_hash
+                == resource_diff.previous_resource.src_code_hash
+            ):
+                # IF the source code hash is different than redeploy lambda code
+                upload_lambda_function_code(
+                    resource_diff.previous_resource.hash, resource_diff.new_resource
+                )
 
                 update_lambda_function_code(resource_diff.new_resource)
                 print("UPDATE A LAMBDAS CODE")
 
-            if not resource_diff.new_resource.config_hash == resource_diff.previous_resource.config_hash:
+            if (
+                not resource_diff.new_resource.config_hash
+                == resource_diff.previous_resource.config_hash
+            ):
                 update_lambda_function_configuration(resource_diff.new_resource)
                 print("UPDATE_LAMBDA_CONFIG")
 
-            if not resource_diff.new_resource.permission_hash == resource_diff.previous_resource.permission_hash:
+            if (
+                not resource_diff.new_resource.permission_hash
+                == resource_diff.previous_resource.permission_hash
+            ):
                 print(resource_diff.new_resource)
-                update_lambda_function_permission(resource_diff.previous_resource, resource_diff.new_resource)
+                update_lambda_function_permission(
+                    resource_diff.previous_resource, resource_diff.new_resource
+                )
                 print("UPDATE LAMBDA PERMISSIONS")
 
-            _replace_old_lambda_object(resource_diff.previous_resource.hash, resource_diff.previous_resource, resource_diff.new_resource)
-            cdev_cloud_mapper.reidentify_cloud_resource(resource_diff.previous_resource.hash, resource_diff.new_resource.hash)
-            
-        
+            _replace_old_lambda_object(
+                resource_diff.previous_resource.hash,
+                resource_diff.previous_resource,
+                resource_diff.new_resource,
+            )
+            cdev_cloud_mapper.reidentify_cloud_resource(
+                resource_diff.previous_resource.hash, resource_diff.new_resource.hash
+            )
+
     except Exception as e:
         print(e)
         return False
 
     return True
-
-

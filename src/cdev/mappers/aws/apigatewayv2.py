@@ -1,5 +1,3 @@
-
-
 import time
 import re
 from typing import Dict
@@ -33,6 +31,7 @@ def create_api(identifier: str, resource: api_model) -> bool:
         print(e)
         raise Exception("COULD NOT DEPLOY")
 
+
 def remove_api(identifier: str, resource: api_model) -> bool:
     try:
         _remove_api(identifier, resource)
@@ -53,12 +52,11 @@ def _create_api(identifier: str, resource: api_model) -> api_output:
 
         args = api_model(**resource.dict()).filter_to_create(identifier)
 
-        response = run_client_function('apigatewayv2', 'create_api', args)
+        response = run_client_function("apigatewayv2", "create_api", args)
 
         rv = response
 
-        #print(rv)
-
+        # print(rv)
 
         return rv
 
@@ -73,12 +71,11 @@ def _remove_api(identifier: str, resource: api_model):
 
         args = api_model(**resource.dict()).filter_to_remove(identifier)
 
-        response = run_client_function('apigatewayv2', 'delete_api', args)
+        response = run_client_function("apigatewayv2", "delete_api", args)
 
         rv = response
 
         print(rv)
-
 
         return rv
 
@@ -91,17 +88,22 @@ def handle_api_deployment(resource_diff: Resource_State_Difference) -> bool:
     try:
         if resource_diff.action_type == Action_Type.CREATE:
 
-            return create_api(resource_diff.new_resource.hash, resource_diff.new_resource)
+            return create_api(
+                resource_diff.new_resource.hash, resource_diff.new_resource
+            )
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
 
             return True
         elif resource_diff.action_type == Action_Type.DELETE:
-            
-            return remove_api(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+            return remove_api(
+                resource_diff.previous_resource.hash, resource_diff.previous_resource
+            )
 
     except Exception as e:
         print(e)
         raise Exception("COULD NOT DEPLOY")
+
 
 ################################################
 ##########
@@ -123,6 +125,7 @@ def create_route(identifier: str, resource: route_model) -> bool:
         print(e)
         raise Exception("COULD NOT DEPLOY")
 
+
 def remove_route(identifier: str, resource: route_model) -> bool:
     try:
         _remove_route(identifier, resource)
@@ -143,16 +146,15 @@ def _create_route(identifier: str, resource: route_model) -> route_output:
 
         args = route_model(**resource.dict()).filter_to_create(identifier)
 
-        response = run_client_function('apigatewayv2', 'create_route', args)
+        response = run_client_function("apigatewayv2", "create_route", args)
 
         rv = response
 
-        ADDITIONAL_OUTPUT=['ApiId']
+        ADDITIONAL_OUTPUT = ["ApiId"]
         for additional in ADDITIONAL_OUTPUT:
             if additional in args:
                 rv[additional] = args.get(additional)
-        #print(rv)
-
+        # print(rv)
 
         return rv
 
@@ -167,12 +169,11 @@ def _remove_route(identifier: str, resource: route_model):
 
         args = route_model(**resource.dict()).filter_to_remove(identifier)
 
-        response = run_client_function('apigatewayv2', 'delete_route', args)
+        response = run_client_function("apigatewayv2", "delete_route", args)
 
         rv = response
 
         print(rv)
-
 
         return rv
 
@@ -185,17 +186,22 @@ def handle_route_deployment(resource_diff: Resource_State_Difference) -> bool:
     try:
         if resource_diff.action_type == Action_Type.CREATE:
 
-            return create_route(resource_diff.new_resource.hash, resource_diff.new_resource)
+            return create_route(
+                resource_diff.new_resource.hash, resource_diff.new_resource
+            )
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
 
             return True
         elif resource_diff.action_type == Action_Type.DELETE:
-            
-            return remove_route(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+            return remove_route(
+                resource_diff.previous_resource.hash, resource_diff.previous_resource
+            )
 
     except Exception as e:
         print(e)
         raise Exception("COULD NOT DEPLOY")
+
 
 ################################################
 ##########
@@ -217,6 +223,7 @@ def create_integration(identifier: str, resource: integration_model) -> bool:
         print(e)
         raise Exception("COULD NOT DEPLOY")
 
+
 def remove_integration(identifier: str, resource: integration_model) -> bool:
     try:
         _remove_integration(identifier, resource)
@@ -232,21 +239,22 @@ def remove_integration(identifier: str, resource: integration_model) -> bool:
 
 
 # Low level function to call actual clieant call and return response
-def _create_integration(identifier: str, resource: integration_model) -> integration_output:
+def _create_integration(
+    identifier: str, resource: integration_model
+) -> integration_output:
     try:
 
         args = integration_model(**resource.dict()).filter_to_create(identifier)
 
-        response = run_client_function('apigatewayv2', 'create_integration', args)
+        response = run_client_function("apigatewayv2", "create_integration", args)
 
         rv = response
 
-        ADDITIONAL_OUTPUT=['ApiId']
+        ADDITIONAL_OUTPUT = ["ApiId"]
         for additional in ADDITIONAL_OUTPUT:
             if additional in args:
                 rv[additional] = args.get(additional)
-        #print(rv)
-
+        # print(rv)
 
         return rv
 
@@ -261,12 +269,11 @@ def _remove_integration(identifier: str, resource: integration_model):
 
         args = integration_model(**resource.dict()).filter_to_remove(identifier)
         print(args)
-        response = run_client_function('apigatewayv2', 'delete_integration', args)
+        response = run_client_function("apigatewayv2", "delete_integration", args)
 
         rv = response
 
         print(rv)
-
 
         return rv
 
@@ -279,17 +286,22 @@ def handle_integration_deployment(resource_diff: Resource_State_Difference) -> b
     try:
         if resource_diff.action_type == Action_Type.CREATE:
 
-            return create_integration(resource_diff.new_resource.hash, resource_diff.new_resource)
+            return create_integration(
+                resource_diff.new_resource.hash, resource_diff.new_resource
+            )
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
 
             return True
         elif resource_diff.action_type == Action_Type.DELETE:
-            
-            return remove_integration(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+            return remove_integration(
+                resource_diff.previous_resource.hash, resource_diff.previous_resource
+            )
 
     except Exception as e:
         print(e)
         raise Exception("COULD NOT DEPLOY")
+
 
 ################################################
 ##########
@@ -311,6 +323,7 @@ def create_stage(identifier: str, resource: stage_model) -> bool:
         print(e)
         raise Exception("COULD NOT DEPLOY")
 
+
 def remove_stage(identifier: str, resource: stage_model) -> bool:
     try:
         _remove_stage(identifier, resource)
@@ -331,16 +344,15 @@ def _create_stage(identifier: str, resource: stage_model) -> stage_output:
 
         args = stage_model(**resource.dict()).filter_to_create(identifier)
 
-        response = run_client_function('apigatewayv2', 'create_stage', args)
+        response = run_client_function("apigatewayv2", "create_stage", args)
 
         rv = response
 
-        ADDITIONAL_OUTPUT=['ApiId']
+        ADDITIONAL_OUTPUT = ["ApiId"]
         for additional in ADDITIONAL_OUTPUT:
             if additional in args:
                 rv[additional] = args.get(additional)
-        #print(rv)
-
+        # print(rv)
 
         return rv
 
@@ -355,12 +367,11 @@ def _remove_stage(identifier: str, resource: stage_model):
 
         args = stage_model(**resource.dict()).filter_to_remove(identifier)
 
-        response = run_client_function('apigatewayv2', 'delete_stage', args)
+        response = run_client_function("apigatewayv2", "delete_stage", args)
 
         rv = response
 
         print(rv)
-
 
         return rv
 
@@ -373,17 +384,22 @@ def handle_stage_deployment(resource_diff: Resource_State_Difference) -> bool:
     try:
         if resource_diff.action_type == Action_Type.CREATE:
 
-            return create_stage(resource_diff.new_resource.hash, resource_diff.new_resource)
+            return create_stage(
+                resource_diff.new_resource.hash, resource_diff.new_resource
+            )
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
 
             return True
         elif resource_diff.action_type == Action_Type.DELETE:
-            
-            return remove_stage(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+            return remove_stage(
+                resource_diff.previous_resource.hash, resource_diff.previous_resource
+            )
 
     except Exception as e:
         print(e)
         raise Exception("COULD NOT DEPLOY")
+
 
 ################################################
 ##########
@@ -405,6 +421,7 @@ def create_deployment(identifier: str, resource: deployment_model) -> bool:
         print(e)
         raise Exception("COULD NOT DEPLOY")
 
+
 def remove_deployment(identifier: str, resource: deployment_model) -> bool:
     try:
         _remove_deployment(identifier, resource)
@@ -420,21 +437,22 @@ def remove_deployment(identifier: str, resource: deployment_model) -> bool:
 
 
 # Low level function to call actual clieant call and return response
-def _create_deployment(identifier: str, resource: deployment_model) -> deployment_output:
+def _create_deployment(
+    identifier: str, resource: deployment_model
+) -> deployment_output:
     try:
 
         args = deployment_model(**resource.dict()).filter_to_create(identifier)
 
-        response = run_client_function('apigatewayv2', 'create_deployment', args)
+        response = run_client_function("apigatewayv2", "create_deployment", args)
 
         rv = response
 
-        ADDITIONAL_OUTPUT=['ApiId']
+        ADDITIONAL_OUTPUT = ["ApiId"]
         for additional in ADDITIONAL_OUTPUT:
             if additional in args:
                 rv[additional] = args.get(additional)
         print(rv)
-
 
         return rv
 
@@ -449,12 +467,11 @@ def _remove_deployment(identifier: str, resource: deployment_model):
 
         args = deployment_model(**resource.dict()).filter_to_remove(identifier)
 
-        response = run_client_function('apigatewayv2', 'delete_deployment', args)
+        response = run_client_function("apigatewayv2", "delete_deployment", args)
 
         rv = response
 
         print(rv)
-
 
         return rv
 
@@ -467,15 +484,18 @@ def handle_deployment_deployment(resource_diff: Resource_State_Difference) -> bo
     try:
         if resource_diff.action_type == Action_Type.CREATE:
 
-            return create_deployment(resource_diff.new_resource.hash, resource_diff.new_resource)
+            return create_deployment(
+                resource_diff.new_resource.hash, resource_diff.new_resource
+            )
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
 
             return True
         elif resource_diff.action_type == Action_Type.DELETE:
-            
-            return remove_deployment(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+            return remove_deployment(
+                resource_diff.previous_resource.hash, resource_diff.previous_resource
+            )
 
     except Exception as e:
         print(e)
         raise Exception("COULD NOT DEPLOY")
-

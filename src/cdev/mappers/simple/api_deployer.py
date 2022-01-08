@@ -14,80 +14,77 @@ log = logger.get_cdev_logger(__name__)
 
 
 def _create_simple_api(identifier: str, resource: simple_api.simple_api_model) -> bool:
-    base_args =  {
+    base_args = {
         "Name": resource.api_name,
-        "ProtocolType": 'HTTP',
+        "ProtocolType": "HTTP",
     }
 
     cors_args = {
         "CorsConfiguration": {
-            "AllowOrigins": [
-                "*"
-            ],
-            "AllowMethods": [
-                "*"
-            ],
+            "AllowOrigins": ["*"],
+            "AllowMethods": ["*"],
             "AllowHeaders": [
                 "Content-Type",
                 "X-Amz-Date",
                 "Authorization",
                 "X-Api-Key",
                 "X-Amz-Security-Token",
-                "X-Amz-User-Agent"
-            ]
+                "X-Amz-User-Agent",
+            ],
         }
     }
 
     _ = base_args.update(cors_args) if resource.allow_cors else None
 
-    
     log.debug(base_args)
     rv = raw_aws_client.run_client_function("apigatewayv2", "create_api", base_args)
-    print_deployment_step('CREATE', f'Created Api {resource.name}')
+    print_deployment_step("CREATE", f"Created Api {resource.name}")
 
     info = {
         "ruuid": resource.ruuid,
         "cdev_name": resource.name,
         "cloud_id": rv.get("ApiId"),
         "arn": "",
-        "endpoints": {}
+        "endpoints": {},
     }
 
-    _stage_model = apigatewayv2_models.stage_model(**{
-        "ruuid": "",
-        "hash": "",
-        "name": "",
-        "ApiId": info.get('cloud_id'),
-        "AutoDeploy": True,
-        "StageName": "prod"
-    })
+    _stage_model = apigatewayv2_models.stage_model(
+        **{
+            "ruuid": "",
+            "hash": "",
+            "name": "",
+            "ApiId": info.get("cloud_id"),
+            "AutoDeploy": True,
+            "StageName": "prod",
+        }
+    )
 
     rv2 = apigatewayv2_deployer._create_stage("", _stage_model)
 
     log.debug(rv2)
 
-    info['endpoint'] = f"{rv.get('ApiEndpoint')}/{rv2.get('StageName')}"
-    api_id = info.get('cloud_id')
+    info["endpoint"] = f"{rv.get('ApiEndpoint')}/{rv2.get('StageName')}"
+    api_id = info.get("cloud_id")
     if resource.routes:
         for route in resource.routes:
             route_cloud_id = _create_route(api_id, route)
-            print_deployment_step('CREATE', f'  Added Route {route.config.get("path")}[{route.config.get("verb")}] for {resource.name}')
-            
+            print_deployment_step(
+                "CREATE",
+                f'  Added Route {route.config.get("path")}[{route.config.get("verb")}] for {resource.name}',
+            )
 
             route_info = {
                 "cloud_id": route_cloud_id,
                 "route": route.config.get("path"),
-                "verbs": route.config.get("verb")
+                "verbs": route.config.get("verb"),
             }
 
             dict_key = f'{route.config.get("path")}:{route.config.get("verb")}'
 
-            tmp =  info.get('endpoints')
+            tmp = info.get("endpoints")
             tmp[dict_key] = route_info
 
-            info['endpoints'] = tmp
-
-
+            info["endpoints"] = tmp
 
     cdev_cloud_mapper.add_identifier(identifier)
     cdev_cloud_mapper.update_output_value(identifier, info)
@@ -95,58 +92,58 @@ def _create_simple_api(identifier: str, resource: simple_api.simple_api_model) -
     return True
 
 
-
 def _remove_simple_api(identifier: str, resource: simple_api.simple_api_model) -> bool:
-    
+
     api_id = cdev_cloud_mapper.get_output_value_by_hash(identifier, "cloud_id")
 
-    raw_aws_client.run_client_function("apigatewayv2", "delete_api", {
-        "ApiId": api_id
-    })
+    raw_aws_client.run_client_function("apigatewayv2", "delete_api", {"ApiId": api_id})
     print_deployment_step("DELETE", f"Deleted Api {resource.name}")
-    
+
     cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
     cdev_cloud_mapper.remove_identifier(identifier)
     log.debug(f"Delete information in resource and cloud state")
-    
+
     return True
 
 
 def _create_route(api_id, route) -> str:
     _route_model = apigatewayv2_models.route_model(
-                **{
-                    "ruuid": "",
-                    "hash": "",
-                    "name": "",
-                    "ApiId": api_id,
-                    "RouteKey": f"{route.config.get('verb')} {route.config.get('path')}"
-                }
-            )
+        **{
+            "ruuid": "",
+            "hash": "",
+            "name": "",
+            "ApiId": api_id,
+            "RouteKey": f"{route.config.get('verb')} {route.config.get('path')}",
+        }
+    )
 
     rv = apigatewayv2_deployer._create_route("", _route_model)
-
-
 
     return rv.get("RouteId")
 
 
 def _delete_route(api_id, route_id) -> bool:
-    
-    raw_aws_client.run_client_function("apigatewayv2", "delete_route", {
-        "ApiId": api_id,
-        "RouteId": route_id
-    })
+
+    raw_aws_client.run_client_function(
+        "apigatewayv2", "delete_route", {"ApiId": api_id, "RouteId": route_id}
+    )
 
     return True
 
-def _update_simple_api(previous_resource: simple_api.simple_api_model, new_resource: simple_api.simple_api_model):
-    #Check routes
-    previous_routes_hashes = set([lambda_event(**x).get_hash() for x in previous_resource.routes])
+
+def _update_simple_api(
+    previous_resource: simple_api.simple_api_model,
+    new_resource: simple_api.simple_api_model,
+):
+    # Check routes
+    previous_routes_hashes = set(
+        [lambda_event(**x).get_hash() for x in previous_resource.routes]
+    )
     new_routes_hashes = set([x.get_hash() for x in new_resource.routes])
 
     routes_to_be_created = []
     routes_to_be_deleted = []
-    
+
     for route in new_resource.routes:
         if not route.get_hash() in previous_routes_hashes:
             routes_to_be_created.append(route)
@@ -155,19 +152,24 @@ def _update_simple_api(previous_resource: simple_api.simple_api_model, new_resou
         if not lambda_event(**route).get_hash() in new_routes_hashes:
             routes_to_be_deleted.append(route)
 
-    log.debug(f'Routes to be created -> {routes_to_be_created}')
-    log.debug(f'Routes to be deleted -> {routes_to_be_deleted}')
+    log.debug(f"Routes to be created -> {routes_to_be_created}")
+    log.debug(f"Routes to be deleted -> {routes_to_be_deleted}")
 
-    previous_cloud_id = cdev_cloud_mapper.get_output_value_by_hash(previous_resource.hash, "cloud_id")
+    previous_cloud_id = cdev_cloud_mapper.get_output_value_by_hash(
+        previous_resource.hash, "cloud_id"
+    )
 
     new_output_info = {}
     for route in routes_to_be_created:
         route_cloud_id = _create_route(previous_cloud_id, route)
-        print_deployment_step("UPDATE", f"  Added new route {route.config.get('path')}[{route.config.get('verb')}] for api {new_resource.name}")
+        print_deployment_step(
+            "UPDATE",
+            f"  Added new route {route.config.get('path')}[{route.config.get('verb')}] for api {new_resource.name}",
+        )
         route_info = {
             "cloud_id": route_cloud_id,
             "route": route.config.get("path"),
-            "verbs": route.config.get("verb")
+            "verbs": route.config.get("verb"),
         }
 
         dict_key = f'{route.config.get("path")}:{route.config.get("verb")}'
@@ -175,25 +177,35 @@ def _update_simple_api(previous_resource: simple_api.simple_api_model, new_resou
 
         log.debug(f"Created Route -> {route}")
 
-    previous_route_info = cdev_cloud_mapper.get_output_value_by_hash(previous_resource.hash, "endpoints")
+    previous_route_info = cdev_cloud_mapper.get_output_value_by_hash(
+        previous_resource.hash, "endpoints"
+    )
 
     previous_route_info.update(new_output_info)
 
-
-    
     for route in routes_to_be_deleted:
-        dict_key = f'{route.get("config").get("path")}:{route.get("config").get("verb")}'
+        dict_key = (
+            f'{route.get("config").get("path")}:{route.get("config").get("verb")}'
+        )
 
-        _delete_route(previous_cloud_id, previous_route_info.get(dict_key).get("cloud_id"))
-        print_deployment_step("UPDATE", f"  Removed route {route.get('config').get('path')}[{route.get('config').get('verb')}] for api {new_resource.name}")
-        
+        _delete_route(
+            previous_cloud_id, previous_route_info.get(dict_key).get("cloud_id")
+        )
+        print_deployment_step(
+            "UPDATE",
+            f"  Removed route {route.get('config').get('path')}[{route.get('config').get('verb')}] for api {new_resource.name}",
+        )
+
         previous_route_info.pop(dict_key)
 
         log.debug(f"Delete Route -> {dict_key}")
-        
-        
-    cdev_cloud_mapper.reidentify_cloud_resource(previous_resource.hash, new_resource.hash)
-    cdev_cloud_mapper.update_output_by_key(new_resource.hash, "endpoints", previous_route_info)
+
+    cdev_cloud_mapper.reidentify_cloud_resource(
+        previous_resource.hash, new_resource.hash
+    )
+    cdev_cloud_mapper.update_output_by_key(
+        new_resource.hash, "endpoints", previous_route_info
+    )
     return True
 
 
@@ -201,13 +213,19 @@ def handle_simple_api_deployment(resource_diff: Resource_State_Difference) -> bo
     try:
         if resource_diff.action_type == Action_Type.CREATE:
 
-            return _create_simple_api(resource_diff.new_resource.hash, resource_diff.new_resource)
+            return _create_simple_api(
+                resource_diff.new_resource.hash, resource_diff.new_resource
+            )
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
 
-            return _update_simple_api(resource_diff.previous_resource, resource_diff.new_resource)
+            return _update_simple_api(
+                resource_diff.previous_resource, resource_diff.new_resource
+            )
         elif resource_diff.action_type == Action_Type.DELETE:
-            
-            return _remove_simple_api(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+            return _remove_simple_api(
+                resource_diff.previous_resource.hash, resource_diff.previous_resource
+            )
 
     except Exception as e:
         print(e)

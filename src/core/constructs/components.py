@@ -4,19 +4,19 @@ from typing import Dict, Union, List, Optional, Set
 
 from pydantic import BaseModel
 
-from .resource import  ResourceReferenceModel, ResourceModel
+from .resource import ResourceReferenceModel, ResourceModel
 
 
 class ComponentModel(BaseModel):
     """
 
-    This is the most basic information needed to describe a rendered component. 
+    This is the most basic information needed to describe a rendered component.
 
     --- Attributes ---
 
     - resources ->  a list of rendered resources that make up this resource
 
-    - hash  ->  a string that is the hash of this component. This hash must be computed such that 
+    - hash  ->  a string that is the hash of this component. This hash must be computed such that
                 it changes only if a change in the state is desired.
 
     - name  ->  a string that is the human readable name for this component
@@ -57,25 +57,32 @@ class ComponentModel(BaseModel):
     Dictionary of the resources to information about references to them from other components
     """
 
-
-    def __init__(__pydantic_self__, name: str, hash: str="0", resources: List[ResourceModel]=[], references: List[ResourceReferenceModel]=[], cloud_output: Dict[str,Dict]={}, external_references: Dict[str,Dict]={} ) -> None:
-        super().__init__(**{
-            "name": name,
-            "hash": hash,
-            "resources": resources,
-            "references": references,
-            "cloud_output": cloud_output,
-            "external_references": external_references
-        })
-
+    def __init__(
+        __pydantic_self__,
+        name: str,
+        hash: str = "0",
+        resources: List[ResourceModel] = [],
+        references: List[ResourceReferenceModel] = [],
+        cloud_output: Dict[str, Dict] = {},
+        external_references: Dict[str, Dict] = {},
+    ) -> None:
+        super().__init__(
+            **{
+                "name": name,
+                "hash": hash,
+                "resources": resources,
+                "references": references,
+                "cloud_output": cloud_output,
+                "external_references": external_references,
+            }
+        )
 
 
 class Component_Change_Type(str, Enum):
-    CREATE='CREATE'
-    UPDATE_NAME='UPDATE_NAME'
-    DELETE='DELETE'
-    UPDATE_IDENTITY='UPDATE_IDENTITY'
- 
+    CREATE = "CREATE"
+    UPDATE_NAME = "UPDATE_NAME"
+    DELETE = "DELETE"
+    UPDATE_IDENTITY = "UPDATE_IDENTITY"
 
 
 class Component_Difference(BaseModel):
@@ -83,31 +90,36 @@ class Component_Difference(BaseModel):
     previous_name: Optional[str]
     new_name: Optional[str]
 
-    def __init__(__pydantic_self__, action_type: Component_Change_Type, previous_name: str=None, new_name: str=None) -> None:
-        super().__init__(**{
-            "action_type": action_type,
-            "previous_name": previous_name,
-            "new_name": new_name
-        })
+    def __init__(
+        __pydantic_self__,
+        action_type: Component_Change_Type,
+        previous_name: str = None,
+        new_name: str = None,
+    ) -> None:
+        super().__init__(
+            **{
+                "action_type": action_type,
+                "previous_name": previous_name,
+                "new_name": new_name,
+            }
+        )
 
-    class Config:  
+    class Config:
         use_enum_values = True
 
 
-
-class Component():
+class Component:
     """
     A component is a logical collection of resources. This simple definition is intended to allow flexibility for different
     styles of setup. It is up to the end user to decide on how they group the resources.
 
-    A component must override the `render` method, which returns the desired resources with configuration as a component model. 
-    The `render` method does not take any input parameters, therefore all configuration for the component should be done via the `__init__` 
-    method or other defined methods. 
+    A component must override the `render` method, which returns the desired resources with configuration as a component model.
+    The `render` method does not take any input parameters, therefore all configuration for the component should be done via the `__init__`
+    method or other defined methods.
     """
 
     def __init__(self, name: str):
         self.name = name
-        
 
     def render(self) -> ComponentModel:
         """Abstract Class that must be implemented by the descendant that returns a component model"""
@@ -115,5 +127,3 @@ class Component():
 
     def get_name(self) -> str:
         return self.name
-
-

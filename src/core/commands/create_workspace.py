@@ -22,15 +22,13 @@ def create_workspace(args):
                 "python_class": "LocalBackend",
                 "config": {
                     "base_folder": base_project_dir,
-                    "central_state_file": "centralstate.json"
-                }
+                    "central_state_file": "centralstate.json",
+                },
             },
-            "initialization_file": "cdev_project"
-        }
-    
+            "initialization_file": "cdev_project",
+        },
     )
 
     manager.create_new_workspace(workspace_info)
 
     return
-

@@ -1,5 +1,3 @@
-
-
 import time
 import re
 from typing import Dict
@@ -33,6 +31,7 @@ def create_bucket(identifier: str, resource: bucket_model) -> bool:
         print(e)
         raise Exception("COULD NOT DEPLOY")
 
+
 def remove_bucket(identifier: str, resource: bucket_model) -> bool:
     try:
         _remove_bucket(identifier, resource)
@@ -53,14 +52,11 @@ def _create_bucket(identifier: str, resource: bucket_model) -> bucket_output:
 
         args = bucket_model(**resource.dict()).filter_to_create(identifier)
 
-        response = run_client_function('s3', 'create_bucket', args)
+        response = run_client_function("s3", "create_bucket", args)
 
         rv = response
 
-
-
         print(rv)
-
 
         return rv
 
@@ -75,14 +71,11 @@ def _remove_bucket(identifier: str, resource: bucket_model):
 
         args = bucket_model(**resource.dict()).filter_to_remove(identifier)
 
-        response = run_client_function('s3', 'delete_bucket', args)
+        response = run_client_function("s3", "delete_bucket", args)
 
         rv = response
 
-
-
         print(rv)
-
 
         return rv
 
@@ -95,17 +88,22 @@ def handle_bucket_deployment(resource_diff: Resource_State_Difference) -> bool:
     try:
         if resource_diff.action_type == Action_Type.CREATE:
 
-            return create_bucket(resource_diff.new_resource.hash, resource_diff.new_resource)
+            return create_bucket(
+                resource_diff.new_resource.hash, resource_diff.new_resource
+            )
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
 
             return True
         elif resource_diff.action_type == Action_Type.DELETE:
-            
-            return remove_bucket(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+            return remove_bucket(
+                resource_diff.previous_resource.hash, resource_diff.previous_resource
+            )
 
     except Exception as e:
         print(e)
         raise Exception("COULD NOT DEPLOY")
+
 
 ################################################
 ##########
@@ -127,6 +125,7 @@ def create_object(identifier: str, resource: object_model) -> bool:
         print(e)
         raise Exception("COULD NOT DEPLOY")
 
+
 def remove_object(identifier: str, resource: object_model) -> bool:
     try:
         _remove_object(identifier, resource)
@@ -147,14 +146,11 @@ def _create_object(identifier: str, resource: object_model) -> object_output:
 
         args = object_model(**resource.dict()).filter_to_create(identifier)
 
-        response = run_client_function('s3', 'put_object', args)
+        response = run_client_function("s3", "put_object", args)
 
         rv = response
 
-
-
         print(rv)
-
 
         return rv
 
@@ -169,14 +165,11 @@ def _remove_object(identifier: str, resource: object_model):
 
         args = object_model(**resource.dict()).filter_to_remove(identifier)
 
-        response = run_client_function('s3', 'delete_object', args)
+        response = run_client_function("s3", "delete_object", args)
 
         rv = response
 
-
-
         print(rv)
-
 
         return rv
 
@@ -189,15 +182,18 @@ def handle_object_deployment(resource_diff: Resource_State_Difference) -> bool:
     try:
         if resource_diff.action_type == Action_Type.CREATE:
 
-            return create_object(resource_diff.new_resource.hash, resource_diff.new_resource)
+            return create_object(
+                resource_diff.new_resource.hash, resource_diff.new_resource
+            )
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
 
             return True
         elif resource_diff.action_type == Action_Type.DELETE:
-            
-            return remove_object(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+            return remove_object(
+                resource_diff.previous_resource.hash, resource_diff.previous_resource
+            )
 
     except Exception as e:
         print(e)
         raise Exception("COULD NOT DEPLOY")
-

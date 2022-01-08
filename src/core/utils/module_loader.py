@@ -4,6 +4,7 @@ from types import ModuleType
 import sys
 from typing import TextIO
 
+
 def import_module(module_name: str) -> ModuleType:
     """
     Helper function for dynamicall loading python modules. This function should be used whenever a python module needs to be dynamically
@@ -17,7 +18,6 @@ def import_module(module_name: str) -> ModuleType:
         Exception
     """
 
-
     # Sometimes the module is already loaded so just reload it to capture any changes
     # Importing the initialization file should cause it to modify the state of the Workspace however is needed
     sys.stdout = override_sys_out
@@ -30,11 +30,9 @@ def import_module(module_name: str) -> ModuleType:
     sys.stdout = sys.__stdout__
 
     return rv
-        
 
 
 class override_sys_out(TextIO):
-
     def write(s: str):
-        if len(s) > 0 and not s == '\n':
+        if len(s) > 0 and not s == "\n":
             sys.__stdout__.write(f"> {s}\n")

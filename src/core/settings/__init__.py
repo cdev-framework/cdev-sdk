@@ -9,27 +9,36 @@ from typing import Any
 from rich.logging import RichHandler
 
 from rich.traceback import install
-#install(show_locals=False)   
 
-SETTINGS = {
-    
-}
+# install(show_locals=False)
+
+SETTINGS = {}
 
 SETTINGS["BASE_PATH"] = os.path.abspath(os.getcwd())
 SETTINGS["INTERNAL_FOLDER_NAME"] = os.path.join(SETTINGS.get("BASE_PATH"), ".cdev")
 
 
 SETTINGS["ROOT_FOLDER_NAME"] = ".cdev"
-SETTINGS['WORKSPACE_FILE_NAME'] = "workspace_info.json"
+SETTINGS["WORKSPACE_FILE_NAME"] = "workspace_info.json"
 
-SETTINGS["CDEV_INTERMEDIATE_FOLDER_LOCATION"] = os.path.join(SETTINGS.get("INTERNAL_FOLDER_NAME"), "intermediate")
-SETTINGS["CDEV_INTERMEDIATE_FILES_LOCATION"] = os.path.join(SETTINGS.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), "functions")
+SETTINGS["CDEV_INTERMEDIATE_FOLDER_LOCATION"] = os.path.join(
+    SETTINGS.get("INTERNAL_FOLDER_NAME"), "intermediate"
+)
+SETTINGS["CDEV_INTERMEDIATE_FILES_LOCATION"] = os.path.join(
+    SETTINGS.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), "functions"
+)
 
 SETTINGS["STATE_FOLDER"] = os.path.join(SETTINGS.get("INTERNAL_FOLDER_NAME"), "state")
-SETTINGS["CDEV_ENVIRONMENT_INFO_FILE"] = os.path.join(SETTINGS.get("STATE_FOLDER"), "environment_info.json")
-SETTINGS["CLOUD_MAPPING_LOCATION"] = os.path.join(SETTINGS.get("STATE_FOLDER"), "cloudmapping.json")
+SETTINGS["CDEV_ENVIRONMENT_INFO_FILE"] = os.path.join(
+    SETTINGS.get("STATE_FOLDER"), "environment_info.json"
+)
+SETTINGS["CLOUD_MAPPING_LOCATION"] = os.path.join(
+    SETTINGS.get("STATE_FOLDER"), "cloudmapping.json"
+)
 
-SETTINGS["CDEV_PROJECT_FILE"] = os.path.join(SETTINGS.get("BASE_PATH"), "cdev_project.py")
+SETTINGS["CDEV_PROJECT_FILE"] = os.path.join(
+    SETTINGS.get("BASE_PATH"), "cdev_project.py"
+)
 SETTINGS["COMPONENT_FILE_NAME"] = "cdev_component.py"
 
 SETTINGS["S3_ARTIFACTS_BUCKET"] = "cdev-demo-project-artificats"
@@ -53,22 +62,19 @@ SETTINGS["DEPLOYMENT_PLATFORM"] = "arm64"
 SETTINGS["DEPLOYMENT_PYTHON_VERSION"] = "py38"
 
 
-
 SETTINGS["LOGGING_INFO"] = {
     "version": 1,
     "formatters": {
         "jsonFormatter": {
             "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
-            "format": "%(asctime)s %(name)s %(levelname)s %(message)s"
+            "format": "%(asctime)s %(name)s %(levelname)s %(message)s",
         },
         "simpleFormatter": {
             "format": "%(asctime)s %(name)s - %(levelname)s: %(message)s"
         },
-        "richFormatter": {
-            "format": "%(name)s - %(message)s"
-        }
+        "richFormatter": {"format": "%(name)s - %(message)s"},
     },
-    "handlers" : {
+    "handlers": {
         "fileHandler": {
             "class": "logging.FileHandler",
             "level": "DEBUG",
@@ -87,126 +93,95 @@ SETTINGS["LOGGING_INFO"] = {
             "markup": True,
             "show_path": False,
             "show_time": False,
-            "rich_tracebacks": True
-        }
+            "rich_tracebacks": True,
+        },
     },
-    "loggers":{  
-        "cli": {
-            "level": "DEBUG",
-            "handlers": ["fileHandler"],
-            "propagate": False
-        },
-        "commands": {
-            "level": "DEBUG",
-            "handlers": ["fileHandler"],
-            "propagate": False
-        },
-        "frontend": {
-            "level": "DEBUG",
-            "handlers": ["fileHandler"],
-            "propagate": False
-        },
-        "backend": {
-            "level": "DEBUG",
-            "handlers": ["fileHandler"],
-            "propagate": False
-        },
-        "mapper": {
-            "level": "DEBUG",
-            "handlers": ["fileHandler"],
-            "propagate": False
-        },
+    "loggers": {
+        "cli": {"level": "DEBUG", "handlers": ["fileHandler"], "propagate": False},
+        "commands": {"level": "DEBUG", "handlers": ["fileHandler"], "propagate": False},
+        "frontend": {"level": "DEBUG", "handlers": ["fileHandler"], "propagate": False},
+        "backend": {"level": "DEBUG", "handlers": ["fileHandler"], "propagate": False},
+        "mapper": {"level": "DEBUG", "handlers": ["fileHandler"], "propagate": False},
         "resources": {
             "level": "DEBUG",
             "handlers": ["fileHandler"],
-            "propagate": False
+            "propagate": False,
         },
-        "utils": {
-            "level": "DEBUG",
-            "handlers": ["fileHandler"],
-            "propagate": False
-        },
+        "utils": {"level": "DEBUG", "handlers": ["fileHandler"], "propagate": False},
         "cli_rich": {
             "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["richHandler"],
-            "propagate": False
+            "propagate": False,
         },
         "commands_rich": {
             "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["richHandler"],
-            "propagate": False
+            "propagate": False,
         },
         "frontend_rich": {
             "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["richHandler"],
-            "propagate": False
+            "propagate": False,
         },
         "backend_rich": {
             "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["richHandler"],
-            "propagate": False
+            "propagate": False,
         },
         "mapper_rich": {
             "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["richHandler"],
-            "propagate": False
+            "propagate": False,
         },
         "resources_rich": {
             "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["richHandler"],
-            "propagate": False
+            "propagate": False,
         },
         "utils_rich": {
             "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["simpleHandler"],
-            "propagate": False
+            "propagate": False,
         },
         "cli_simple": {
             "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["simpleHandler"],
-            "propagate": False
+            "propagate": False,
         },
         "commands_simple": {
             "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["simpleHandler"],
-            "propagate": False
+            "propagate": False,
         },
         "frontend_simple": {
             "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["simpleHandler"],
-            "propagate": False
+            "propagate": False,
         },
         "backend_simple": {
             "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["simpleHandler"],
-            "propagate": False
+            "propagate": False,
         },
         "mapper_simple": {
             "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["simpleHandler"],
-            "propagate": False
+            "propagate": False,
         },
         "resources_simple": {
             "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["simpleHandler"],
-            "propagate": False
+            "propagate": False,
         },
         "utils_simple": {
             "level": SETTINGS["CONSOLE_LOG_LEVEL"],
             "handlers": ["simpleHandler"],
-            "propagate": False
+            "propagate": False,
         },
-    }, 
-    "root": {
-        "level": "ERROR",
-        "handlers": ["simpleHandler"]
     },
-    "disable_existing_loggers": False
-
+    "root": {"level": "ERROR", "handlers": ["simpleHandler"]},
+    "disable_existing_loggers": False,
 }
-
-
-
 
 
 def set_setting(key: str, val: Any) -> None:

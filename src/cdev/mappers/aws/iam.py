@@ -1,5 +1,3 @@
-
-
 import time
 import re
 from typing import Dict
@@ -33,6 +31,7 @@ def create_policy(identifier: str, resource: policy_model) -> bool:
         print(e)
         raise Exception("COULD NOT DEPLOY")
 
+
 def remove_policy(identifier: str, resource: policy_model) -> bool:
     try:
         _remove_policy(identifier, resource)
@@ -53,12 +52,11 @@ def _create_policy(identifier: str, resource: policy_model) -> policy_output:
 
         args = policy_model(**resource.dict()).filter_to_create(identifier)
 
-        response = run_client_function('iam', 'create_policy', args)
+        response = run_client_function("iam", "create_policy", args)
 
-        rv = response.get('Policy')
+        rv = response.get("Policy")
 
         print(rv)
-
 
         return rv
 
@@ -73,12 +71,11 @@ def _remove_policy(identifier: str, resource: policy_model):
 
         args = policy_model(**resource.dict()).filter_to_remove(identifier)
 
-        response = run_client_function('iam', 'delete_policy', args)
+        response = run_client_function("iam", "delete_policy", args)
 
         rv = response
 
         print(rv)
-
 
         return rv
 
@@ -91,17 +88,22 @@ def handle_policy_deployment(resource_diff: Resource_State_Difference) -> bool:
     try:
         if resource_diff.action_type == Action_Type.CREATE:
 
-            return create_policy(resource_diff.new_resource.hash, resource_diff.new_resource)
+            return create_policy(
+                resource_diff.new_resource.hash, resource_diff.new_resource
+            )
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
 
             return True
         elif resource_diff.action_type == Action_Type.DELETE:
-            
-            return remove_policy(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+            return remove_policy(
+                resource_diff.previous_resource.hash, resource_diff.previous_resource
+            )
 
     except Exception as e:
         print(e)
         raise Exception("COULD NOT DEPLOY")
+
 
 ################################################
 ##########
@@ -123,6 +125,7 @@ def create_role(identifier: str, resource: role_model) -> bool:
         print(e)
         raise Exception("COULD NOT DEPLOY")
 
+
 def remove_role(identifier: str, resource: role_model) -> bool:
     try:
         _remove_role(identifier, resource)
@@ -143,12 +146,11 @@ def _create_role(identifier: str, resource: role_model) -> role_output:
 
         args = role_model(**resource.dict()).filter_to_create(identifier)
 
-        response = run_client_function('iam', 'create_role', args)
+        response = run_client_function("iam", "create_role", args)
 
-        rv = response.get('Role')
+        rv = response.get("Role")
 
         print(rv)
-
 
         return rv
 
@@ -163,12 +165,11 @@ def _remove_role(identifier: str, resource: role_model):
 
         args = role_model(**resource.dict()).filter_to_remove(identifier)
 
-        response = run_client_function('iam', 'delete_role', args)
+        response = run_client_function("iam", "delete_role", args)
 
         rv = response
 
         print(rv)
-
 
         return rv
 
@@ -181,15 +182,18 @@ def handle_role_deployment(resource_diff: Resource_State_Difference) -> bool:
     try:
         if resource_diff.action_type == Action_Type.CREATE:
 
-            return create_role(resource_diff.new_resource.hash, resource_diff.new_resource)
+            return create_role(
+                resource_diff.new_resource.hash, resource_diff.new_resource
+            )
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
 
             return True
         elif resource_diff.action_type == Action_Type.DELETE:
-            
-            return remove_role(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+            return remove_role(
+                resource_diff.previous_resource.hash, resource_diff.previous_resource
+            )
 
     except Exception as e:
         print(e)
         raise Exception("COULD NOT DEPLOY")
-

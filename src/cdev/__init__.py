@@ -9,14 +9,13 @@ This tool is designed to improve the developer experience for Serverless develop
 """
 
 
-#from . import commands, cli, settings, utils, constructs, models
+# from . import commands, cli, settings, utils, constructs, models
 #
 #
-#__all__ = [ "cli", "settings", "commands", "utils", "constructs", "models"]
+# __all__ = [ "cli", "settings", "commands", "utils", "constructs", "models"]
 
 __pdoc__ = {}
-__pdoc__['.venv'] = False
-
+__pdoc__[".venv"] = False
 
 
 from . import constructs
@@ -24,5 +23,3 @@ from . import constructs
 
 # Ergonomic mapping so that the global project instance is in a more logical place for end developers.
 Project = constructs.project.Project
-
-

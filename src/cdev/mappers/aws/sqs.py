@@ -1,5 +1,3 @@
-
-
 import time
 import re
 from typing import Dict
@@ -33,6 +31,7 @@ def create_queue(identifier: str, resource: queue_model) -> bool:
         print(e)
         raise Exception("COULD NOT DEPLOY")
 
+
 def remove_queue(identifier: str, resource: queue_model) -> bool:
     try:
         _remove_queue(identifier, resource)
@@ -53,12 +52,11 @@ def _create_queue(identifier: str, resource: queue_model) -> queue_output:
 
         args = queue_model(**resource.dict()).filter_to_create(identifier)
 
-        response = run_client_function('sqs', 'create_queue', args)
+        response = run_client_function("sqs", "create_queue", args)
 
         rv = response
 
         print(rv)
-
 
         return rv
 
@@ -73,12 +71,11 @@ def _remove_queue(identifier: str, resource: queue_model):
 
         args = queue_model(**resource.dict()).filter_to_remove(identifier)
 
-        response = run_client_function('sqs', 'delete_queue', args)
+        response = run_client_function("sqs", "delete_queue", args)
 
         rv = response
 
         print(rv)
-
 
         return rv
 
@@ -91,15 +88,18 @@ def handle_queue_deployment(resource_diff: Resource_State_Difference) -> bool:
     try:
         if resource_diff.action_type == Action_Type.CREATE:
 
-            return create_queue(resource_diff.new_resource.hash, resource_diff.new_resource)
+            return create_queue(
+                resource_diff.new_resource.hash, resource_diff.new_resource
+            )
         elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
 
             return True
         elif resource_diff.action_type == Action_Type.DELETE:
-            
-            return remove_queue(resource_diff.previous_resource.hash, resource_diff.previous_resource)
+
+            return remove_queue(
+                resource_diff.previous_resource.hash, resource_diff.previous_resource
+            )
 
     except Exception as e:
         print(e)
         raise Exception("COULD NOT DEPLOY")
-

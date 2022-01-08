@@ -10,16 +10,15 @@ from ..utils.hasher import hash_list
 
 class ResourceModel(BaseModel):
     """
-    This is the most basic information needed to describe a resource. 
+    This is the most basic information needed to describe a resource.
 
     --- Attributes ---
 
     - ruuid ->  a string that represents the resource identifier (provider::resource-type)
 
-    - hash  ->  a string that is the hash of this object. This hash must be computed such that 
+    - hash  ->  a string that is the hash of this object. This hash must be computed such that
                 it changes only if a change in the state is desired.
     """
-
 
     ruuid: str
     """
@@ -28,13 +27,11 @@ class ResourceModel(BaseModel):
     Form: (top-level-namespace)::(resource-type-id)
     """
 
-
     hash: str
     """
     This is a hash that is used to identify if changes in the resources have occurred. It should have the property:
     - This value changes only if a there is a change in the resource. 
     """
-
 
     name: str
     """
@@ -54,17 +51,23 @@ class ResourceModel(BaseModel):
 
     class Config:
         validate_assignment = True
-        extra = 'allow'
+        extra = "allow"
 
-
-    def __init__(__pydantic_self__, ruuid: str, hash: str, name: str, parent_resources: List[str] = None ) -> None:
-        super().__init__(**{
-            "ruuid": ruuid,
-            "hash": hash,
-            "name": name,
-            "parent_resources": parent_resources
-        })
-
+    def __init__(
+        __pydantic_self__,
+        ruuid: str,
+        hash: str,
+        name: str,
+        parent_resources: List[str] = None,
+    ) -> None:
+        super().__init__(
+            **{
+                "ruuid": ruuid,
+                "hash": hash,
+                "name": name,
+                "parent_resources": parent_resources,
+            }
+        )
 
 
 class ResourceReferenceModel(BaseModel):
@@ -75,7 +78,7 @@ class ResourceReferenceModel(BaseModel):
 
     - ruuid ->  a string that represents the resource identifier (provider::resource-type)
 
-    - hash  ->  a string that is the hash of this object. This hash must be computed such that 
+    - hash  ->  a string that is the hash of this object. This hash must be computed such that
                 it changes only if a change in the state is desired.
     """
 
@@ -112,50 +115,64 @@ class ResourceReferenceModel(BaseModel):
     Boolean to determine if the reference should be resolved in the same resource state or from the parent resource state.
     """
 
-    def __init__(__pydantic_self__, component_name: str, ruuid: str, name: str, hash: str,  is_in_parent_resource_state: bool = False ) -> None:
-        super().__init__(**{
-            "component_name": component_name,
-            "ruuid": ruuid,
-            "name": name,
-            "hash": hash,
-            "is_in_parent_resource_state": is_in_parent_resource_state
-        })
-
+    def __init__(
+        __pydantic_self__,
+        component_name: str,
+        ruuid: str,
+        name: str,
+        hash: str,
+        is_in_parent_resource_state: bool = False,
+    ) -> None:
+        super().__init__(
+            **{
+                "component_name": component_name,
+                "ruuid": ruuid,
+                "name": name,
+                "hash": hash,
+                "is_in_parent_resource_state": is_in_parent_resource_state,
+            }
+        )
 
     class Config:
         validate_assignment = True
-        extra = 'allow'
-
+        extra = "allow"
 
 
 class Resource_Change_Type(str, Enum):
-    CREATE='CREATE'
-    UPDATE_IDENTITY='UPDATE_IDENTITY'
-    UPDATE_NAME='UPDATE_NAME'
-    DELETE='DELETE'
+    CREATE = "CREATE"
+    UPDATE_IDENTITY = "UPDATE_IDENTITY"
+    UPDATE_NAME = "UPDATE_NAME"
+    DELETE = "DELETE"
 
 
 class Resource_Reference_Change_Type(str, Enum):
-    CREATE='CREATE'
-    DELETE='DELETE'
+    CREATE = "CREATE"
+    DELETE = "DELETE"
 
 
 class Resource_Difference(BaseModel):
     action_type: Resource_Change_Type
     component_name: str
-    previous_resource:  Optional[ResourceModel]
+    previous_resource: Optional[ResourceModel]
     new_resource: Optional[ResourceModel]
 
-    def __init__(__pydantic_self__, action_type: Resource_Change_Type, component_name: str, previous_resource: ResourceModel=None, new_resource: ResourceModel=None) -> None:
-        super().__init__(**{
-            "action_type": action_type,
-            "component_name": component_name,
-            "previous_resource": previous_resource,
-            "new_resource": new_resource,
-        })
+    def __init__(
+        __pydantic_self__,
+        action_type: Resource_Change_Type,
+        component_name: str,
+        previous_resource: ResourceModel = None,
+        new_resource: ResourceModel = None,
+    ) -> None:
+        super().__init__(
+            **{
+                "action_type": action_type,
+                "component_name": component_name,
+                "previous_resource": previous_resource,
+                "new_resource": new_resource,
+            }
+        )
 
-
-    class Config:  
+    class Config:
         use_enum_values = True
 
 
@@ -163,22 +180,26 @@ class Resource_Reference_Difference(BaseModel):
     action_type: Resource_Reference_Change_Type
     resource_reference: ResourceReferenceModel
 
-    def __init__(__pydantic_self__, action_type: Resource_Reference_Change_Type, resource_reference: ResourceReferenceModel) -> None:
-        super().__init__(**{
-            "action_type": action_type,
-            "resource_reference": resource_reference,
-        })
+    def __init__(
+        __pydantic_self__,
+        action_type: Resource_Reference_Change_Type,
+        resource_reference: ResourceReferenceModel,
+    ) -> None:
+        super().__init__(
+            **{
+                "action_type": action_type,
+                "resource_reference": resource_reference,
+            }
+        )
 
-    class Config:  
+    class Config:
         use_enum_values = True
-
-
 
 
 class Cloud_Output(BaseModel):
     """
     Often we want resources that depend on the value of output of other resources that is only known after a cloud resource is created. This servers
-    as an placeholder for that desired value until it is available. 
+    as an placeholder for that desired value until it is available.
     """
 
     resource: str
@@ -193,18 +214,15 @@ class Cloud_Output(BaseModel):
 
     type: Literal["cdev_output"]
 
-        
     def __str__(self) -> str:
         return f"{self.resource}$${self.key}"
 
 
-
-class Resource():
+class Resource:
     RUUID: str = None
 
     def __init__(self, name: str):
         self.name = name
-    
 
     def render(self) -> ResourceModel:
         pass
@@ -213,23 +231,28 @@ class Resource():
         pass
 
 
-
-class Resource_Reference():
+class Resource_Reference:
     RUUID: str = None
 
-    def __init__(self, component_name: str, name: str, is_in_parent_resource_state: bool = False):
+    def __init__(
+        self, component_name: str, name: str, is_in_parent_resource_state: bool = False
+    ):
         self.component_name = component_name
         self.name = name
         self.is_in_parent_resource_state = is_in_parent_resource_state
-    
 
     def render(self) -> ResourceReferenceModel:
         raise NotImplementedError
 
-
     def from_output(key: str) -> Cloud_Output:
         raise NotImplementedError
 
-    
     def compute_hash(self) -> str:
-        return hash_list([self.component_name, self.RUUID, self.name, str(self.is_in_parent_resource_state)])
+        return hash_list(
+            [
+                self.component_name,
+                self.RUUID,
+                self.name,
+                str(self.is_in_parent_resource_state),
+            ]
+        )

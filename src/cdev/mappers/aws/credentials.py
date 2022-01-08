@@ -3,9 +3,10 @@ from pydantic import BaseModel
 
 from enum import Enum
 
+
 class aws_credentials_type(str, Enum):
-    raw_credentials="raw_credentials"
-    profile="profile"
+    raw_credentials = "raw_credentials"
+    profile = "profile"
 
 
 class aws_key(BaseModel):

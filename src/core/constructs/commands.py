@@ -1,12 +1,12 @@
-
 import os
 from argparse import ArgumentParser, HelpFormatter
 import sys
 from io import TextIOBase
 
+
 class CdevCommandError(BaseException):
     """
-    This is directly from Django, but I have to rename it for consistency sake since end users will have to raise it. Thank you Django. 
+    This is directly from Django, but I have to rename it for consistency sake since end users will have to raise it. Thank you Django.
 
     Exception class indicating a problem while executing a management
     command.
@@ -17,6 +17,7 @@ class CdevCommandError(BaseException):
     error) is the preferred way to indicate that something has gone
     wrong in the execution of a command.
     """
+
     def __init__(self, *args, returncode=1, **kwargs):
         self.returncode = returncode
         super().__init__(*args, **kwargs)
@@ -29,15 +30,21 @@ class DjangoHelpFormatter(HelpFormatter):
     Customized formatter so that command-specific arguments appear in the
     --help output before arguments common to all commands.
     """
+
     show_last = {
-        '--version', '--verbosity', '--traceback', '--settings', '--pythonpath',
-        '--no-color', '--force-color', '--skip-checks',
+        "--version",
+        "--verbosity",
+        "--traceback",
+        "--settings",
+        "--pythonpath",
+        "--no-color",
+        "--force-color",
+        "--skip-checks",
     }
 
     def _reordered_actions(self, actions):
         return sorted(
-            actions,
-            key=lambda a: set(a.option_strings) & self.show_last != set()
+            actions, key=lambda a: set(a.option_strings) & self.show_last != set()
         )
 
     def add_usage(self, usage, actions, *args, **kwargs):
@@ -51,6 +58,7 @@ class OutputWrapper(TextIOBase):
     """
     Wrapper around stdout/stderr
     """
+
     @property
     def style_func(self):
         return self._style_func
@@ -62,7 +70,7 @@ class OutputWrapper(TextIOBase):
         else:
             self._style_func = lambda x: x
 
-    def __init__(self, out, ending='\n'):
+    def __init__(self, out, ending="\n"):
         self._out = out
         self.style_func = None
         self.ending = ending
@@ -71,13 +79,13 @@ class OutputWrapper(TextIOBase):
         return getattr(self._out, name)
 
     def flush(self):
-        if hasattr(self._out, 'flush'):
+        if hasattr(self._out, "flush"):
             self._out.flush()
 
     def isatty(self):
-        return hasattr(self._out, 'isatty') and self._out.isatty()
+        return hasattr(self._out, "isatty") and self._out.isatty()
 
-    def write(self, msg='', style_func=None, ending=None):
+    def write(self, msg="", style_func=None, ending=None):
         ending = self.ending if ending is None else ending
         if ending and not msg.endswith(ending):
             msg += ending
@@ -85,7 +93,7 @@ class OutputWrapper(TextIOBase):
         self._out.write(style_func(msg))
 
 
-class BaseCommand():
+class BaseCommand:
     """
     This command system is heavily influenced/inspired by the Django command system (https://github.com/django/django/blob/b0ed619303d2fb723330ca9efa3acf23d49f1d19/django/core/management/base.py).
 
@@ -93,7 +101,7 @@ class BaseCommand():
     - A command is called with `cdev run <subcommand args>
     - Manage searches the project for the command.. TODO add more detail
     - When the command is found, we build it's arg parser
-    - Then the command is run via the `run_command` 
+    - Then the command is run via the `run_command`
 
     Note that `run_command` and `command` can both throw `CdevCommandError` and that should be caught in `run_from_command_line` and delegate the output through cdev_output.
 
@@ -112,10 +120,9 @@ class BaseCommand():
         self.stdout = OutputWrapper(stdout or sys.stdout)
         self.stderr = OutputWrapper(stderr or sys.stderr)
 
-
     def create_arg_parser(self, prog_name, subcommand, **kwargs) -> ArgumentParser:
         parser = ArgumentParser(
-            prog='%s %s' % (os.path.basename(prog_name), subcommand),
+            prog="%s %s" % (os.path.basename(prog_name), subcommand),
             description=self.help or None,
             formatter_class=DjangoHelpFormatter,
             **kwargs
@@ -125,17 +132,15 @@ class BaseCommand():
 
         return parser
 
-
     def add_arguments(self, parser: ArgumentParser):
         """
         Must be overridden by the subclasses
         """
         pass
 
-
     def run_from_command_line(self, argv):
         """
-        Handles input from command line and builds arg parser and uses it to validate input. 
+        Handles input from command line and builds arg parser and uses it to validate input.
 
         argv -> [program_name, command, *args]
 
@@ -145,24 +150,22 @@ class BaseCommand():
         """
         parser = self.create_arg_parser(argv[0], argv[1])
 
-        
         options = parser.parse_args(argv[2:])
-        
+
         cmd_options = vars(options)
         # Move positional args out of options to mimic legacy optparse
-        args = cmd_options.pop('args', ())
+        args = cmd_options.pop("args", ())
 
         try:
             self.run_command(*args, **cmd_options)
         except CdevCommandError as e:
-            self.stderr.write('%s: %s' % (e.__class__.__name__, e))
+            self.stderr.write("%s: %s" % (e.__class__.__name__, e))
             sys.exit(e.returncode)
-
 
     def run_command(self, *args, **kwargs):
         """
         Actually runs the command and sets up correct output and scaffolding. Also does any project checks. This should be the entry point to all commands not the actual `command` function.
-        
+
         **This method should not be overridden**
         """
 
@@ -172,18 +175,18 @@ class BaseCommand():
             self.stdout.write(output)
 
         return output
-    
 
     def command(self, *args, **kwargs):
         """
         The actual logic of the command. Subclasses must implement
         this method.
         """
-        raise NotImplementedError('subclasses of BaseCommand must provide a command() method')
+        raise NotImplementedError(
+            "subclasses of BaseCommand must provide a command() method"
+        )
 
 
-
-class BaseCommandContainer():
+class BaseCommandContainer:
     """
     This is used to designate that the directory is a CommandContainer and should be searched for when looking for commands.
 
@@ -198,7 +201,6 @@ class BaseCommandContainer():
     def __init__(self, stdout=None, stderr=None, no_color=False, force_color=False):
         self.stdout = OutputWrapper(stdout or sys.stdout)
         self.stderr = OutputWrapper(stderr or sys.stderr)
-
 
     def display_help_message(self) -> str:
         self.stdout.write(self.help)

@@ -10,20 +10,23 @@ cryptographically secure and should not be used for that. Instead, these functio
 that will be used to track changes throughout the system. 
 """
 
+
 class FILE_CACHE_CLASS:
     cache = {}
 
+
 FILE_CACHE = FILE_CACHE_CLASS()
+
 
 def hash_list(val: List[str]) -> str:
     if not val:
         return "0"
-        
+
     return hash_string("".join([str(x) for x in val]))
 
 
 def hash_string(val: str) -> str:
-    return hashlib.md5(val.encode()).hexdigest() 
+    return hashlib.md5(val.encode()).hexdigest()
 
 
 def clear_file_cache():
@@ -40,6 +43,3 @@ def hash_file(fp: FilePath) -> str:
     FILE_CACHE.cache[fp] = hash
 
     return hash
-
-
-
