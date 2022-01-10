@@ -1,4 +1,4 @@
-from typing import Dict, Union, List, Optional, Set, Callable, Any
+from typing import Dict, TypeVar, Union, List, Optional, Set, Callable, Any
 from typing_extensions import Literal
 
 from enum import Enum
@@ -43,12 +43,6 @@ class ResourceModel(BaseModel):
     instead of update. 
     """
 
-    parent_resources: Optional[List[str]]
-    """
-    A set of all resource identifications (ruuid:hash) that are a parent resource to some other resource in the component. This set serves as 
-    a fast way of checking if we need to update descendants when a resource is updated 
-    """
-
     class Config:
         validate_assignment = True
         extra = "allow"
@@ -58,14 +52,12 @@ class ResourceModel(BaseModel):
         ruuid: str,
         hash: str,
         name: str,
-        parent_resources: List[str] = None,
     ) -> None:
         super().__init__(
             **{
                 "ruuid": ruuid,
                 "hash": hash,
                 "name": name,
-                "parent_resources": parent_resources,
             }
         )
 
@@ -178,22 +170,28 @@ class Resource_Difference(BaseModel):
 
 class Resource_Reference_Difference(BaseModel):
     action_type: Resource_Reference_Change_Type
+    originating_component_name: str
     resource_reference: ResourceReferenceModel
 
     def __init__(
         __pydantic_self__,
         action_type: Resource_Reference_Change_Type,
+        originating_component_name: str,
         resource_reference: ResourceReferenceModel,
     ) -> None:
         super().__init__(
             **{
                 "action_type": action_type,
+                "originating_component_name": originating_component_name,
                 "resource_reference": resource_reference,
             }
         )
 
     class Config:
         use_enum_values = True
+
+    
+Output_Type = Union[Literal['resource'], Literal['reference']]
 
 
 class Cloud_Output(BaseModel):
@@ -202,9 +200,14 @@ class Cloud_Output(BaseModel):
     as an placeholder for that desired value until it is available.
     """
 
-    resource: str
+    ruuid: str
     """
-    ruuid:hash
+    Ruuid of the resource
+    """
+
+    name: str
+    """
+    Name of the resource
     """
 
     key: str
@@ -212,10 +215,26 @@ class Cloud_Output(BaseModel):
     The key to lookup the output value by (ex: arn)
     """
 
-    type: Literal["cdev_output"]
+    type: Output_Type
+
+
+    _id: Literal["cdev_output"]
+
+    component_name: Optional[str]
 
     def __str__(self) -> str:
-        return f"{self.resource}$${self.key}"
+        return f"{self.ruuid}$${self.name}$${self.key}"
+
+
+    def __init__(__pydantic_self__, ruuid: str, name: str, key: str, type: Output_Type, component_name: str = None) -> None:
+        super().__init__(**{
+            "ruuid": ruuid,
+            "name": name,
+            "key": key,
+            "type": type,
+            "_id": 'cdev_output',
+            "component_name": component_name
+        })
 
 
 class Resource:
@@ -227,8 +246,13 @@ class Resource:
     def render(self) -> ResourceModel:
         pass
 
-    def from_output(key: str) -> Cloud_Output:
-        pass
+    def from_output(self, key: Enum) -> Cloud_Output:
+        return Cloud_Output(
+            ruuid= self.RUUID,
+            name= self.name,
+            key= key.value,
+            type= 'resource'
+        )
 
 
 class Resource_Reference:
@@ -244,8 +268,14 @@ class Resource_Reference:
     def render(self) -> ResourceReferenceModel:
         raise NotImplementedError
 
-    def from_output(key: str) -> Cloud_Output:
-        raise NotImplementedError
+    def from_output(self, key: Enum) -> Cloud_Output:
+        return Cloud_Output(
+            ruuid= self.RUUID,
+            name= self.name,
+            key= key.value,
+            type= 'reference',
+            component_name= self.component_name
+        )
 
     def compute_hash(self) -> str:
         return hash_list(

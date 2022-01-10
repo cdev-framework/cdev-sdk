@@ -69,6 +69,7 @@ def simple_create_references(parent_component_name: str, component_name: str):
     return [
         Resource_Reference_Difference(
             Resource_Reference_Change_Type.CREATE,
+            component_name,
             ResourceReferenceModel(
                 parent_component_name,
                 x.ruuid,
@@ -85,6 +86,7 @@ def simple_delete_references(parent_component_name: str, component_name: str):
     return [
         Resource_Reference_Difference(
             Resource_Reference_Change_Type.DELETE,
+            component_name,
             ResourceReferenceModel(
                 parent_component_name,
                 x.ruuid,

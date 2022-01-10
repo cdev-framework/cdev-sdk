@@ -924,6 +924,7 @@ def _create_resource_diffs(
 def _create_reference_diffs(
     new_references: List[ResourceReferenceModel],
     old_references: List[ResourceReferenceModel],
+    originating_component_name: str, 
 ) -> List[Resource_Reference_Difference]:
 
     if old_references:
@@ -946,7 +947,7 @@ def _create_reference_diffs(
         else:
             rv.append(
                 Resource_Reference_Difference(
-                    Resource_Reference_Change_Type.CREATE, reference
+                    Resource_Reference_Change_Type.CREATE, originating_component_name, reference
                 )
             )
 
@@ -954,7 +955,7 @@ def _create_reference_diffs(
         log.info(f"delete resource diff {old_reference}")
         rv.append(
             Resource_Reference_Difference(
-                Resource_Reference_Change_Type.DELETE, old_reference
+                Resource_Reference_Change_Type.DELETE, originating_component_name, old_reference
             )
         )
 
@@ -1004,7 +1005,7 @@ def _create_differences(
                 )
                 resource_diffs.extend(tmp_resource_diff)
 
-                tmp_reference_diff = _create_reference_diffs(component.references, [])
+                tmp_reference_diff = _create_reference_diffs(component.references, [], component.name)
                 reference_diffs.extend(tmp_reference_diff)
 
             elif (
@@ -1084,7 +1085,7 @@ def _create_differences(
                 resource_diffs.extend(tmp_resource_diff)
 
                 tmp_reference_diff = _create_reference_diffs(
-                    component.references, previous_component.references
+                    component.references, previous_component.references, component.name
                 )
                 reference_diffs.extend(tmp_reference_diff)
 
@@ -1113,7 +1114,7 @@ def _create_differences(
         )
         resource_diffs.extend(tmp_resource_diff)
 
-        tmp_reference_diff = _create_reference_diffs([], removed_component.references)
+        tmp_reference_diff = _create_reference_diffs([], removed_component.references, removed_component.name)
         reference_diffs.extend(tmp_reference_diff)
 
     return component_diffs, reference_diffs, resource_diffs

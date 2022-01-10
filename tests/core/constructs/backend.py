@@ -346,6 +346,7 @@ def simple_differences(test_backend: Backend):
         for reference in component.references:
             reference_change = Resource_Reference_Difference(
                 Resource_Reference_Change_Type.CREATE,
+                component.name,
                 reference
             )
 
