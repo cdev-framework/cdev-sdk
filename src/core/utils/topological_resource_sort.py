@@ -8,6 +8,7 @@ import networkx as nx
 deliminator = '+'
 
 def find_parents(resource: ResourceModel) -> List[Cloud_Output]:
+    print(resource)
     resource_as_obj = resource.dict()
 
     cloud_outputs = find_cloud_output(resource_as_obj)
@@ -50,17 +51,17 @@ def _recursive_replace_output(obj) -> List[Cloud_Output]:
     return rv
 
 
-def generate_sorted_resources(differences: Tuple[List[Component_Difference], List[Resource_Reference_Difference], List[Resource_Difference]]) -> nx.DiGraph:
+def generate_sorted_resources(differences: Tuple[List[Component_Difference], List[Resource_Difference], List[Resource_Reference_Difference]]) -> nx.DiGraph:
     # nx graphs work on the element level by using the __hash__ of objects added to the graph, and to avoid making every obj support __hash__
     # we are using the id of {x.new_resource.ruuid}::{x.new_resource.hash} to identify resources in the graph then use a dict to map back to 
     # the actual object
     change_dag = nx.DiGraph()
 
 
-
     component_differences = differences[0]
-    reference_differences = differences[1]
-    resource_differences = differences[2]
+    resource_differences = differences[1]
+    reference_differences = differences[2]
+    
 
     
     component_ids = {_create_component_id(x.new_name):x for x in component_differences if x.action_type == Component_Change_Type.CREATE or x.action_type == Component_Change_Type.UPDATE_NAME or x.action_type == Component_Change_Type.UPDATE_IDENTITY}
@@ -89,7 +90,7 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
         else:
             raise Exception(f"There should always be a change in a component for a resource change {resource}")
 
-        parent_cloudoutputs = find_parents(resource.new_resource.dict()) if not resource.action_type == Resource_Change_Type.DELETE else find_parents(resource.previous_resource.dict())
+        parent_cloudoutputs = find_parents(resource.new_resource) if not resource.action_type == Resource_Change_Type.DELETE else find_parents(resource.previous_resource)
 
 
         if not parent_cloudoutputs:
@@ -139,18 +140,13 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
             # Since the original resource is not in the change set, it should be checked to be sure that it is accessible from the backend
             pass
             
-
-
-  
-
-
     #sorted_resources = []
     #resource_dag_list = list(nx.topological_sort(resource_dag))
     #for resource_id in resource_dag_list:
     #    sorted_resources.append(all_resource_id_to_resource_diff.get(resource_id))
 
     #return sorted_resources
-    return []
+    return change_dag
 
 
 def _create_component_id(component_name: str ) -> str:

@@ -8,7 +8,7 @@ from typing import Dict, List, Tuple
 from core.constructs.backend import Backend
 from core.constructs.backend_exceptions import *
 
-from . import sample_data
+from .. import sample_data
 
 ################################
 ##### Simple Tests
@@ -361,7 +361,7 @@ def simple_differences(test_backend: Backend):
 
     new_components.append(rename_component)
     
-    component_diffs, reference_diffs, resource_diffs = test_backend.create_differences(resource_state_uuid, new_components, [x.name for x in previous_components])
+    component_diffs,  resource_diffs, reference_diffs = test_backend.create_differences(resource_state_uuid, new_components, [x.name for x in previous_components])
 
 
     # TODO do more in depth testing of the actual diffs

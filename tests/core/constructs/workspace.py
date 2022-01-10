@@ -1,7 +1,7 @@
 from typing import Dict
 from core.constructs.workspace import Workspace, Workspace_State, Workspace_Info
 
-from . import sample_data
+from .. import sample_data
 
 def simple_initialize_workspace(workspace: Workspace, config: Workspace_Info):
     workspace.initialize_workspace(config)

@@ -1,5 +1,5 @@
 from typing import Dict, Tuple, List
-from core.constructs.components import Component, ComponentModel
+from core.constructs.components import Component, Component_Change_Type, ComponentModel, Component_Difference
 
 from core.constructs.resource import Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference, ResourceModel, Resource_Change_Type, ResourceReferenceModel
 
@@ -16,7 +16,6 @@ class simple_component(Component):
         )
 
 
-
 def simple_resource_data():
     return [
         ResourceModel("cdev::resource::x", "1", "resource1"),
@@ -27,7 +26,7 @@ def simple_resource_data():
     ]
 
 
-def simple_create_resource_changes(component_name: str):
+def simple_create_resource_changes(component_name: str) -> List[Resource_Difference]:
     simple_resources = simple_resource_data()
     return [
         Resource_Difference(
@@ -63,7 +62,7 @@ def simple_create_resource_changes(component_name: str):
     ]
 
 
-def simple_create_references(parent_component_name: str, component_name: str):
+def simple_create_references(parent_component_name: str, component_name: str) -> List[Resource_Reference_Difference]:
     simple_resources = simple_resource_data()
 
     return [
@@ -74,13 +73,12 @@ def simple_create_references(parent_component_name: str, component_name: str):
                 parent_component_name,
                 x.ruuid,
                 x.name,
-                "1"
             )
         ) for x in simple_resources
     ]
 
 
-def simple_delete_references(parent_component_name: str, component_name: str):
+def simple_delete_references(parent_component_name: str, component_name: str) -> List[Resource_Reference_Difference]:
     simple_resources = simple_resource_data()
 
     return [
@@ -91,7 +89,6 @@ def simple_delete_references(parent_component_name: str, component_name: str):
                 parent_component_name,
                 x.ruuid,
                 x.name,
-                "1"
             )
         ) for x in simple_resources
     ]
@@ -213,7 +210,6 @@ def simple_component_differences() -> Tuple[List[ComponentModel], List[Component
                 "component_name": "comp1",
                 "ruuid": "cdev::resource",
                 "name": "resource1",
-                "hash": "1",
             }
         ),
         ResourceReferenceModel(
@@ -221,7 +217,6 @@ def simple_component_differences() -> Tuple[List[ComponentModel], List[Component
                 "component_name": "comp1",
                 "ruuid": "cdev::resource",
                 "name": "resource2",
-                "hash": "2",
             }
         ),
     ]
@@ -232,7 +227,6 @@ def simple_component_differences() -> Tuple[List[ComponentModel], List[Component
                 "component_name": "comp1",
                 "ruuid": "cdev::resource",
                 "name": "resource1",
-                "hash": "1",
             }
         ),
         ResourceReferenceModel(
@@ -240,7 +234,6 @@ def simple_component_differences() -> Tuple[List[ComponentModel], List[Component
                 "component_name": "comp1",
                 "ruuid": "cdev::resource",
                 "name": "resource3",
-                "hash": "3",
             }
         ),
     ]
@@ -323,9 +316,83 @@ def simple_components() -> List[Component]:
         component3
     ]
 
+
 def simple_commands() -> List[str]:
     return [
         "data_sync",
         "logs",
         "price"
     ]
+
+
+
+def simple_differences_for_topo_sort() -> Tuple[List[Component_Difference], List[Resource_Reference_Difference], List[Resource_Difference]]:
+    """
+    Generate a simple set of data to test for the correct of the topological sort of a set changes to be deployed. 
+
+    Returns:
+        Tuple[List[Component_Difference], List[Resource_Reference_Difference], List[Resource_Difference]]: The generated Data
+    """
+    
+    component_diffs = [
+        Component_Difference(
+            action_type=Component_Change_Type.UPDATE_IDENTITY,
+            previous_name="comp1",
+            new_name="comp1"
+        ),
+        Component_Difference(
+            action_type=Component_Change_Type.UPDATE_NAME,
+            previous_name="comp2",
+            new_name="comp22"
+        ),
+        Component_Difference(
+            action_type=Component_Change_Type.UPDATE_IDENTITY,
+            previous_name="comp3",
+            new_name="comp3"
+        ),
+    ]
+
+    
+    resource_diffs = [
+        Resource_Difference(
+            action_type=Resource_Change_Type.CREATE,
+            component_name="comp1",
+            previous_resource=None,
+            new_resource=ResourceModel(
+                ruuid="cdev::test::r1",
+                hash="123",
+                name="r11"
+            )
+        ),
+        Resource_Difference(
+            action_type=Resource_Change_Type.UPDATE_IDENTITY,
+            component_name="comp1",
+            previous_resource=ResourceModel(
+                ruuid="cdev::test::r1",
+                hash="1234",
+                name="r2"
+            ),
+            new_resource=ResourceModel(
+                ruuid="cdev::test::r1",
+                hash="1235",
+                name="r2"
+            )
+        )
+    ]
+
+    reference_diffs = [
+        Resource_Reference_Difference(
+            action_type=Resource_Reference_Change_Type.CREATE,
+            originating_component_name='comp3',
+            resource_reference=ResourceReferenceModel(
+                component_name="comp1",
+                ruuid='cdev::test::r1',
+                name='r11',
+                
+            )
+        )
+    ]
+
+
+    return component_diffs, resource_diffs, reference_diffs
+

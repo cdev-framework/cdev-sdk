@@ -930,7 +930,7 @@ def _create_reference_diffs(
     if old_references:
         # build map<name,resource>
         old_name_to_references: Dict[str, ResourceReferenceModel] = {
-            x.hash: x for x in old_references
+            f"{x.ruuid};;{x.name}": x for x in old_references
         }
     else:
         old_name_to_references = {}
@@ -939,10 +939,10 @@ def _create_reference_diffs(
 
     rv = []
     for reference in new_references:
-
-        if reference.hash in old_name_to_references:
+        _id = f"{reference.ruuid};;{reference.name}"
+        if _id in old_name_to_references:
             # POP the seen previous resources as we go so only remaining resources will be deletes
-            old_references.remove(old_name_to_references.get(reference.hash))
+            old_references.remove(old_name_to_references.get(_id))
 
         else:
             rv.append(
@@ -966,8 +966,8 @@ def _create_differences(
     new_components: List[ComponentModel], previous_components: List[ComponentModel]
 ) -> Tuple[
     List[Component_Difference],
-    List[Resource_Reference_Difference],
     List[Resource_Difference],
+    List[Resource_Reference_Difference]
 ]:
 
     component_diffs = []
@@ -1117,4 +1117,4 @@ def _create_differences(
         tmp_reference_diff = _create_reference_diffs([], removed_component.references, removed_component.name)
         reference_diffs.extend(tmp_reference_diff)
 
-    return component_diffs, reference_diffs, resource_diffs
+    return component_diffs, resource_diffs, reference_diffs

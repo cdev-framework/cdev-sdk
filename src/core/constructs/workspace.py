@@ -343,7 +343,7 @@ class Workspace:
     def create_state_differences(
         self, desired_state: List[ComponentModel], previous_state_components: List[str]
     ) -> Tuple[
-        Component_Difference, Resource_Reference_Difference, Resource_Difference
+        Component_Difference, Resource_Difference, Resource_Reference_Difference,
     ]:
         """
         Produce the differences between the desired state of the components and the current saved state

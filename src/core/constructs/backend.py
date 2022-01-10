@@ -425,7 +425,7 @@ class Backend:
         new_components: List[ComponentModel],
         old_components: List[str],
     ) -> Tuple[
-        Component_Difference, Resource_Reference_Difference, Resource_Difference
+        Component_Difference,  Resource_Difference, Resource_Reference_Difference,
     ]:
         """
         Create the set of differences from a proposed set of components to a provided set of current components identified by their name. This allows the flexibility for working on a particular

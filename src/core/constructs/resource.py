@@ -96,12 +96,6 @@ class ResourceReferenceModel(BaseModel):
     instead of update. 
     """
 
-    hash: str
-    """
-    This is a hash that is used to identify if changes in the resources have occurred. It should have the property:
-    - This value changes only if a there is a change in the resource. 
-    """
-
     is_in_parent_resource_state: Optional[bool]
     """
     Boolean to determine if the reference should be resolved in the same resource state or from the parent resource state.
@@ -112,7 +106,6 @@ class ResourceReferenceModel(BaseModel):
         component_name: str,
         ruuid: str,
         name: str,
-        hash: str,
         is_in_parent_resource_state: bool = False,
     ) -> None:
         super().__init__(
@@ -120,7 +113,6 @@ class ResourceReferenceModel(BaseModel):
                 "component_name": component_name,
                 "ruuid": ruuid,
                 "name": name,
-                "hash": hash,
                 "is_in_parent_resource_state": is_in_parent_resource_state,
             }
         )
