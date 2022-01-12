@@ -7,6 +7,7 @@ from core.utils import hasher
 
 from .xlambda import Event as lambda_event, EventTypes
 
+
 RUUID = "cdev::simple::api"
 
 
@@ -17,6 +18,7 @@ class simple_api_model(ResourceModel):
 
 
 class simple_api_output(str, Enum):
+    cloud_name = "cloud_name"
     cloud_id = "cloud_id"
     endpoints = "endpoints"
     endpoint = "endpoint"
@@ -32,9 +34,9 @@ class Api(Resource):
         Create a simple http Api.
 
         Args
-            cdev_name (str): name of the resource
-            api_name (str, optional): name in aws of the resource. defaults to cdev_name if not provided
-            allow_cors (str, optional): allow CORS on the api
+            cdev_name (str): Name of the resource
+            api_name (str, optional): The base name of the resource when deployed in the cloud.
+            allow_cors (bool, optional): allow CORS on the api
 
         Note:
             To create routes for the api use the `route` method
@@ -42,9 +44,9 @@ class Api(Resource):
 
         super().__init__(cdev_name)
         self.api_name = (
-            f"{api_name}_{cdev_environment.get_current_environment_hash()}"
+            api_name
             if api_name
-            else f"{cdev_environment.get_current_environment_hash()}"
+            else f"cdevapi"
         )
         self._routes = []
         self.allow_cors = allow_cors

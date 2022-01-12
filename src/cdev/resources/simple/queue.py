@@ -1,15 +1,11 @@
 from enum import Enum
 from typing import List, Dict, Union
 
-
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output
 from core.utils import hasher
-from ...utils import environment as cdev_environment
 
-from .xlambda import Event as lambda_event, EventTypes, Permission
-
-
-RUUID = "cdev::simple::queue"
+from .xlambda import Event as lambda_event, EventTypes
+from .iam import Permission
 
 
 class QueuePermissions:
@@ -77,16 +73,16 @@ class Queue(Resource):
         args:
             cdev_name (str): Name of the resource
             queue_name (str, optional): Name of the queue in aws. Defaults to cdev_name if not provided.
-            is_fifo (bool, optional, default=False): if this should be a First-in First-out queue (link to difference) TODO
+            is_fifo (bool, optional, default=False): if this should be a First-in First-out queue (link to difference)
         """
         super().__init__(cdev_name)
 
-        _base_name = queue_name if queue_name else cdev_name
+        _base_name = queue_name if queue_name else "cdevqueue"
 
         self.queue_name = (
-            f"{_base_name}_{cdev_environment.get_current_environment_hash()}"
+            _base_name
             if not is_fifo
-            else f"{_base_name}_{cdev_environment.get_current_environment_hash()}.fifo"
+            else f"{_base_name}.fifo"
         )
         self.fifo = is_fifo
         self.permissions = QueuePermissions(cdev_name)
@@ -128,10 +124,4 @@ class Queue(Resource):
         return event
 
     def from_output(self, key: simple_queue_output) -> Cloud_Output:
-        return Cloud_Output(
-            **{
-                "resource": f"{self.RUUID}::{self.hash}",
-                "key": key.value,
-                "type": "cdev_output",
-            }
-        )
+        return super().from_output(key)

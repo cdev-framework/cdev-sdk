@@ -1,15 +1,13 @@
 from enum import Enum
 from typing import List, Dict, Union, Optional
 
+from core.constructs.resource import Resource, ResourceModel, Cloud_Output
+from core.utils import hasher
 
-from ...constructs import Cdev_Resource
-from ...models import Cloud_Output, Rendered_Resource
-from ...utils import hasher, environment as cdev_environment
+from .iam import Permission, PermissionArn
 
 
-from .xlambda import Permission, PermissionArn
 
-RUUID = "cdev::simple::relationaldb"
 
 
 class db_engine(Enum):
@@ -23,7 +21,7 @@ class db_engine(Enum):
     """Postgres 10.4-compatible Aurora"""
 
 
-class simple_relational_db_model(Rendered_Resource):
+class simple_relational_db_model(ResourceModel):
     DBClusterIdentifier: str
     """Replacement"""
     DatabaseName: str
@@ -50,7 +48,11 @@ class simple_relational_db_output(str, Enum):
 
 
 class RelationalDBPermissions:
+    RUUID = "cdev::simple::relationaldb"
+    
+    
     def __init__(self, resource_name) -> None:
+        
 
         self.DATABASE_ACCESS = Permission(
             actions=[
@@ -60,7 +62,7 @@ class RelationalDBPermissions:
                 "rds-data:ExecuteStatement",
                 "rds-data:RollbackTransaction",
             ],
-            resource=f"{RUUID}::{resource_name}",
+            resource=f"{self.RUUID}::{resource_name}",
             effect="Allow",
         )
 
@@ -69,7 +71,9 @@ class RelationalDBPermissions:
         )
 
 
-class RelationalDB(Cdev_Resource):
+class RelationalDB(Resource):
+    RUUID = "cdev::simple::relationaldb"
+
     def __init__(
         self,
         cdev_name: str,
@@ -91,9 +95,9 @@ class RelationalDB(Cdev_Resource):
         self.MasterUserPassword = password
 
         self.DBClusterIdentifier = (
-            f"{cluster_name}-{cdev_environment.get_current_environment_hash()}"
+            cluster_name
             if cluster_name
-            else f"{cdev_name}-{cdev_environment.get_current_environment_hash()}"
+            else "cdevrelationaldb"
         )
         self.DatabaseName = database_name
         self.EnableHttpEndpoint = httpendpoint
@@ -121,7 +125,7 @@ class RelationalDB(Cdev_Resource):
     def render(self) -> simple_relational_db_model:
         return simple_relational_db_model(
             **{
-                "ruuid": RUUID,
+                "ruuid": self.RUUID,
                 "name": self.name,
                 "hash": self.hash,
                 "DBClusterIdentifier": self.DBClusterIdentifier,
@@ -137,10 +141,4 @@ class RelationalDB(Cdev_Resource):
         )
 
     def from_output(self, key: simple_relational_db_output) -> Cloud_Output:
-        return Cloud_Output(
-            **{
-                "resource": f"{RUUID}::{self.hash}",
-                "key": key.value,
-                "type": "cdev_output",
-            }
-        )
+        return super().from_output(key)

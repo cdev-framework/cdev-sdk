@@ -1,19 +1,13 @@
 from enum import Enum
 from typing import List, Dict, Union
 
-import cdev
+from core.constructs.resource import Resource, ResourceModel, Cloud_Output
+from core.utils import hasher
 
+from .xlambda import Event as lambda_event, EventTypes
+from .iam import Permission
 
-from ...constructs import Cdev_Resource
-from ...models import Cloud_Output, Rendered_Resource
-from ...utils import hasher, environment as cdev_environment
-
-from .xlambda import Event as lambda_event, EventTypes, Permission
-
-RUUID = "cdev::simple::bucket"
-
-
-class Bucket_Event_Types(Enum):
+class Bucket_Event_Types(str, Enum):
     Object_Created = "s3:ObjectCreated:*"
     Object_Removed = "s3:ObjectRemoved:*"
     Object_Restore = "s3:ObjectRestore:*"
@@ -50,16 +44,16 @@ class BucketPermissions:
         )
 
 
-class simple_bucket_model(Rendered_Resource):
+class simple_bucket_model(ResourceModel):
     bucket_name: str
 
 
 class simple_bucket_output(str, Enum):
     cloud_id = "cloud_id"
-    bucket_name = "bucket_name"
+    cloud_name = "cloud_name"
 
 
-class Bucket(Cdev_Resource):
+class Bucket(Resource):
     RUUID = "cdev::simple::bucket"
 
     def __init__(self, cdev_name: str, bucket_name: str = "") -> None:
@@ -73,9 +67,9 @@ class Bucket(Cdev_Resource):
         super().__init__(cdev_name)
 
         self.bucket_name = (
-            f"{bucket_name}{cdev_environment.get_current_environment_hash()}"
+            bucket_name
             if bucket_name
-            else f"{cdev_name}{cdev_environment.get_current_environment_hash()}"
+            else "bucket"
         )
 
         self.permissions = BucketPermissions(cdev_name)
@@ -111,10 +105,4 @@ class Bucket(Cdev_Resource):
         return event
 
     def from_output(self, key: simple_bucket_output) -> Cloud_Output:
-        return Cloud_Output(
-            **{
-                "resource": f"{self.RUUID}::{self.hash}",
-                "key": key.value,
-                "type": "cdev_output",
-            }
-        )
+        return super().from_output(key)

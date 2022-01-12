@@ -14,19 +14,31 @@ import os
 
 from pathlib import PosixPath, WindowsPath
 
-from core.constructs.resource import ResourceModel, Cloud_Output, Resource
-from core.utils import hasher, logger
-from cdev.utils import parent_resources, environment as cdev_environment
 
-log = logger.get_cdev_logger(__name__)
+from core.constructs.resource import Resource, ResourceModel, Cloud_Output
+from core.utils import hasher
+
+from .iam import Permission, PermissionArn
+
+#log = logger.get_cdev_logger(__name__)
 
 
 LAMBDA_LAYER_RUUID = "cdev::simple::lambda_layer"
 LAMBDA_FUNCTION_RUUID = "cdev::simple::lambda_function"
 
 
+
+
+################
+##### Dependencies 
+################
+
 class simple_lambda_layer_output(str, Enum):
     arn = "arn"
+
+
+class LambdaLayerArn(ResourceModel):
+    arn: str
 
 
 class DependencyLayerModel(ResourceModel):
@@ -48,23 +60,18 @@ class DependencyLayer(Resource):
         self.artifact_path = artifact_path
 
     def from_output(self, key: simple_lambda_layer_output) -> Cloud_Output:
-        return Cloud_Output(
-            **{
-                "resource": f"{self.RUUID}::{self.name}",
-                "key": key.value,
-                "type": "cdev_output",
-            }
-        )
+        return super().from_output(key)
 
     def render(self) -> DependencyLayerModel:
         return DependencyLayerModel(self.name, self.RUUID, self.artifact_path)
 
 
-class LambdaLayerArn(ResourceModel):
-    arn: str
 
+################
+##### Events
+################
 
-class EventTypes(Enum):
+class EventTypes(str, Enum):
     HTTP_API_ENDPOINT = "api::endpoint"
     TABLE_STREAM = "table::stream"
     BUCKET_TRIGGER = "bucket:trigger"
@@ -91,53 +98,9 @@ class Event(BaseModel):
         )
 
 
-class Permission(BaseModel):
-    actions: List[str]
-    resource: str
-    effect: Union[Literal["Allow"], Literal["Deny"]]
-    resource_suffix: Optional[str]
-
-    def __init__(
-        self,
-        actions: List[str],
-        resource: str,
-        effect: Union[Literal["Allow"], Literal["Deny"]],
-        resource_suffix: Optional[str] = "",
-    ):
-        """
-        Create a permission object that can be attached to a lambda function to give it permission to access other resources.
-
-        args:
-            actions (List[str]): List of the IAM actions that this policy will include
-            resource (str): The Cdev resource name that this policy is for. Note this is not the aws resource name. A lookup will occur to map the cdev name to aws resource
-            effect ('Allow', 'Deny'): Allow or Deny the permission
-            resource_suffix (Optional[str]): Some permissions need suffixes added to the looked up aws resource (i.e. dynamodb streams )
-        """
-        super().__init__(
-            **{
-                "actions": actions,
-                "resource": resource,
-                "effect": effect,
-                "resource_suffix": resource_suffix,
-            }
-        )
-
-    def get_hash(self) -> str:
-        return hasher.hash_list(
-            [
-                self.resource,
-                hasher.hash_list(self.actions),
-                self.effect,
-                self.resource_suffix,
-            ]
-        )
-
-
-class PermissionArn(BaseModel):
-    arn: str
-
-    def get_hash(self) -> str:
-        return hasher.hash_string(self.arn)
+################
+##### Functions
+################
 
 
 class lambda_function_configuration_environment(BaseModel):
@@ -214,26 +177,19 @@ class simple_lambda(Resource):
         self.includes = includes
         self.events = events
         self.function_name = (
-            f"{function_name}_{cdev_environment.get_current_environment_hash()}"
+            function_name
             if function_name
-            else f"{cdev_name}_{cdev_environment.get_current_environment_hash()}"
+            else "cdev_serverless_function"
         )
 
         self.configuration = configuration
-        config_parents = [
-            f"{'::'.join(x.resource.split('::')[:3])};hash;{x.resource.split('::')[-1]}"
-            for x in parent_resources.find_cloud_output(configuration.dict())
-        ]
+
 
         self._permissions = function_permissions
         self.permissions_hash = hasher.hash_list(
             [x.get_hash for x in function_permissions]
         )
-        permissions_parents = [
-            f"{'::'.join(x.resource.split('::')[:-1])};name;{x.resource.split('::')[-1]}"
-            for x in function_permissions
-            if isinstance(x, Permission)
-        ]
+
 
         self.src_code_hash = hasher.hash_file(filepath)
         self.config_hash = configuration.get_cdev_hash()
@@ -252,13 +208,8 @@ class simple_lambda(Resource):
             ]
         )
 
-        event_parents = [
-            f"{x.original_resource_type};name;{x.original_resource_name}"
-            for x in events
-        ]
-        all_parents = event_parents + config_parents + permissions_parents
-        self.parents = all_parents
-        log.info(f"ALL PARENTS {self.parents}")
+        
+        
 
     def render(self) -> simple_aws_lambda_function_model:
 
@@ -276,7 +227,6 @@ class simple_lambda(Resource):
                 "src_code_hash": self.src_code_hash,
                 "config_hash": self.config_hash,
                 "events_hash": self.events_hash,
-                "parent_resources": self.parents,
                 "external_dependencies_hash": self.external_dependencies_hash,
                 "external_dependencies": self.external_dependencies,
             }
@@ -305,7 +255,6 @@ def simple_lambda_function_annotation(
 
     def create_function(func) -> simple_lambda:
 
-        log.info(func)
         if inspect.isfunction(func):
             for item in inspect.getmembers(func):
 

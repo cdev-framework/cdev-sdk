@@ -1,15 +1,11 @@
 from enum import Enum
 from typing import Optional
 
-from ...utils import hasher
-from ...constructs import Cdev_Resource
-from ...models import Cloud_Output, Rendered_Resource
+from core.constructs.resource import Resource, ResourceModel, Cloud_Output
+from core.utils import hasher
 
 
-RUUID = "cdev::simple::staticsite"
-
-
-class simple_static_site_model(Rendered_Resource):
+class simple_static_site_model(ResourceModel):
     site_name: str
     """Name of the site this page will be for. The site name must match the final dns domain that will be used if this site will be served with a simple cdn."""
     index_document: str
@@ -25,7 +21,9 @@ class simple_static_site_output(str, Enum):
     site_url = "site_url"
 
 
-class StaticSite(Cdev_Resource):
+class StaticSite(Resource):
+    RUUID = "cdev::simple::staticsite"
+
     def __init__(
         self,
         cdev_name: str,
@@ -40,11 +38,11 @@ class StaticSite(Cdev_Resource):
 
         Args:
             cdev_name (str): Name of the resource
-            bucket_name (str, optional): base name of the bucket in s3. If not provided, will default to cdev_name.
+            site_name (str, optional): base name of the bucket in s3. If not provided, will default to cdev_name.
         """
         super().__init__(cdev_name)
 
-        self.site_name = site_name
+        self.site_name = site_name if site_name else "cdev_staticsite"
         self.index_document = index_document
         self.error_document = error_document
         self.sync_folder = sync_folder
@@ -70,7 +68,7 @@ class StaticSite(Cdev_Resource):
     def render(self) -> simple_static_site_model:
         return simple_static_site_model(
             **{
-                "ruuid": RUUID,
+                "ruuid": self.RUUID,
                 "name": self.name,
                 "hash": self.hash,
                 "site_name": self.site_name,
@@ -82,10 +80,4 @@ class StaticSite(Cdev_Resource):
         )
 
     def from_output(self, key: simple_static_site_output) -> Cloud_Output:
-        return Cloud_Output(
-            **{
-                "resource": f"{RUUID}::{self.hash}",
-                "key": key.value,
-                "type": "cdev_output",
-            }
-        )
+        return super().from_output(key)

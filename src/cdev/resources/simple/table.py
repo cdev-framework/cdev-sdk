@@ -1,20 +1,16 @@
 from enum import Enum
 from typing import List, Dict, Union
 
+from core.constructs.resource import Resource, ResourceModel, Cloud_Output
+from core.utils import hasher
 
-from ...constructs import Cdev_Resource
-from ...models import Cloud_Output, Rendered_Resource
-from ...utils import hasher, environment as cdev_environment
-
-from .xlambda import Event as lambda_event, EventTypes, Permission
+from .xlambda import Event as lambda_event, EventTypes
+from .iam import Permission
 
 # log = logger.get_cdev_logger(__name__)
 
 
-RUUID = "cdev::simple::table"
-
-
-class attribute_type(Enum):
+class attribute_type(str, Enum):
     """
     Attributes of a table can be of the values:\n
     S -> String\n
@@ -31,7 +27,7 @@ class attribute_type(Enum):
     B = "B"
 
 
-class key_type(Enum):
+class key_type(str, Enum):
     """
     Type of key for a defined key on a table. Can be values:
     HASH -> Partion Key
@@ -45,7 +41,7 @@ class key_type(Enum):
     RANGE = "RANGE"
 
 
-class stream_type(Enum):
+class stream_type(str, Enum):
     """
     Type of streams for a table. Can be values:\n
     KEYS_ONLY -> Only the key attributes of the modified item.\n
@@ -60,7 +56,7 @@ class stream_type(Enum):
     NEW_AND_OLD_IMAGES = "NEW_AND_OLD_IMAGES"
 
 
-class simple_table_model(Rendered_Resource):
+class simple_table_model(ResourceModel):
     table_name: str
     attributes: List[Dict[str, str]]
     keys: List[Dict[str, str]]
@@ -138,7 +134,7 @@ class TablePermissions:
         )
 
 
-class Table(Cdev_Resource):
+class Table(Resource):
     RUUID = "cdev::simple::table"
 
     def __init__(
@@ -156,9 +152,9 @@ class Table(Cdev_Resource):
         super().__init__(cdev_name)
 
         self.table_name = (
-            f"{table_name}_{cdev_environment.get_current_environment_hash()}"
+            table_name
             if table_name
-            else f"{cdev_name}_{cdev_environment.get_current_environment_hash()}"
+            else "cdevtable"
         )
         self.attributes = [
             {
@@ -265,10 +261,4 @@ class Table(Cdev_Resource):
         return (True, "")
 
     def from_output(self, key: simple_table_output) -> Cloud_Output:
-        return Cloud_Output(
-            **{
-                "resource": f"cdev::simple::table::{self.hash}",
-                "key": key.value,
-                "type": "cdev_output",
-            }
-        )
+        return super().from_output(key)

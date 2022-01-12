@@ -1,12 +1,11 @@
 from enum import Enum
 from typing import List, Dict, Union
 
+from core.constructs.resource import Resource, ResourceModel, Cloud_Output
+from core.utils import hasher
 
-from ...constructs import Cdev_Resource
-from ...models import Cloud_Output, Rendered_Resource
-from ...utils import hasher, environment as cdev_environment
-
-from .xlambda import Event as lambda_event, EventTypes, Permission
+from .xlambda import Event as lambda_event, EventTypes
+from .iam import Permission
 
 RUUID = "cdev::simple::topic"
 
@@ -31,7 +30,7 @@ class TopicPermissions:
         )
 
 
-class simple_topic_model(Rendered_Resource):
+class simple_topic_model(ResourceModel):
     topic_name: str
     fifo: bool
 
@@ -41,7 +40,7 @@ class simple_topic_output(str, Enum):
     topic_name = "topic_name"
 
 
-class Topic(Cdev_Resource):
+class Topic(Resource):
 
     RUUID = "cdev::simple::topic"
 
@@ -53,12 +52,8 @@ class Topic(Cdev_Resource):
         """
         super().__init__(cdev_name)
 
-        _base_name = topic_name if topic_name else cdev_name
-        self.topic_name = (
-            f"{_base_name}_{cdev_environment.get_current_environment_hash()}"
-            if not is_fifo
-            else f"{_base_name}_{cdev_environment.get_current_environment_hash()}.fifo"
-        )
+        self.topic_name = topic_name if topic_name else "cdevtopic"
+
         self.fifo = is_fifo
         self.permissions = TopicPermissions(cdev_name)
 
@@ -90,10 +85,5 @@ class Topic(Cdev_Resource):
         return event
 
     def from_output(self, key: simple_topic_output) -> Cloud_Output:
-        return Cloud_Output(
-            **{
-                "resource": f"{self.RUUID}::{self.hash}",
-                "key": key.value,
-                "type": "cdev_output",
-            }
-        )
+        return super().from_output(key)
+
