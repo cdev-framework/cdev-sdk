@@ -117,7 +117,7 @@ class local_workspace(Workspace):
     #################
     ##### Mappers
     #################
-    @wrap_phase(Workspace_State.INITIALIZING)
+    @wrap_phase([Workspace_State.INITIALIZING])
     def add_mapper(self, mapper: CloudMapper) -> None:
         if not isinstance(mapper, CloudMapper):
             # TODO Throw error
@@ -126,18 +126,18 @@ class local_workspace(Workspace):
 
         self._MAPPERS.append(mapper)
 
-    @wrap_phase(Workspace_State.INITIALIZING)
+    @wrap_phase([Workspace_State.INITIALIZING])
     def add_mappers(self, mappers: List[CloudMapper]) -> None:
         for mapper in mappers:
             self.add_mapper(mapper)
 
         self._MAPPERS.append(mapper)
 
-    @wrap_phase(Workspace_State.INITIALIZED)
+    @wrap_phase([Workspace_State.INITIALIZED])
     def get_mappers(self) -> List[CloudMapper]:
         return self._MAPPERS
 
-    @wrap_phase(Workspace_State.INITIALIZED)
+    @wrap_phase([Workspace_State.INITIALIZED])
     def get_mapper_namespace(self) -> Dict:
         rv = {}
         mappers: List[CloudMapper] = self.get_mappers()
@@ -151,56 +151,56 @@ class local_workspace(Workspace):
     #################
     ##### Commands
     #################
-    @wrap_phase(Workspace_State.INITIALIZING)
+    @wrap_phase([Workspace_State.INITIALIZING])
     def add_command(self, command_location: str):
         self._COMMANDS.append(command_location)
 
-    @wrap_phase(Workspace_State.INITIALIZING)
+    @wrap_phase([Workspace_State.INITIALIZING])
     def add_commands(self, command_locations: List[str]):
         for command_location in command_locations:
             self.add_command(command_location)
 
-    @wrap_phase(Workspace_State.INITIALIZED)
+    @wrap_phase([Workspace_State.INITIALIZED])
     def get_commands(self) -> List[str]:
         return self._COMMANDS
 
     #################
     ##### Components
     #################
-    @wrap_phase(Workspace_State.INITIALIZING)
+    @wrap_phase([Workspace_State.INITIALIZING])
     def add_component(self, component: Component):
         self._COMPONENTS.append(component)
 
-    @wrap_phase(Workspace_State.INITIALIZING)
+    @wrap_phase([Workspace_State.INITIALIZING])
     def add_components(self, components: List[Component]):
         for component in components:
             self.add_component(component)
 
-    @wrap_phase(Workspace_State.INITIALIZED)
+    @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_FRONTEND])
     def get_components(self) -> List[Component]:
         return self._COMPONENTS
 
     #################
     ##### Backend
     #################
-    @wrap_phase(Workspace_State.INITIALIZING)
+    @wrap_phase([Workspace_State.INITIALIZING])
     def set_backend(self, backend: Backend):
         if not isinstance(backend, Backend):
             raise Exception("Not a backend object")
 
         self._backend = backend
 
-    @wrap_phase(Workspace_State.INITIALIZED)
+    @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_FRONTEND])
     def get_backend(self) -> Backend:
         return self._backend
 
-    @wrap_phase(Workspace_State.INITIALIZING)
+    @wrap_phase([Workspace_State.INITIALIZING])
     def set_resource_state_uuid(self, resource_state_uuid: str):
         self._resource_state_uuid = resource_state_uuid
 
-    @wrap_phase(Workspace_State.INITIALIZED)
+    @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_FRONTEND])
     def get_resource_state_uuid(self) -> str:
-        raise self._resource_state_uuid
+        return self._resource_state_uuid
 
 
 class local_workspace_manager(WorkspaceManager):

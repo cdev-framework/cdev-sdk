@@ -40,6 +40,7 @@ class local_project(Project):
 
     _central_state: project_info
     _backend: Backend = None
+    _project_state: Project_State = None
 
     def __new__(cls, project_info_location: FilePath):
         if cls._instance is None:
@@ -55,8 +56,11 @@ class local_project(Project):
 
             # Load the backend
             cls._instance._current_environment = None
+            
+            cls._instance.set_state(Project_State.UNINITIALIZED)
 
             Project.set_global_instance(cls._instance)
+
 
         return cls._instance
 
@@ -65,17 +69,20 @@ class local_project(Project):
         cls._instance = None
 
     def initialize_project(self):
+        self.set_state(Project_State.INITIALIZING)
         current_env = self.get_current_environment()
-        current_env.initialize_environment()
+        if current_env:
+            current_env.initialize_environment()
+        self.set_state(Project_State.INITIALIZED)
 
     def terminate_project(self):
         Project.remove_global_instance(self)
 
     def get_state(self) -> Project_State:
-        environment = self.get_current_environment()
-        return WORKSPACE_STATE_TO_PROJECT_STATE.get(
-            environment.get_workspace().get_state()
-        )
+        return self._project_state
+
+    def set_state(self, new_state: Project_State):
+        self._project_state = new_state
 
     # Note that the class methods should not include doc strings so that they inherit the doc string of the 
     # parent class. 
@@ -141,6 +148,9 @@ class local_project(Project):
 
     def get_current_environment(self) -> Environment:
         self._load_state()
+
+        if not self._central_state.current_environment:
+            return None
 
         return self.get_environment(self._central_state.current_environment)
 

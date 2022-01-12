@@ -19,6 +19,7 @@ def simple_execute_frontend_workspace(workspace: Workspace, config: Workspace_In
     
     workspace.initialize_workspace(config)
 
+    workspace.set_state(Workspace_State.EXECUTING_FRONTEND)
 
     state = workspace.generate_current_state()
 

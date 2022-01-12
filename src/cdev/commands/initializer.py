@@ -11,7 +11,7 @@ from core.constructs.workspace import Workspace_Info
 
 from core.default.backend import Local_Backend_Configuration, LocalBackend
 
-from ..constructs.project import check_if_project_exists, project_info
+from ..constructs.project import Project_State, check_if_project_exists, project_info
 
 
 STATE_FOLDER = "state"
@@ -59,8 +59,12 @@ def create_project(project_name: str, base_directory: DirectoryPath = None):
 
     new_project = local_project(project_info_location)
 
+    new_project.initialize_project()
+
     for environment in DEFAULT_ENVIRONMENTS:
         new_project.create_environment(environment)
+
+    new_project.set_state(Project_State.UNINITIALIZED)
 
     new_project.set_current_environment(DEFAULT_ENVIRONMENTS[-1])
 
