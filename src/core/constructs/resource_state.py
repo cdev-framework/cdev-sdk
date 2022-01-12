@@ -26,6 +26,11 @@ class Resource_State(BaseModel):
     """
     The list of components owned by this namespace
     """
+    
+    component_name_to_uuid: Optional[Dict[str, str]]
+    """
+    A dictionary from the uuid of a component to the component name
+    """
 
     parent_uuid: Optional[str]
     """
@@ -47,24 +52,28 @@ class Resource_State(BaseModel):
     A dictionary of transaction tokens to a tuple of (component_name, diff, error_info) for the changes that failed
     """
 
+
     def __init__(
         __pydantic_self__,
         name: str,
         uuid: str,
         components: List[ComponentModel] = [],
+        component_name_to_uuid: Dict[str, str]={},
         parent_uuid: Optional[str] = None,
         children: List[str] = [],
         resource_changes: Dict[str, Tuple[str, Resource_Difference]] = {},
         failed_changes: Dict[str, Tuple[str, Resource_Difference, Dict]] = {},
+        
     ) -> None:
         super().__init__(
             **{
                 "name": name,
                 "uuid": uuid,
                 "components": components,
+                "component_name_to_uuid": component_name_to_uuid,
                 "parent_uuid": parent_uuid,
                 "children": children,
                 "resource_changes": resource_changes,
-                "failed_changes": failed_changes,
+                "failed_changes": failed_changes
             }
         )

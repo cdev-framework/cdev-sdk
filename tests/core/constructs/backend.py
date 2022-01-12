@@ -1,7 +1,7 @@
 from os import rename
 from core.constructs import backend
 from core.constructs.resource import Cloud_Output, Resource_Change_Type, Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference, ResourceModel
-from core.constructs.components import ComponentModel
+from core.constructs.components import Component_Change_Type, Component_Difference, ComponentModel
 import pytest
 from typing import Dict, List, Tuple
 
@@ -49,7 +49,7 @@ def simple_actions(test_backend: Backend):
     
     # Try deleting a component that still has resources
     with pytest.raises(ComponentNotEmpty):
-        test_backend.delete_component(resource_state_uuid, component_name)
+        _delete_component(test_backend, resource_state_uuid, component_name)
 
     # Delete resources
     for resource_change in sample_delete_resource_changes:
@@ -75,7 +75,7 @@ def simple_actions(test_backend: Backend):
     with pytest.raises(Exception):
         test_backend.delete_resource_state(resource_state_uuid)
 
-    test_backend.delete_component(resource_state_uuid, component_name)
+    _delete_component(test_backend, resource_state_uuid, component_name)
 
     # Get an error when trying to access the component
     with pytest.raises(Exception):
@@ -134,7 +134,8 @@ def simple_references(test_backend: Backend):
 
     resource_state_uuid = _create_simple_resource_state_and_component(test_backend,  resource_state_name, component1_name)
 
-    test_backend.create_component(resource_state_uuid, component2_name)
+    
+    _create_component(test_backend, resource_state_uuid, component2_name)
 
     sample_create_resources = sample_data.simple_create_resource_changes(component1_name)
     sample_create_references = sample_data.simple_create_references(component1_name, component2_name)
@@ -207,7 +208,7 @@ def conflicting_names_component(test_backend: Backend):
     resource_state_uuid = _create_simple_resource_state_and_component(test_backend,  resource_state_name, component_name)
     
     with pytest.raises(ComponentAlreadyExists):
-        test_backend.create_component(resource_state_uuid, component_name)
+        _create_component(test_backend, resource_state_uuid, component_name)
 
 
 def get_missing_component(test_backend: Backend):
@@ -216,7 +217,7 @@ def get_missing_component(test_backend: Backend):
 
     resource_state_uuid = _create_simple_resource_state_and_component(test_backend,  resource_state_name, component_name)
 
-    test_backend.delete_component(resource_state_uuid, component_name)
+    _delete_component(test_backend, resource_state_uuid, component_name)
 
     with pytest.raises(ComponentDoesNotExist):
         test_backend.get_component(resource_state_uuid, component_name)
@@ -314,7 +315,7 @@ def simple_differences(test_backend: Backend):
     resource_state_uuid = test_backend.create_resource_state("demo")
 
     
-    [test_backend.create_component(resource_state_uuid, x.name) for x in previous_components]
+    [_create_component(test_backend, resource_state_uuid, x.name) for x in previous_components]
 
 
     # Create the previous resource states:
@@ -383,9 +384,8 @@ def _create_simple_resource_state_and_component(
 
     # Test that the resource state was added as a top level resource state
     assert resource_state_uuid == test_backend.get_resource_state(resource_state_uuid).uuid
-
-
-    test_backend.create_component(resource_state_uuid, component_name)
+    
+    _create_component(test_backend, resource_state_uuid, component_name)
 
     returned_component = test_backend.get_component(resource_state_uuid, component_name)
 
@@ -412,3 +412,24 @@ def _check_final_resources_and_output(test_backend: Backend, resource_state_uuid
     assert all((resource == test_backend.get_resource_by_hash(resource_state_uuid, component_name, resource.ruuid, resource.hash)) for resource, _, _ in final_state)
     assert all((original_output.get(key) == test_backend.get_cloud_output_value_by_name(resource_state_uuid, component_name, resource.ruuid, resource.name, key)) for resource, original_output, key in final_state)
     assert all((original_output.get(key) == test_backend.get_cloud_output_value_by_hash(resource_state_uuid, component_name, resource.ruuid, resource.hash, key)) for resource, original_output, key in final_state)
+
+
+def _create_component(backend: Backend, resource_state_uuid: str, component_name: str):
+
+    create_comp_diff = Component_Difference(
+        action_type=Component_Change_Type.CREATE,
+        new_name=component_name
+    )
+    
+    backend.update_component(resource_state_uuid, create_comp_diff)
+
+
+
+def _delete_component(backend: Backend, resource_state_uuid: str, component_name: str):
+
+    create_comp_diff = Component_Difference(
+        action_type=Component_Change_Type.DELETE,
+        previous_name=component_name
+    )
+    
+    backend.update_component(resource_state_uuid, create_comp_diff)

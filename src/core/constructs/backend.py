@@ -100,44 +100,12 @@ class Backend:
         """
         raise NotImplementedError
 
-    # Api for working with components within a resource state
-    def create_component(self, resource_state_uuid: str, component_name: str):
-        """
-        Create a component within a resource state.
-
-        Arguments:
-            resource_state_uuid (str): The resource state that this component will be in.
-            component_name (str): Name of the component
-
-        Returns:
-            uuid (str): The uuid for the new component
-
-        Raises:
-            ComponentAlreadyExists
-
-        """
-        raise NotImplementedError
-
-    def delete_component(self, resource_state_uuid: str, component_name: str):
-        """
-        Delete a component within a resource state.
-
-        Arguments:
-            resource_state_uuid (str): The resource state that this component will be in.
-            component_name (str): uuid of the component.
-
-        Raises:
-            ResourceStateDoesNotExist
-            ComponentDoesNotExist
-            ComponentNotEmpty
-        """
-        raise NotImplementedError
 
     def get_component(
         self, resource_state_uuid: str, component_name: str
     ) -> ComponentModel:
         """
-        Get a component from the resource state
+        Get a component from the resource state.
 
         Arguments:
             resource_state_uuid (str): The resource state that this component will be in.
@@ -151,6 +119,39 @@ class Backend:
             ComponentDoesNotExist
         """
         raise NotImplementedError
+
+
+    def update_component(
+        self, resource_state_uuid: str, component_difference: Component_Difference
+    ):
+        """Make an update to the component. 
+
+        Arguments:
+            resource_state_uuid (str): The resource state that the change is in.
+            component_difference (Component_Difference): The difference in the component to be made.
+
+        Raises:
+            ResourceStateDoesNotExist
+            ComponentDoesNotExist
+        """
+        pass
+
+
+    def get_namespace_identifier(self, resource_state_uuid: str, component_name: str) -> str:
+        """
+        Get the unique namespace for this resource state and component. 
+
+        Arguments:
+            resource_state_uuid (str): The resource state that this component will be in.
+            component_name (str): Name of the component
+
+        Raises:
+            ResourceStateDoesNotExist
+            ComponentDoesNotExist
+
+        Returns:
+            identifier (str): A unique identifier for this namespace
+        """
 
     # Api for changing individual Resources
     # The resource state needs to know when a mapper will be attempting to update a cdev resource. It is in charge of

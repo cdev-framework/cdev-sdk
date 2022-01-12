@@ -31,6 +31,7 @@ class ComponentModel(BaseModel):
     instead of update. 
     """
 
+
     hash: str
     """
     A hash that is used to identify if changes in the resources have occurred. It should have the property:

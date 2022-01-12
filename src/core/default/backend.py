@@ -229,7 +229,7 @@ class LocalBackend(Backend):
         return rv
 
     # Components
-    def create_component(self, resource_state_uuid: str, component_name: str):
+    def _create_component(self, resource_state_uuid: str, component_name: str):
 
         resource_state = self.get_resource_state(resource_state_uuid)
         resource_state_file_location = self._get_resource_state_file_location(
@@ -242,13 +242,17 @@ class LocalBackend(Backend):
                 f"Component already exists with name {component_name} in Resource State {resource_state_uuid}"
             )
 
+        # Create the new component
         new_component = ComponentModel(component_name)
-
         resource_state.components.append(new_component)
+
+        # Create a uuid for the component
+        component_uuid = str(uuid.uuid4())
+        resource_state.component_name_to_uuid[component_name] = component_uuid
 
         self._write_resource_state_file(resource_state, resource_state_file_location)
 
-    def delete_component(self, resource_state_uuid: str, component_name: str):
+    def _delete_component(self, resource_state_uuid: str, component_name: str):
 
         resource_state = self.get_resource_state(resource_state_uuid)
         resource_state_file_location = self._get_resource_state_file_location(
@@ -274,7 +278,58 @@ class LocalBackend(Backend):
             x for x in resource_state.components if not x.name == component_name
         ]
 
+        
+        resource_state.component_name_to_uuid.pop(component_name)
+
         self._write_resource_state_file(resource_state, resource_state_file_location)
+
+
+    def _update_component_name(self, resource_state_uuid: str, previous_component_name: str, new_component_name: str):
+        resource_state = self.get_resource_state(resource_state_uuid)
+        resource_state_file_location = self._get_resource_state_file_location(
+            resource_state_uuid
+        )
+
+        if not previous_component_name in set(x.name for x in resource_state.components) or not previous_component_name in resource_state.component_name_to_uuid:
+            # Component of that name does not exists
+            raise ComponentDoesNotExist(
+                f"Could not find component {previous_component_name} in Resource State {resource_state_uuid}"
+            )
+
+
+        if new_component_name in set(x.name for x in resource_state.components) or new_component_name in resource_state.component_name_to_uuid:
+            # Cant not have two components of the same name in the same resource state
+            raise ComponentAlreadyExists(
+                f"Component already exists with name {new_component_name} in Resource State {resource_state_uuid}"
+            )
+
+        # get the component to rename
+        rename_component = next(
+            x for x in resource_state.components if x.name == previous_component_name
+        )
+
+        # remove the component from the list of components
+        resource_state.components = [
+            x for x in resource_state.components if not x.name == previous_component_name
+        ]
+
+        # Since ComponentModels are frozen, we can just change the name
+        # So we make a dict of the current ComponentModel then change the name and use the dict as input
+        # for a new ComponentModel Obj. Then add the new Obj to the resource state
+        component_as_dict = rename_component.dict()
+        component_as_dict['name'] = new_component_name
+        new_component = ComponentModel(**component_as_dict)
+
+        resource_state.components.append(new_component)
+
+        # Update the name to uuid dict
+        resource_state.component_name_to_uuid.pop(previous_component_name)
+        resource_state.component_name_to_uuid[new_component_name] = new_component
+
+
+        self._write_resource_state_file(resource_state, resource_state_file_location)
+
+        
 
     def get_component(
         self, resource_state_uuid: str, component_name: str
@@ -290,6 +345,41 @@ class LocalBackend(Backend):
 
         return next(x for x in resource_state.components if x.name == component_name)
 
+
+    def get_namespace_identifier(self, resource_state_uuid: str, component_name: str) -> str:
+        resource_state = self.get_resource_state(resource_state_uuid)
+
+        if not component_name in resource_state.component_name_to_uuid:
+            raise ComponentDoesNotExist(
+                f"Can not find Component {component_name} in Resource State {resource_state_uuid}"
+            )
+
+        component_uuid = resource_state.component_name_to_uuid.get(component_name)
+
+        return cdev_hasher.hash_list(resource_state_uuid, component_uuid)
+
+
+    def update_component(
+        self, resource_state_uuid: str, component_difference: Component_Difference
+    ):
+        if component_difference.action_type == Component_Change_Type.CREATE:
+            self._create_component(resource_state_uuid , component_difference.new_name)
+            return
+
+        elif component_difference.action_type == Component_Change_Type.DELETE:
+            self._delete_component(resource_state_uuid, component_difference.previous_name)
+            return
+
+        elif component_difference.action_type == Component_Change_Type.UPDATE_IDENTITY:
+            return
+
+        elif  component_difference.action_type == Component_Change_Type.UPDATE_NAME:
+            self._update_component_name(resource_state_uuid, component_difference.previous_name, component_difference.new_name)
+
+        else:
+            raise Exception(f"Component Action type not supported {component_difference.action_type}")
+
+
     # Resource Changes
     def create_resource_change(
         self, resource_state_uuid: str, component_name: str, diff: Resource_Difference
@@ -299,8 +389,7 @@ class LocalBackend(Backend):
             resource_state_uuid
         )
 
-        self.get_component(resource_state_uuid, component_name)
-
+       
         transaction_token = str(uuid.uuid4())
 
         resource_state.resource_changes[transaction_token] = (component_name, diff)

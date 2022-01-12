@@ -2,16 +2,15 @@ from enum import Enum
 from typing import List
 
 
-from ...constructs import Cdev_Resource
-from ...models import Cloud_Output, Rendered_Resource
-from ...utils import hasher, environment as cdev_environment
+from core.constructs.resource import Resource, ResourceModel, Cloud_Output
+from core.utils import hasher
 
 from .xlambda import Event as lambda_event, EventTypes
 
 RUUID = "cdev::simple::api"
 
 
-class simple_api_model(Resource):
+class simple_api_model(ResourceModel):
     api_name: str
     routes: List[lambda_event]
     allow_cors: bool
@@ -23,7 +22,7 @@ class simple_api_output(str, Enum):
     endpoint = "endpoint"
 
 
-class Api(Cdev_Resource):
+class Api(Resource):
     RUUID = "cdev::simple::api"
 
     def __init__(
@@ -45,7 +44,7 @@ class Api(Cdev_Resource):
         self.api_name = (
             f"{api_name}_{cdev_environment.get_current_environment_hash()}"
             if api_name
-            else f"{cdev_name}_{cdev_environment.get_current_environment_hash()}"
+            else f"{cdev_environment.get_current_environment_hash()}"
         )
         self._routes = []
         self.allow_cors = allow_cors
@@ -85,10 +84,4 @@ class Api(Cdev_Resource):
         )
 
     def from_output(self, key: simple_api_output) -> Cloud_Output:
-        return Cloud_Output(
-            **{
-                "resource": f"{self.RUUID}::{self.hash}",
-                "key": key.value,
-                "type": "cdev_output",
-            }
-        )
+        return super().from_output(key)
