@@ -137,7 +137,7 @@ class Backend:
         pass
 
 
-    def get_namespace_identifier(self, resource_state_uuid: str, component_name: str) -> str:
+    def get_component_uuid(self, resource_state_uuid: str, component_name: str) -> str:
         """
         Get the unique namespace for this resource state and component. 
 
@@ -156,9 +156,9 @@ class Backend:
     # Api for changing individual Resources
     # The resource state needs to know when a mapper will be attempting to update a cdev resource. It is in charge of
     # determing if the current resource state is capable of handling a change in the resource.
-    def create_resource_change(
+    def create_resource_change_transaction(
         self, resource_state_uuid: str, component_name: str, diff: Resource_Difference
-    ) -> str:
+    ) -> Tuple[str, str]:
         """
         Create in the Resource State the desire to change a particular resource. If the resource state can currently handle creating
         this change, it will return a base idempotency token that can be used to construct idempotency tokens for deploying the underlying
@@ -172,6 +172,7 @@ class Backend:
         Returns:
             transaction_token (str): The transaction token to be used by the mapper when deploying the resource. This token can be used to give to a cloud
             provider as a idempotency token.
+            namespace_token (str): A suffix that can be added to deployed cloud resources that acts as a namespace for the resource within the cloud. 
 
         Raises:
             ResourceStateDoesNotExist

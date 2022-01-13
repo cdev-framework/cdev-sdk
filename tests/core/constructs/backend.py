@@ -27,7 +27,7 @@ def simple_actions(test_backend: Backend):
     resource_state_uuid = _create_simple_resource_state_and_component(test_backend,  resource_state_name, component_name)
     # Create a resource change then automatically complete the transaction
     for resource_change in final_state:
-        tmp_transaction = test_backend.create_resource_change(
+        tmp_transaction, tmp_namespace = test_backend.create_resource_change_transaction(
                                 resource_state_uuid, 
                                 component_name, 
                                 resource_change
@@ -53,7 +53,7 @@ def simple_actions(test_backend: Backend):
 
     # Delete resources
     for resource_change in sample_delete_resource_changes:
-        tmp_transaction = test_backend.create_resource_change(
+        tmp_transaction, tmp_namespace = test_backend.create_resource_change_transaction(
                                 resource_state_uuid, 
                                 component_name, 
                                 resource_change
@@ -103,7 +103,7 @@ def simple_get_resource(test_backend: Backend):
 
     # Create a resource change then automatically complete the transaction
     for resource_change, cloud_output in final_state:
-        tmp_transaction = test_backend.create_resource_change(
+        tmp_transaction, tmp_namespace = test_backend.create_resource_change_transaction(
                                 resource_state_uuid, 
                                 component_name, 
                                 resource_change
@@ -142,7 +142,7 @@ def simple_references(test_backend: Backend):
     sample_delete_references = sample_data.simple_delete_references(component1_name, component2_name)
 
     for resource_change in sample_create_resources:
-        tmp_transaction = test_backend.create_resource_change(
+        tmp_transaction, tmp_namespace = test_backend.create_resource_change_transaction(
                                 resource_state_uuid, 
                                 component1_name, 
                                 resource_change
@@ -249,7 +249,7 @@ def get_missing_cloud_output(test_backend: Backend):
     resource_state_uuid = _create_simple_resource_state_and_component(test_backend,  resource_state_name, component_name)
     # Create a resource change then automatically complete the transaction
     for resource_change, cloud_output in changes:
-        tmp_transaction = test_backend.create_resource_change(
+        tmp_transaction, tmp_namespace = test_backend.create_resource_change_transaction(
                                 resource_state_uuid, 
                                 component_name, 
                                 resource_change
@@ -329,7 +329,7 @@ def simple_differences(test_backend: Backend):
             )
 
 
-            tmp_transaction = test_backend.create_resource_change(
+            tmp_transaction, tmp_namespace = test_backend.create_resource_change_transaction(
                                 resource_state_uuid, 
                                 component.name, 
                                 resource_change

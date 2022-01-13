@@ -346,7 +346,7 @@ class LocalBackend(Backend):
         return next(x for x in resource_state.components if x.name == component_name)
 
 
-    def get_namespace_identifier(self, resource_state_uuid: str, component_name: str) -> str:
+    def get_component_uuid(self, resource_state_uuid: str, component_name: str) -> str:
         resource_state = self.get_resource_state(resource_state_uuid)
 
         if not component_name in resource_state.component_name_to_uuid:
@@ -356,7 +356,7 @@ class LocalBackend(Backend):
 
         component_uuid = resource_state.component_name_to_uuid.get(component_name)
 
-        return cdev_hasher.hash_list(resource_state_uuid, component_uuid)
+        return cdev_hasher.hash_list([resource_state_uuid, component_uuid])
 
 
     def update_component(
@@ -381,22 +381,23 @@ class LocalBackend(Backend):
 
 
     # Resource Changes
-    def create_resource_change(
+    def create_resource_change_transaction(
         self, resource_state_uuid: str, component_name: str, diff: Resource_Difference
-    ) -> str:
+    ) -> Tuple[str, str]:
         resource_state = self.get_resource_state(resource_state_uuid)
         resource_state_file_location = self._get_resource_state_file_location(
             resource_state_uuid
         )
 
-       
         transaction_token = str(uuid.uuid4())
+
+        namespace_token = cdev_hasher.hash_list([resource_state_uuid, self.get_component_uuid(resource_state_uuid, component_name)])
 
         resource_state.resource_changes[transaction_token] = (component_name, diff)
 
         self._write_resource_state_file(resource_state, resource_state_file_location)
 
-        return transaction_token
+        return transaction_token, namespace_token
 
     def complete_resource_change(
         self,
