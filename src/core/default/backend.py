@@ -391,7 +391,9 @@ class LocalBackend(Backend):
 
         transaction_token = str(uuid.uuid4())
 
-        namespace_token = cdev_hasher.hash_list([resource_state_uuid, self.get_component_uuid(resource_state_uuid, component_name)])
+        ruuid = diff.new_resource.ruuid if diff.new_resource else diff.previous_resource.ruuid
+
+        namespace_token = cdev_hasher.hash_list([resource_state_uuid, self.get_component_uuid(resource_state_uuid, component_name), ruuid])
 
         resource_state.resource_changes[transaction_token] = (component_name, diff)
 

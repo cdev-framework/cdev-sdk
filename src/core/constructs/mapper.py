@@ -15,7 +15,7 @@ class CloudMapper:
     def get_namespaces(self) -> List[str]:
         pass
 
-    def deploy_resource(self, resource_diff: Resource_Difference) -> bool:
+    def deploy_resource(self, transaction_token: str, namespace_token: str, resource_diff: Resource_Difference):
         pass
 
     def get_available_resources(self) -> Set[str]:
@@ -24,7 +24,3 @@ class CloudMapper:
     def get_resource_to_handler(self) -> Dict[str, Callable]:
         pass
 
-    def render_resource_outputs(
-        self, resource_diff: Resource_Difference
-    ) -> Resource_Difference:
-        pass
