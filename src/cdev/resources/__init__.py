@@ -1,3 +1,3 @@
-"""
-Basic set of resources that should be available for use
-"""
+from . import simple
+
+__all__ = ['simple']

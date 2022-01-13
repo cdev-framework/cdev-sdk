@@ -6,7 +6,7 @@ from typing import Callable, Any
 # from cdev import output
 
 # from ..commands import plan, deploy, destroy, environment, cloud_output, local_development, initializer
-from ..commands import initializer, environment, plan
+from ..commands import initializer, environment, plan, deploy
 
 parser = argparse.ArgumentParser(description="cdev cli")
 subparsers = parser.add_subparsers(title="sub_command", description="valid subcommands")
@@ -31,11 +31,7 @@ subparsers = parser.add_subparsers(title="sub_command", description="valid subco
         "help": "Destroy all the resources in the current environment",
         "default": destroy.destroy_command
     }, 
-    {
-        "name": "deploy",
-        "help": "Deploy a set of changes",
-        "default": deploy.deploy_command
-    }, 
+
     {
         "name": "output",
         "help": "See the generated cloud output",
@@ -177,6 +173,11 @@ CDEV_COMMANDS = [
             },
         ],
     },
+    {
+        "name": "deploy",
+        "help": "Deploy a set of changes",
+        "default": wrap_load_and_initialize_project(deploy.deploy_command_cli)
+    }, 
 ]
 
 

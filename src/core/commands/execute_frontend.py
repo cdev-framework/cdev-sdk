@@ -1,3 +1,4 @@
+from networkx.classes import digraph
 from ..constructs.workspace import Workspace, Workspace_State
 
 import networkx as nx
@@ -10,7 +11,7 @@ def execute_frontend_cli(args):
     execute_frontend(WORKSPACE)
 
 
-def execute_frontend(workspace: Workspace):
+def execute_frontend(workspace: Workspace) -> nx.DiGraph:
     workspace.set_state(Workspace_State.EXECUTING_FRONTEND)
     current_state = workspace.generate_current_state()
 
@@ -27,4 +28,4 @@ def execute_frontend(workspace: Workspace):
 
     differences_ordered = workspace.sort_differences(differences)
 
-    print([x for x in nx.topological_sort(differences_ordered)])
+    return differences_ordered

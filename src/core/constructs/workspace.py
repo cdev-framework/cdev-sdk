@@ -2,6 +2,7 @@ from enum import Enum
 import inspect
 from typing import Callable, List, Dict, Any, Tuple, TypeVar
 from networkx.classes.digraph import DiGraph
+from networkx.classes.graph import NodeView
 
 from pydantic import BaseModel
 
@@ -375,8 +376,14 @@ class Workspace:
 
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
-    def deploy_differences(differences_dag: DiGraph) -> None:
-        pass
+    def deploy_differences(self, differences_dag: DiGraph) -> None:
+        topological_helper.topological_iteration(differences_dag, self.deploy_change)
+
+
+    @wrap_phase([Workspace_State.EXECUTING_BACKEND])
+    def deploy_change(self, change: NodeView) -> None:
+        print(f"> deploy the change ({type(change)}) {change}")
+
 
     @wrap_phase([Workspace_State.INITIALIZED])
     def execute_command(self, command: str, args: List):

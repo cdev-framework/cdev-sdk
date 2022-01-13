@@ -10,9 +10,9 @@ from . import utils as fs_utils
 from .utils import PackageTypes, ModulePackagingInfo, ExternalDependencyWriteInfo
 
 from zipfile import ZipFile
-from cdev.settings import SETTINGS as cdev_settings
-from cdev.utils import paths as cdev_paths, hasher as cdev_hasher
-from cdev.resources.simple.xlambda import LambdaLayerArn, DependencyLayer
+from core.settings import SETTINGS as cdev_settings
+from core.utils import paths as cdev_paths, hasher as cdev_hasher
+from core.resources.simple.xlambda import LambdaLayerArn, DependencyLayer
 import json
 import shutil
 import heapq

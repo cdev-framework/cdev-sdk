@@ -380,7 +380,6 @@ class LocalBackend(Backend):
             raise Exception(f"Component Action type not supported {component_difference.action_type}")
 
 
-    # Resource Changes
     def create_resource_change_transaction(
         self, resource_state_uuid: str, component_name: str, diff: Resource_Difference
     ) -> Tuple[str, str]:
@@ -400,6 +399,7 @@ class LocalBackend(Backend):
         self._write_resource_state_file(resource_state, resource_state_file_location)
 
         return transaction_token, namespace_token
+
 
     def complete_resource_change(
         self,

@@ -11,9 +11,9 @@ from pydantic.types import DirectoryPath, FilePath
 from sortedcontainers.sorteddict import SortedDict
 
 
-from cdev.settings import SETTINGS as CDEV_SETTINGS
-from cdev.utils import hasher as cdev_hasher
-from ..cparser import cdev_parser
+from core.settings import SETTINGS as CDEV_SETTINGS
+from core.utils import hasher as cdev_hasher
+from serverless_parser import parser as cdev_parser
 
 
 from . import docker_package_builder

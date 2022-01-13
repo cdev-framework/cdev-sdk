@@ -13,7 +13,7 @@ from core.constructs.resource import (
     Resource_Reference,
 )
 
-from cdev.resources.simple.xlambda import (
+from core.resources.simple.xlambda import (
     DependencyLayer,
     simple_lambda,
     simple_aws_lambda_function_model,

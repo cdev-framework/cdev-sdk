@@ -18,8 +18,9 @@ __pdoc__ = {}
 __pdoc__[".venv"] = False
 
 
-from . import constructs
+from . import constructs, resources
 
 
 # Ergonomic mapping so that the global project instance is in a more logical place for end developers.
 Project = constructs.project.Project
+

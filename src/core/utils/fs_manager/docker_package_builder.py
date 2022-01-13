@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List
 import docker
-from cdev.settings import SETTINGS as CDEV_SETTINGS
+from core.settings import SETTINGS as CDEV_SETTINGS
 import os
 import json
 from pkg_resources import Distribution

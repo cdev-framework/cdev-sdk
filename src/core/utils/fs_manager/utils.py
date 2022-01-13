@@ -6,8 +6,8 @@ from pydantic import BaseModel
 from enum import Enum
 from pathlib import PosixPath, WindowsPath
 
-from cdev.settings import SETTINGS as cdev_settings
-from cdev.utils import paths as cdev_paths, hasher as cdev_hasher
+from core.settings import SETTINGS as cdev_settings
+from core.utils import paths as cdev_paths, hasher as cdev_hasher
 
 import sys
 import platform
