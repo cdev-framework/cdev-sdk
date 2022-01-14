@@ -135,11 +135,11 @@ class local_workspace(Workspace):
 
         self._MAPPERS.append(mapper)
 
-    @wrap_phase([Workspace_State.INITIALIZED])
+    @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_BACKEND])
     def get_mappers(self) -> List[CloudMapper]:
         return self._MAPPERS
 
-    @wrap_phase([Workspace_State.INITIALIZED])
+    @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_BACKEND])
     def get_mapper_namespace(self) -> Dict:
         rv = {}
         mappers: List[CloudMapper] = self.get_mappers()
@@ -192,7 +192,7 @@ class local_workspace(Workspace):
 
         self._backend = backend
 
-    @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_FRONTEND])
+    @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_FRONTEND, Workspace_State.EXECUTING_BACKEND])
     def get_backend(self) -> Backend:
         return self._backend
 
@@ -200,7 +200,7 @@ class local_workspace(Workspace):
     def set_resource_state_uuid(self, resource_state_uuid: str):
         self._resource_state_uuid = resource_state_uuid
 
-    @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_FRONTEND])
+    @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_FRONTEND,  Workspace_State.EXECUTING_BACKEND])
     def get_resource_state_uuid(self) -> str:
         return self._resource_state_uuid
 

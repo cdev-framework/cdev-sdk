@@ -1,15 +1,15 @@
 from enum import Enum
 import inspect
-from typing import Callable, List, Dict, Any, Tuple, TypeVar
+from typing import Callable, List, Dict, Any, Tuple, TypeVar, Union
 from networkx.classes.digraph import DiGraph
 from networkx.classes.graph import NodeView
 
 from pydantic import BaseModel
 
-from .resource import Resource_Difference, Resource_Reference_Difference
+from .resource import Resource_Change_Type, Resource_Difference, Resource_Reference, Resource_Reference_Difference
 from .backend import Backend
 from .mapper import CloudMapper
-from .components import Component, Component_Difference, ComponentModel
+from .components import Component, Component_Change_Type, Component_Difference, ComponentModel
 
 
 from .commands import BaseCommand, BaseCommandContainer
@@ -190,7 +190,7 @@ class Workspace:
         """
         raise NotImplementedError
 
-    def get_mapper_namespace(self) -> Dict:
+    def get_mapper_namespace(self) -> Dict[str, CloudMapper]:
         """
         Return the Dictionary that maps Resource ID's (ruuid) to the mapper that will be used to deploy the resource into the cloud.
 
@@ -382,7 +382,28 @@ class Workspace:
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
     def deploy_change(self, change: NodeView) -> None:
-        print(f"> deploy the change ({type(change)}) {change}")
+        
+        if isinstance(change, Resource_Difference):
+        
+            transaction_token, namespace_token = self.get_backend().create_resource_change_transaction(self.get_resource_state_uuid(), change.component_name, change)
+
+            print(f"transaction {transaction_token}; namespace token {namespace_token}")
+
+            ruuid = change.new_resource.ruuid if change.new_resource else change.previous_resource.ruuid
+
+            self.get_mapper_namespace().get(ruuid).deploy_resource(transaction_token, namespace_token, change)
+
+            self.get_backend().complete_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, {})
+
+        elif isinstance(change, Resource_Reference):
+            pass
+
+        elif isinstance(change, Component_Difference):
+            self.get_backend().update_component(self.get_resource_state_uuid(), change)
+            print(f"Deployed Component {change}")
+
+        else:
+            raise Exception(f"Trying to deploy node {change} but it is not a correct type ")
 
 
     @wrap_phase([Workspace_State.INITIALIZED])

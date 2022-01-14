@@ -71,6 +71,7 @@ class local_project(Project):
     def initialize_project(self):
         self.set_state(Project_State.INITIALIZING)
         current_env = self.get_current_environment()
+        
         if current_env:
             current_env.initialize_environment()
         self.set_state(Project_State.INITIALIZED)
