@@ -3,9 +3,10 @@ from core.constructs.workspace import Workspace, Workspace_State, Workspace_Info
 
 from .. import sample_data
 
-def simple_initialize_workspace(workspace: Workspace, config: Workspace_Info):
+def simple_initialize_workspace(workspace: Workspace, config: Dict):
+    workspace.set_state(Workspace_State.INITIALIZING)
     workspace.initialize_workspace(config)
-    workspace.get_state() ==  Workspace_State.INITIALIZED
+    
 
 
 def simple_execute_frontend_workspace(workspace: Workspace, config: Workspace_Info):
@@ -18,7 +19,7 @@ def simple_execute_frontend_workspace(workspace: Workspace, config: Workspace_In
 
     
     workspace.initialize_workspace(config)
-
+    workspace.set_state(Workspace_State.INITIALIZED)
     workspace.set_state(Workspace_State.EXECUTING_FRONTEND)
 
     state = workspace.generate_current_state()
@@ -36,6 +37,8 @@ def simple_add_commands(workspace: Workspace, config: Workspace_Info):
 
 
     workspace.initialize_workspace(config)
+
+    workspace.set_state(Workspace_State.INITIALIZED)
 
     returned_commands = workspace.get_commands()
 

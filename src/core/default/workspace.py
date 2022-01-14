@@ -75,11 +75,13 @@ class local_workspace(Workspace):
     def initialize_workspace(
         self, workspace_configuration_dict: local_workspace_configuration
     ):
+
+        # It is the responsibility of the higher up callers to set the correct states for initialization.
+        # This allows the flexibility of higher up frameworks injecting initialization steps into the process.
         workspace_configuration = local_workspace_configuration(
             **workspace_configuration_dict
         )
-        self.set_state(Workspace_State.INITIALIZING)
-
+        
         try:
             backend_config = workspace_configuration.backend_configuration
             self.set_backend(load_backend(backend_config))
@@ -99,7 +101,7 @@ class local_workspace(Workspace):
 
         self.set_resource_state_uuid(workspace_configuration.resource_state_uuid)
 
-        self.set_state(Workspace_State.INITIALIZED)
+        
 
     def destroy_workspace(self):
         Workspace.destroy_workspace(self)

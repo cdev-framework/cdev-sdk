@@ -461,6 +461,16 @@ def load_and_initialize_workspace(config: Workspace_Info):
     """
     Load and initialize the workspace from the given configuration
     """
+    ws = load_workspace(config)
+    ws.set_state(Workspace_State.INITIALIZING)
+    initialize_workspace(ws, config.config)
+    ws.set_state(Workspace_State.INITIALIZED)
+
+
+def load_workspace(config: Workspace_Info) -> Workspace:
+    """
+    Load and initialize the workspace from the given configuration
+    """
     try:
         workspace_module = module_loader.import_module(config.python_module)
     except Exception as e:
@@ -486,10 +496,22 @@ def load_and_initialize_workspace(config: Workspace_Info):
 
     try:
         # initialize the backend obj with the provided configuration values
-        workspace_class().initialize_workspace(config.config)
+        return workspace_class()
 
     except Exception as e:
         print(
-            f"Could not initialize {workspace_class} Class from config {config.config}"
+            f"Could not load {workspace_class} Class from config {config.config}"
+        )
+        raise e
+
+
+def initialize_workspace(workspace: Workspace, config: Dict):
+    try:
+        # initialize the backend obj with the provided configuration values
+        workspace.initialize_workspace(config)
+
+    except Exception as e:
+        print(
+            f"Could not initialize {workspace} Class from config {config}"
         )
         raise e
