@@ -190,21 +190,23 @@ def topological_iteration(dag: DiGraph, process: Callable[[NodeView], None], thr
     all_nodes = set(x for x in dag.nodes())
 
     starting_nodes = all_nodes - all_children
+    
 
     nodes_to_process: list[NodeView] = []
     nodes_to_process.extend(starting_nodes)
 
     _processing_future_to_resource: Dict[Future, NodeView] = {}
-    _node_to_state: Dict[NodeView,node_state] = {x:node_state.UNPROCESSED for x in all_children}
+    _node_to_state: Dict[NodeView,node_state] = {x:node_state.UNPROCESSED for x in all_nodes}
 
     executor = ThreadPoolExecutor(thread_count)
+    
     
     while any(_node_to_state.get(x) == node_state.UNPROCESSED or _node_to_state.get(x) == node_state.PROCESSING for x in all_nodes):
         
         # Pull any ready nodes to be processed and add them to the thread pool
-        for _ in range(0,len(nodes_to_process)):
+        for _ in range(0, len(nodes_to_process)):
             node_to_process = nodes_to_process.pop(0)
-
+           
             future = executor.submit(process, (node_to_process))
 
             _processing_future_to_resource[future] = node_to_process
@@ -253,7 +255,7 @@ def topological_iteration(dag: DiGraph, process: Callable[[NodeView], None], thr
 
         sleep(interval)
 
-
+    print(f"finished executing changes")
     executor.shutdown()
 
 
