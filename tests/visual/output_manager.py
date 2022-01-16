@@ -7,7 +7,7 @@ from typing import Callable, Dict, List, Tuple
 
 
 from core.output.output_manager import OutputManager, OutputTask
-from core.utils.topological_helper import _create_output_description
+
 
 from tests.core.sample_data import simple_components, simple_differences_for_topo_sort, simple_change_dag
 
@@ -48,7 +48,7 @@ def sample_cloud_deploy():
         manager = OutputManager(console, progress)
 
         all_nodes_sorted: List[NodeView] = [x for x in topological_sort(dag)]
-        _node_to_output_task: Dict[NodeView, OutputTask] = {x:manager.create_task(_create_output_description(x), start=False, total=10, comment='Waiting to deploy') for x in all_nodes_sorted}
+        _node_to_output_task: Dict[NodeView, OutputTask] = {x:manager.create_task(manager.create_output_description(x), start=False, total=10, comment='Waiting to deploy') for x in all_nodes_sorted}
 
         for node in all_nodes_sorted:
             _node_to_output_task[node].start_task()
