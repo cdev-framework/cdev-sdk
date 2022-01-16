@@ -535,7 +535,7 @@ def load_workspace(config: Workspace_Info) -> Workspace:
 
     except Exception as e:
         print(
-            f"Could not load {workspace_class} Class from config {config.config}"
+            f"Could not load {workspace_class} Class from config {config.config}; {e}"
         )
         raise e
 
@@ -547,6 +547,6 @@ def initialize_workspace(workspace: Workspace, config: Dict):
 
     except Exception as e:
         print(
-            f"Could not initialize {workspace} Class from config {config}"
+            f"Could not initialize {workspace} Class from config {config}; {e}"
         )
         raise e

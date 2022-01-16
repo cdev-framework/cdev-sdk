@@ -90,7 +90,7 @@ class local_workspace(Workspace):
             raise e
 
         module_loader.import_module(workspace_configuration.initialization_module, denote_output=True)
-
+        
         if workspace_configuration.resource_state_uuid:
             if not workspace_configuration.resource_state_uuid in set(
                 [x.uuid for x in self._backend.get_top_level_resource_states()]
@@ -100,7 +100,7 @@ class local_workspace(Workspace):
                 )
 
         self.set_resource_state_uuid(workspace_configuration.resource_state_uuid)
-
+        
         
 
     def destroy_workspace(self):

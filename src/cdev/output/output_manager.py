@@ -1,4 +1,5 @@
 from rich import print
+from typing import List
 
 from core.output.output_manager import OutputManager
 
@@ -14,3 +15,8 @@ class CdevOutputManager(OutputManager):
 
         print("")
         print(f"Project: {myproject.get_name()}")
+        print("")
+
+
+    def print_components_to_diff_against(self, old_component_names: List[str]):
+        pass

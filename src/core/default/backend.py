@@ -216,16 +216,17 @@ class LocalBackend(Backend):
 
         except Exception as e:
             raise InvalidResourceStateData(
-                f"Ivalid data for Resource State from file {file_location} for resource state {resource_state_uuid}"
+                f"Ivalid data for Resource State from file {file_location} for resource state {resource_state_uuid}; {e}"
             )
 
     def get_top_level_resource_states(self) -> List[Resource_State]:
         rv = []
-
+        
         for resource_id in self._central_state.top_level_states:
             # Let any exception from loading a state pass up to caller
             rv.append(self.get_resource_state(resource_id))
 
+        
         return rv
 
     # Components
@@ -954,8 +955,6 @@ def _create_resource_diffs(
         old_hash_to_resource = {}
         old_name_to_resource = {}
 
-    log.debug(f"old_hash_to_resource -> {old_hash_to_resource}")
-    log.debug(f"old_name_to_resource -> {old_name_to_resource}")
 
     rv = []
     for resource in new_resources:
@@ -1057,8 +1056,6 @@ def _create_reference_diffs(
         }
     else:
         old_name_to_references = {}
-
-    print(f"old_name_to_resource -> {old_name_to_references}")
 
     rv = []
     for reference in new_references:

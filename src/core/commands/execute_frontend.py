@@ -1,12 +1,9 @@
-from networkx.classes import digraph
-from typing import List
+from typing import List, Tuple
 
-from core.output.output_manager import OutputManager
 from ..constructs.workspace import Workspace, Workspace_State
-
-import networkx as nx
-
-
+from ..constructs.components import Component_Difference
+from ..constructs.resource import Resource_Difference, Resource_Reference_Difference
+from ..output.output_manager import OutputManager
 
 
 def execute_frontend_cli(args):
@@ -18,7 +15,7 @@ def execute_frontend_cli(args):
     execute_frontend(WORKSPACE, output_manager)
 
 
-def execute_frontend(workspace: Workspace, output: OutputManager, previous_component_names: List[str]=None) -> nx.DiGraph:
+def execute_frontend(workspace: Workspace, output: OutputManager, previous_component_names: List[str]=None) -> Tuple[List[Component_Difference], List[Resource_Difference], List[Resource_Reference_Difference]]:
     workspace.set_state(Workspace_State.EXECUTING_FRONTEND)
     current_state = workspace.generate_current_state()
 
@@ -29,12 +26,17 @@ def execute_frontend(workspace: Workspace, output: OutputManager, previous_compo
     else:
         diff_previous_component_names = previous_component_names
 
+    
+    output.print_components_to_diff_against(diff_previous_component_names)
+
     differences = workspace.create_state_differences(current_state, diff_previous_component_names)
 
-
     
+    if any(x for x in differences):
+        output.print_state_differences(differences)
 
-
-    differences_ordered = workspace.sort_differences(differences)
-
-    return differences_ordered
+    else:
+        print("No Differences")
+        return None
+    
+    return differences
