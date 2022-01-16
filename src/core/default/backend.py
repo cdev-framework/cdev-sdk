@@ -416,15 +416,18 @@ class LocalBackend(Backend):
             resource_state_uuid
         )
 
+        
         if not transaction_token in resource_state.resource_changes:
+            
             raise ResourceChangeTransactionDoesNotExist(
                 f"Transaction {transaction_token} does not exist in Resource State {resource_state_uuid}"
             )
 
         component = self.get_component(resource_state_uuid, component_name)
-
+        
         new_component = self._update_component(component, diff, cloud_output)
-
+        
+        print(resource_state.components)
         resource_state.components = [
             x for x in resource_state.components if not x.name == component.name
         ] + [new_component]
@@ -432,6 +435,7 @@ class LocalBackend(Backend):
         resource_state.resource_changes.pop(transaction_token)
 
         self._write_resource_state_file(resource_state, resource_state_file_location)
+        
 
     def fail_resource_change(
         self,
@@ -797,11 +801,6 @@ class LocalBackend(Backend):
 
         cloud_output = component.cloud_output.get(cloud_output_id)
 
-        if not cloud_output:
-            raise CloudOutputDoesNotExist(
-                f"None value for Cloud Output for {resource_type}::{resource_name} in Component {component_name} in Resource State {resource_state_uuid}"
-            )
-
         return cloud_output
 
     def create_differences(
@@ -827,7 +826,7 @@ class LocalBackend(Backend):
         self,
         component: ComponentModel,
         diff: Resource_Difference,
-        cloud_output: Dict = None,
+        new_cloud_output: Dict = {},
     ) -> ComponentModel:
         """
         Apply a resource difference over a component model and return the updated component model
@@ -842,6 +841,7 @@ class LocalBackend(Backend):
 
         """
         if diff.action_type == Resource_Change_Type.DELETE:
+            
             component.resources = [
                 x
                 for x in component.resources
@@ -849,25 +849,30 @@ class LocalBackend(Backend):
                 and x.name == diff.previous_resource.name
             ]
 
+            
             # remove the previous resource's cloud output
             previous_resource_cloud_output_id = self._get_cloud_output_id(
                 diff.previous_resource
             )
-
+            
             if previous_resource_cloud_output_id in component.cloud_output:
-                cloud_output.pop(previous_resource_cloud_output_id)
+                component.cloud_output.pop(previous_resource_cloud_output_id)
+            
 
         elif (
             diff.action_type == Resource_Change_Type.UPDATE_IDENTITY
             or diff.action_type == Resource_Change_Type.UPDATE_NAME
         ):
-
-            component.resources = [
+            print("here")
+            print(component.resources)
+            print(diff.previous_resource)
+            removed_prevous = [
                 x
                 for x in component.resources
-                if x.ruuid == diff.previous_resource.ruuid
-                and x.name == diff.previous_resource.name
-            ].append(diff.new_resource)
+                if not (x.ruuid == diff.previous_resource.ruuid and x.name == diff.previous_resource.name)
+            ] 
+            print(removed_prevous)
+            component.resources = removed_prevous +  [diff.new_resource]
 
             # remove the previous resource's cloud output
             previous_resource_cloud_output_id = self._get_cloud_output_id(
@@ -875,19 +880,17 @@ class LocalBackend(Backend):
             )
 
             if previous_resource_cloud_output_id in component.cloud_output:
-                cloud_output.pop(previous_resource_cloud_output_id)
+                component.cloud_output.pop(previous_resource_cloud_output_id)
 
-            # Add the new resources cloud output
-            if cloud_output:
-                cloud_output_id = self._get_cloud_output_id(diff.new_resource)
-                component.cloud_output[cloud_output_id] = cloud_output
+            
+            cloud_output_id = self._get_cloud_output_id(diff.new_resource)
+            component.cloud_output[cloud_output_id] = new_cloud_output
+            print("end here")
 
         elif diff.action_type == Resource_Change_Type.CREATE:
-            component.resources.append(diff.new_resource)
-
-            if cloud_output:
-                cloud_output_id = self._get_cloud_output_id(diff.new_resource)
-                component.cloud_output[cloud_output_id] = cloud_output
+            component.resources.append(diff.new_resource)            
+            cloud_output_id = self._get_cloud_output_id(diff.new_resource)
+            component.cloud_output[cloud_output_id] = new_cloud_output
 
         # recompute hash
         component.hash = _compute_component_hash(component)
@@ -921,15 +924,22 @@ def _compute_component_hash(component: ComponentModel) -> str:
     Returns:
         hash (str): identity hash for the component
     """
-    resources = [x for x in component.resources]
-    resources.sort(key=lambda x: x.name)
+    if component.resources:
+        resources = [x for x in component.resources]
+        resources.sort(key=lambda x: x.name)
 
-    resource_hashes = [x.hash for x in resources]
+        resource_hashes = [x.hash for x in resources]
+    else:
+        resource_hashes = []
 
-    references = [x for x in component.references]
-    references.sort(key=lambda x: x.hash)
+    if component.references:
+        # TODO create hash of all the things
+        references = [x for x in component.references]
+        references.sort(key=lambda x: x.name)
 
-    references_hashes = [x.hash for x in references]
+        references_hashes = [x.name for x in references]
+    else:
+        references_hashes = []
 
     all_hashes = references_hashes + resource_hashes
 

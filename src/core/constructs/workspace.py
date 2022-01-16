@@ -1,5 +1,6 @@
 from enum import Enum
 import inspect
+from rich.console import Console, ConsoleOptions
 from typing import Callable, List, Dict, Any, Tuple, TypeVar, Union
 from networkx.classes.digraph import DiGraph
 from networkx.classes.graph import NodeView
@@ -377,7 +378,10 @@ class Workspace:
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
     def deploy_differences(self, differences_dag: DiGraph) -> None:
-        topological_helper.topological_iteration(differences_dag, self.deploy_change)
+
+        console = Console()
+        with console.status("Working..."):
+            topological_helper.topological_iteration(differences_dag, self.deploy_change)
 
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
@@ -399,15 +403,20 @@ class Workspace:
 
             try:
                 mapper = self.get_mapper_namespace().get(ruuid)
-                print(mapper)
                 cloud_output = mapper.deploy_resource(transaction_token, namespace_token, change, previous_output)
-
+            
             except Exception as e:
-                print(f'failed deployment of diff {change}')
+                
                 self.get_backend().fail_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, {"message": "error"})
+                print(e)
                 raise e
 
-            self.get_backend().complete_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, cloud_output)
+            try:
+                self.get_backend().complete_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, cloud_output)
+
+            except Exception as e:
+                print(e)
+                raise e
 
         elif isinstance(change, Resource_Reference):
             pass
@@ -417,6 +426,7 @@ class Workspace:
             print(f"Deployed Component {change}")
 
         else:
+        
             raise Exception(f"Trying to deploy node {change} but it is not a correct type ")
 
 
