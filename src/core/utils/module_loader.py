@@ -5,7 +5,7 @@ import sys
 from typing import TextIO
 
 
-def import_module(module_name: str) -> ModuleType:
+def import_module(module_name: str, denote_output: bool = False) -> ModuleType:
     """
     Helper function for dynamicall loading python modules. This function should be used whenever a python module needs to be dynamically
     loaded within the framework. For more information about python modules see https://docs.python.org/3/tutorial/modules.html. Any changes
@@ -18,9 +18,14 @@ def import_module(module_name: str) -> ModuleType:
         Exception
     """
 
+    if denote_output:
+        print(f"--------- OUTPUT FROM MODULE {module_name} ----------")
+
     # Sometimes the module is already loaded so just reload it to capture any changes
     # Importing the initialization file should cause it to modify the state of the Workspace however is needed
     sys.stdout = override_sys_out
+
+    
 
     if sys.modules.get(module_name):
         rv = importlib.reload(sys.modules.get(module_name))
@@ -28,6 +33,9 @@ def import_module(module_name: str) -> ModuleType:
         rv = importlib.import_module(module_name)
 
     sys.stdout = sys.__stdout__
+
+    if denote_output:
+        print(f"---------------------------------------------------")
 
     return rv
 

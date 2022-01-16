@@ -89,7 +89,7 @@ class local_workspace(Workspace):
             print(f"Could not load the load backend")
             raise e
 
-        module_loader.import_module(workspace_configuration.initialization_module)
+        module_loader.import_module(workspace_configuration.initialization_module, denote_output=True)
 
         if workspace_configuration.resource_state_uuid:
             if not workspace_configuration.resource_state_uuid in set(

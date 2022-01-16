@@ -131,6 +131,26 @@ class Project:
 
         _GLOBAL_PROJECT = None
 
+
+    def set_name(self, name: str):
+        """
+        Set the name of this Project
+
+        Args:
+            name (str): name of the Project
+        """
+        raise NotImplementedError
+
+
+    def get_name(self):
+        """
+        Get the name of this Project
+
+        Returns:
+            name (str)
+        """
+        raise NotImplementedError
+
     def get_state(self) -> Project_State:
         """
         Get the current lifecycle state of the Project.

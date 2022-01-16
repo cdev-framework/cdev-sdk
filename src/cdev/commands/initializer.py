@@ -92,5 +92,4 @@ def load_and_initialize_project(args):
 
     project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)
 
-    print("initializing project")
     local_project(project_info_location).initialize_project()

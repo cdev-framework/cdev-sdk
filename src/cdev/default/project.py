@@ -41,6 +41,7 @@ class local_project(Project):
     _central_state: project_info
     _backend: Backend = None
     _project_state: Project_State = None
+    _project_name: str = None
 
     def __new__(cls, project_info_location: FilePath):
         if cls._instance is None:
@@ -49,6 +50,8 @@ class local_project(Project):
             cls._instance._project_info_location = project_info_location
 
             cls._instance._load_state()
+
+            cls._instance.set_name(cls._instance._central_state.project_name)
 
             cls._instance._backend = load_backend(
                 cls._instance._central_state.backend_info
@@ -78,6 +81,26 @@ class local_project(Project):
 
     def terminate_project(self):
         Project.remove_global_instance(self)
+
+
+    def set_name(self, name: str):
+        """
+        Set the name of this Project
+
+        Args:
+            name (str): name of the Project
+        """
+        self._project_name = name
+
+
+    def get_name(self):
+        """
+        Get the name of this Project
+
+        Returns:
+            name (str)
+        """
+        return self._project_name
 
     def get_state(self) -> Project_State:
         return self._project_state

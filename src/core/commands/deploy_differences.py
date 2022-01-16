@@ -9,7 +9,7 @@ def execute_deployment_cli(args):
 
     WORKSPACE = Workspace.instance()
 
-    execute_frontend(WORKSPACE)
+    execute_deployment(WORKSPACE)
 
 
 
