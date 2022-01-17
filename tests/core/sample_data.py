@@ -350,70 +350,84 @@ def simple_differences_for_topo_sort() -> Tuple[List[Component_Difference], List
     Generate a simple set of data to test for the correct of the topological sort of a set changes to be deployed. 
 
     Returns:
-        Tuple[List[Component_Difference], List[Resource_Reference_Difference], List[Resource_Difference]]: The generated Data
+        Tuple[
+            Tuple[List[Component_Difference], List[Resource_Reference_Difference], List[Resource_Difference]]: The generated Data
+            List[Edges]
+        ]
     """
-    
-    component_diffs = [
-        Component_Difference(
-            action_type=Component_Change_Type.UPDATE_IDENTITY,
-            previous_name="comp1",
-            new_name="comp1"
-        ),
-        Component_Difference(
-            action_type=Component_Change_Type.UPDATE_NAME,
-            previous_name="comp2",
-            new_name="comp22"
-        ),
-        Component_Difference(
-            action_type=Component_Change_Type.UPDATE_IDENTITY,
-            previous_name="comp3",
-            new_name="comp3"
-        ),
-    ]
 
-    
-    resource_diffs = [
-        Resource_Difference(
-            action_type=Resource_Change_Type.CREATE,
-            component_name="comp1",
-            previous_resource=None,
-            new_resource=ResourceModel(
-                ruuid="cdev::test::r1",
-                hash="123",
-                name="r11"
-            )
-        ),
-        Resource_Difference(
-            action_type=Resource_Change_Type.UPDATE_IDENTITY,
-            component_name="comp1",
-            previous_resource=ResourceModel(
-                ruuid="cdev::test::r1",
-                hash="1234",
-                name="r2"
-            ),
-            new_resource=ResourceModel(
-                ruuid="cdev::test::r1",
-                hash="1235",
-                name="r2"
-            )
+    c1 = Component_Difference(
+        action_type=Component_Change_Type.UPDATE_IDENTITY,
+        previous_name="comp1",
+        new_name="comp1"
+    )
+    c2 = Component_Difference(
+        action_type=Component_Change_Type.UPDATE_NAME,
+        previous_name="comp2",
+        new_name="comp22"
+    )
+    c3 = Component_Difference(
+        action_type=Component_Change_Type.UPDATE_IDENTITY,
+        previous_name="comp3",
+        new_name="comp3"
+    )
+
+
+    rd1 = Resource_Difference(
+        action_type=Resource_Change_Type.CREATE,
+        component_name="comp1",
+        previous_resource=None,
+        new_resource=ResourceModel(
+            ruuid="cdev::test::r1",
+            hash="123",
+            name="r11"
         )
-    ]
+    )
+    rd2 = Resource_Difference(
+        action_type=Resource_Change_Type.UPDATE_IDENTITY,
+        component_name="comp1",
+        previous_resource=ResourceModel(
+            ruuid="cdev::test::r1",
+            hash="1234",
+            name="r2"
+        ),
+        new_resource=ResourceModel(
+            ruuid="cdev::test::r1",
+            hash="1235",
+            name="r2"
+        )
+    )
+
+
+    refd1 = Resource_Reference_Difference(
+        action_type=Resource_Reference_Change_Type.CREATE,
+        originating_component_name='comp3',
+        resource_reference=ResourceReferenceModel(
+            component_name="comp1",
+            ruuid='cdev::test::r1',
+            name='r11',
+            
+        )
+    )
+    
+    component_diffs = [ c1,c2,c3, ]
+
+    resource_diffs = [rd1, rd2]
 
     reference_diffs = [
-        Resource_Reference_Difference(
-            action_type=Resource_Reference_Change_Type.CREATE,
-            originating_component_name='comp3',
-            resource_reference=ResourceReferenceModel(
-                component_name="comp1",
-                ruuid='cdev::test::r1',
-                name='r11',
-                
-            )
-        )
+       refd1
     ]
 
 
-    return component_diffs, resource_diffs, reference_diffs
+    edges = [
+        (c1, rd1),
+        (c1, rd2),
+        (c3, refd1),
+        (rd1, refd1)
+    ]
+
+
+    return (component_diffs, resource_diffs, reference_diffs), edges
 
 
 def simple_resources_for_find_parents() -> List[Tuple[ResourceModel, int]]:

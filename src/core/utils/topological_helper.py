@@ -128,6 +128,17 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
     for _, reference in reference_ids.items():
         change_dag.add_node(reference)
 
+        # Reference changes should be a child to an Update Identity component diff
+        originating_component_id = _create_component_id(reference.originating_component_name)
+
+        if originating_component_id in component_ids:
+            change_dag.add_edge(component_ids.get(originating_component_id), reference)
+
+        else:
+            raise Exception(f"There should always be a change in a component for a reference change {resource}")
+
+
+        # Reference change should also be a child to any change to the referenced resource
         resource_id = _create_resource_id(reference.resource_reference.component_name, reference.resource_reference.ruuid, reference.resource_reference.name)
         if resource_id in resource_ids:
             # If there is also a change to the component this reference is apart of then the changes need to be ordered
@@ -135,7 +146,6 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
                 if resource_ids.get(resource_id).action_type == Resource_Change_Type.DELETE:
                     # We can not create a reference if that resource is currently being destroyed.
                     raise Exception(f"Trying to reference a resource that is being deleted {reference} -> {resource_id}")
-
 
                 # Since the reference is being created, we should perform the operation after the changes to the underlying resource 
                 change_dag.add_edge(resource_ids.get(resource_id), reference)
