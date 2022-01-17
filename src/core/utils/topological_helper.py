@@ -193,14 +193,14 @@ def _create_output_description(node: NodeView) -> str:
 
     elif isinstance(node, Resource_Reference_Difference):
         if node.action_type == Resource_Reference_Change_Type.CREATE:
-            return f"Create reference {node.resource_reference.name} ({node.resource_reference.ruuid}) from {node.originating_component_name}"
+            return f"[bold green]Create reference:[/bold green][bold blue] {node.resource_reference.name} ({node.resource_reference.ruuid}) from {node.originating_component_name}[/bold blue]"
 
         elif node.action_type == Resource_Reference_Change_Type.DELETE:
-            return f"Delete reference {node.resource_reference.name} ({node.resource_reference.ruuid}) from {node.originating_component_name}"
+            return f"[bold red]Delete reference:[/bold red][bold blue] {node.resource_reference.name} ({node.resource_reference.ruuid}) from {node.originating_component_name}[/bold blue]"
 
     elif isinstance(node, Component_Difference):
         if node.action_type == Component_Change_Type.UPDATE_NAME:
-            return f"[bold yellow]Update name: [/bold yellow][bold blue]{node.previous_name} to {node.new_name} (component)[/bold blue]"
+            return f"[bold yellow]Update Name: [/bold yellow][bold blue]{node.previous_name} to {node.new_name} (component)[/bold blue]"
 
         elif node.action_type == Component_Change_Type.UPDATE_IDENTITY:
             return f"[bold yellow]Update Identity: [/bold yellow][bold blue]{node.new_name} (component)[/bold blue]"

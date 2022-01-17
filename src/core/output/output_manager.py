@@ -72,7 +72,7 @@ class OutputManager():
 
         for component_diff in component_differences:
             if component_diff.action_type == Component_Change_Type.UPDATE_NAME:
-                self._console.print(f"    [bold yellow]Update name: [/bold yellow][bold blue]{component_diff.previous_name} to {component_diff.new_name} (component)[/bold blue]")
+                self._console.print(f"    [bold yellow]Update Name: [/bold yellow][bold blue]{component_diff.previous_name} to {component_diff.new_name} (component)[/bold blue]")
                 continue
 
             elif component_diff.action_type == Component_Change_Type.UPDATE_IDENTITY:
@@ -107,10 +107,10 @@ class OutputManager():
             if reference_changes:
                 for reference_diff in reference_changes:
                     if reference_diff.action_type == Resource_Reference_Change_Type.CREATE:
-                        self._console.print(f"        Create reference {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}")
+                        self._console.print(f"        [bold green]Create reference:[/bold green][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]")
 
                     elif reference_diff.action_type == Resource_Reference_Change_Type.DELETE:
-                        self._console.print(f"        Delete reference {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}")
+                        self._console.print(f"        [bold red]Delete reference:[/bold red][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]")
 
 
     def create_task(self, description: str, start: bool = True, total: int = 100, completed: int = 0, visible: bool = True, **fields: Any) -> 'OutputTask':
