@@ -352,7 +352,8 @@ def simple_differences_for_topo_sort() -> Tuple[List[Component_Difference], List
     Returns:
         Tuple[
             Tuple[List[Component_Difference], List[Resource_Reference_Difference], List[Resource_Difference]]: The generated Data
-            List[Edges]
+            List[Edges]: Edges that should be present
+            List[Component_Difference|Resource_Reference_Difference|Resource_Difference]: All the nodes that should be present
         ]
     """
 
@@ -426,8 +427,13 @@ def simple_differences_for_topo_sort() -> Tuple[List[Component_Difference], List
         (rd1, refd1)
     ]
 
+    nodes = [
+        c1, c2, c3,
+        rd1, rd2,
+        refd1
+    ]
 
-    return (component_diffs, resource_diffs, reference_diffs), edges
+    return (component_diffs, resource_diffs, reference_diffs), edges, nodes
 
 
 def simple_resources_for_find_parents() -> List[Tuple[ResourceModel, int]]:
