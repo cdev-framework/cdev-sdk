@@ -1,7 +1,7 @@
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Union
 from core.constructs.components import Component, Component_Change_Type, ComponentModel, Component_Difference
 
-from core.constructs.resource import Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference, ResourceModel, Resource_Change_Type, ResourceReferenceModel
+from core.constructs.resource import Cloud_Output, Output_Type, Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference, ResourceModel, Resource_Change_Type, ResourceReferenceModel
 
 
 class simple_component(Component):
@@ -16,13 +16,33 @@ class simple_component(Component):
         )
 
 
+class simple_resource_model(ResourceModel):
+    val: Union[str, Cloud_Output] 
+        
+        
+
 def simple_resource_data():
     return [
-        ResourceModel("cdev::resource::x", "1", "resource1"),
-        ResourceModel("cdev::resource::x", "2", "resource2"),
-        ResourceModel("cdev::resource::x", "3", "resource3"),
-        ResourceModel("cdev::resource::x", "4", "resource4"),
-        ResourceModel("cdev::resource::x", "5", "resource5")
+        ResourceModel(
+            ruuid="cdev::resource::x",
+            hash="1",
+            name="resource1"),
+        ResourceModel(
+            ruuid="cdev::resource::x",
+            hash="2",
+            name="resource2"),
+        ResourceModel(
+            ruuid="cdev::resource::x",
+            hash="3",
+            name="resource3"),
+        ResourceModel(
+            ruuid="cdev::resource::x",
+            hash="4",
+            name="resource4"),
+        ResourceModel(
+            ruuid="cdev::resource::x",
+            hash="5",
+            name="resource5")
     ]
 
 
@@ -325,7 +345,6 @@ def simple_commands() -> List[str]:
     ]
 
 
-
 def simple_differences_for_topo_sort() -> Tuple[List[Component_Difference], List[Resource_Reference_Difference], List[Resource_Difference]]:
     """
     Generate a simple set of data to test for the correct of the topological sort of a set changes to be deployed. 
@@ -396,3 +415,31 @@ def simple_differences_for_topo_sort() -> Tuple[List[Component_Difference], List
 
     return component_diffs, resource_diffs, reference_diffs
 
+
+def simple_resources_for_find_parents() -> List[Tuple[ResourceModel, int]]:
+    return [
+        (simple_resource_model(**{
+            "ruuid": "cdev::test:r1",
+            "name": "resource1",
+            "hash": "1",
+            "val": "val"
+        }),0),
+        (simple_resource_model(**{
+            "ruuid": "cdev::test:r1",
+            "name": "resource2",
+            "hash": "2",
+            "val": Cloud_Output(
+                ruuid='cdev::test:r1',
+                name='resource1',
+                key='val',
+                type='resource'
+            )
+        }),1),
+        (simple_resource_model(**{
+            "ruuid": "cdev::test:r1",
+            "name": "resource3",
+            "hash": "3",
+            "val": "val"
+        }),0),
+
+    ]

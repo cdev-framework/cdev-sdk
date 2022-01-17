@@ -1,7 +1,7 @@
 from enum import Enum
 import inspect
 from rich.console import Console, ConsoleOptions
-from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn
+from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn, SpinnerColumn
 from typing import Callable, List, Dict, Any, Tuple, TypeVar, Union
 from networkx.classes.digraph import DiGraph
 from networkx.classes.graph import NodeView
@@ -384,8 +384,9 @@ class Workspace:
 
         console = Console()
         with Progress(
+                SpinnerColumn(),
                 "[progress.description]{task.description}",
-                BarColumn(),
+                BarColumn(finished_style='white'),
                 TimeElapsedColumn(),
                 TextColumn("{task.fields[comment]}"),
                 console=console
@@ -394,6 +395,10 @@ class Workspace:
             output_manager = OutputManager(console, progress)
             topological_helper.topological_iteration(differences_dag, self.deploy_change, output_manager=output_manager)
 
+
+    @wrap_phase([Workspace_State.EXECUTING_BACKEND])
+    def mark_failure_by_parent(self, change: NodeView, output_task: OutputTask) -> None:
+        output_task.update(advance=10, comment="Failed because parent resource failed to deploy :cross_mark:")
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
     def deploy_change(self, change: NodeView, output_task: OutputTask) -> None:
@@ -422,16 +427,16 @@ class Workspace:
             
             except Exception as e:
                 self.get_backend().fail_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, {"message": "deployment error"})
+                output_task.update(advance=10, comment="Failed because mapper raised error :cross_mark:")
                 print(e)
                 raise e
 
             try:
                 self.get_backend().complete_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, cloud_output)
                 
-                
-
             except Exception as e:
                 self.get_backend().fail_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, {"message": "backend error"})
+                output_task.update(advance=10, comment="Failed because backend raised error :cross_mark:")
                 print(e)
                 raise e
 
@@ -447,7 +452,7 @@ class Workspace:
             raise Exception(f"Trying to deploy node {change} but it is not a correct type ")
 
 
-        output_task.update(completed=10, comment='Successfully Deployed :white_check_mark:')
+        output_task.update(completed=10, comment='Completed :white_check_mark:')
 
 
     @wrap_phase([Workspace_State.INITIALIZED])

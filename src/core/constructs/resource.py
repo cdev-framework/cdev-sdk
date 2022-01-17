@@ -44,21 +44,6 @@ class ResourceModel(BaseModel):
     """
 
 
-
-    def __init__(
-        __pydantic_self__,
-        ruuid: str,
-        hash: str,
-        name: str,
-    ) -> None:
-        super().__init__(
-            **{
-                "ruuid": ruuid,
-                "hash": hash,
-                "name": name,
-            }
-        )
-
     class Config:
         extra = "allow"
         frozen = True
@@ -215,7 +200,8 @@ class Cloud_Output(BaseModel):
     type: Output_Type
 
 
-    _id: Literal["cdev_output"]
+    id: str
+
 
     component_name: Optional[str]
 
@@ -223,13 +209,13 @@ class Cloud_Output(BaseModel):
         return f"{self.ruuid}$${self.name}$${self.key}"
 
 
-    def __init__(__pydantic_self__, ruuid: str, name: str, key: str, type: Output_Type, component_name: str = None) -> None:
+    def __init__(__pydantic_self__, ruuid: str, name: str, key: str, type: Output_Type, component_name: str = None, id: str=None) -> None:
         super().__init__(**{
             "ruuid": ruuid,
             "name": name,
             "key": key,
             "type": type,
-            "_id": 'cdev_output',
+            "id": 'cdev_output',
             "component_name": component_name
         })
 

@@ -13,7 +13,6 @@ from core.constructs.components import Component_Change_Type, Component_Differen
 from core.output.output_manager import OutputManager, OutputTask
 
 
-
 deliminator = '+'
 
 def find_parents(resource: ResourceModel) -> List[Cloud_Output]:
@@ -38,7 +37,7 @@ def _recursive_replace_output(obj) -> List[Cloud_Output]:
     if isinstance(obj, dict): 
         for k,v in obj.items():
             if isinstance(v, dict):
-                if "_id" in v and v.get("_id") == 'cdev_output':
+                if "id" in v and v.get("id") == 'cdev_output':
                     rv.append(Cloud_Output(**v))
                 else:
                     rv.extend(_recursive_replace_output(v))
