@@ -8,7 +8,7 @@ from networkx.classes.graph import NodeView
 
 from pydantic import BaseModel
 
-from core.output.output_manager import OutputManager
+from core.output.output_manager import OutputManager, OutputTask
 
 from .resource import Resource_Change_Type, Resource_Difference, Resource_Reference, Resource_Reference_Difference
 from .backend import Backend
@@ -396,17 +396,12 @@ class Workspace:
 
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
-    def deploy_change(self, change: NodeView, output_manager: OutputManager) -> None:
+    def deploy_change(self, change: NodeView, output_task: OutputTask) -> None:
         
+        output_task.start_task()
         
         if isinstance(change, Resource_Difference):
-        
-            task_id = output_manager._progress.add_task(f"Creating backend transaction", total=3, comment='')
-
             transaction_token, namespace_token = self.get_backend().create_resource_change_transaction(self.get_resource_state_uuid(), change.component_name, change)
-
-
-            
 
             ruuid = change.new_resource.ruuid if change.new_resource else change.previous_resource.ruuid
 
@@ -416,44 +411,43 @@ class Workspace:
                 {}
             )
 
-            
-
-            
 
             try:
-                output_manager._progress.update(task_id, advance=.5, description="Deploying on the Cloud", comment="some message")
+                output_task.update(advance=5, comment="Deploying on Cloud :cloud:")
                 mapper = self.get_mapper_namespace().get(ruuid)
-
-                
                 cloud_output = mapper.deploy_resource(transaction_token, namespace_token, change, previous_output)
 
-            
-                output_manager._progress.update(task_id, completed=True, description="Completing transaction with Backend")
+
+                output_task.update(advance=3, comment="Completing transaction with Backend")
             
             except Exception as e:
-                
                 self.get_backend().fail_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, {"message": "deployment error"})
                 print(e)
                 raise e
 
             try:
                 self.get_backend().complete_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, cloud_output)
-                #output_manager.print_completed_resource_differences(change)
-                output_manager._progress.update(task_id, advance=1, description="Finished deploying", comment='')
+                
+                
 
             except Exception as e:
                 self.get_backend().fail_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, {"message": "backend error"})
                 print(e)
                 raise e
 
-        elif isinstance(change, Resource_Reference):
+        elif isinstance(change, Resource_Reference_Difference):
             pass
 
         elif isinstance(change, Component_Difference):
+            output_task.update(advance=5, comment='Updating Component in Backend')
             self.get_backend().update_component(self.get_resource_state_uuid(), change)
+            
 
         else:
             raise Exception(f"Trying to deploy node {change} but it is not a correct type ")
+
+
+        output_task.update(completed=10, comment='Successfully Deployed :white_check_mark:')
 
 
     @wrap_phase([Workspace_State.INITIALIZED])
