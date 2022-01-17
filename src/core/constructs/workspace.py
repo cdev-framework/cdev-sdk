@@ -7,6 +7,8 @@ from networkx.classes.graph import NodeView
 
 from pydantic import BaseModel
 
+from core.output.output_manager import OutputManager
+
 from .resource import Resource_Change_Type, Resource_Difference, Resource_Reference, Resource_Reference_Difference
 from .backend import Backend
 from .mapper import CloudMapper
@@ -80,8 +82,8 @@ def wrap_phase(phases: List[Workspace_State]) -> Callable[[F], F]:
                 )
 
             else:
-
-                return func(workspace, *func_posargs, **func_kwargs)
+                rv = func(workspace, *func_posargs, **func_kwargs)
+                return rv
 
         return wrapper_func
 
@@ -380,18 +382,18 @@ class Workspace:
     def deploy_differences(self, differences_dag: DiGraph) -> None:
 
         console = Console()
-        with console.status("Working..."):
-            topological_helper.topological_iteration(differences_dag, self.deploy_change)
+        with console.status("Deploying Changes..."):
+            output_manager = OutputManager(console)
+            topological_helper.topological_iteration(differences_dag, self.deploy_change, output_manager=output_manager)
 
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
-    def deploy_change(self, change: NodeView) -> None:
+    def deploy_change(self, change: NodeView, output_manager: OutputManager) -> None:
+        
         
         if isinstance(change, Resource_Difference):
         
             transaction_token, namespace_token = self.get_backend().create_resource_change_transaction(self.get_resource_state_uuid(), change.component_name, change)
-
-            print(f"transaction {transaction_token}; namespace token {namespace_token}")
 
             ruuid = change.new_resource.ruuid if change.new_resource else change.previous_resource.ruuid
 
@@ -403,18 +405,21 @@ class Workspace:
 
             try:
                 mapper = self.get_mapper_namespace().get(ruuid)
+                output_manager.print_deploying_resource_differences(change)
                 cloud_output = mapper.deploy_resource(transaction_token, namespace_token, change, previous_output)
             
             except Exception as e:
                 
-                self.get_backend().fail_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, {"message": "error"})
+                self.get_backend().fail_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, {"message": "deployment error"})
                 print(e)
                 raise e
 
             try:
                 self.get_backend().complete_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, cloud_output)
+                output_manager.print_completed_resource_differences(change)
 
             except Exception as e:
+                self.get_backend().fail_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, {"message": "backend error"})
                 print(e)
                 raise e
 
@@ -423,10 +428,8 @@ class Workspace:
 
         elif isinstance(change, Component_Difference):
             self.get_backend().update_component(self.get_resource_state_uuid(), change)
-            print(f"Deployed Component {change}")
 
         else:
-        
             raise Exception(f"Trying to deploy node {change} but it is not a correct type ")
 
 

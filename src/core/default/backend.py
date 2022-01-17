@@ -427,7 +427,7 @@ class LocalBackend(Backend):
         
         new_component = self._update_component(component, diff, cloud_output)
         
-        print(resource_state.components)
+        
         resource_state.components = [
             x for x in resource_state.components if not x.name == component.name
         ] + [new_component]
@@ -863,16 +863,12 @@ class LocalBackend(Backend):
             diff.action_type == Resource_Change_Type.UPDATE_IDENTITY
             or diff.action_type == Resource_Change_Type.UPDATE_NAME
         ):
-            print("here")
-            print(component.resources)
-            print(diff.previous_resource)
-            removed_prevous = [
+                   
+            component.resources = [
                 x
                 for x in component.resources
                 if not (x.ruuid == diff.previous_resource.ruuid and x.name == diff.previous_resource.name)
-            ] 
-            print(removed_prevous)
-            component.resources = removed_prevous +  [diff.new_resource]
+            ]  +  [diff.new_resource]
 
             # remove the previous resource's cloud output
             previous_resource_cloud_output_id = self._get_cloud_output_id(
@@ -885,7 +881,7 @@ class LocalBackend(Backend):
             
             cloud_output_id = self._get_cloud_output_id(diff.new_resource)
             component.cloud_output[cloud_output_id] = new_cloud_output
-            print("end here")
+        
 
         elif diff.action_type == Resource_Change_Type.CREATE:
             component.resources.append(diff.new_resource)            

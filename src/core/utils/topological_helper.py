@@ -9,6 +9,7 @@ from time import sleep
 
 from core.constructs.resource import Cloud_Output, Resource_Change_Type, Resource_Reference_Change_Type, ResourceModel, Resource_Difference, Resource_Reference_Difference
 from core.constructs.components import Component_Change_Type, Component_Difference
+from core.output.output_manager import OutputManager
 
 
 
@@ -176,7 +177,7 @@ class node_state(str, Enum):
 
 
     
-def topological_iteration(dag: DiGraph, process: Callable[[NodeView], None], thread_count: int = 1, interval: float = .3):
+def topological_iteration(dag: DiGraph, process: Callable[[NodeView, OutputManager], None], thread_count: int = 1, interval: float = .3, output_manager: OutputManager=None):
     """
     Execute a given process over a DAG in a threaded way. 
 
@@ -206,8 +207,7 @@ def topological_iteration(dag: DiGraph, process: Callable[[NodeView], None], thr
         # Pull any ready nodes to be processed and add them to the thread pool
         for _ in range(0, len(nodes_to_process)):
             node_to_process = nodes_to_process.pop(0)
-           
-            future = executor.submit(process, (node_to_process))
+            future = executor.submit(process, node_to_process, output_manager)
 
             _processing_future_to_resource[future] = node_to_process
             _node_to_state[node_to_process] = node_state.PROCESSING
