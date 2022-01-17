@@ -1,18 +1,25 @@
 from networkx.algorithms import components
 from rich.console import Console
-from typing import List, Tuple  
+from typing import List, Tuple
+
+from rich.progress import Progress  
 
 from core.constructs.components import Component_Change_Type, ComponentModel, Component_Difference
 from core.constructs.resource import Resource_Change_Type, Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference
 
 class OutputManager():
 
-    def __init__(self, console: Console=None) -> None:
+    def __init__(self, console: Console=None, progress: Progress=None) -> None:
 
         if console:
             self._console = console
         else:
             self._console = Console()
+
+        if progress:
+            self._progress = progress
+        else:
+            self._progress = None
 
 
     def print_header(self, resource_state_uuid: str):        

@@ -1,6 +1,7 @@
 from enum import Enum
 import inspect
 from rich.console import Console, ConsoleOptions
+from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn
 from typing import Callable, List, Dict, Any, Tuple, TypeVar, Union
 from networkx.classes.digraph import DiGraph
 from networkx.classes.graph import NodeView
@@ -382,8 +383,15 @@ class Workspace:
     def deploy_differences(self, differences_dag: DiGraph) -> None:
 
         console = Console()
-        with console.status("Deploying Changes..."):
-            output_manager = OutputManager(console)
+        with Progress(
+                "[progress.description]{task.description}",
+                BarColumn(),
+                TimeElapsedColumn(),
+                TextColumn("{task.fields[comment]}"),
+                console=console
+            ) as progress:
+
+            output_manager = OutputManager(console, progress)
             topological_helper.topological_iteration(differences_dag, self.deploy_change, output_manager=output_manager)
 
 
@@ -393,7 +401,12 @@ class Workspace:
         
         if isinstance(change, Resource_Difference):
         
+            task_id = output_manager._progress.add_task(f"Creating backend transaction", total=3, comment='')
+
             transaction_token, namespace_token = self.get_backend().create_resource_change_transaction(self.get_resource_state_uuid(), change.component_name, change)
+
+
+            
 
             ruuid = change.new_resource.ruuid if change.new_resource else change.previous_resource.ruuid
 
@@ -403,10 +416,19 @@ class Workspace:
                 {}
             )
 
+            
+
+            
+
             try:
+                output_manager._progress.update(task_id, advance=.5, description="Deploying on the Cloud", comment="some message")
                 mapper = self.get_mapper_namespace().get(ruuid)
-                output_manager.print_deploying_resource_differences(change)
+
+                
                 cloud_output = mapper.deploy_resource(transaction_token, namespace_token, change, previous_output)
+
+            
+                output_manager._progress.update(task_id, completed=True, description="Completing transaction with Backend")
             
             except Exception as e:
                 
@@ -416,7 +438,8 @@ class Workspace:
 
             try:
                 self.get_backend().complete_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, cloud_output)
-                output_manager.print_completed_resource_differences(change)
+                #output_manager.print_completed_resource_differences(change)
+                output_manager._progress.update(task_id, advance=1, description="Finished deploying", comment='')
 
             except Exception as e:
                 self.get_backend().fail_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, {"message": "backend error"})
