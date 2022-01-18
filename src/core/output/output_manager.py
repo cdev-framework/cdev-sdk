@@ -1,4 +1,4 @@
-from networkx.algorithms import components
+from networkx.classes.reportviews import NodeView
 from rich.console import Console
 from typing import Any, List, Tuple
 
@@ -132,6 +132,43 @@ class OutputManager():
 
         return OutputTask(self, task_id)
 
+
+    def create_output_description(self, node: NodeView) -> str:
+        if isinstance(node, Resource_Difference):
+            if node.action_type == Resource_Change_Type.CREATE:
+                return f"[bold green]Creating:[/bold green][bold blue] {node.new_resource.name} ({node.new_resource.ruuid})[/bold blue]"
+
+            elif node.action_type == Resource_Change_Type.DELETE:
+                return f"[bold red]Deleting:[/bold red][bold blue] {node.previous_resource.name} ({node.previous_resource.ruuid})[/bold blue]"
+
+            elif node.action_type == Resource_Change_Type.UPDATE_IDENTITY:
+                return f"[bold yellow]Updating:[/bold yellow][bold blue] {node.new_resource.name} ({node.new_resource.ruuid})[/bold blue]"
+
+            elif node.action_type == Resource_Change_Type.UPDATE_NAME:
+                return f"[bold yellow]Updating Name:[/bold yellow][bold blue] from {node.previous_resource.name} to {node.new_resource.name} ({node.new_resource.ruuid})[/bold blue]"
+
+        elif isinstance(node, Resource_Reference_Difference):
+            if node.action_type == Resource_Reference_Change_Type.CREATE:
+                return f"[bold green]Create reference:[/bold green][bold blue] {node.resource_reference.name} ({node.resource_reference.ruuid}) from {node.originating_component_name}[/bold blue]"
+
+            elif node.action_type == Resource_Reference_Change_Type.DELETE:
+                return f"[bold red]Delete reference:[/bold red][bold blue] {node.resource_reference.name} ({node.resource_reference.ruuid}) from {node.originating_component_name}[/bold blue]"
+
+        elif isinstance(node, Component_Difference):
+            if node.action_type == Component_Change_Type.UPDATE_NAME:
+                return f"[bold yellow]Update Name: [/bold yellow][bold blue]{node.previous_name} to {node.new_name} (component)[/bold blue]"
+
+            elif node.action_type == Component_Change_Type.UPDATE_IDENTITY:
+                return f"[bold yellow]Update Identity: [/bold yellow][bold blue]{node.new_name} (component)[/bold blue]"
+
+            elif node.action_type == Component_Change_Type.CREATE:
+                return f"[bold green]Create: [/bold green][bold blue]{node.new_name} (component)[/bold blue]"
+
+            elif node.action_type == Component_Change_Type.DELETE:
+                return f"[bold red]Delete: [/bold red] [bold blue]{node.new_name} (component)[/bold blue]"
+
+        else:
+            raise Exception(f"Trying to deploy node {node} but it is not a correct type ")
 
 class OutputTask():
     """

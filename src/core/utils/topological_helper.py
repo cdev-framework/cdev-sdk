@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor, Future
 from enum import Enum
-from networkx.algorithms.dag import topological_sort
+
 from networkx.classes.digraph import DiGraph
 from networkx.classes.reportviews import NodeView
 
@@ -177,44 +177,6 @@ def _create_reference_id(originating_component_name: str, component_name: str, r
 
 
 
-def _create_output_description(node: NodeView) -> str:
-    if isinstance(node, Resource_Difference):
-        if node.action_type == Resource_Change_Type.CREATE:
-            return f"[bold green]Creating:[/bold green][bold blue] {node.new_resource.name} ({node.new_resource.ruuid})[/bold blue]"
-
-        elif node.action_type == Resource_Change_Type.DELETE:
-            return f"[bold red]Deleting:[/bold red][bold blue] {node.previous_resource.name} ({node.previous_resource.ruuid})[/bold blue]"
-
-        elif node.action_type == Resource_Change_Type.UPDATE_IDENTITY:
-            return f"[bold yellow]Updating:[/bold yellow][bold blue] {node.new_resource.name} ({node.new_resource.ruuid})[/bold blue]"
-
-        elif node.action_type == Resource_Change_Type.UPDATE_NAME:
-            return f"[bold yellow]Updating Name:[/bold yellow][bold blue] from {node.previous_resource.name} to {node.new_resource.name} ({node.new_resource.ruuid})[/bold blue]"
-
-    elif isinstance(node, Resource_Reference_Difference):
-        if node.action_type == Resource_Reference_Change_Type.CREATE:
-            return f"[bold green]Create reference:[/bold green][bold blue] {node.resource_reference.name} ({node.resource_reference.ruuid}) from {node.originating_component_name}[/bold blue]"
-
-        elif node.action_type == Resource_Reference_Change_Type.DELETE:
-            return f"[bold red]Delete reference:[/bold red][bold blue] {node.resource_reference.name} ({node.resource_reference.ruuid}) from {node.originating_component_name}[/bold blue]"
-
-    elif isinstance(node, Component_Difference):
-        if node.action_type == Component_Change_Type.UPDATE_NAME:
-            return f"[bold yellow]Update Name: [/bold yellow][bold blue]{node.previous_name} to {node.new_name} (component)[/bold blue]"
-
-        elif node.action_type == Component_Change_Type.UPDATE_IDENTITY:
-            return f"[bold yellow]Update Identity: [/bold yellow][bold blue]{node.new_name} (component)[/bold blue]"
-
-        elif node.action_type == Component_Change_Type.CREATE:
-            return f"[bold green]Create: [/bold green][bold blue]{node.new_name} (component)[/bold blue]"
-
-        elif node.action_type == Component_Change_Type.DELETE:
-            return f"[bold red]Delete: [/bold red] [bold blue]{node.new_name} (component)[/bold blue]"
-
-    else:
-        raise Exception(f"Trying to deploy node {node} but it is not a correct type ")
-
-
 
 class node_state(str, Enum):
     UNPROCESSED = "UNPROCESSED"
@@ -224,9 +186,7 @@ class node_state(str, Enum):
     PARENT_ERROR = "PARENT_ERROR"
 
 
-
-    
-def topological_iteration(dag: DiGraph, process: Callable[[NodeView, OutputTask], None], output_manager: OutputManager, failed_parent_handler: Callable[[NodeView], None]=None, thread_count: int = 1, interval: float = .3):
+def topological_iteration(dag: DiGraph, process: Callable[[NodeView], None], failed_parent_handler: Callable[[NodeView], None]=None, thread_count: int = 1, interval: float = .3):
     """
     Execute a given process over a DAG in a threaded way. 
 
@@ -239,18 +199,13 @@ def topological_iteration(dag: DiGraph, process: Callable[[NodeView, OutputTask]
     all_children: Set[NodeView] = set(x[1] for x in dag.edges)
     all_nodes: Set[NodeView] = set(x for x in dag.nodes())
 
-    all_nodes_sorted: List[NodeView] = [x for x in topological_sort(dag)]
-
     starting_nodes = all_nodes - all_children
     
-
     nodes_to_process: list[NodeView] = []
     nodes_to_process.extend(starting_nodes)
 
     _processing_future_to_resource: Dict[Future, NodeView] = {}
     _node_to_state: Dict[NodeView,node_state] = {x:node_state.UNPROCESSED for x in all_nodes}
-
-    _node_to_output_task: Dict[NodeView, OutputTask] = {x:output_manager.create_task(_create_output_description(x), start=False, total=10, comment='Waiting to deploy') for x in all_nodes_sorted} 
 
     executor = ThreadPoolExecutor(thread_count)
     
@@ -260,7 +215,7 @@ def topological_iteration(dag: DiGraph, process: Callable[[NodeView, OutputTask]
         # Pull any ready nodes to be processed and add them to the thread pool
         for _ in range(0, len(nodes_to_process)):
             node_to_process = nodes_to_process.pop(0)
-            future = executor.submit(process, node_to_process, _node_to_output_task.get(node_to_process))
+            future = executor.submit(process, node_to_process)
 
             _processing_future_to_resource[future] = node_to_process
             _node_to_state[node_to_process] = node_state.PROCESSING
@@ -299,9 +254,7 @@ def topological_iteration(dag: DiGraph, process: Callable[[NodeView, OutputTask]
                 print(f"FAILED {node}")
 
                 # mark an descdents of this node as unable to process
-                _recursively_mark_parent_failure(_node_to_state, dag, node, _node_to_output_task.get(node), handler=failed_parent_handler)
-
-                
+                _recursively_mark_parent_failure(_node_to_state, dag, node, handler=failed_parent_handler)                
 
             # Remove the future from the dictionary
             _processing_future_to_resource.pop(fut)
