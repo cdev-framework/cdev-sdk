@@ -3,6 +3,10 @@ from pydantic import FilePath
 import os
 import shutil
 from typing import Dict
+from types import MappingProxyType
+
+from core.constructs.resource_state import Resource_State  
+from .types import FrozenDict
 
 class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -11,6 +15,9 @@ class CustomEncoder(json.JSONEncoder):
 
         if isinstance(obj, frozenset):
             return list(obj)
+
+        if isinstance(obj, FrozenDict):
+            return dict(obj)
 
         return json.JSONEncoder.default(self, obj)
 
@@ -45,3 +52,22 @@ def safe_json_write(obj: Dict, fp: FilePath):
         raise e
 
     os.remove(tmp_fp)
+
+
+
+def load_resource_state(fp: FilePath) -> Resource_State:
+    with open(fp, "r") as fh:
+        _mutable_json = json.load(fh)
+
+    _mutable_json['components'] = _recursive_make_immutable(_mutable_json.get('components'))
+
+    return Resource_State(**_mutable_json)
+    
+def _recursive_make_immutable(o):
+    if isinstance(o, list):
+        return frozenset([_recursive_make_immutable(x) for x in o])
+    elif isinstance(o, dict):
+        return FrozenDict({k: _recursive_make_immutable(v) for k, v in o.items()})
+    return o
+
+    

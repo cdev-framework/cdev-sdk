@@ -71,10 +71,10 @@ class ComponentModel(BaseModel):
             **{
                 "name": name,
                 "hash": hash,
-                "resources": resources,
-                "references": references,
-                "cloud_output": cloud_output,
-                "external_references": external_references,
+                "resources": list(resources),
+                "references": list(references),
+                "cloud_output": dict(cloud_output),
+                "external_references": dict(external_references),
             }
         )
 

@@ -1,3 +1,4 @@
+import json
 from concurrent.futures import ThreadPoolExecutor, Future
 from enum import Enum
 
@@ -13,14 +14,24 @@ from core.constructs.components import Component_Change_Type, Component_Differen
 from core.output.output_manager import OutputManager, OutputTask
 
 
+from .file_writer import CustomEncoder
+
 deliminator = '+'
 
 def find_parents(resource: ResourceModel) -> List[Cloud_Output]:
+
+    #return []
+    print(">>>>>>>>>>>>>>>>>>>")
+    print(resource)
+    print("<<<<<<<<<<<<<<<<<<<<")
     
     resource_as_obj = resource.dict()
-
+    #resource_as_obj = next(iter(resource.routes))
+    #print(resource_as_obj.dict())
+    print("here")
+    print(resource_as_obj)
     cloud_outputs = find_cloud_output(resource_as_obj)
-
+    
     return cloud_outputs
 
 

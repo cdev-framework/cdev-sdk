@@ -224,6 +224,7 @@ def _update_simple_api(
             output_task.print_error(e)
             raise e 
 
+
     # Change the CORS Settings of the API
     if not previous_resource.allow_cors == new_resource.allow_cors:
         new_cors_policy =  {
@@ -254,6 +255,7 @@ def _update_simple_api(
             raise e 
 
     
+    print(f"here222")
     # Updating the routes
     previous_routes_hashes = set(
         [lambda_event(**x).get_hash() for x in previous_resource.routes]
@@ -274,8 +276,10 @@ def _update_simple_api(
     log.debug(f"Routes to be created -> {routes_to_be_created}")
     log.debug(f"Routes to be deleted -> {routes_to_be_deleted}")
 
-    
-    
+
+    print("here3333")
+    print(routes_to_be_created)
+    print(routes_to_be_deleted)
     new_output_info = {}
     for route in routes_to_be_created:
 

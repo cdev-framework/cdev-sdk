@@ -1,12 +1,14 @@
 from enum import Enum
 from typing_extensions import Literal
 from typing import Dict, List, Optional, Union
+from types import MappingProxyType
 
 from pydantic.main import BaseModel
 from pydantic import FilePath
 from pydantic.types import DirectoryPath
 
 from sortedcontainers.sorteddict import SortedDict
+
 
 import importlib
 import inspect
@@ -17,6 +19,7 @@ from pathlib import PosixPath, WindowsPath
 
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output
 from core.utils import hasher
+from core.utils.types import FrozenDict
 
 from .iam import Permission, PermissionArn
 
@@ -86,17 +89,21 @@ class Event(BaseModel):
 
     event_type: EventTypes
 
-    config: Dict
+    config2: FrozenDict
 
     def get_hash(self) -> str:
         return hasher.hash_list(
             [
                 self.original_resource_name,
                 self.original_resource_type,
-                SortedDict(self.config),
+                self.config2,
             ]
         )
 
+    class Config:
+        use_enum_values = True
+        # Beta Feature but should be fine since this is simple data 
+        frozen = True
 
 ################
 ##### Functions

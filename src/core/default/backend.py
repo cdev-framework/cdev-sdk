@@ -217,6 +217,7 @@ class LocalBackend(Backend):
             )
 
         try:
+            return file_writer.load_resource_state(file_location)
             with open(file_location, "r") as fh:
                 return Resource_State(**json.load(fh))
 
