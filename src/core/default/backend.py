@@ -543,7 +543,6 @@ class LocalBackend(Backend):
     def resolve_reference_change(
         self,
         resource_state_uuid: str,
-        component_name: str,
         diff: Resource_Reference_Difference,
     ):
         resource_state = self.get_resource_state(resource_state_uuid)
@@ -551,7 +550,7 @@ class LocalBackend(Backend):
             resource_state_uuid
         )
 
-        component = self.get_component(resource_state_uuid, component_name)
+        component = self.get_component(resource_state_uuid, diff.originating_component_name)
 
         _reference_resource_state = resource_state
         if diff.resource_reference.is_in_parent_resource_state:
@@ -586,7 +585,7 @@ class LocalBackend(Backend):
             )
 
         if diff.action_type == Resource_Reference_Change_Type.CREATE:
-            # TODO Change to hash
+            
             reference_id = (
                 f"{diff.resource_reference.ruuid}{diff.resource_reference.name}"
             )
@@ -607,7 +606,7 @@ class LocalBackend(Backend):
             component.references.append(diff.resource_reference)
 
         elif diff.action_type == Resource_Reference_Change_Type.DELETE:
-            # TODO Change to hash
+            
             reference_id = (
                 f"{diff.resource_reference.ruuid}{diff.resource_reference.name}"
             )

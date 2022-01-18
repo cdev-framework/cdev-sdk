@@ -1,6 +1,4 @@
-from os import rename
-from core.constructs import backend
-from core.constructs.resource import Cloud_Output, Resource_Change_Type, Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference, ResourceModel
+from core.constructs.resource import Resource_Change_Type, Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference, ResourceModel
 from core.constructs.components import Component_Change_Type, Component_Difference, ComponentModel
 import pytest
 from typing import Dict, List, Tuple
@@ -159,7 +157,7 @@ def simple_references(test_backend: Backend):
 
 
     for reference_change in sample_create_references:
-        test_backend.resolve_reference_change(resource_state_uuid, component2_name, reference_change)
+        test_backend.resolve_reference_change(resource_state_uuid, reference_change)
 
 
     comp2 = test_backend.get_component(resource_state_uuid, component2_name)
@@ -169,7 +167,7 @@ def simple_references(test_backend: Backend):
 
 
     for reference_change in sample_delete_references:
-        test_backend.resolve_reference_change(resource_state_uuid, component2_name, reference_change)
+        test_backend.resolve_reference_change(resource_state_uuid, reference_change)
 
 
     comp2 = test_backend.get_component(resource_state_uuid, component2_name)
@@ -351,7 +349,7 @@ def simple_differences(test_backend: Backend):
                 reference
             )
 
-            test_backend.resolve_reference_change(resource_state_uuid, component.name, reference_change)
+            test_backend.resolve_reference_change(resource_state_uuid,reference_change)
 
 
     new_components.insert(0, test_backend.get_component(resource_state_uuid, previous_components[0].name))

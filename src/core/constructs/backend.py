@@ -238,7 +238,6 @@ class Backend:
     def resolve_reference_change(
         self,
         resource_state_uuid: str,
-        component_name: str,
         diff: Resource_Reference_Difference,
     ):
         """
