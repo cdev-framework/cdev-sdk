@@ -1,6 +1,10 @@
+from typing import Dict, List
+from networkx.classes.reportviews import NodeView
+from rich.console import ConsoleOptions
+
 from core.utils import topological_helper
 
-from ..sample_data import simple_resources_for_find_parents, simple_differences_for_topo_sort
+from ..sample_data import simple_resources_for_find_parents, simple_differences_for_topo_sort, simple_change_dag
 
 
 def test_find_parents():
@@ -61,4 +65,50 @@ def test_sort_changes():
         print(correct_edges)
         # There should not be any remaining edges
         assert False
+
+
+
+def test_topological_iteration():
+    dag, topo_iteration_data = simple_change_dag()
+    #assert False
+    topological_helper.topological_iteration(dag, wrap_handler(topo_iteration_data), failed_parent_handler=auto_fail, pass_through_exceptions=True, interval=.01)
+
+
+def wrap_handler(correct_data: Dict[NodeView, List[NodeView]]):
+    """
+    Helper function for testing topological iteration. The provided data should be for any nodes in the DAG that have parents. 
+    The handler function will test to see it any of the nodes from the correct data have not been seen. If they have not been 
+    seen, then it will fail the test.
+
+
+    Args:
+        correct_data (Dict[NodeView, List[NodeView]]): [description]
+    """
+
+    seen_nodes = set()
+    def handler(node: NodeView) -> None:
+        
+        if node in seen_nodes:
+            print(f'already seen {node}')
+            assert False
+
+
+        print(f"NODE -> {node}")
+
+        seen_nodes.add(node)
+
+
+        if not node in correct_data:
+            return 
+
+
+        assert all((x in seen_nodes) for x in correct_data.get(node))
+
+
+    return handler
+
+
+def auto_fail(node: NodeView):
+    assert False
+
 

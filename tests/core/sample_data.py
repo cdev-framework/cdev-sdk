@@ -1,4 +1,5 @@
 from networkx import DiGraph
+from networkx.classes.reportviews import NodeView
 from typing import Dict, Tuple, List, Union
 
 
@@ -467,7 +468,7 @@ def simple_resources_for_find_parents() -> List[Tuple[ResourceModel, int]]:
     ]
 
 
-def simple_change_dag() -> DiGraph:
+def simple_change_dag() -> Tuple[DiGraph, Dict[NodeView, List[NodeView]]]:
     c1 = Component_Difference(
         action_type=Component_Change_Type.UPDATE_IDENTITY,
         previous_name="comp1",
@@ -539,5 +540,12 @@ def simple_change_dag() -> DiGraph:
         ]
     )
 
+    topo_iteration_data = {
+        rd1: [c1],
+        rd2: [c1],
+        refd1: [c3, rd1],
+        
+    }
 
-    return graph
+
+    return (graph, topo_iteration_data)

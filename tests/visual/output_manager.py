@@ -29,7 +29,7 @@ def print_differences():
 
 def sample_cloud_deploy():
     console = Console()
-    dag = simple_change_dag()
+    dag, _ = simple_change_dag()
 
     messages = [
         "Starting Deployment",

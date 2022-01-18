@@ -186,9 +186,12 @@ class node_state(str, Enum):
     PARENT_ERROR = "PARENT_ERROR"
 
 
-def topological_iteration(dag: DiGraph, process: Callable[[NodeView], None], failed_parent_handler: Callable[[NodeView], None]=None, thread_count: int = 1, interval: float = .3):
+def topological_iteration(dag: DiGraph, process: Callable[[NodeView], None], failed_parent_handler: Callable[[NodeView], None]=None, thread_count: int = 1, interval: float = .3, pass_through_exceptions: bool = False):
     """
-    Execute a given process over a DAG in a threaded way. 
+    Execute a given 'process' over a DAG in a topologically constrained way. This means that the 'process' will not be executed on a node until the 'process' has been executed on all
+    parents of that node. If the process throws an Exception when executing on a Node, then any child nodes will not be executed over (if provided, the failed_parent_handler will
+    be executed on any child nodes). This iteration supports multiple threads via the thread count param, which can speed up the total iteration time if the 'process' is IO bound and 
+    there are non dependant paths through the DAG. 
 
     Args:
         dag (DiGraph): [description]
@@ -199,17 +202,20 @@ def topological_iteration(dag: DiGraph, process: Callable[[NodeView], None], fai
     all_children: Set[NodeView] = set(x[1] for x in dag.edges)
     all_nodes: Set[NodeView] = set(x for x in dag.nodes())
 
+    # starting nodes are those that have no parents
     starting_nodes = all_nodes - all_children
     
     nodes_to_process: list[NodeView] = []
     nodes_to_process.extend(starting_nodes)
 
     _processing_future_to_resource: Dict[Future, NodeView] = {}
+
+    # Keep track of the state of all nodes to determine when the entire DAG has been traversed
     _node_to_state: Dict[NodeView,node_state] = {x:node_state.UNPROCESSED for x in all_nodes}
 
     executor = ThreadPoolExecutor(thread_count)
     
-    
+    # While any node is unprocessed or still processing
     while any(_node_to_state.get(x) == node_state.UNPROCESSED or _node_to_state.get(x) == node_state.PROCESSING for x in all_nodes):
         
         # Pull any ready nodes to be processed and add them to the thread pool
@@ -240,7 +246,7 @@ def topological_iteration(dag: DiGraph, process: Callable[[NodeView], None], fai
                 children = dag.successors(node)
 
                 for child in children:
-                    # If any of the parents of the child has not been processed this node is not ready
+                    # If any of the parents of the child have not been processed, than the child node is not ready to be processed
                     if any(not _node_to_state.get(x) == node_state.PROCESSED for x in dag.predecessors(child)):
                         continue
                     
@@ -248,13 +254,15 @@ def topological_iteration(dag: DiGraph, process: Callable[[NodeView], None], fai
 
             except Exception as e:
                 # Since this returned a error need to mark all children as unable to deploy
-                print(e)
-
                 _node_to_state[node] = node_state.ERROR
-                print(f"FAILED {node}")
-
+                
+                  
                 # mark an descdents of this node as unable to process
-                _recursively_mark_parent_failure(_node_to_state, dag, node, handler=failed_parent_handler)                
+                _recursively_mark_parent_failure(_node_to_state, dag, node, handler=failed_parent_handler)
+
+                if pass_through_exceptions:
+                    raise e 
+                         
 
             # Remove the future from the dictionary
             _processing_future_to_resource.pop(fut)
@@ -265,7 +273,7 @@ def topological_iteration(dag: DiGraph, process: Callable[[NodeView], None], fai
     executor.shutdown()
 
 
-def _recursively_mark_parent_failure(_node_to_state: Dict[NodeView, node_state], dag: DiGraph, parent_node: NodeView, output_task: OutputTask, handler: Callable[[NodeView, OutputTask], None]=None) -> None:
+def _recursively_mark_parent_failure(_node_to_state: Dict[NodeView, node_state], dag: DiGraph, parent_node: NodeView, handler: Callable[[NodeView, OutputTask], None]=None, pass_through_exceptions: bool = False) -> None:
 
     if parent_node not in _node_to_state:
         raise Exception(f"trying to mark node ({parent_node}) but cant not find it in given dict")
@@ -283,11 +291,13 @@ def _recursively_mark_parent_failure(_node_to_state: Dict[NodeView, node_state],
         if handler:
             # Call a handler that does extra busines logic for items that fail because of their parent
             try:
-                handler(child, output_task)
+                handler(child)
 
             except Exception as e:
                 #handler threw exception but we should continue
-                pass
+                
+                if pass_through_exceptions:
+                    raise e 
 
 
         _recursively_mark_parent_failure(_node_to_state, dag, child)
