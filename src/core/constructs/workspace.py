@@ -398,18 +398,24 @@ class Workspace:
 
             node_to_task= {x: output_manager.create_task(output_manager.create_output_description(x), start=False, total=10, comment='Waiting') for x in all_nodes_sorted}
 
-            topological_helper.topological_iteration(differences_dag, self.wrap_output_deploy_change(node_to_task))
+            topological_helper.topological_iteration(differences_dag, self.wrap_output_deploy_change(node_to_task), failed_parent_handler=self.wrap_output_failed_child(node_to_task))
 
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
-    def mark_failure_by_parent(self, change: NodeView, output_task: OutputTask) -> None:
-        output_task.update(advance=10, comment="Failed because parent resource failed to deploy :cross_mark:")
+    def wrap_output_failed_child(self, tasks: Dict[NodeView, OutputTask]):
+        
+
+        def mark_failure_by_parent(change: NodeView) -> None:
+            output_task = tasks.get(change)
+            output_task.update(advance=10, comment="Failed because parent resource failed to deploy :cross_mark:")
+
+        return mark_failure_by_parent
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
-    def wrap_output_deploy_change(self, all_tasks: Dict[NodeView, OutputTask]):
+    def wrap_output_deploy_change(self, tasks: Dict[NodeView, OutputTask]):
 
         def deploy_change(change: NodeView) -> None:
-            output_task = all_tasks.get(change)
+            output_task = tasks.get(change)
             output_task.start_task()
 
             if isinstance(change, Resource_Difference):
@@ -427,8 +433,6 @@ class Workspace:
                     output_task.update(advance=5, comment="Deploying on Cloud :cloud:")
                     mapper = self.get_mapper_namespace().get(ruuid)
                     cloud_output = mapper.deploy_resource(transaction_token, namespace_token, change, previous_output)
-
-
                     output_task.update(advance=3, comment="Completing transaction with Backend")
 
                 except Exception as e:
@@ -447,7 +451,9 @@ class Workspace:
                     raise e
 
             elif isinstance(change, Resource_Reference_Difference):
-                pass
+                output_task.update(advance=5, comment=f'{"Creating" if change.action_type == Resource_Reference_Change_Type.CREATE else "Removing"} Reference')
+                self.get_backend().resolve_reference_change(self.get_resource_state_uuid(), change)
+
 
             elif isinstance(change, Component_Difference):
                 output_task.update(advance=5, comment='Updating Component in Backend')
