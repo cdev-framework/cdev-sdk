@@ -170,14 +170,37 @@ class OutputManager():
         else:
             raise Exception(f"Trying to deploy node {node} but it is not a correct type ")
 
+
 class OutputTask():
     """
-    Wrapper around a Progress Task from rich that is tied to a specific Output Manager
+    Wrapper around an output that can be used to track long running events. The implementation is as a wrapper around a 'progress task' from the
+    rich library. Thus, the api for 'update' and 'start' follows the same pattern as that of a 'task' in the rich library. The print method provides
+    access for sending messages to the parent console of this task. 
     """  
 
     def __init__(self, output_manager: OutputManager, task_id: TaskID) -> None:
         self._output_manager = output_manager
         self._task_id = task_id
+
+    
+    def print(self, msg: str):
+        """Print a message to the parent output context.
+
+        Args:
+            msg (str): message to print
+        """
+        self._output_manager._console.print(msg)
+
+
+    def print_error(self, msg: str):
+        """
+        Print a message as an error
+
+        Args:
+            msg (str): error message
+        """
+        self.print(f"[bold red]{msg}[/bold red]")
+
 
 
     def update(self, *args, total: float = None, completed: float = None, advance: None = None, description: str = None, visible: bool = None, refresh: bool = False, **fields: Any):

@@ -1,5 +1,5 @@
 from core.utils.exceptions import Cdev_Error, Cdev_Warning
-from .fs_manager import finder
+from core.utils.fs_manager import finder
 
 
 from core.constructs.components import ComponentModel, Component
@@ -29,9 +29,10 @@ class Cdev_FileSystem_Component(Component):
             [x.hash for x in resources_sorted] + [x.hash for x in references_sorted]
         )
 
+        
         rv = ComponentModel(
             **{
-                "rendered_resources": resources_sorted,
+                "resources": list(resources_sorted),
                 "hash": total_component_hash,
                 "name": self.get_name(),
             }

@@ -1,4 +1,6 @@
-from typing import Dict, List
+from typing import Callable, Dict, List, Set
+
+from core.output.output_manager import OutputTask
 
 from ..constructs.resource import Resource_Change_Type, Resource_Reference_Difference, Resource_Difference
 from ..constructs.mapper import CloudMapper
@@ -16,13 +18,21 @@ class DefaultMapper(CloudMapper):
         super().__init__(RESOURCE_TO_HANDLER_FUNCTION)
 
     def get_namespaces(self) -> List[str]:
-        return ["cdev"]
+        return [
+            "cdev::simple::api"
+        ]
 
-    def deploy_resource(self, transaction_token: str, namespace_token: str, resource_diff: Resource_Difference, previous_output: Dict) -> Dict:
+    def deploy_resource(self, transaction_token: str, namespace_token: str, resource_diff: Resource_Difference, previous_output: Dict, output_task: OutputTask) -> Dict:
         ruuid = resource_diff.new_resource.ruuid if resource_diff.new_resource else resource_diff.previous_resource.ruuid
 
-        return self.get_resource_to_handler()[ruuid](transaction_token, namespace_token, resource_diff, previous_output)
-        
+        return self.get_resource_to_handler()[ruuid](transaction_token, namespace_token, resource_diff, previous_output, output_task)
+    
+
+    def get_available_resources(self) -> Set[str]:
+        return set(self.get_namespaces())
+
+    def get_resource_to_handler(self) -> Dict[str, Callable]:
+        return self.resource_to_handler
         
 
 

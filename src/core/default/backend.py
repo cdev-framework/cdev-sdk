@@ -47,6 +47,12 @@ DEFAULT_CENTRAL_STATE_FILE = os.path.join(DEFAULT_BASE, "local_state.json")
 
 log = logger.get_cdev_logger(__name__)
 
+class SetEncoder(json.JSONEncoder):
+    def default(self, obj):
+       if isinstance(obj, set):
+          return list(obj)
+       return json.JSONEncoder.default(self, obj)
+
 
 class Local_Backend_Configuration(Backend_Configuration):
     def __init__(self, config: Dict) -> None:

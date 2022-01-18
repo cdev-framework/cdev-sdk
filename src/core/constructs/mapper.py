@@ -2,6 +2,8 @@ from typing import Dict, Union, List, Optional, Set, Callable
 
 from .resource import Resource_Difference
 
+from core.output.output_manager import OutputTask
+
 
 class CloudMapper:
     """
@@ -14,7 +16,7 @@ class CloudMapper:
     def get_namespaces(self) -> List[str]:
         raise NotImplementedError
 
-    def deploy_resource(self, transaction_token: str, namespace_token: str, resource_diff: Resource_Difference, previous_output: Dict) -> Dict:
+    def deploy_resource(self, transaction_token: str, namespace_token: str, resource_diff: Resource_Difference, previous_output: Dict, output_task: OutputTask) -> Dict:
         raise NotImplementedError
 
     def get_available_resources(self) -> Set[str]:

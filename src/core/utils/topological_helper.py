@@ -87,6 +87,7 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
 
 
     for _, resource in resource_ids.items():
+        print(resource)
         change_dag.add_node(resource)
 
         component_id = _create_component_id(resource.component_name)

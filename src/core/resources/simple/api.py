@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List, FrozenSet
 
 
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output
@@ -13,12 +13,16 @@ RUUID = "cdev::simple::api"
 
 class simple_api_model(ResourceModel):
     api_name: str
-    routes: List[lambda_event]
+    routes: FrozenSet[lambda_event]
     allow_cors: bool
+
+    class Config:
+        use_enum_values = True
+        # Beta Feature but should be fine since this is simple data 
+        frozen = True
 
 
 class simple_api_output(str, Enum):
-    cloud_name = "cloud_name"
     cloud_id = "cloud_id"
     endpoints = "endpoints"
     endpoint = "endpoint"
@@ -80,7 +84,7 @@ class Api(Resource):
                 "name": self.name,
                 "hash": self.hash,
                 "api_name": self.api_name,
-                "routes": self._routes,
+                "routes": frozenset(self._routes),
                 "allow_cors": self.allow_cors,
             }
         )

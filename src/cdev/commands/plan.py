@@ -12,7 +12,7 @@ def plan_command(args):
     output_manager = CdevOutputManager()
 
     myProject = Project.instance()
-
+    print(f"created project")
     ws = myProject.get_current_environment().get_workspace()
 
     execute_frontend(ws, output_manager)

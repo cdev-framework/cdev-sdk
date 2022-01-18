@@ -377,7 +377,7 @@ class Workspace:
         )
 
     @wrap_phase([Workspace_State.EXECUTING_FRONTEND])
-    def sort_differences(self, differences: Tuple[Component_Difference, Resource_Reference_Difference, Resource_Difference]) -> DiGraph:
+    def sort_differences(self, differences: Tuple[List[Component_Difference], List[Resource_Reference_Difference], List[Resource_Difference]]) -> DiGraph:
         return topological_helper.generate_sorted_resources(differences)
 
 
@@ -432,7 +432,7 @@ class Workspace:
                 try:
                     output_task.update(advance=5, comment="Deploying on Cloud :cloud:")
                     mapper = self.get_mapper_namespace().get(ruuid)
-                    cloud_output = mapper.deploy_resource(transaction_token, namespace_token, change, previous_output)
+                    cloud_output = mapper.deploy_resource(transaction_token, namespace_token, change, previous_output, output_task)
                     output_task.update(advance=3, comment="Completing transaction with Backend")
 
                 except Exception as e:
