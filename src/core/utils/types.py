@@ -1,9 +1,9 @@
 from sortedcontainers.sorteddict import SortedDict
 
-import collections
+from collections.abc import Mapping
 
 
-class FrozenDict(collections.Mapping):
+class frozendict(Mapping):
 
     def __init__(self, d: dict):
         self._d = d
@@ -27,15 +27,12 @@ class FrozenDict(collections.Mapping):
     @classmethod
     def validate(cls, v):
         
-        if not (isinstance(v, FrozenDict)) :
-            print(f"======{v}")
+        if not (isinstance(v, frozendict)) :
+            
             raise TypeError(f'{v} Not Frozen Dict')
 
-
+        return v
     
     def __repr__(self) -> str:
         return f"FrozenDict({self._d})"
         
-    #def __hash__(self):
-    #    
-    #    return hash(frozenset(self.items()))

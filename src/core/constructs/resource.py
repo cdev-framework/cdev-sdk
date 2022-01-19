@@ -5,7 +5,7 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-from core.utils.types import FrozenDict
+from core.utils.types import frozendict
 
 from ..utils.hasher import hash_list
 
@@ -64,7 +64,6 @@ class ResourceModel(BaseModel):
 
 
     @classmethod
-    
     def _get_value(
         cls,
         v: Any,
@@ -79,7 +78,7 @@ class ResourceModel(BaseModel):
 
         if isinstance(v, BaseModel):
             if to_dict:
-                v_dict = FrozenDict( v.dict(
+                v_dict = frozendict( v.dict(
                     by_alias=by_alias,
                     exclude_unset=exclude_unset,
                     exclude_defaults=exclude_defaults,

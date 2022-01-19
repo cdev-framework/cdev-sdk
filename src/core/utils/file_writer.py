@@ -6,7 +6,7 @@ from typing import Dict
 from types import MappingProxyType
 
 from core.constructs.resource_state import Resource_State  
-from .types import FrozenDict
+from .types import frozendict
 
 class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -16,7 +16,7 @@ class CustomEncoder(json.JSONEncoder):
         if isinstance(obj, frozenset):
             return list(obj)
 
-        if isinstance(obj, FrozenDict):
+        if isinstance(obj, frozendict):
             return dict(obj)
 
         return json.JSONEncoder.default(self, obj)
@@ -67,7 +67,7 @@ def _recursive_make_immutable(o):
     if isinstance(o, list):
         return frozenset([_recursive_make_immutable(x) for x in o])
     elif isinstance(o, dict):
-        return FrozenDict({k: _recursive_make_immutable(v) for k, v in o.items()})
+        return frozendict({k: _recursive_make_immutable(v) for k, v in o.items()})
     return o
 
     

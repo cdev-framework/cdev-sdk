@@ -1,6 +1,6 @@
 from enum import Enum
 from typing_extensions import Literal
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Mapping, Optional, Union
 from types import MappingProxyType
 
 from pydantic.main import BaseModel
@@ -19,7 +19,7 @@ from pathlib import PosixPath, WindowsPath
 
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output
 from core.utils import hasher
-from core.utils.types import FrozenDict
+from core.utils.types import frozendict
 
 from .iam import Permission, PermissionArn
 
@@ -89,14 +89,14 @@ class Event(BaseModel):
 
     event_type: EventTypes
 
-    a: FrozenDict
+    config: frozendict
 
     def get_hash(self) -> str:
         return hasher.hash_list(
             [
                 self.original_resource_name,
                 self.original_resource_type,
-                self.a,
+                self.config,
             ]
         )
 
@@ -104,7 +104,7 @@ class Event(BaseModel):
         use_enum_values = True
         # Beta Feature but should be fine since this is simple data 
         frozen = True
-        arbitrary_types_allowed = True
+
 
 ################
 ##### Functions

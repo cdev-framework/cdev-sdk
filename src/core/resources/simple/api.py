@@ -5,7 +5,7 @@ from types import MappingProxyType
 
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output
 from core.utils import hasher
-from core.utils.types import FrozenDict
+from core.utils.types import frozendict
 
 from .xlambda import Event as lambda_event, EventTypes
 
@@ -61,19 +61,14 @@ class Api(Resource):
         )
 
     def route(self, path: str, verb: str) -> lambda_event:
-        config = FrozenDict({"path": path, "verb": verb})
-        print(f"config {config}")
+        config = frozendict({"path": path, "verb": verb})
         
         event = lambda_event(
-            **{
-                "original_resource_name": self.name,
-                "original_resource_type": self.RUUID,
-                "event_type": EventTypes.HTTP_API_ENDPOINT,
-                "a": config,
-            }
+            original_resource_name= self.name,
+            original_resource_type= self.RUUID,
+            event_type= EventTypes.HTTP_API_ENDPOINT,
+            config= config,   
         )
-
-        print(event)
 
         self._routes.append(event)
 
@@ -81,12 +76,11 @@ class Api(Resource):
             [hasher.hash_list(self._routes), self.api_name, self.allow_cors]
         )
 
-        print(self._routes)
         return event
 
     def render(self) -> simple_api_model:
         routes =  frozenset(self._routes)
-        print(routes)
+        
         return simple_api_model(
             **{
                 "ruuid": self.RUUID,
