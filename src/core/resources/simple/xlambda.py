@@ -36,7 +36,7 @@ LAMBDA_FUNCTION_RUUID = "cdev::simple::lambda_function"
 ##### Dependencies 
 ################
 
-class simple_lambda_layer_output(str, Enum):
+class layer_output(str, Enum):
     arn = "arn"
 
 
@@ -62,7 +62,7 @@ class DependencyLayer(Resource):
         super().__init__(name)
         self.artifact_path = artifact_path
 
-    def from_output(self, key: simple_lambda_layer_output) -> Cloud_Output:
+    def from_output(self, key: layer_output) -> Cloud_Output:
         return super().from_output(key)
 
     def render(self) -> DependencyLayerModel:
@@ -111,7 +111,7 @@ class Event(BaseModel):
 ################
 
 
-class lambda_function_configuration_environment(BaseModel):
+class function_configuration_environment(BaseModel):
     Variables: Dict[str, Union[str, Cloud_Output]]
 
     def __init__(
@@ -126,10 +126,10 @@ class lambda_function_configuration_environment(BaseModel):
         return hasher.hash_list(as_list)
 
 
-class lambda_function_configuration(BaseModel):
+class function_configuration(BaseModel):
     Handler: Union[str, None]
     Description: Union[str, None]
-    Environment: Union[lambda_function_configuration_environment, None]
+    Environment: Union[function_configuration_environment, None]
 
     def get_cdev_hash(self) -> str:
         if self.Environment:
@@ -140,14 +140,14 @@ class lambda_function_configuration(BaseModel):
         return rv
 
 
-class simple_aws_lambda_function_model(ResourceModel):
+class simple_function_model(ResourceModel):
     """
     An aws lambda function
     """
 
     function_name: str
     filepath: str  # Don't use FilePath because this will be a relative path and might not always point correctly to a file in all contexts
-    configuration: lambda_function_configuration
+    configuration: function_configuration
     events: List[Event]
     permissions: List[Union[Permission, PermissionArn]]
     src_code_hash: str
@@ -168,14 +168,14 @@ class simple_aws_lambda_function_model(ResourceModel):
         extra = "ignore"
 
 
-class simple_lambda(Resource):
+class SimpleFunction(Resource):
     def __init__(
         self,
         cdev_name: str,
         filepath: str,
         function_name: str = "",
         events: List[Event] = [],
-        configuration: lambda_function_configuration = {},
+        configuration: function_configuration = {},
         function_permissions: List[Union[Permission, PermissionArn]] = [],
         includes: List[str] = [],
     ) -> None:
@@ -219,9 +219,9 @@ class simple_lambda(Resource):
         
         
 
-    def render(self) -> simple_aws_lambda_function_model:
+    def render(self) -> simple_function_model:
 
-        return simple_aws_lambda_function_model(
+        return simple_function_model(
             **{
                 "name": self.name,
                 "ruuid": LAMBDA_FUNCTION_RUUID,
@@ -244,7 +244,7 @@ class simple_lambda(Resource):
         return self.includes
 
 
-def simple_lambda_function_annotation(
+def simple_function_annotation(
     name: str,
     function_name: str = "",
     events: List[Event] = [],
@@ -261,7 +261,7 @@ def simple_lambda_function_annotation(
 
     """
 
-    def create_function(func) -> simple_lambda:
+    def create_function(func) -> SimpleFunction:
 
         if inspect.isfunction(func):
             for item in inspect.getmembers(func):
@@ -279,13 +279,13 @@ def simple_lambda_function_annotation(
         base_config["Description"] = description
         base_config["Handler"] = handler_name
 
-        final_config = lambda_function_configuration(**base_config)
+        final_config = function_configuration(**base_config)
 
         mod = importlib.import_module(mod_name)
 
         full_filepath = os.path.abspath(mod.__file__)
 
-        return simple_lambda(
+        return SimpleFunction(
             cdev_name=name,
             filepath=full_filepath,
             function_name=function_name,

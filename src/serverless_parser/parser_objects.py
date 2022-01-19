@@ -5,6 +5,7 @@ from enum import Enum
 import tokenize
 import re
 import hashlib
+from typing import List
 
 from sortedcontainers import SortedList
 
@@ -21,11 +22,11 @@ class parsed_function():
     """
 
     def __init__(self, name):
-        self.name = name
+        self.name: str = name
         self.needed_line_numbers = SortedList(key=lambda x: x[0])
 
         # set of imported packages
-        self.imported_packages = set()
+        self.imported_packages: str = set()
 
         # some packages come with the lambda runtime so they do not need to be packaged into a layer so we need to make a new set with 
         # just packages we need to actually package into layers
@@ -213,7 +214,7 @@ class file_information():
         self.imported_symbols = set()
 
         # List of parsed function objects
-        self.parsed_functions = []
+        self.parsed_functions: List[parsed_function] = []
 
         # dict<str, global_statement>: function name to its global statement
         self.global_functions = {}
