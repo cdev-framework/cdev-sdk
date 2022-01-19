@@ -1,5 +1,5 @@
 from os import name
-from typing import Any, Dict, List
+from typing import Any, Dict, FrozenSet, List
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
 from core.constructs.workspace import Workspace
@@ -87,7 +87,7 @@ def _create_simple_api(transaction_token: str, namespace_token: str, resource: s
     api_id = info.get("cloud_id")
     if resource.routes:
         for route in resource.routes:
-            output_task.update(advance=1, comment=f'Creating Route {route.config.get("path")} [{route.config.get("verb")}]')
+            output_task.update(advance=1, comment=f'Creating Route {route.path} [{route.verb}]')
             
             try:
                 route_cloud_id = _create_route(api_id, route)
@@ -97,11 +97,11 @@ def _create_simple_api(transaction_token: str, namespace_token: str, resource: s
 
             route_info = {
                 "cloud_id": route_cloud_id,
-                "route": route.config.get("path"),
-                "verbs": route.config.get("verb"),
+                "route": route.path,
+                "verbs": route.verb,
             }
 
-            dict_key = f'{route.config.get("path")}:{route.config.get("verb")}'
+            dict_key = f'{route.path}:{route.verb}'
 
             tmp = info.get("endpoints")
             tmp[dict_key] = route_info
@@ -139,21 +139,21 @@ def _remove_simple_api(transaction_token: str,  previous_output: Dict, output_ta
 
 
 
-def _create_route(api_id: str, route: lambda_event) -> str:
+def _create_route(api_id: str, route: simple_api.route_event_model) -> str:
     """
     Helper Function for creating routes on an API. Note that any error raised by the aws client will not be caught by this function and should
     be handled by the caller of this function.
 
     Args:
         api_id (str): Api ID of the api in AWS.
-        route (lambda_event): Information about the route to create.
+        route (simple_api.route_event_model): Information about the route to create.
 
     Returns:
         str: Route ID of the create route.
     """
     _route_args = {
         "ApiId": api_id,
-        "RouteKey": f"{route.config.get('verb')} {route.config.get('path')}",
+        "RouteKey": f"{route.verb} {route.path}",
     }
     
 
@@ -207,6 +207,8 @@ def _update_simple_api(
 
     previous_cloud_id = previous_output.get('cloud_id')
 
+    output_task.print(previous_resource)
+
     # Update the name of the underlying api
     if not previous_resource.api_name == new_resource.api_name:
         new_api_name = f"{new_resource.api_name}-{namespace_token}"
@@ -255,35 +257,20 @@ def _update_simple_api(
             raise e 
 
     
-    print(f"here222")
-    # Updating the routes
-    previous_routes_hashes = set(
-        [lambda_event(**x).get_hash() for x in previous_resource.routes]
-    )
-    new_routes_hashes = set([x.get_hash() for x in new_resource.routes])
-
-    routes_to_be_created: List[lambda_event] = []
-    routes_to_be_deleted = []
-
-    for route in new_resource.routes:
-        if not route.get_hash() in previous_routes_hashes:
-            routes_to_be_created.append(route)
-
-    for route in previous_resource.routes:
-        if not lambda_event(**route).get_hash() in new_routes_hashes:
-            routes_to_be_deleted.append(route)
-
+    
+   
+    # Delete any route that is not in the new routes but in previous routes
+    routes_to_be_deleted: FrozenSet[simple_api.route_event_model] = previous_resource.routes.difference(new_resource.routes)
+    # Create any route that is in the new routes but not in previous routes
+    routes_to_be_created: FrozenSet[simple_api.route_event_model] = new_resource.routes.difference(previous_resource.routes)
+     
     log.debug(f"Routes to be created -> {routes_to_be_created}")
     log.debug(f"Routes to be deleted -> {routes_to_be_deleted}")
 
-
-    print("here3333")
-    print(routes_to_be_created)
-    print(routes_to_be_deleted)
     new_output_info = {}
     for route in routes_to_be_created:
 
-        output_task.update(advance=1, comment=f'Creating Route {route.config.get("path")} [{route.config.get("verb")}]')
+        output_task.update(advance=1, comment=f'Creating Route {route.path} [{route.verb}]')
         try:
             route_cloud_id = _create_route(previous_cloud_id, route)
         except Exception as e:
@@ -292,26 +279,24 @@ def _update_simple_api(
 
         route_info = {
             "cloud_id": route_cloud_id,
-            "route": route.config.get("path"),
-            "verbs": route.config.get("verb"),
+            "route": route.path,
+            "verbs": route.verb,
         }
 
-        dict_key = f'{route.config.get("path")}:{route.config.get("verb")}'
+        dict_key = f'{route.path}:{route.verb}'
         new_output_info[dict_key] = route_info
 
         log.debug(f"Created Route -> {route}")
 
-
+    print(previous_output)
     previous_route_info: Dict[str,str] = previous_output.get('endpoints')
-    
-    previous_route_info.update(new_output_info)
-
+    print(previous_route_info)
     for route in routes_to_be_deleted:
         dict_key = (
-            f'{route.get("config").get("path")}:{route.get("config").get("verb")}'
+            f'{route.path}:{route.verb}'
         )
 
-        output_task.update(advance=1, comment=f'Deleting Route {route.get("config").get("path")} [{route.get("config").get("verb")}]')
+        output_task.update(advance=1, comment=f'Deleting Route {route.path} [{route.verb}]')
         try:
             _delete_route(
                 previous_cloud_id, previous_route_info.get(dict_key).get("cloud_id")
@@ -324,7 +309,7 @@ def _update_simple_api(
 
         log.debug(f"Delete Route -> {dict_key}")
 
-
+    previous_route_info.update(new_output_info)
     previous_output['endpoints'] = previous_route_info
 
     return previous_output
@@ -351,7 +336,7 @@ def handle_simple_api_deployment(
         return _update_simple_api(
             transaction_token,
             namespace_token,
-            resource_diff.previous_resource,
+            simple_api.simple_api_model(**resource_diff.previous_resource.dict()),
             resource_diff.new_resource,
             previous_output,
             output_task

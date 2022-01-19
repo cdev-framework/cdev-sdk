@@ -12,7 +12,7 @@ from .utils import PackageTypes, ModulePackagingInfo, ExternalDependencyWriteInf
 from zipfile import ZipFile
 from core.settings import SETTINGS as cdev_settings
 from core.utils import paths as cdev_paths, hasher as cdev_hasher
-from core.resources.simple.xlambda import LambdaLayerArn, DependencyLayer
+from core.resources.simple.xlambda import  DependencyLayer
 import json
 import shutil
 import heapq

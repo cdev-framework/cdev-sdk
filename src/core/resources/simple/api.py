@@ -7,15 +7,40 @@ from core.constructs.resource import Resource, ResourceModel, Cloud_Output
 from core.utils import hasher
 from core.utils.types import frozendict
 
-from .xlambda import Event as lambda_event, EventTypes
+from .xlambda import Event
+
+from .events import Event, event_model, EventTypes
 
 
 RUUID = "cdev::simple::api"
 
 
+class route_event_model(event_model):
+    path: str
+    verb: str
+
+class RouteEvent(Event):
+
+    def __init__(self, resource_name: str, path: str, verb: str) -> None:
+        self.resource_name = resource_name
+        self.path = path
+        self.verb = verb
+
+    def get_hash(self) -> str:
+        return hasher.hash_list([self.path, self.verb])
+
+    def render(self) -> event_model:
+        return route_event_model(
+            original_resource_name= self.resource_name,
+            original_resource_type= Api.RUUID ,
+            event_type= EventTypes.HTTP_API_ENDPOINT,
+            path=self.path,
+            verb=self.verb   
+        )
+
 class simple_api_model(ResourceModel):
     api_name: str
-    routes: FrozenSet[lambda_event]
+    routes: FrozenSet[route_event_model]
     allow_cors: bool
 
     class Config:
@@ -54,26 +79,26 @@ class Api(Resource):
             if api_name
             else f"cdevapi"
         )
-        self._routes = []
+        self._routes: List[RouteEvent] = []
+
         self.allow_cors = allow_cors
+
         self.hash = hasher.hash_list(
             [hasher.hash_list(self._routes), self.api_name, self.allow_cors]
         )
 
-    def route(self, path: str, verb: str) -> lambda_event:
-        config = frozendict({"path": path, "verb": verb})
-        
-        event = lambda_event(
-            original_resource_name= self.name,
-            original_resource_type= self.RUUID,
-            event_type= EventTypes.HTTP_API_ENDPOINT,
-            config= config,   
+    def route(self, path: str, verb: str) -> RouteEvent:
+    
+        event = RouteEvent(
+            self.name,
+            path, 
+            verb
         )
 
         self._routes.append(event)
 
         self.hash = hasher.hash_list(
-            [hasher.hash_list(self._routes), self.api_name, self.allow_cors]
+            [hasher.hash_list([x.get_hash() for x in self._routes]), self.api_name, self.allow_cors]
         )
 
         return event
@@ -87,7 +112,7 @@ class Api(Resource):
                 "name": self.name,
                 "hash": self.hash,
                 "api_name": self.api_name,
-                "routes": routes,
+                "routes": frozenset([x.render() for x in routes]),
                 "allow_cors": self.allow_cors,
             }
         )

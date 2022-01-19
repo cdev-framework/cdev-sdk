@@ -1,4 +1,4 @@
-from time import sleep
+"""from time import sleep
 from typing import Dict
 
 from cdev.models import Resource_State_Difference, Action_Type
@@ -585,3 +585,4 @@ def handle_simple_lambda_function_deployment(
     except Exception as e:
         print(e)
         raise Exception("COULD NOT DEPLOY")
+"""

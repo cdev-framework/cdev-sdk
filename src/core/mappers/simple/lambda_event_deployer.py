@@ -1,4 +1,4 @@
-from typing import Dict
+"""from typing import Dict
 from cdev.resources.aws.apigatewayv2_models import IntegrationType
 from cdev.utils import logger
 from cdev.resources.simple import xlambda as simple_lambda
@@ -478,3 +478,4 @@ EVENT_TO_HANDLERS = {
         "REMOVE": _handle_deleting_topic_subscription,
     },
 }
+"""

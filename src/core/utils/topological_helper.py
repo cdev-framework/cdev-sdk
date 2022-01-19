@@ -20,9 +20,6 @@ from .file_writer import CustomEncoder
 deliminator = '+'
 
 def find_parents(resource: ResourceModel) -> List[Cloud_Output]:
-
-
-    
     resource_as_obj = resource.dict()
     
     cloud_outputs = find_cloud_output(resource_as_obj)
@@ -42,13 +39,13 @@ def _recursive_replace_output(obj) -> List[Cloud_Output]:
 
     if isinstance(obj, frozendict) or isinstance(obj, dict): 
         for k,v in obj.items():
-            if isinstance(obj, frozendict) or isinstance(obj, dict):
+            if isinstance(v, frozendict) or isinstance(v, dict):
                 if "id" in v and v.get("id") == 'cdev_output':
                     rv.append(Cloud_Output(**v))
                 else:
                     rv.extend(_recursive_replace_output(v))
 
-            elif isinstance(obj, frozenset) or isinstance(obj, list):
+            elif isinstance(v, frozenset) or isinstance(v, list):
                 all_items_rendered = [_recursive_replace_output(x) for x in v]
                 
                 for item in all_items_rendered:

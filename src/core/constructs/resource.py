@@ -5,23 +5,12 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-from core.utils.types import frozendict
+from core.utils.types import ImmutableModel
 
 from ..utils.hasher import hash_list
 
-from pydantic.utils import (
-    ROOT_KEY,
-    ValueItems,
-    sequence_like,
 
-)
-
-from pydantic.typing import (
-    is_namedtuple,
-)
-
-
-class ResourceModel(BaseModel):
+class ResourceModel(ImmutableModel):
     """
     This is the most basic information needed to describe a resource.
 
@@ -63,85 +52,9 @@ class ResourceModel(BaseModel):
         arbitrary_types_allowed = True
 
 
-    @classmethod
-    def _get_value(
-        cls,
-        v: Any,
-        to_dict: bool,
-        by_alias: bool,
-        include ,
-        exclude,
-        exclude_unset: bool,
-        exclude_defaults: bool,
-        exclude_none: bool,
-    ) -> Any:
+    
 
-        if isinstance(v, BaseModel):
-            if to_dict:
-                v_dict = frozendict( v.dict(
-                    by_alias=by_alias,
-                    exclude_unset=exclude_unset,
-                    exclude_defaults=exclude_defaults,
-                    include=include,
-                    exclude=exclude,
-                    exclude_none=exclude_none,
-                ))
-                if ROOT_KEY in v_dict:
-                    return v_dict[ROOT_KEY]
-                return v_dict
-            else:
-                return v.copy(include=include, exclude=exclude)
-
-        value_exclude = ValueItems(v, exclude) if exclude else None
-        value_include = ValueItems(v, include) if include else None
-
-        if isinstance(v, dict):
-            return {
-                k_: cls._get_value(
-                    v_,
-                    to_dict=to_dict,
-                    by_alias=by_alias,
-                    exclude_unset=exclude_unset,
-                    exclude_defaults=exclude_defaults,
-                    include=value_include and value_include.for_element(k_),
-                    exclude=value_exclude and value_exclude.for_element(k_),
-                    exclude_none=exclude_none,
-                )
-                for k_, v_ in v.items()
-                if (not value_exclude or not value_exclude.is_excluded(k_))
-                and (not value_include or value_include.is_included(k_))
-            }
-
-        elif sequence_like(v):
-            seq_args = (
-                cls._get_value(
-                    v_,
-                    to_dict=to_dict,
-                    by_alias=by_alias,
-                    exclude_unset=exclude_unset,
-                    exclude_defaults=exclude_defaults,
-                    include=value_include and value_include.for_element(i),
-                    exclude=value_exclude and value_exclude.for_element(i),
-                    exclude_none=exclude_none,
-                )
-                for i, v_ in enumerate(v)
-                if (not value_exclude or not value_exclude.is_excluded(i))
-                and (not value_include or value_include.is_included(i))
-            )
-
-            if v.__class__ == frozenset:
-                return [*seq_args]
-            
-            return v.__class__(*seq_args) if is_namedtuple(v.__class__) else v.__class__(seq_args)
-
-        elif isinstance(v, Enum) and getattr(cls.Config, 'use_enum_values', False):
-            return v.value
-
-        else:
-            return v
-
-
-class ResourceReferenceModel(BaseModel):
+class ResourceReferenceModel(ImmutableModel):
     """
     This is the information needed to reference a resource that is defined outside this component
 
@@ -213,7 +126,7 @@ class Resource_Reference_Change_Type(str, Enum):
     DELETE = "DELETE"
 
 
-class Resource_Difference(BaseModel):
+class Resource_Difference(ImmutableModel):
     action_type: Resource_Change_Type
     component_name: str
     previous_resource: Optional[ResourceModel]
@@ -241,7 +154,7 @@ class Resource_Difference(BaseModel):
         frozen = True
 
 
-class Resource_Reference_Difference(BaseModel):
+class Resource_Reference_Difference(ImmutableModel):
     action_type: Resource_Reference_Change_Type
     originating_component_name: str
     resource_reference: ResourceReferenceModel

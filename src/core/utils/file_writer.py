@@ -54,12 +54,15 @@ def safe_json_write(obj: Dict, fp: FilePath):
     os.remove(tmp_fp)
 
 
-
 def load_resource_state(fp: FilePath) -> Resource_State:
     with open(fp, "r") as fh:
         _mutable_json = json.load(fh)
 
-    _mutable_json['components'] = _recursive_make_immutable(_mutable_json.get('components'))
+    for component in _mutable_json['components']:
+        # The actual resource and reference models need to be immutable data structures so that they can have a 
+        # __hash__ value.
+        component['resources'] = [_recursive_make_immutable(x) for x in component.get('resources')]
+        component['references'] = [_recursive_make_immutable(x) for x in component.get('references')]
 
     return Resource_State(**_mutable_json)
     
