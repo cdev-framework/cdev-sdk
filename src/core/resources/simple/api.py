@@ -69,7 +69,7 @@ class Api(Resource):
                 "original_resource_name": self.name,
                 "original_resource_type": self.RUUID,
                 "event_type": EventTypes.HTTP_API_ENDPOINT,
-                "config2": config,
+                "a": config,
             }
         )
 

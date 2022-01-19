@@ -89,14 +89,14 @@ class Event(BaseModel):
 
     event_type: EventTypes
 
-    config2: FrozenDict
+    a: FrozenDict
 
     def get_hash(self) -> str:
         return hasher.hash_list(
             [
                 self.original_resource_name,
                 self.original_resource_type,
-                self.config2,
+                self.a,
             ]
         )
 
@@ -104,6 +104,7 @@ class Event(BaseModel):
         use_enum_values = True
         # Beta Feature but should be fine since this is simple data 
         frozen = True
+        arbitrary_types_allowed = True
 
 ################
 ##### Functions

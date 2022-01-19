@@ -26,7 +26,9 @@ class FrozenDict(collections.Mapping):
 
     @classmethod
     def validate(cls, v):
+        
         if not (isinstance(v, FrozenDict)) :
+            print(f"======{v}")
             raise TypeError(f'{v} Not Frozen Dict')
 
 
