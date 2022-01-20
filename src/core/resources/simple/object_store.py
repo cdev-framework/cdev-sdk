@@ -1,21 +1,50 @@
 from enum import Enum
-from typing import List, Dict, Union
 
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output
 from core.utils import hasher
 
-from .xlambda import Event as lambda_event, EventTypes
 from .iam import Permission
 
-class Bucket_Event_Types(str, Enum):
+from .events import Event, event_model, EventTypes
+
+class Bucket_Event_Type(str, Enum):
     Object_Created = "s3:ObjectCreated:*"
     Object_Removed = "s3:ObjectRemoved:*"
     Object_Restore = "s3:ObjectRestore:*"
     Object_Replicaton = "s3:ObjectReplication:*"
 
 
-class BucketPermissions:
+class bucket_event_model(event_model):
+    """
+    something
 
+    Arguments:
+        original_resource_name: str
+        original_resource_type: str
+        event_type: EventTypes
+        bucket_event_type: Bucket_Event_Types
+    """
+    bucket_event_type: Bucket_Event_Type
+
+
+class BucketEvent(Event):
+    RUUID = "cdev::simple::bucket"
+
+    def __init__(self, bucket_name: str, bucket_event_type: Bucket_Event_Type) -> None:
+        self.bucket_name = bucket_name
+        self.bucket_event_type = bucket_event_type
+
+
+    def render(self) -> event_model:
+        return bucket_event_model(
+            original_resource_name=self.bucket_name,
+            original_resource_type=self.RUUID,
+            event_type=EventTypes.BUCKET_TRIGGER,
+            bucket_event_type=self.bucket_event_type 
+        )
+
+
+class BucketPermissions:
     RUUID = "cdev::simple::bucket"
 
     def __init__(self, resource_name) -> None:
@@ -53,7 +82,7 @@ class simple_bucket_output(str, Enum):
     cloud_name = "cloud_name"
 
 
-class Bucket(Resource):
+class SimpleBucket(Resource):
     RUUID = "cdev::simple::bucket"
 
     def __init__(self, cdev_name: str, bucket_name: str = "") -> None:
@@ -76,30 +105,23 @@ class Bucket(Resource):
 
         self.hash = hasher.hash_list([self.bucket_name])
 
+
     def render(self) -> simple_bucket_model:
         return simple_bucket_model(
-            **{
-                "ruuid": self.RUUID,
-                "name": self.name,
-                "hash": self.hash,
-                "bucket_name": self.bucket_name,
-            }
+            ruuid=self.RUUID,
+            name=self.name,
+            hash=self.hash,
+            bucket_name=self.bucket_name,
         )
 
-    def create_event_trigger(
-        self, event_types: List[Bucket_Event_Types]
-    ) -> lambda_event:
-        config = {
-            "EventTypes": list(set([x.value for x in event_types])),
-        }
 
-        event = lambda_event(
-            **{
-                "original_resource_name": self.name,
-                "original_resource_type": self.RUUID,
-                "event_type": EventTypes.BUCKET_TRIGGER,
-                "config": config,
-            }
+    def create_event_trigger(
+        self, event_type: Bucket_Event_Type
+    ) -> BucketEvent:
+
+        event = BucketEvent(
+            bucket_name=self.bucket_name,
+            bucket_event_type=event_type
         )
 
         return event

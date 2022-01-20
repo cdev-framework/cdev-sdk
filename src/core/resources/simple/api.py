@@ -1,13 +1,8 @@
 from enum import Enum
 from typing import List, FrozenSet
-from types import MappingProxyType
-
 
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output
 from core.utils import hasher
-from core.utils.types import frozendict
-
-from .xlambda import Event
 
 from .events import Event, event_model, EventTypes
 

@@ -34,11 +34,11 @@ class StaticSite(Resource):
         content_folder: str = None,
     ) -> None:
         """
-        Create a simple S3 bucket that can be used as an object store.
+        Create a static hosted site.
 
         Args:
             cdev_name (str): Name of the resource
-            site_name (str, optional): base name of the bucket in s3. If not provided, will default to cdev_name.
+            site_name (str, optional): base name of the bucket in s3.
         """
         super().__init__(cdev_name)
 
@@ -53,7 +53,7 @@ class StaticSite(Resource):
                 f"If sync_folder is set to 'True' then you must provide a path to the folder."
             )
 
-        self.site_name, self.index_document, self.error_document, self.sync_folder, self.content_folder
+            raise Exception
 
         self.hash = hasher.hash_list(
             [
@@ -67,16 +67,14 @@ class StaticSite(Resource):
 
     def render(self) -> simple_static_site_model:
         return simple_static_site_model(
-            **{
-                "ruuid": self.RUUID,
-                "name": self.name,
-                "hash": self.hash,
-                "site_name": self.site_name,
-                "index_document": self.index_document,
-                "error_document": self.error_document,
-                "sync_folder": self.sync_folder,
-                "content_folder": self.content_folder,
-            }
+            ruuid=self.RUUID,
+            name=self.name,
+            hash=self.hash,
+            site_name=self.site_name,
+            index_document=self.index_document,
+            error_document=self.error_document,
+            sync_folder=self.sync_folder,
+            content_folder=self.content_folder,   
         )
 
     def from_output(self, key: simple_static_site_output) -> Cloud_Output:

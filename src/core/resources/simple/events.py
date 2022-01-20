@@ -13,6 +13,15 @@ class EventTypes(str, Enum):
 
 
 class event_model(ImmutableModel):
+    """
+    
+    Arguments:
+        original_resource_name: str
+        original_resource_type: str
+        event_type: EventTypes
+
+    
+    """
     original_resource_name: str
 
     original_resource_type: str

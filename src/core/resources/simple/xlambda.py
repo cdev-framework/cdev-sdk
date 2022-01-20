@@ -9,7 +9,7 @@ from core.constructs.resource import Resource, ResourceModel, Cloud_Output
 from core.utils import hasher
 from core.utils.types import frozendict, ImmutableModel
 
-from .iam import Permission, PermissionArn
+from .iam import Permission, PermissionArn, permission_arn_model, permission_model
 from .events import Event, event_model
 
 
@@ -80,7 +80,7 @@ class simple_function_model(ResourceModel):
     filepath: str  # Don't use FilePath because this will be a relative path and might not always point correctly to a file in all contexts
     configuration: simple_function_configuration_model
     events: FrozenSet[event_model]
-    permissions: FrozenSet[Union[Permission, PermissionArn]]
+    permissions: FrozenSet[Union[permission_model, permission_arn_model]]
     external_dependencies: FrozenSet[Union[deployed_layer_model, dependency_layer_model]]
 
 
@@ -118,12 +118,13 @@ class SimpleFunction(Resource):
 
 
         self._permissions = function_permissions
-        self.permissions_hash = hasher.hash_list(
-            [x.get_hash for x in function_permissions]
-        )
+        
+        self.permissions_hash = "1"
 
         self.src_code_hash = hasher.hash_file(filepath)
+
         self.config_hash = "1"
+
         self.events_hash = hasher.hash_list([x.get_hash() for x in events])
 
         self.external_dependencies = external_dependencies
@@ -149,7 +150,7 @@ class SimpleFunction(Resource):
             filepath=self.filepath,
             configuration=self.configuration,
             events=frozenset([x.render() for x in self.events]),
-            permissions=frozenset(self._permissions),
+            permissions=frozenset([x.render() for x in self._permissions]),
             external_dependencies=self.external_dependencies,
         )
 

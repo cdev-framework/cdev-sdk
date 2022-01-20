@@ -1,13 +1,63 @@
 from enum import Enum
-from typing import List, Dict, Union
+from typing import FrozenSet, List, Dict, Union
 
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output
 from core.utils import hasher
+from core.utils.types import ImmutableModel, frozendict
 
-from .xlambda import Event as lambda_event, EventTypes
+from .events import Event, event_model, EventTypes
 from .iam import Permission
 
 # log = logger.get_cdev_logger(__name__)
+class stream_type(str, Enum):
+    """
+    Type of streams for a table. Can be values:\n
+    KEYS_ONLY -> Only the key attributes of the modified item.\n
+    NEW_IMAGE -> The entire item, as it appears after it was modified.\n
+    OLD_IMAGE -> The entire item, as it appeared before it was modified.\n
+    NEW_AND_OLD_IMAGES -> Both the new and the old item images of the item.\n
+    """
+
+    KEYS_ONLY = "KEYS_ONLY"
+    NEW_IMAGE = "NEW_IMAGE"
+    OLD_IMAGE = "OLD_IMAGE"
+    NEW_AND_OLD_IMAGES = "NEW_AND_OLD_IMAGES"
+
+
+class stream_event_model(event_model):
+    """
+    something
+
+    Arguments:
+        original_resource_name: str
+        original_resource_type: str
+        event_type: EventTypes
+        view_type: stream_type
+        batch_size: int
+    """
+    view_type: stream_type
+    batch_size: int
+
+
+class StreamEvent(Event):
+    RUUID = "cdev::simple::table"
+
+    def __init__(self, table_name: str, view_type: stream_type, batch_size: int) -> None:
+        self.table_name=table_name
+        self.view_type=view_type
+        self.batch_size=batch_size
+        
+
+
+    def render(self) -> stream_event_model:
+        return stream_event_model(
+            original_resource_name=self.table_name,
+            original_resource_type=self.RUUID,
+            event_type=EventTypes.TABLE_STREAM,
+            batch_size=self.batch_size,
+            view_type=self.view_type.value,
+        )
+
 
 
 class attribute_type(str, Enum):
@@ -41,25 +91,46 @@ class key_type(str, Enum):
     RANGE = "RANGE"
 
 
-class stream_type(str, Enum):
-    """
-    Type of streams for a table. Can be values:\n
-    KEYS_ONLY -> Only the key attributes of the modified item.\n
-    NEW_IMAGE -> The entire item, as it appears after it was modified.\n
-    OLD_IMAGE -> The entire item, as it appeared before it was modified.\n
-    NEW_AND_OLD_IMAGES -> Both the new and the old item images of the item.\n
-    """
+class attribute_definition_model(ImmutableModel):
+    attribute_name: str
+    attribute_type: attribute_type
 
-    KEYS_ONLY = "KEYS_ONLY"
-    NEW_IMAGE = "NEW_IMAGE"
-    OLD_IMAGE = "OLD_IMAGE"
-    NEW_AND_OLD_IMAGES = "NEW_AND_OLD_IMAGES"
+
+class AttributeDefinition:
+    def __init__(self, name:str, type: attribute_type) -> None:
+        self.name = name
+        self.type = type
+
+
+    def render(self) -> attribute_definition_model:
+        return attribute_definition_model(
+            attribute_name=self.name,
+            attribute_type=self.type
+        )
+
+class key_definition_model(ImmutableModel):
+    attribute_name: str
+    key_type: key_type
+
+
+
+class KeyDefinition:
+    def __init__(self, name:str, type: key_type) -> None:
+        self.name = name
+        self.type = type
+
+
+    def render(self) -> attribute_definition_model:
+        return attribute_definition_model(
+            attribute_name=self.name,
+            key_type=self.type
+        )
 
 
 class simple_table_model(ResourceModel):
     table_name: str
-    attributes: List[Dict[str, str]]
-    keys: List[Dict[str, str]]
+    attributes: FrozenSet[attribute_definition_model]
+    keys: FrozenSet[key_definition_model]
 
 
 class simple_table_output(str, Enum):
@@ -140,33 +211,26 @@ class Table(Resource):
     def __init__(
         self,
         cdev_name: str,
-        attributes: List[Dict[str, Union[attribute_type, str]]],
-        keys: List[Dict[str, Union[key_type, str]]],
+        attributes: List[AttributeDefinition],
+        keys: List[KeyDefinition],
         table_name: str = "",
     ) -> None:
+        super().__init__(cdev_name)
+
         rv = Table.check_attributes_and_keys(attributes, keys)
         if not rv[0]:
             print(rv[1])
             raise Exception
 
-        super().__init__(cdev_name)
-
+    
         self.table_name = (
             table_name
             if table_name
             else "cdevtable"
         )
-        self.attributes = [
-            {
-                "AttributeName": x.get("AttributeName"),
-                "AttributeType": x.get("AttributeType").value,
-            }
-            for x in attributes
-        ]
-        self.keys = [
-            {"AttributeName": x.get("AttributeName"), "KeyType": x.get("KeyType").value}
-            for x in keys
-        ]
+
+        self.attributes = attributes
+        self.keys = keys
         self._stream = None
 
         self.permissions = TablePermissions(cdev_name)
@@ -175,40 +239,33 @@ class Table(Resource):
 
     def render(self) -> simple_table_model:
         return simple_table_model(
-            **{
-                "ruuid": self.RUUID,
-                "name": self.name,
-                "hash": self.hash,
-                "table_name": self.table_name,
-                "attributes": self.attributes,
-                "keys": self.keys,
-            }
+            ruuid=self.RUUID,
+            name=self.name,
+            hash=self.hash,
+            table_name=self.table_name,
+            attributes=[x.render() for x in self.attributes],
+            keys=[x.render() for x in self.keys],
         )
 
     def create_stream(
         self, view_type: stream_type, batch_size: int = 100
-    ) -> lambda_event:
+    ) -> StreamEvent:
         if self._stream:
             print(
                 f"Already created stream on this table. Use `get_stream()` to get the current stream."
             )
             raise Exception
 
-        config = {"ViewType": view_type.value, "BatchSize": batch_size}
-
-        event = lambda_event(
-            **{
-                "original_resource_name": self.name,
-                "original_resource_type": self.RUUID,
-                "event_type": EventTypes.TABLE_STREAM,
-                "config": config,
-            }
+        event = StreamEvent(
+            table_name=self.name,
+            view_type=view_type,
+            batch_size=batch_size
         )
 
         self._stream = event
         return event
 
-    def get_stream(self) -> lambda_event:
+    def get_stream(self) -> StreamEvent:
         if not self._stream:
             print(
                 "Stream has not been created. Create a stream for this table using the `create_stream` function."
@@ -218,7 +275,7 @@ class Table(Resource):
         return self._stream
 
     def check_attributes_and_keys(
-        attributes: List[Dict[str, attribute_type]], keys: List[Dict[str, key_type]]
+        attributes: List[AttributeDefinition], keys: List[KeyDefinition]
     ) -> bool:
         """
         Check key constraints based on https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.create_table
@@ -231,15 +288,15 @@ class Table(Resource):
         if not primary_key:
             return (False, "No Hash key provided")
 
-        if not primary_key.get("KeyType") == key_type.HASH:
+        if not primary_key.type == key_type.HASH:
             return (False, "First key is not Hash key")
 
-        if not primary_key.get("AttributeName") in set(
-            [x.get("AttributeName") for x in attributes]
+        if not primary_key.name in set(
+            [x.name for x in attributes]
         ):
             return (
                 False,
-                f"Hash key 'AttributeName' ({primary_key.get('AttributeName')}) not defined in attributes",
+                f"Hash key 'AttributeName' ({primary_key.name}) not defined in attributes",
             )
 
         if len(keys) == 1:
@@ -247,15 +304,15 @@ class Table(Resource):
 
         range_key = keys[1]
 
-        if not range_key.get("KeyType") == key_type.RANGE:
-            return (False, "FSecond key is not a Range key")
+        if not range_key.type == key_type.RANGE:
+            return (False, "Second key is not a Range key")
 
-        if not range_key.get("AttributeName") in set(
-            [x.get("AttributeName") for x in attributes]
+        if not range_key.name in set(
+            [x.name for x in attributes]
         ):
             return (
                 False,
-                f"Range key 'AttributeName' ({range_key.get('AttributeName')}) not defined in attributes",
+                f"Range key 'AttributeName' ({range_key.name}) not defined in attributes",
             )
 
         return (True, "")

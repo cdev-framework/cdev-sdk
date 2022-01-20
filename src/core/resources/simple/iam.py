@@ -1,18 +1,24 @@
 from typing import Dict, List, Optional, Union
 
-from pydantic.main import BaseModel
-
-from core.constructs.resource import Resource, ResourceModel, Cloud_Output
-from core.utils import hasher
+from core.utils.types import ImmutableModel
 
 
-
-
-class Permission(BaseModel):
+class permission_model(ImmutableModel):
     actions: List[str]
     resource: str
     effect: str
     resource_suffix: Optional[str]
+
+
+class permission_arn_model(ImmutableModel):
+    arn: str
+
+
+
+class Permission():
+    """
+    Permission that can be attached to a resource to give it permission to access other resources.
+    """
 
     def __init__(
         self,
@@ -22,36 +28,36 @@ class Permission(BaseModel):
         resource_suffix: Optional[str] = "",
     ):
         """
-        Create a permission object that can be attached to a lambda function to give it permission to access other resources.
-
-        args:
-            actions (List[str]): List of the IAM actions that this policy will include
-            resource (str): The Cdev resource name that this policy is for. Note this is not the aws resource name. A lookup will occur to map the cdev name to aws resource
+        Arguments:
+            actions (List[str]): List of the actions that this policy will include
+            resource (str): The Cdev resource id that this policy is for. Note this is not the name in the cloud. A lookup will occur to map the cdev name to aws resource
             effect ('Allow', 'Deny'): Allow or Deny the permission
             resource_suffix (Optional[str]): Some permissions need suffixes added to the looked up aws resource (i.e. dynamodb streams )
         """
-        super().__init__(
-            **{
-                "actions": actions,
-                "resource": resource,
-                "effect": effect,
-                "resource_suffix": resource_suffix,
-            }
-        )
-
-    def get_hash(self) -> str:
-        return hasher.hash_list(
-            [
-                self.resource,
-                hasher.hash_list(self.actions),
-                self.effect,
-                self.resource_suffix,
-            ]
+        self.actions = actions,
+        self.resource = resource,
+        self.effect = effect,
+        self.resource_suffix = resource_suffix,
+            
+    def render(self) -> permission_model:
+        return permission_model(
+            actions=self.actions,
+            resource=self.resource,
+            effect=self.effect,
+            resource_suffix=self.resource_suffix
         )
 
 
-class PermissionArn(BaseModel):
-    arn: str
+class PermissionArn():
+    """
+    Id of a permission that is already deployed on the cloud.
+    """
+    def __init__(self, arn: str) -> None:
+        self.arn = arn
 
-    def get_hash(self) -> str:
-        return hasher.hash_string(self.arn)
+
+    def render(self) -> permission_arn_model:
+        return permission_arn_model(
+            arn=self.arn
+        )
+

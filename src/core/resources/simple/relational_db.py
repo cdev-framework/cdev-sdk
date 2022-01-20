@@ -1,13 +1,9 @@
 from enum import Enum
-from typing import List, Dict, Union, Optional
 
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output
 from core.utils import hasher
 
 from .iam import Permission, PermissionArn
-
-
-
 
 
 class db_engine(Enum):
@@ -67,7 +63,7 @@ class RelationalDBPermissions:
         )
 
         self.SECRET_ACCESS = PermissionArn(
-            **{"arn": "arn:aws:iam::aws:policy/SecretsManagerReadWrite"}
+            arn="arn:aws:iam::aws:policy/SecretsManagerReadWrite"
         )
 
 
@@ -77,12 +73,13 @@ class RelationalDB(Resource):
     def __init__(
         self,
         cdev_name: str,
+        
         engine: db_engine,
         username: str,
         password: str,
         httpendpoint: bool = True,
-        cluster_name: str = "",
         database_name: str = "",
+        cluster_name: str = "",
         max_capacity: int = 64,
         min_capacity: int = 2,
         seconds_to_pause: int = 300,

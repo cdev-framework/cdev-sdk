@@ -4,8 +4,48 @@ from typing import List, Dict, Union
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output
 from core.utils import hasher
 
-from .xlambda import Event as lambda_event, EventTypes
+
+from .events import Event, event_model, EventTypes
 from .iam import Permission
+
+
+
+class queue_event_model(event_model):
+    """
+    something
+
+    Arguments:
+        original_resource_name: str
+        original_resource_type: str
+        event_type: EventTypes
+        batch_size: int
+        batch_window: int
+    """
+    batch_size: int
+    batch_window: int
+
+
+class QueueEvent(Event):
+    RUUID = "cdev::simple::queue"
+
+    def __init__(self, queue_name: str, batch_size: int, batch_window: int) -> None:
+
+        if batch_size > 10000 or batch_size < 0:
+            raise Exception
+
+        self.queue_name=queue_name
+        self.batch_size=batch_size
+        self.batch_window=batch_window
+
+
+    def render(self) -> queue_event_model:
+        return queue_event_model(
+            original_resource_name=self.queue_name,
+            original_resource_type=self.RUUID,
+            event_type=EventTypes.QUEUE_TRIGGER,
+            batch_size=self.batch_size,
+            batch_window=self.batch_window,
+        )
 
 
 class QueuePermissions:
@@ -77,13 +117,8 @@ class Queue(Resource):
         """
         super().__init__(cdev_name)
 
-        _base_name = queue_name if queue_name else "cdevqueue"
+        self.queue_name = queue_name if queue_name else "cdevqueue"
 
-        self.queue_name = (
-            _base_name
-            if not is_fifo
-            else f"{_base_name}.fifo"
-        )
         self.fifo = is_fifo
         self.permissions = QueuePermissions(cdev_name)
 
@@ -102,23 +137,16 @@ class Queue(Resource):
 
     def create_event_trigger(
         self, batch_size: int = 10, batch_window: int = 5
-    ) -> lambda_event:
-        if batch_size > 10000 or batch_size < 0:
-            raise Exception
-
+    ) -> QueueEvent:
+    
         # https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#events-sqs-eventsource
         if self.fifo and batch_size > 10:
             raise Exception
 
-        config = {"batch_size": batch_size, "batch_window": batch_window}
-
-        event = lambda_event(
-            **{
-                "original_resource_name": self.name,
-                "original_resource_type": self.RUUID,
-                "event_type": EventTypes.QUEUE_TRIGGER,
-                "config": config,
-            }
+        event = QueueEvent(
+            queue_name=self.queue_name,
+            batch_size=batch_size,
+            batch_window=batch_window
         )
 
         return event
