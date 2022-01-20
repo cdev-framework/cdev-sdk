@@ -1,15 +1,16 @@
 from enum import Enum
 from types import new_class
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
 from core.resources.simple import object_store as simple_object_store
-from core.utils import hasher, logger
+from core.output.output_manager import OutputTask
+from core.utils import hasher
 
 
 from .. import aws_client as raw_aws_client
 
-log = logger.get_cdev_logger(__name__)
+
 RUUID = "cdev::simple::bucket"
 
 
@@ -20,21 +21,28 @@ class event_hander_types(Enum):
 
 
 def _create_simple_bucket(
-    identifier: str, resource: simple_object_store.simple_bucket_model
+    transaction_token: str, 
+    namespace_token: str, 
+    resource:  simple_object_store.simple_bucket_model,
+    output_task: OutputTask
 ) -> Dict:
+
+
+    cloud_bucket_name = f"{resource.bucket_name}-{namespace_token}"
+
+    output_task.update(advance=1, comment=f'Creating Bucket {cloud_bucket_name}')
+    
     # TODO create buckets in different region
-    raw_aws_client.run_client_function(
-        "s3", "create_bucket", {"Bucket": resource.bucket_name}
+    rv = raw_aws_client.run_client_function(
+        "s3", "create_bucket", {"Bucket": cloud_bucket_name}
     )
 
-    
+    output_task.update(advance=1, comment=f'Created Bucket {cloud_bucket_name}')
 
     output_info = {
-        "bucket_name": resource.bucket_name,
-        "cloud_id": f"arn:aws:s3:::{resource.bucket_name}",
-        "arn": f"arn:aws:s3:::{resource.bucket_name}",
-        "cdev_name": resource.name,
-        "ruuid": RUUID,
+        "bucket_name": cloud_bucket_name,
+        "cloud_id": f"arn:aws:s3:::{cloud_bucket_name}",
+        "arn": f"arn:aws:s3:::{cloud_bucket_name}",
     }
 
 
@@ -42,41 +50,33 @@ def _create_simple_bucket(
 
 
 def _update_simple_bucket(
+    transaction_token: str, 
+    namespace_token: str,
     previous_resource: simple_object_store.simple_bucket_model,
     new_resource: simple_object_store.simple_bucket_model,
+    previous_output: Dict,
+    output_task: OutputTask
 ) -> Dict:
-    _remove_simple_bucket(previous_resource.hash, previous_resource)
-    new_info =  _create_simple_bucket(new_resource.hash, new_resource)
+
+    _remove_simple_bucket(transaction_token,  previous_output, output_task)
+    new_info =  _create_simple_bucket(transaction_token, namespace_token, new_resource, output_task)
 
     return new_info
 
 
 def _remove_simple_bucket(
-    identifier: str, resource: simple_object_store.simple_bucket_model
+    transaction_token: str,  previous_output: Dict, output_task: OutputTask
 ):
+
+    previous_bucket_name = previous_output.get('bucket_name')
+
+    output_task.update(advance=1, comment=f'Deleting Bucket {previous_bucket_name}')
+
     raw_aws_client.run_client_function(
-        "s3", "delete_bucket", {"Bucket": resource.bucket_name}
+        "s3", "delete_bucket", {"Bucket": previous_bucket_name}
     )
 
-
-def handle_simple_bucket_deployment(resource_diff: Resource_Difference) -> bool:
-    try:
-        if resource_diff.action_type == Resource_Change_Type.CREATE:
-            return _create_simple_bucket(
-                resource_diff.new_resource.hash, resource_diff.new_resource
-            )
-        elif resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY:
-            return _update_simple_bucket(
-                resource_diff.previous_resource, resource_diff.new_resource
-            )
-        elif resource_diff.action_type == Resource_Change_Type.DELETE:
-            return _remove_simple_bucket(
-                resource_diff.previous_resource.hash, resource_diff.previous_resource
-            )
-
-    except Exception as e:
-        print(e)
-        raise Exception("COULD NOT DEPLOY")
+    output_task.update(advance=1, comment=f'Deleted Bucket {previous_bucket_name}')
 
 
 def add_eventsource(
@@ -95,7 +95,6 @@ def add_eventsource(
     if not current_events:
         current_events = {}
 
-    log.debug(f"CURRENT BUCKET EVENTS {current_events}")
 
     event_id = hasher.hash_list(
         [handler_type.value, handler_arn, hasher.hash_list(events)]
@@ -146,7 +145,6 @@ def remove_eventsource(bucket_name: str, bucket_event_id: str) -> bool:
     if not current_events:
         raise Exception
 
-    log.debug(f"CURRENT BUCKET EVENTS {current_events}")
 
     keys = [
         "TopicConfigurations",
@@ -164,7 +162,6 @@ def remove_eventsource(bucket_name: str, bucket_event_id: str) -> bool:
 
         for val in current_events.get(key):
             if val.get("Id") == bucket_event_id:
-                log.debug(f"Found event in bucket event {key} {val}; {bucket_event_id}")
                 remove_val = val
                 remove_key = key
                 found_val = True
@@ -175,7 +172,6 @@ def remove_eventsource(bucket_name: str, bucket_event_id: str) -> bool:
 
     current_events.get(remove_key).remove(remove_val)
 
-    log.debug(f"New configuration after removal {current_events}")
     _write_bucket_event_configuration(bucket_name, current_events)
 
     return True
@@ -205,3 +201,44 @@ def _write_bucket_event_configuration(bucket_name: str, new_config: Dict) -> boo
     )
 
     return True
+
+
+
+def handle_simple_bucket_deployment( 
+        transaction_token: str, 
+        namespace_token: str, 
+        resource_diff: Resource_Difference, 
+        previous_output: Dict[simple_object_store.simple_bucket_output, Any],
+        output_task: OutputTask
+    ) -> Dict:
+    try:
+        if resource_diff.action_type == Resource_Change_Type.CREATE:
+            return _create_simple_bucket(
+                transaction_token,
+                namespace_token,
+                resource_diff.new_resource,
+                output_task
+            )
+            
+        elif resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY:
+            return _update_simple_bucket(
+                transaction_token,
+                namespace_token,
+                simple_object_store.simple_bucket_model(resource_diff.previous_resource.dict()),
+                resource_diff.new_resource,
+                previous_output,
+                output_task
+            )
+
+        elif resource_diff.action_type == Resource_Change_Type.DELETE:
+            _remove_simple_bucket(
+               transaction_token,
+               previous_output,
+               output_task
+            )
+
+            return {}
+
+    except Exception as e:
+        print(e)
+        raise Exception("COULD NOT DEPLOY")

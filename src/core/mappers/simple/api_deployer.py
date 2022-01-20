@@ -2,19 +2,20 @@ from os import name
 from typing import Any, Dict, FrozenSet, List
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
-from core.constructs.workspace import Workspace
 from core.output.output_manager import OutputTask
-from core.utils import logger
 
 from core.resources.simple import api as simple_api
-from core.resources.simple.xlambda import Event as lambda_event
 
 from .. import aws_client 
 
-log = logger.get_cdev_logger(__name__)
 
 
-def _create_simple_api(transaction_token: str, namespace_token: str, resource: simple_api.simple_api_model, output_task: OutputTask) -> Dict:
+def _create_simple_api(
+        transaction_token: str, 
+        namespace_token: str, 
+        resource: simple_api.simple_api_model, 
+        output_task: OutputTask
+    ) -> Dict:
     """
     Create an API on AWS.
 
@@ -80,8 +81,6 @@ def _create_simple_api(transaction_token: str, namespace_token: str, resource: s
     except Exception as e:
         output_task.print_error(e)
         raise e 
-
-    log.debug(rv2)
 
     info["endpoint"] = f"{rv.get('ApiEndpoint')}/{rv2.get('StageName')}"
     api_id = info.get("cloud_id")
@@ -263,9 +262,6 @@ def _update_simple_api(
     routes_to_be_deleted: FrozenSet[simple_api.route_event_model] = previous_resource.routes.difference(new_resource.routes)
     # Create any route that is in the new routes but not in previous routes
     routes_to_be_created: FrozenSet[simple_api.route_event_model] = new_resource.routes.difference(previous_resource.routes)
-     
-    log.debug(f"Routes to be created -> {routes_to_be_created}")
-    log.debug(f"Routes to be deleted -> {routes_to_be_deleted}")
 
     new_output_info = {}
     for route in routes_to_be_created:
@@ -286,11 +282,10 @@ def _update_simple_api(
         dict_key = f'{route.path}:{route.verb}'
         new_output_info[dict_key] = route_info
 
-        log.debug(f"Created Route -> {route}")
 
-    print(previous_output)
+    
     previous_route_info: Dict[str,str] = previous_output.get('endpoints')
-    print(previous_route_info)
+    
     for route in routes_to_be_deleted:
         dict_key = (
             f'{route.path}:{route.verb}'
@@ -307,7 +302,6 @@ def _update_simple_api(
 
         previous_route_info.pop(dict_key)
 
-        log.debug(f"Delete Route -> {dict_key}")
 
     previous_route_info.update(new_output_info)
     previous_output['endpoints'] = previous_route_info
