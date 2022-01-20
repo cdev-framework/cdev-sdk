@@ -1,9 +1,7 @@
-from os import name
-from typing import Any, Dict, FrozenSet, List
+from typing import Any, Dict, FrozenSet
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
 from core.output.output_manager import OutputTask
-
 from core.resources.simple import api as simple_api
 
 from .. import aws_client 
