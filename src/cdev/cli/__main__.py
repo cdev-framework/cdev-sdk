@@ -1,5 +1,6 @@
 import argparse
 from ast import parse
+import traceback
 import os
 from typing import Callable, Any
 
@@ -89,6 +90,8 @@ def wrap_load_project(command: Callable) -> Callable[[Any], Any]:
         except Exception as e:
             print(f"Could not load the project to call {command}")
             print(e)
+            print(traceback.format_exc())
+
             return
 
         command(args)
@@ -103,6 +106,7 @@ def wrap_load_and_initialize_project(command: Callable) -> Callable[[Any], Any]:
         except Exception as e:
             print(f"Could not load and initialize the project to call {command}")
             print(e)
+            print(traceback.format_exc())
             return
 
         command(args)

@@ -1,17 +1,9 @@
 from enum import Enum
-from typing_extensions import Literal
-from typing import Dict, FrozenSet, List, Mapping, Optional, Union
-from types import MappingProxyType
-
-from pydantic.main import BaseModel
-from pydantic import FilePath
-from pydantic.types import DirectoryPath
-
-from sortedcontainers.sorteddict import SortedDict
-
 import importlib
 import inspect
 import os
+from pydantic import FilePath
+from typing import FrozenSet, List, Optional, Union
 
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output
 from core.utils import hasher
@@ -30,6 +22,8 @@ LAMBDA_FUNCTION_RUUID = "cdev::simple::lambda_function"
 class deployed_layer_model(ResourceModel):
     arn: str
 
+class layer_output(str, Enum):
+    arn = "arn"
 
 class DeployerLayer():
     pass
@@ -50,7 +44,7 @@ class DependencyLayer(Resource):
         super().__init__(name)
         self.artifact_path = artifact_path
 
-    def from_output(self, key: simple_lambda_layer_output) -> Cloud_Output:
+    def from_output(self, key: layer_output) -> Cloud_Output:
         return super().from_output(key)
 
 
@@ -61,9 +55,6 @@ class DependencyLayer(Resource):
             hash='1',
             artifact_path=self.artifact_path
         )
-
-
-
 
 
 ################
@@ -110,6 +101,7 @@ class SimpleFunction(Resource):
         configuration: FunctionConfiguration = {},
         function_permissions: List[Union[Permission, PermissionArn]] = [],
         includes: List[str] = [],
+        external_dependencies: List[Union[deployed_layer_model, dependency_layer_model]]=[]
     ) -> None:
         super().__init__(cdev_name)
 
@@ -134,8 +126,7 @@ class SimpleFunction(Resource):
         self.config_hash = "1"
         self.events_hash = hasher.hash_list([x.get_hash() for x in events])
 
-        self.external_dependencies_hash = None
-        self.external_dependencies = None
+        self.external_dependencies = external_dependencies
 
         self.full_hash = hasher.hash_list(
             [
@@ -166,7 +157,7 @@ class SimpleFunction(Resource):
         return self.includes
 
 
-def simple_lambda_function_annotation(
+def simple_function_annotation(
     name: str,
     function_name: str = "",
     events: List[Event] = [],
@@ -196,10 +187,10 @@ def simple_lambda_function_annotation(
                     mod_name = item[1]
 
 
-        final_config = FunctionConfiguration(
-            handler_name=handler_name,
+        final_config = simple_function_configuration_model(
+            handler=handler_name,
             description=description,
-            environment={"Variables": environment} if environment else None
+            environment_variables= frozendict(environment) if environment else frozendict({})
         )
 
         mod = importlib.import_module(mod_name)

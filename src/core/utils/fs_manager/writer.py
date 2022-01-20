@@ -75,7 +75,6 @@ def create_full_deployment_package(
         available_layers (int): The number of layers available to use
 
     Returns:
-        src_code_hash (str): The hash of the source code archive
         handler_archive_location (FilePath): The location of the created archive for the handler
         base_handler_path (str): The path to the file as a python package path
         external_dependencies (LambdaLayerArtifact): List of layers that are needed for this function
@@ -147,9 +146,9 @@ def create_full_deployment_package(
             handler_files.extend(local_dependencies_intermediate_locations)
 
     # Create the actual handler archive by zipping the needed files
-    src_code_hash = _make_intermediate_handler_zip(zip_archive_location, handler_files)
+    _make_intermediate_handler_zip(zip_archive_location, handler_files)
 
-    return (src_code_hash, zip_archive_location, base_handler_path, dependencies_info)
+    return (zip_archive_location, base_handler_path, dependencies_info)
 
 
 def _create_package_dependencies_info(

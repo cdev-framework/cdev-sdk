@@ -1,5 +1,6 @@
 import importlib
 import os
+from pydoc import describe
 from pydantic.main import BaseModel
 from pydantic.types import FilePath
 from sortedcontainers.sortedlist import SortedKeyList
@@ -13,13 +14,14 @@ from core.constructs.resource import (
     Resource_Reference,
 )
 
-#from core.resources.simple.xlambda import (
-#    DependencyLayer,
-#    simple_lambda,
-#    simple_aws_lambda_function_model,
-#)
+from core.resources.simple.xlambda import (
+    DependencyLayer,
+    SimpleFunction,
+    simple_function_configuration_model,
+    simple_function_model,
+)
 
-from core.utils import hasher, paths, logger
+from core.utils import hasher, module_loader, paths, logger
 
 from serverless_parser import parser as serverless_parser
 
@@ -94,199 +96,117 @@ def _find_resources_information_from_file(
 ) -> Tuple[List[ResourceModel], List[ResourceReferenceModel]]:
     # Input: filepath
     if not os.path.isfile(fp):
-        print("OH NO")
         return
 
     mod_name = _get_module_name_from_path(fp)
 
-    print("-------")
-    if sys.modules.get(mod_name):
-        # print(f"already loaded {mod_name}")
-        importlib.reload(sys.modules.get(mod_name))
-
+   
     # When the python file is imported and executed all the Cdev resources are created
-    mod = importlib.import_module(mod_name)
-    print("-------")
+    mod = module_loader.import_module(mod_name)
 
     resource_rv = []
     reference_rv = []
 
-    functions_to_parse = []
-    #function_name_to_resource_model: Dict[str, simple_aws_lambda_function_model] = {}
+    functions_to_parse: List[str] = []
+    function_name_to_info: Dict[str, simple_function_model] = {}
 
     for i in dir(mod):
         obj = getattr(mod, i)
         if isinstance(obj, Resource):
             # Find all the Resources in the module and render them
 
-            log.info(f"FOUND {obj} as Resource in {mod}")
-
-            #if isinstance(obj, simple_lambda):
-            #    log.info(f"FOUND FUNCTION TO PARSE {obj}")
-            #    pre_parsed_info = obj.render()
-#
-            #    functions_to_parse.append(pre_parsed_info.configuration.Handler)
-            #    function_name_to_resource_model[
-            #        pre_parsed_info.configuration.Handler
-            #    ] = pre_parsed_info
-            #    log.info(f"PREPROCESS {pre_parsed_info}")
-#
-            #else:
-            resource_rv.append(obj.render())
+            if isinstance(obj, SimpleFunction):
+                preparsed_info = obj.render()
+                functions_to_parse.append(preparsed_info.configuration.handler)
+                function_name_to_info[preparsed_info.configuration.handler] = preparsed_info
+                
+            else:
+                resource_rv.append(obj.render())
 
         elif isinstance(obj, Resource_Reference):
             reference_rv.append(obj.render())
 
     log.info(f"FUNCTIONS TO PARSE: {functions_to_parse}")
-    #if functions_to_parse:
-    #    parsed_function_info = _create_serverless_function_resources(
-    #        fp, functions_to_parse
-    #    )
-    #    log.info(parsed_function_info)
-#
-    #    for parsed_function_name in parsed_function_info:
-    #        if not parsed_function_name in function_name_to_resource_model:
-    #            log.error("ERROR UNKNOWN FUNCTION NAME RETURNED")
-    #            raise Exception
-#
-    #        tmp = function_name_to_resource_model.get(parsed_function_name)
-    #        tmp.src_code_hash = parsed_function_info.get(parsed_function_name).get(
-    #            "src_code_hash"
-    #        )
-#
-    #        if parsed_function_info.get(
-    #            parsed_function_name
-    #        ).external_dependencies_info:
-    #            tmp.external_dependencies = parsed_function_info.get(
-    #                parsed_function_name
-    #            ).external_dependencies_info
-    #            tmp.external_dependencies_hash = [
-    #                x.render().hash
-    #                for x in parsed_function_info.get(
-    #                    parsed_function_name
-    #                ).external_dependencies_info
-    #            ]
-#
-    #            for dependency in tmp.external_dependencies:
-    #                reference_rv.append(dependency.render())
-#
-    #        else:
-    #            tmp.external_dependencies = None
-    #            tmp.external_dependencies_hash = None
-#
-    #        tmp.filepath = parsed_function_info.get(parsed_function_name).get(
-    #            "file_path"
-    #        )
-    #        tmp.configuration.Handler = parsed_function_info.get(
-    #            parsed_function_name
-    #        ).get("Handler")
-#
-    #        tmp.config_hash = tmp.configuration.get_cdev_hash()
-#
-    #        if tmp.external_dependencies_hash:
-    #            tmp.hash = hasher.hash_list(
-    #                [
-    #                    tmp.src_code_hash,
-    #                    tmp.config_hash,
-    #                    tmp.events_hash,
-    #                    tmp.permissions_hash,
-    #                    tmp.external_dependencies_hash,
-    #                ]
-    #            )
-    #        else:
-    #            tmp.hash = hasher.hash_list(
-    #                [
-    #                    tmp.src_code_hash,
-    #                    tmp.config_hash,
-    #                    tmp.events_hash,
-    #                    tmp.permissions_hash,
-    #                ]
-    #            )
-#
-    #        log.info(f"updated to {tmp}")
-    #        resource_rv.append(tmp)
-#
+    if functions_to_parse:
+        parsed_function_info = _parse_serverless_functions(
+            fp, 
+            functions_to_parse,
+            handler_name_to_info=function_name_to_info
+        )
+
+
+        resource_rv.extend(parsed_function_info)
+        
     return resource_rv, reference_rv
 
 
-#class parsed_serverless_function_info(BaseModel):
-#    src_code_hash: str
-#    archivepath: FilePath
-#    handler: str
-#    external_dependencies_info: List[DependencyLayer]
-#
-#    def __init__(
-#        __pydantic_self__,
-#        src_code_hash: str,
-#        archivepath: FilePath,
-#        handler: str,
-#        external_dependencies_info: List[DependencyLayer],
-#    ) -> None:
-#        super().__init__(
-#            **{
-#                "src_code_hash": src_code_hash,
-#                "archivepath": archivepath,
-#                "handler": handler,
-#                "external_dependencies_info": external_dependencies_info,
-#            }
-#        )
 
+def _parse_serverless_functions(
+    filepath: FilePath,
+    functions_names_to_parse: List[str],
+    handler_name_to_info: Dict[str, simple_function_model],
+    manual_includes: Dict = {},
+    global_includes: List = [],
+) -> List[simple_function_model]:
 
-#def _create_serverless_function_resources(
-#    filepath: FilePath,
-#    functions_names_to_parse: List[str],
-#    manual_includes: Dict = {},
-#    global_includes: List = [],
-#) -> Dict[str, parsed_serverless_function_info]:
-#
-#    include_functions_list = functions_names_to_parse
-#
-#    parsed_file_info = serverless_parser.parse_functions_from_file(
-#        filepath, include_functions=include_functions_list, remove_top_annotation=True
-#    )
-#
-#    rv = {}
-#    for parsed_function in parsed_file_info.parsed_functions:
-#        final_info = {}
-#
-#        cleaned_name = _clean_function_name(parsed_function.name)
-#        intermediate_path = fs_utils.get_parsed_path(filepath, cleaned_name)
-#
-#        print(f"imported modules ->>> {parsed_function.imported_packages}")
-#        needed_module_information = cdev_package_manager.get_top_level_module_info(
-#            parsed_function.imported_packages, filepath
-#        )
-#        print(f"Need modules infos ->>> { needed_module_information}")
-#
-#        fs_utils.print_dependency_tree(
-#            parsed_function.name, [v for k, v in needed_module_information.items()]
-#        )
-#
-#        (
-#            src_code_hash,
-#            archive_path,
-#            base_handler_path,
-#            dependencies_info,
-#        ) = writer.create_full_deployment_package(
-#            filepath,
-#            parsed_function.get_line_numbers_serializeable(),
-#            intermediate_path,
-#            needed_module_information,
-#        )
-#
-#        handler_path = base_handler_path + "." + parsed_function.name
-#
-#        final_info = parsed_serverless_function_info(
-#            src_code_hash=src_code_hash,
-#            archivepath=paths.get_relative_to_project_path(archive_path),
-#            handler=handler_path,
-#            external_dependencies_info=dependencies_info,
-#        )
-#
-#        rv[cleaned_name] = final_info
-#
-#    return rv
-#
+    include_functions_list = functions_names_to_parse
+
+    parsed_file_info = serverless_parser.parse_functions_from_file(
+        filepath, include_functions=include_functions_list, remove_top_annotation=True
+    )
+
+    rv = []
+    for parsed_function in parsed_file_info.parsed_functions:
+
+        cleaned_name = _clean_function_name(parsed_function.name)
+        intermediate_path = fs_utils.get_parsed_path(filepath, cleaned_name)
+
+        #print(f"imported modules ->>> {parsed_function.imported_packages}")
+        needed_module_information = cdev_package_manager.get_top_level_module_info(
+            parsed_function.imported_packages, filepath
+        )
+        #print(f"Need modules infos ->>> { needed_module_information}")
+
+        #fs_utils.print_dependency_tree(
+        #    parsed_function.name, [v for k, v in needed_module_information.items()]
+        #)
+
+        (
+            archive_path,
+            base_handler_path,
+            dependencies_info,
+        ) = writer.create_full_deployment_package(
+            filepath,
+            parsed_function.get_line_numbers_serializeable(),
+            intermediate_path,
+            needed_module_information,
+        )
+
+        handler_path = base_handler_path + "." + parsed_function.name
+
+        previous_info = handler_name_to_info.get(parsed_function.name)
+
+        new_configuration = simple_function_configuration_model(
+            handler=handler_path,
+            description=previous_info.configuration.description,
+            environment_variables=previous_info.configuration.environment_variables
+        )
+
+        new_function = SimpleFunction(
+            cdev_name=previous_info.name,
+            filepath=paths.get_relative_to_project_path(archive_path),
+            function_name=previous_info.function_name,
+            events=previous_info.events,
+            configuration=new_configuration,
+            function_permissions=previous_info.permissions,
+            dependencies_info=dependencies_info
+        )
+
+    
+        rv.append(new_function.render())
+
+    return rv
+
 
 def _clean_function_name(potential_name: str) -> str:
     return potential_name.replace(" ", "_")
