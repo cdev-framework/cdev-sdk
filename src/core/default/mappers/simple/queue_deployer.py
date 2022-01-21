@@ -67,7 +67,7 @@ def _update_simple_queue(
     new_resource: queue.simple_queue_model,
     previous_output: Dict,
     output_task: OutputTask
-) -> bool:
+) -> Dict:
     _remove_simple_queue(transaction_token, previous_output, output_task)
     new_info = _create_simple_queue(transaction_token, namespace_token, new_resource, output_task)
     return new_info
@@ -75,7 +75,7 @@ def _update_simple_queue(
 
 def _remove_simple_queue(
     transaction_token: str, previous_output: Dict, output_task: OutputTask
-) -> bool:
+):
     queue_url = previous_output.get("queue_url")
 
     output_task.update(comment=f'Deleting Queue')

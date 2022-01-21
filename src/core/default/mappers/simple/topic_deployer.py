@@ -1,106 +1,117 @@
-from enum import Enum
-from types import new_class
-from typing import Dict, List
+from typing import Any, Dict, List
+from uuid import uuid4
 
-from botocore.endpoint import Endpoint
+from core.constructs.resource import Resource_Difference, Resource_Change_Type
+from core.resources.simple import topic 
+from core.output.output_manager import OutputTask
+from core.utils import hasher
 
-from cdev.models import Resource_State_Difference, Action_Type
-from cdev.utils import hasher, logger
-from cdev.resources.simple import topic as simple_topic
-from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
-from ..aws import aws_client as raw_aws_client
-from cdev.output import print_deployment_step
-
-log = logger.get_cdev_logger(__name__)
-RUUID = simple_topic.RUUID
-
+from .. import aws_client
 
 def _create_simple_topic(
-    identifier: str, resource: simple_topic.simple_topic_model
-) -> bool:
+    transaction_token: str, 
+    namespace_token: str, 
+    resource:  topic.simple_topic_model,
+    output_task: OutputTask
+) -> Dict:
+
     attributes = {}
+
+    full_namespace_suffix = hasher.hash_list([namespace_token, str(uuid4())])
+
+    topic_name = f"cdev-topic-{full_namespace_suffix}.fifo" if resource.fifo else f"cdev-topic-{full_namespace_suffix}"
 
     if resource.fifo:
         attributes.update({"FifoTopic": str(resource.fifo)})
 
-    rv = raw_aws_client.run_client_function(
-        "sns", "create_topic", {"Name": resource.topic_name, "Attributes": attributes}
-    )
-    print_deployment_step("CREATE", f"Created topic {resource.name}")
+    output_task.update(comment=f'Creating Topic {topic_name}')
 
+    rv = aws_client.run_client_function(
+        "sns", "create_topic", {"Name": topic_name, "Attributes": attributes}
+    )
+    
     output_info = {
-        "topic_name": resource.topic_name,
+        "topic_name": topic_name,
         "cdev_name": resource.name,
-        "ruuid": RUUID,
-        "arn": rv.get("TopicArn"),
         "cloud_id": rv.get("TopicArn"),
     }
 
-    cdev_cloud_mapper.add_identifier(identifier),
-    cdev_cloud_mapper.update_output_value(identifier, output_info)
-    return True
+   
+    return output_info
 
 
 def _update_simple_topic(
-    previous_resource: simple_topic.simple_topic_model,
-    new_resource: simple_topic.simple_topic_model,
-) -> bool:
-    _remove_simple_topic(previous_resource.hash, previous_resource)
-    _create_simple_topic(new_resource.hash, new_resource)
-    return True
+    transaction_token: str, 
+    namespace_token: str,
+    previous_resource: topic.simple_topic_model,
+    new_resource: topic.simple_topic_model,
+    previous_output: Dict,
+    output_task: OutputTask
+) -> Dict:
+    _remove_simple_topic(transaction_token, previous_output, output_task)
+    new_rv = _create_simple_topic(transaction_token, namespace_token, new_resource, output_task)
+    return new_rv
 
 
 def _remove_simple_topic(
-    identifier: str, resource: simple_topic.simple_topic_model
-) -> bool:
-    topic_arn = cdev_cloud_mapper.get_output_value_by_hash(identifier, "arn")
+    transaction_token: str, previous_output: Dict, output_task: OutputTask
+):
+    topic_arn = previous_output.get("cloud_id")
 
-    raw_aws_client.run_client_function("sns", "delete_topic", {"TopicArn": topic_arn})
-
-    print_deployment_step("DELETE", f"Removed topic {resource.name}")
-
-    cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
-    cdev_cloud_mapper.remove_identifier(identifier)
-    log.debug(f"Delete information in resource and cloud state")
-    return True
+    aws_client.run_client_function("sns", "delete_topic", {"TopicArn": topic_arn})
 
 
-def handle_simple_topic_deployment(resource_diff: Resource_State_Difference) -> bool:
-    try:
-        if resource_diff.action_type == Action_Type.CREATE:
-            return _create_simple_topic(
-                resource_diff.new_resource.hash, resource_diff.new_resource
-            )
-        elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
-            return _update_simple_topic(
-                resource_diff.previous_resource, resource_diff.new_resource
-            )
-        elif resource_diff.action_type == Action_Type.DELETE:
-            return _remove_simple_topic(
-                resource_diff.previous_resource.hash, resource_diff.previous_resource
-            )
-
-    except Exception as e:
-        print(e)
-        raise Exception("COULD NOT DEPLOY")
-
-
-def add_subscriber(topic_arn: str, protocol: str, endpoint: str) -> str:
-    rv = raw_aws_client.run_client_function(
-        "sns",
-        "subscribe",
-        {
-            "TopicArn": topic_arn,
-            "Protocol": protocol,
-            "Endpoint": endpoint,
-            "ReturnSubscriptionArn": True,
-        },
-    )
-
-    return rv.get("SubscriptionArn")
+#def add_subscriber(topic_arn: str, protocol: str, endpoint: str) -> str:
+#    rv = raw_aws_client.run_client_function(
+#        "sns",
+#        "subscribe",
+#        {
+#            "TopicArn": topic_arn,
+#            "Protocol": protocol,
+#            "Endpoint": endpoint,
+#            "ReturnSubscriptionArn": True,
+#        },
+#    )
+#
+#    return rv.get("SubscriptionArn")
+#
+#
+#def remove_subscriber(subscription_arn: str):
+#    rv = raw_aws_client.run_client_function(
+#        "sns", "unsubscribe", {"SubscriptionArn": subscription_arn}
+#    )
 
 
-def remove_subscriber(subscription_arn: str):
-    rv = raw_aws_client.run_client_function(
-        "sns", "unsubscribe", {"SubscriptionArn": subscription_arn}
-    )
+def handle_simple_topic_deployment(
+        transaction_token: str, 
+        namespace_token: str, 
+        resource_diff: Resource_Difference, 
+        previous_output: Dict[topic.simple_topic_output, Any],
+        output_task: OutputTask
+    ) -> Dict:
+    if resource_diff.action_type == Resource_Change_Type.CREATE:
+        return _create_simple_topic(
+            transaction_token,
+            namespace_token,
+            resource_diff.new_resource,
+            output_task
+        )
+        
+    elif resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY:
+        return _update_simple_topic(
+            transaction_token,
+            namespace_token,
+            topic.simple_topic_model(**resource_diff.previous_resource.dict()),
+            resource_diff.new_resource,
+            previous_output,
+            output_task
+        )
+
+    elif resource_diff.action_type == Resource_Change_Type.DELETE:
+        _remove_simple_topic(
+            transaction_token,
+            previous_output,
+            output_task
+        )
+
+        return {}

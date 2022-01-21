@@ -18,13 +18,13 @@ class TopicPermissions:
                 "sns:GetTopicAttributes",
                 "sns:Subscribe",
             ],
-            resource=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{self.RUUID}::{resource_name}",
             effect="Allow",
         )
 
         self.PUBLISH = Permission(
             actions=["sns:GetTopicAttributes", "sns:Publish"],
-            resource=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{self.RUUID}::{resource_name}",
             effect="Allow",
         )
 

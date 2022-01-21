@@ -16,7 +16,8 @@ from .mappers.simple import (
     dynamodb_deployer,
     queue_deployer,
     relational_db_deployer,
-    static_site_deployer
+    static_site_deployer,
+    topic_deployer
 )
 
 class DefaultMapper(CloudMapper):   
@@ -32,7 +33,8 @@ class DefaultMapper(CloudMapper):
             "cdev::simple::table",
             "cdev::simple::queue",
             "cdev::simple::relationaldb",
-            "cdev::simple::staticsite"
+            "cdev::simple::staticsite",
+            "cdev::simple::topic"
         ]
 
     def deploy_resource(self, transaction_token: str, namespace_token: str, resource_diff: Resource_Difference, previous_output: Dict, output_task: OutputTask) -> Dict:
@@ -57,6 +59,7 @@ RESOURCE_TO_HANDLER_FUNCTION = {
     "cdev::simple::table": dynamodb_deployer.handle_simple_table_deployment,
     "cdev::simple::queue": queue_deployer.handle_simple_queue_deployment,
     "cdev::simple::relationaldb": relational_db_deployer.handle_simple_relational_db_deployment,
-    "cdev::simple::staticsite": static_site_deployer.handle_simple_static_site_deployment
+    "cdev::simple::staticsite": static_site_deployer.handle_simple_static_site_deployment,
+    "cdev::simple::topic": topic_deployer.handle_simple_topic_deployment
     
 }
