@@ -5,14 +5,24 @@ from core.utils.types import ImmutableModel
 
 class permission_model(ImmutableModel):
     actions: List[str]
-    resource: str
+    cloud_id: str
     effect: str
     resource_suffix: Optional[str]
+
+    class Config:
+        use_enum_values = True
+        # Beta Feature but should be fine since this is simple data 
+        frozen = True
 
 
 class permission_arn_model(ImmutableModel):
     arn: str
 
+
+    class Config:
+        use_enum_values = True
+        # Beta Feature but should be fine since this is simple data 
+        frozen = True
 
 
 class Permission():
@@ -23,26 +33,26 @@ class Permission():
     def __init__(
         self,
         actions: List[str],
-        resource: str,
+        cloud_id: str,
         effect: str,
         resource_suffix: Optional[str] = "",
     ):
         """
         Arguments:
             actions (List[str]): List of the actions that this policy will include
-            resource (str): The Cdev resource id that this policy is for. Note this is not the name in the cloud. A lookup will occur to map the cdev name to aws resource
+            cloud_id (str): 
             effect ('Allow', 'Deny'): Allow or Deny the permission
             resource_suffix (Optional[str]): Some permissions need suffixes added to the looked up aws resource (i.e. dynamodb streams )
         """
         self.actions = actions,
-        self.resource = resource,
+        self.cloud_id = cloud_id,
         self.effect = effect,
         self.resource_suffix = resource_suffix,
             
     def render(self) -> permission_model:
         return permission_model(
             actions=self.actions,
-            resource=self.resource,
+            cloud_id=self.cloud_id,
             effect=self.effect,
             resource_suffix=self.resource_suffix
         )

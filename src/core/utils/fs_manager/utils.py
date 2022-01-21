@@ -63,9 +63,11 @@ def _compress_lines(original_lines):
 
 
 def get_parsed_path(original_path, function_name, prefix=None):
-    split_path = cdev_paths.get_relative_to_project_path(original_path).split("/")
+    split_path = cdev_paths.get_relative_to_workspace_path(original_path).split("/")
+    print(split_path)
     # the last item in the path is .py file name... change the  .py to _py so it works as a dir
     final_file_name = split_path[-1].split(".")[0] + "_" + function_name + ".py"
+    print(final_file_name)
     try:
         split_path.remove(".")
         split_path.remove("..")
@@ -76,6 +78,7 @@ def get_parsed_path(original_path, function_name, prefix=None):
         split_path.insert(0, prefix)
 
     final_file_dir = cdev_paths.create_path(INTERMEDIATE_FOLDER, split_path[:-1])
+    print(final_file_dir)
 
     return os.path.join(final_file_dir, final_file_name)
 

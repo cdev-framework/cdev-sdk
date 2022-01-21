@@ -1,24 +1,22 @@
-from typing import List, Optional, Dict, Tuple, Set
-from ast import parse
+import heapq
+import json
+import math
 import os
-from pydantic.main import BaseModel
-
 from pydantic.types import DirectoryPath, FilePath
-from sortedcontainers.sorteddict import SortedDict
-
-from . import utils as fs_utils
-from .utils import PackageTypes, ModulePackagingInfo, ExternalDependencyWriteInfo
-
+import shutil
+from typing import List, Dict, Tuple, Set
 from zipfile import ZipFile
+
+
 from core.settings import SETTINGS as cdev_settings
 from core.utils import paths as cdev_paths, hasher as cdev_hasher
 from core.resources.simple.xlambda import  DependencyLayer
-import json
-import shutil
-import heapq
 
+
+from . import utils as fs_utils
+from .utils import PackageTypes, ModulePackagingInfo, ExternalDependencyWriteInfo
 from .external_dependencies_index import weighted_dependency_graph, compute_index
-import math
+
 
 INTERMEDIATE_FOLDER = cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION")
 EXCLUDE_SUBDIRS = {"__pycache__"}
@@ -76,6 +74,7 @@ def create_full_deployment_package(
 
     Returns:
         handler_archive_location (FilePath): The location of the created archive for the handler
+        handler_archive_hash (str): Identifying hash of the handler archive
         base_handler_path (str): The path to the file as a python package path
         external_dependencies (LambdaLayerArtifact): List of layers that are needed for this function
     """
@@ -146,9 +145,9 @@ def create_full_deployment_package(
             handler_files.extend(local_dependencies_intermediate_locations)
 
     # Create the actual handler archive by zipping the needed files
-    _make_intermediate_handler_zip(zip_archive_location, handler_files)
+    archive_hash = _make_intermediate_handler_zip(zip_archive_location, handler_files)
 
-    return (zip_archive_location, base_handler_path, dependencies_info)
+    return (zip_archive_location, archive_hash, base_handler_path, dependencies_info)
 
 
 def _create_package_dependencies_info(
@@ -353,7 +352,7 @@ def _find_packaging_files_handler(original_path: FilePath) -> List[FilePath]:
         needed_files (List[Filepath]): The list of files that need to be included with the handler
     """
     path_from_project_dir = os.path.dirname(
-        cdev_paths.get_relative_to_project_path(original_path)
+        cdev_paths.get_relative_to_workspace_path(original_path)
     ).split("/")
     intermediate_location = cdev_paths.get_project_path()
     rv = []
@@ -366,7 +365,7 @@ def _find_packaging_files_handler(original_path: FilePath) -> List[FilePath]:
 
         file_loc = os.path.join(intermediate_location, "__init__.py")
         intermediate_file_location = cdev_paths.get_full_path_from_intermediate_folder(
-            cdev_paths.get_relative_to_project_path(file_loc)
+            cdev_paths.get_relative_to_workspace_path(file_loc)
         )
 
         if os.path.isfile(file_loc):
@@ -493,6 +492,7 @@ def _make_intermediate_handler_zip(
         archive_hash (str): An identifying hash for the zip
     """
     hashes = []
+    paths.sort()
     with ZipFile(zip_archive_location, "w") as zipfile:
         for path in paths:
             filename = os.path.relpath(path, INTERMEDIATE_FOLDER)

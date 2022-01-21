@@ -1,11 +1,11 @@
-from enum import Enum
-from typing import List
 import docker
-from core.settings import SETTINGS as CDEV_SETTINGS
-import os
 import json
+import os
 from pkg_resources import Distribution
 import re
+from typing import List
+
+from core.settings import SETTINGS as CDEV_SETTINGS
 
 
 from .utils import (

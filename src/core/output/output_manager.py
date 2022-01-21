@@ -204,6 +204,7 @@ class OutputTask():
 
 
     def update(self, *args, total: float = None, completed: float = None, advance: None = None, description: str = None, visible: bool = None, refresh: bool = False, **fields: Any):
+        self._output_manager._console.print(fields.get('comment'))
         self._output_manager._progress.update(self._task_id, *args, total=total, completed=completed, advance=advance, description=description, visible=visible, refresh=refresh, **fields)
 
 

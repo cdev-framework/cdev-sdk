@@ -1,20 +1,14 @@
 import os
-import sys
-import typing
-import pkg_resources
-from zipfile import ZipFile
-from typing import List, Set, Dict, Tuple, Union, Optional
-import re
 from pathlib import Path
+import pkg_resources
 from pydantic.types import DirectoryPath, FilePath
-
+import re
 from sortedcontainers.sorteddict import SortedDict
-
+import sys
+from typing import List, Set, Dict, Tuple, Union, Optional
 
 from core.settings import SETTINGS as CDEV_SETTINGS
-from core.utils import hasher as cdev_hasher
 from serverless_parser import parser as cdev_parser
-
 
 from . import docker_package_builder
 from .utils import PackageTypes, ModulePackagingInfo, lambda_python_environments

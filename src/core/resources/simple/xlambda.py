@@ -3,7 +3,7 @@ import importlib
 import inspect
 import os
 from pydantic import FilePath
-from typing import FrozenSet, List, Optional, Union
+from typing import Callable, FrozenSet, List, Optional, Union
 
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output
 from core.utils import hasher
@@ -14,18 +14,19 @@ from .events import Event, event_model
 
 
 LAMBDA_LAYER_RUUID = "cdev::simple::lambda_layer"
-LAMBDA_FUNCTION_RUUID = "cdev::simple::lambda_function"
+LAMBDA_FUNCTION_RUUID = "cdev::simple::function"
 
 ################
 ##### Dependencies 
 ################
 class deployed_layer_model(ResourceModel):
     arn: str
+    version: str
 
 class layer_output(str, Enum):
     arn = "arn"
 
-class DeployerLayer():
+class DeployedLayer():
     pass
 
 
@@ -82,7 +83,7 @@ class simple_function_model(ResourceModel):
     events: FrozenSet[event_model]
     permissions: FrozenSet[Union[permission_model, permission_arn_model]]
     external_dependencies: FrozenSet[Union[deployed_layer_model, dependency_layer_model]]
-
+    src_code_hash: str
 
     class Config:
         use_enum_values = True
@@ -101,7 +102,8 @@ class SimpleFunction(Resource):
         configuration: FunctionConfiguration = {},
         function_permissions: List[Union[Permission, PermissionArn]] = [],
         includes: List[str] = [],
-        external_dependencies: List[Union[deployed_layer_model, dependency_layer_model]]=[]
+        external_dependencies: List[Union[DeployedLayer, DependencyLayer]]=[],
+        src_code_hash: str = None
     ) -> None:
         super().__init__(cdev_name)
 
@@ -121,7 +123,7 @@ class SimpleFunction(Resource):
         
         self.permissions_hash = "1"
 
-        self.src_code_hash = hasher.hash_file(filepath)
+        self.src_code_hash = src_code_hash if src_code_hash else hasher.hash_file(filepath)
 
         self.config_hash = "1"
 
@@ -152,10 +154,13 @@ class SimpleFunction(Resource):
             events=frozenset([x.render() for x in self.events]),
             permissions=frozenset([x.render() for x in self._permissions]),
             external_dependencies=self.external_dependencies,
+            src_code_hash=self.src_code_hash
         )
 
     def get_includes(self) -> List[str]:
         return self.includes
+
+
 
 
 def simple_function_annotation(
@@ -165,7 +170,7 @@ def simple_function_annotation(
     environment={},
     permissions: List[Union[Permission, PermissionArn]] = [],
     includes: List[str] = [],
-):
+) -> Callable[[Callable], SimpleFunction]:
     """
     This annotation is used to designate that a function should be deployed on the AWS lambda platform. Functions that are designated
     using this annotation should have a signature that takes two inputs (event,context) to conform to the aws lambda handler signature.
@@ -175,7 +180,7 @@ def simple_function_annotation(
 
     """
 
-    def create_function(func) -> SimpleFunction:
+    def create_function(func: Callable) -> SimpleFunction:
 
         if inspect.isfunction(func):
             for item in inspect.getmembers(func):

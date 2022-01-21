@@ -1,10 +1,6 @@
-import importlib
 import os
-from pydoc import describe
-from pydantic.main import BaseModel
 from pydantic.types import FilePath
 from sortedcontainers.sortedlist import SortedKeyList
-import sys
 from typing import Dict, List, Tuple
 
 from core.constructs.resource import (
@@ -15,8 +11,8 @@ from core.constructs.resource import (
 )
 
 from core.resources.simple.xlambda import (
-    DependencyLayer,
     SimpleFunction,
+    simple_function_annotation,
     simple_function_configuration_model,
     simple_function_model,
 )
@@ -76,7 +72,7 @@ def parse_folder(
 
 
 def _get_module_name_from_path(fp):
-    relative_to_project_path = paths.get_relative_to_project_path(fp)
+    relative_to_project_path = paths.get_relative_to_workspace_path(fp)
 
     relative_to_project_path_parts = relative_to_project_path.split("/")
 
@@ -102,7 +98,7 @@ def _find_resources_information_from_file(
 
    
     # When the python file is imported and executed all the Cdev resources are created
-    mod = module_loader.import_module(mod_name)
+    mod = module_loader.import_module(mod_name, denote_output=True)
 
     resource_rv = []
     reference_rv = []
@@ -112,9 +108,11 @@ def _find_resources_information_from_file(
 
     for i in dir(mod):
         obj = getattr(mod, i)
+        #print(obj)
         if isinstance(obj, Resource):
             # Find all the Resources in the module and render them
-
+            #print(obj)
+            print(f"FOUND {obj} as Cdev_Resource in {mod}")
             if isinstance(obj, SimpleFunction):
                 preparsed_info = obj.render()
                 functions_to_parse.append(preparsed_info.configuration.handler)
@@ -126,7 +124,8 @@ def _find_resources_information_from_file(
         elif isinstance(obj, Resource_Reference):
             reference_rv.append(obj.render())
 
-    log.info(f"FUNCTIONS TO PARSE: {functions_to_parse}")
+
+    print(f"FUNCTIONS TO PARSE: {functions_to_parse}")
     if functions_to_parse:
         parsed_function_info = _parse_serverless_functions(
             fp, 
@@ -159,6 +158,7 @@ def _parse_serverless_functions(
     for parsed_function in parsed_file_info.parsed_functions:
 
         cleaned_name = _clean_function_name(parsed_function.name)
+        print(cleaned_name)
         intermediate_path = fs_utils.get_parsed_path(filepath, cleaned_name)
 
         #print(f"imported modules ->>> {parsed_function.imported_packages}")
@@ -172,7 +172,8 @@ def _parse_serverless_functions(
         #)
 
         (
-            archive_path,
+            handler_archive_path,
+            handler_archive_hash,
             base_handler_path,
             dependencies_info,
         ) = writer.create_full_deployment_package(
@@ -194,12 +195,13 @@ def _parse_serverless_functions(
 
         new_function = SimpleFunction(
             cdev_name=previous_info.name,
-            filepath=paths.get_relative_to_project_path(archive_path),
+            filepath=paths.get_full_path_from_workspace_base(handler_archive_path),
             function_name=previous_info.function_name,
             events=previous_info.events,
             configuration=new_configuration,
             function_permissions=previous_info.permissions,
-            dependencies_info=dependencies_info
+            external_dependencies=dependencies_info if dependencies_info else [],
+            src_code_hash=handler_archive_hash
         )
 
     

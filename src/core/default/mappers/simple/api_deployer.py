@@ -316,7 +316,6 @@ def handle_simple_api_deployment(
         ) -> Dict:
     
     if resource_diff.action_type == Resource_Change_Type.CREATE:
-
         return _create_simple_api(
             transaction_token,
             namespace_token,
