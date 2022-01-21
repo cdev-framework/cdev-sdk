@@ -851,10 +851,8 @@ class LocalBackend(Backend):
             component.resources = [
                 x
                 for x in component.resources
-                if x.ruuid == diff.previous_resource.ruuid
-                and x.name == diff.previous_resource.name
-            ]
-
+                if not (x.ruuid == diff.previous_resource.ruuid and x.name == diff.previous_resource.name)
+            ] 
             
             # remove the previous resource's cloud output
             previous_resource_cloud_output_id = self._get_cloud_output_id(
