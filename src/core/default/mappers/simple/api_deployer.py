@@ -110,73 +110,6 @@ def _create_simple_api(
     return info
 
 
-def _remove_simple_api(transaction_token: str,  previous_output: Dict, output_task: OutputTask):
-    """
-    Delete an API from AWS.
-
-    Args:
-        transaction_token (str): Transaction token to use to identify this action over a resource.
-        previous_output (Dict): Cloud output of the resource. Used to determine what API to delete on AWS.
-        output_task (OutputTask): Output Task to send any progress information.
-
-    Raises:
-        e: [description]
-    """
-
-    api_id = previous_output.get("cloud_id")
-
-    output_task.update(advance=1, comment=f'Deleting API')
-
-    try:
-        aws_client.run_client_function("apigatewayv2", "delete_api", {"ApiId": api_id})
-    except Exception as e:
-        output_task.print_error(e)
-        raise e 
-
-    
-
-
-
-def _create_route(api_id: str, route: simple_api.route_event_model) -> str:
-    """
-    Helper Function for creating routes on an API. Note that any error raised by the aws client will not be caught by this function and should
-    be handled by the caller of this function.
-
-    Args:
-        api_id (str): Api ID of the api in AWS.
-        route (simple_api.route_event_model): Information about the route to create.
-
-    Returns:
-        str: Route ID of the create route.
-    """
-    _route_args = {
-        "ApiId": api_id,
-        "RouteKey": f"{route.verb} {route.path}",
-    }
-    
-
-    rv = aws_client.run_client_function('apigatewayv2', 'create_route', _route_args)
-    
-
-    return rv.get("RouteId")
-
-
-def _delete_route(api_id: str, route_id: str):
-    """
-    Helper Function for deleting routes on an API. Note that any error raised by the aws client will not be caught by this function and should
-    be handled by the caller of this function.
-
-    Args:
-        api_id (str): Api ID of the api in AWS.
-        route_id (lambda_event): Route ID of the route in AWS.
-    """
-
-    aws_client.run_client_function(
-        "apigatewayv2", "delete_route", {"ApiId": api_id, "RouteId": route_id}
-    )
-
-
-
 def _update_simple_api(
     transaction_token: str, 
     namespace_token: str,
@@ -184,7 +117,7 @@ def _update_simple_api(
     new_resource: simple_api.simple_api_model,
     previous_output: Dict,
     output_task: OutputTask
-) -> Dict:
+    ) -> Dict:
     """
     Create an API on AWS.
 
@@ -289,6 +222,78 @@ def _update_simple_api(
     previous_output['endpoints'] = previous_route_info
 
     return previous_output
+
+
+def _remove_simple_api(
+    transaction_token: str,  
+    previous_output: Dict, 
+    output_task: OutputTask
+    ):
+    """
+    Delete an API from AWS.
+
+    Args:
+        transaction_token (str): Transaction token to use to identify this action over a resource.
+        previous_output (Dict): Cloud output of the resource. Used to determine what API to delete on AWS.
+        output_task (OutputTask): Output Task to send any progress information.
+
+    Raises:
+        e: [description]
+    """
+
+    api_id = previous_output.get("cloud_id")
+
+    output_task.update(advance=1, comment=f'Deleting API')
+
+    try:
+        aws_client.run_client_function("apigatewayv2", "delete_api", {"ApiId": api_id})
+    except Exception as e:
+        output_task.print_error(e)
+        raise e 
+
+    
+
+
+
+def _create_route(api_id: str, route: simple_api.route_event_model) -> str:
+    """
+    Helper Function for creating routes on an API. Note that any error raised by the aws client will not be caught by this function and should
+    be handled by the caller of this function.
+
+    Args:
+        api_id (str): Api ID of the api in AWS.
+        route (simple_api.route_event_model): Information about the route to create.
+
+    Returns:
+        str: Route ID of the create route.
+    """
+    _route_args = {
+        "ApiId": api_id,
+        "RouteKey": f"{route.verb} {route.path}",
+    }
+    
+
+    rv = aws_client.run_client_function('apigatewayv2', 'create_route', _route_args)
+    
+
+    return rv.get("RouteId")
+
+
+def _delete_route(api_id: str, route_id: str):
+    """
+    Helper Function for deleting routes on an API. Note that any error raised by the aws client will not be caught by this function and should
+    be handled by the caller of this function.
+
+    Args:
+        api_id (str): Api ID of the api in AWS.
+        route_id (lambda_event): Route ID of the route in AWS.
+    """
+
+    aws_client.run_client_function(
+        "apigatewayv2", "delete_route", {"ApiId": api_id, "RouteId": route_id}
+    )
+
+
 
 
 def handle_simple_api_deployment(

@@ -1,5 +1,6 @@
 from enum import Enum
-from typing import FrozenSet, List, Dict, Union
+from typing import FrozenSet, List
+from pydantic import Field
 
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output
 from core.utils import hasher
@@ -92,9 +93,10 @@ class key_type(str, Enum):
 
 
 class attribute_definition_model(ImmutableModel):
-    attribute_name: str
+    attribute_name: str 
     attribute_type: attribute_type
 
+    
 
 class AttributeDefinition:
     def __init__(self, name:str, type: attribute_type) -> None:
@@ -109,9 +111,8 @@ class AttributeDefinition:
         )
 
 class key_definition_model(ImmutableModel):
-    attribute_name: str
+    attribute_name: str 
     key_type: key_type
-
 
 
 class KeyDefinition:
@@ -120,8 +121,8 @@ class KeyDefinition:
         self.type = type
 
 
-    def render(self) -> attribute_definition_model:
-        return attribute_definition_model(
+    def render(self) -> key_definition_model:
+        return key_definition_model(
             attribute_name=self.name,
             key_type=self.type
         )
@@ -145,7 +146,7 @@ class TablePermissions:
                 "dynamodb:Query",
                 "dynamodb:ConditionCheckItem",
             ],
-            resource=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{self.RUUID}::{resource_name}",
             effect="Allow",
         )
 
@@ -163,7 +164,7 @@ class TablePermissions:
                 "dynamodb:UpdateItem",
                 "dynamodb:DescribeLimits",
             ],
-            resource=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{self.RUUID}::{resource_name}",
             effect="Allow",
         )
 
@@ -181,7 +182,7 @@ class TablePermissions:
                 "dynamodb:Scan",
                 "dynamodb:UpdateItem",
             ],
-            resource=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{self.RUUID}::{resource_name}",
             effect="Allow",
         )
 
@@ -193,7 +194,7 @@ class TablePermissions:
                 "dynamodb:ListShards",
                 "dynamodb:ListStreams",
             ],
-            resource=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{self.RUUID}::{resource_name}",
             effect="Allow",
             resource_suffix="/stream/*",
         )

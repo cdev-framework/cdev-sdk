@@ -9,7 +9,7 @@ from ..settings import SETTINGS
 
 #from .mappers.aws import aws_lambda, dynamodb, iam, s3, sqs, apigatewayv2, apigateway
 
-from .mappers.simple import api_deployer, bucket_deployer, lambda_deployer#, lambda_deployer, dynamodb_deployer, 
+from .mappers.simple import api_deployer, bucket_deployer, lambda_deployer, dynamodb_deployer#, lambda_deployer, dynamodb_deployer, 
 #from ..mappers.simple import queue_deployer, topic_deployer, relational_db_deployer, static_site_deployer
 
 
@@ -22,7 +22,8 @@ class DefaultMapper(CloudMapper):
         return [
             "cdev::simple::api",
             "cdev::simple::bucket",
-            "cdev::simple::function"
+            "cdev::simple::function",
+            "cdev::simple::table"
         ]
 
     def deploy_resource(self, transaction_token: str, namespace_token: str, resource_diff: Resource_Difference, previous_output: Dict, output_task: OutputTask) -> Dict:
@@ -60,7 +61,8 @@ RESOURCE_TO_HANDLER_FUNCTION = {
     #"cdev::aws::apigateway::integration_response": apigateway.handle_integrationresponse_deployment,
     "cdev::simple::function": lambda_deployer.handle_simple_lambda_function_deployment,
     "cdev::simple::api": api_deployer.handle_simple_api_deployment,
-    "cdev::simple::bucket": bucket_deployer.handle_simple_bucket_deployment
+    "cdev::simple::bucket": bucket_deployer.handle_simple_bucket_deployment,
+    "cdev::simple::table": dynamodb_deployer.handle_simple_table_deployment
     #"cdev::simple::lambda_function": lambda_deployer.handle_simple_lambda_function_deployment,
     #"cdev::simple::table": dynamodb_deployer.handle_simple_table_deployment,
     #"cdev::simple::bucket": bucket_deployer.handle_simple_bucket_deployment,

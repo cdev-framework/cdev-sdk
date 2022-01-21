@@ -30,7 +30,7 @@ def _create_simple_bucket(
 
     full_namespace_suffix = hasher.hash_list([namespace_token, str(uuid4())])
 
-    cloud_bucket_name = full_namespace_suffix
+    cloud_bucket_name = f"cdev-bucket-{full_namespace_suffix}"
 
     output_task.update(comment=f'Creating Bucket {cloud_bucket_name}')
     
