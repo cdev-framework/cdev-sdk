@@ -6,8 +6,6 @@ from core.utils import hasher
 
 
 class simple_static_site_model(ResourceModel):
-    site_name: str
-    """Name of the site this page will be for. The site name must match the final dns domain that will be used if this site will be served with a simple cdn."""
     index_document: str
     """The suffix for documents when request are made for a folder. ex: site.com/dir1/ will look for /dir1/<index_document>"""
     error_document: str
@@ -27,11 +25,11 @@ class StaticSite(Resource):
     def __init__(
         self,
         cdev_name: str,
-        site_name: str = "",
         index_document: str = "index.html",
         error_document: str = "error.html",
         sync_folder: bool = False,
         content_folder: str = None,
+        _nonce: str = ""
     ) -> None:
         """
         Create a static hosted site.
@@ -42,11 +40,11 @@ class StaticSite(Resource):
         """
         super().__init__(cdev_name)
 
-        self.site_name = site_name if site_name else "cdev_staticsite"
         self.index_document = index_document
         self.error_document = error_document
         self.sync_folder = sync_folder
         self.content_folder = content_folder
+        self._nonce = _nonce
 
         if self.sync_folder and not self.content_folder:
             print(
@@ -57,11 +55,11 @@ class StaticSite(Resource):
 
         self.hash = hasher.hash_list(
             [
-                self.site_name,
                 self.index_document,
                 self.error_document,
                 self.sync_folder,
                 self.content_folder,
+                self._nonce
             ]
         )
 
@@ -70,7 +68,6 @@ class StaticSite(Resource):
             ruuid=self.RUUID,
             name=self.name,
             hash=self.hash,
-            site_name=self.site_name,
             index_document=self.index_document,
             error_document=self.error_document,
             sync_folder=self.sync_folder,

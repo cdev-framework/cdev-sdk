@@ -1,4 +1,5 @@
 from typing import Any, Dict, FrozenSet
+from uuid import uuid4
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
 from core.output.output_manager import OutputTask
@@ -31,7 +32,7 @@ def _create_simple_api(
     """
     
     base_args = {
-        "Name": f"{resource.api_name}-{namespace_token}",
+        "Name": f"cdev-api-{namespace_token}-{str(uuid4())}",
         "ProtocolType": "HTTP",
     }
 
@@ -206,24 +207,7 @@ def _update_simple_api(
 
     output_task.print(previous_resource)
 
-    # Update the name of the underlying api
-    if not previous_resource.api_name == new_resource.api_name:
-        new_api_name = f"{new_resource.api_name}-{namespace_token}"
-        output_task.update(advance=1, comment=f'Updating Name to {new_api_name}')
-        try:
-            aws_client.run_client_function(
-                'apigatewayv2', 
-                'update_api', 
-                {
-                    'api_id': previous_cloud_id,
-                    'name': new_api_name
-                }
-            )
-        except Exception as e:
-            output_task.print_error(e)
-            raise e 
-
-
+    
     # Change the CORS Settings of the API
     if not previous_resource.allow_cors == new_resource.allow_cors:
         new_cors_policy =  {
@@ -239,7 +223,7 @@ def _update_simple_api(
             ],
         } if new_resource.allow_cors else {}
 
-        output_task.update(advance=1, comment=f'Updating CORS Policy to {new_api_name}')
+        output_task.update(advance=1, comment=f'Updating CORS Policy')
         try:
             aws_client.run_client_function(
                 'apigatewayv2', 

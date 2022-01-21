@@ -73,16 +73,15 @@ class RelationalDB(Resource):
     def __init__(
         self,
         cdev_name: str,
-        
         engine: db_engine,
         username: str,
         password: str,
         httpendpoint: bool = True,
         database_name: str = "",
-        cluster_name: str = "",
         max_capacity: int = 64,
         min_capacity: int = 2,
         seconds_to_pause: int = 300,
+        _nonce: str = ""
     ) -> None:
 
         super().__init__(cdev_name)
@@ -91,11 +90,8 @@ class RelationalDB(Resource):
         self.MasterUsername = username
         self.MasterUserPassword = password
 
-        self.DBClusterIdentifier = (
-            cluster_name
-            if cluster_name
-            else "cdevrelationaldb"
-        )
+        self._nonce = _nonce
+
         self.DatabaseName = database_name
         self.EnableHttpEndpoint = httpendpoint
 
@@ -110,12 +106,12 @@ class RelationalDB(Resource):
                 self.Engine,
                 self.MasterUsername,
                 self.MasterUserPassword,
-                self.DBClusterIdentifier,
                 self.DatabaseName,
                 self.EnableHttpEndpoint,
                 self.MaxCapacity,
                 self.MinCapacity,
                 self.SecondsToPause,
+                self._nonce
             ]
         )
 
@@ -125,7 +121,6 @@ class RelationalDB(Resource):
                 "ruuid": self.RUUID,
                 "name": self.name,
                 "hash": self.hash,
-                "DBClusterIdentifier": self.DBClusterIdentifier,
                 "DatabaseName": self.DatabaseName,
                 "EnableHttpEndpoint": self.EnableHttpEndpoint,
                 "Engine": self.Engine,

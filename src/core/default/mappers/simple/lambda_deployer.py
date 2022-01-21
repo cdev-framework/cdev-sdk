@@ -8,7 +8,7 @@ from core.output.output_manager import OutputTask
 from core.resources.simple import xlambda as simple_xlambda
 from core.resources.simple.iam import permission_arn_model, permission_model
 
-from core.utils import paths as core_paths
+from core.utils import paths as core_paths, hasher
 
 
 from .. import aws_client 
@@ -46,27 +46,26 @@ def _create_simple_lambda(
     # 4. Create the function
     # 5. Create any integrations that are need based on Events passed in
 
-    function_name = f"{resource.function_name}_{namespace_token}"
+    full_namespace_suffix = hasher.hash_list([namespace_token, str(uuid4())])
+
+    function_name = f"cdev_function_{full_namespace_suffix}"
     output_task.update(
-        advance=1, comment=f"Creating lambda function resources for lambda {function_name}"
+        comment=f"Creating lambda function resources for lambda {function_name}"
     )
-
-
-    
 
     final_info = {
         'function_name': function_name
     }
 
     output_task.update(
-        advance=1, comment=f"Creating IAM Role w/ permissions {resource.permissions}"
+        comment=f"Creating IAM Role w/ permissions {resource.permissions}"
     )
     # Step 1
     role_name = f"role_{function_name}"
     role_arn, permission_info = create_role_with_permissions(role_name, resource.permissions)
 
     output_task.update(
-        advance=1, comment=f"Create role for lambda function {resource.name}"
+        comment=f"Create role for lambda function {resource.name}"
     )
 
 
@@ -78,7 +77,7 @@ def _create_simple_lambda(
 
     # Step 2
     output_task.update(
-        advance=1, comment=f"Uploading code for lambda function {resource.name}"
+        comment=f"Uploading code for lambda function {resource.name}"
     )
 
     keyname = _upload_s3_code_artifact(function_name, resource)
@@ -90,7 +89,7 @@ def _create_simple_lambda(
     # Step 3
     if resource.external_dependencies:
         output_task.update(
-            advance=1, comment=f"Creating dependencies for lambda function {resource.name}"
+            comment=f"Creating dependencies for lambda function {resource.name}"
         )
 
         cloud_dependency_info = [_create_dependency(x) for x in resource.external_dependencies]
@@ -100,13 +99,13 @@ def _create_simple_lambda(
     # Step 4
     # TODO
     output_task.update(
-        advance=1, comment=f"[blink]Waiting for role to finish creating (~10s)[/blink]"
+        comment=f"[blink]Waiting for role to finish creating (~10s)[/blink]"
     )
     sleep(10)
     # ughhhh add a retry wrapper because it takes time to generate the IAM roles across all regions so we need to wait a few seconds to create this
     
     output_task.update(
-        advance=1, comment=f"Create Lambda function"
+        comment=f"Create Lambda function"
     )
 
     lambda_function_args = {
@@ -158,7 +157,7 @@ def _create_simple_lambda(
 
     
     output_task.update(
-        advance=1, comment=f"Created lambda function resources for lambda {resource.name}"
+        comment=f"Created lambda function resources for lambda {resource.name}"
     )
     return final_info
 
@@ -189,7 +188,7 @@ def _remove_simple_lambda(
     #    )
 #
     output_task.update(
-        advance=1, comment=f"Deleting function resource for {cloud_id}"
+        comment=f"Deleting function resource for {cloud_id}"
     )
 
 
@@ -203,7 +202,7 @@ def _remove_simple_lambda(
     delete_role_and_permissions(role_name, permissions)
 
     output_task.update(
-        advance=1, comment=f"Deleting permissions for the resource ({cloud_id})"
+        comment=f"Deleting permissions for the resource ({cloud_id})"
     )
 
     dependencies_info = previous_output.get("layers")
@@ -213,12 +212,12 @@ def _remove_simple_lambda(
             _remove_dependency(dependency_info)
 
         output_task.update(
-            advance=1, comment=f"Deleting dependencies for the resource ({cloud_id})"
+            comment=f"Deleting dependencies for the resource ({cloud_id})"
         )
 
    
     output_task.update(
-        advance=1, comment=f"Removed resources for lambda {cloud_id}"
+        comment=f"Removed resources for lambda {cloud_id}"
     )
 
 
@@ -235,7 +234,7 @@ def _update_simple_lambda(
     # Update configuration
     # Update events
     output_task.update(
-        advance=1, comment=f"Updating lambda function {new_resource.name}"
+        comment=f"Updating lambda function {new_resource.name}"
     )
     
     did_update_permission = False
@@ -248,7 +247,7 @@ def _update_simple_lambda(
             == new_resource.configuration.environment_variables
         ):
             output_task.update(
-                advance=1, comment=f"Updating Environment Variables"
+                comment=f"Updating Environment Variables"
             )
             aws_client.run_client_function(
                 "lambda",
@@ -263,7 +262,7 @@ def _update_simple_lambda(
 
     if not previous_resource.permissions == new_resource.permissions:
         output_task.update(
-            advance=1, comment=f"Updating Policies"
+            comment=f"Updating Policies"
         )
 
         did_update_permission = True
@@ -292,12 +291,9 @@ def _update_simple_lambda(
         previous_output['permissions'] = permission_output
 
 
-    if not previous_resource.function_name == new_resource.function_name:
-        pass
-
     if not previous_resource.src_code_hash == new_resource.src_code_hash:
         output_task.update(
-            advance=1, comment=f"Update Source Code"
+            comment=f"Update Source Code"
         )
 
         keyname = _upload_s3_code_artifact(previous_output.get('function_name'), new_resource)
@@ -319,7 +315,7 @@ def _update_simple_lambda(
         == new_resource.external_dependencies
     ):
         output_task.update(
-            advance=1, comment=f"Update Dependencies"
+            comment=f"Update Dependencies"
         )
         
         remove_dependencies = previous_resource.external_dependencies.difference(new_resource.external_dependencies)
@@ -441,7 +437,7 @@ def _update_simple_lambda(
 
 
 ##########################
-# Dependencies
+##### Dependencies
 ##########################
 def _create_dependency(
     dependency: Union[simple_xlambda.dependency_layer_model, simple_xlambda.deployed_layer_model],

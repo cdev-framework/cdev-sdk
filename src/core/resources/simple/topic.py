@@ -4,7 +4,7 @@ from typing import List, Dict, Union
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output
 from core.utils import hasher
 
-from .xlambda import Event as lambda_event, EventTypes
+from .xlambda import Event as lambda_event
 from .iam import Permission
 
 RUUID = "cdev::simple::topic"
@@ -31,7 +31,7 @@ class TopicPermissions:
 
 
 class simple_topic_model(ResourceModel):
-    topic_name: str
+    
     fifo: bool
 
 
@@ -45,19 +45,18 @@ class Topic(Resource):
     RUUID = "cdev::simple::topic"
 
     def __init__(
-        self, cdev_name: str, topic_name: str = "", is_fifo: bool = False
+        self, cdev_name: str, is_fifo: bool = False, _nonce: str=''
     ) -> None:
         """
         Simple SNS topic.
         """
         super().__init__(cdev_name)
 
-        self.topic_name = topic_name if topic_name else "cdevtopic"
-
         self.fifo = is_fifo
         self.permissions = TopicPermissions(cdev_name)
+        self._nonce = _nonce
 
-        self.hash = hasher.hash_list([self.topic_name, is_fifo])
+        self.hash = hasher.hash_list([is_fifo, self._nonce])
 
     def render(self) -> simple_topic_model:
         return simple_topic_model(
@@ -65,7 +64,6 @@ class Topic(Resource):
                 "ruuid": self.RUUID,
                 "name": self.name,
                 "hash": self.hash,
-                "topic_name": self.topic_name,
                 "fifo": self.fifo,
             }
         )
@@ -77,7 +75,7 @@ class Topic(Resource):
             **{
                 "original_resource_name": self.name,
                 "original_resource_type": self.RUUID,
-                "event_type": EventTypes.TOPIC_TRIGGER,
+                "event_type": "",
                 "config": config,
             }
         )

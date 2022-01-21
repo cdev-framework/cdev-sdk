@@ -85,25 +85,22 @@ class simple_bucket_output(str, Enum):
 class SimpleBucket(Resource):
     RUUID = "cdev::simple::bucket"
 
-    def __init__(self, cdev_name: str, bucket_name: str = "") -> None:
+    def __init__(self, cdev_name: str, bucket_name: str, _nonce: str) -> None:
         """
         Create a simple S3 bucket that can be used as an object store.
 
         Args:
             cdev_name (str): Name of the resource
-            bucket_name (str, optional): base name of the bucket in s3. If not provided, will default to cdev_name.
+            bucket_name (str): base name of the bucket in the cloud. This name should differ from the cdev name 
+            and also differ from any other buckets in the same namespace.
         """
         super().__init__(cdev_name)
 
-        self.bucket_name = (
-            bucket_name
-            if bucket_name
-            else "bucket"
-        )
+        self._nonce = _nonce
 
         self.permissions = BucketPermissions(cdev_name)
 
-        self.hash = hasher.hash_list([self.bucket_name])
+        self.hash = hasher.hash_list([self._nonce])
 
 
     def render(self) -> simple_bucket_model:
@@ -111,7 +108,6 @@ class SimpleBucket(Resource):
             ruuid=self.RUUID,
             name=self.name,
             hash=self.hash,
-            bucket_name=self.bucket_name,
         )
 
 
@@ -120,7 +116,7 @@ class SimpleBucket(Resource):
     ) -> BucketEvent:
 
         event = BucketEvent(
-            bucket_name=self.bucket_name,
+            bucket_name=self.name,
             bucket_event_type=event_type
         )
 

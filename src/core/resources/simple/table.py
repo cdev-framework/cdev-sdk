@@ -3,7 +3,7 @@ from typing import FrozenSet, List, Dict, Union
 
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output
 from core.utils import hasher
-from core.utils.types import ImmutableModel, frozendict
+from core.utils.types import ImmutableModel
 
 from .events import Event, event_model, EventTypes
 from .iam import Permission
@@ -127,12 +127,6 @@ class KeyDefinition:
         )
 
 
-class simple_table_model(ResourceModel):
-    table_name: str
-    attributes: FrozenSet[attribute_definition_model]
-    keys: FrozenSet[key_definition_model]
-
-
 class simple_table_output(str, Enum):
     cloud_id = "cloud_id"
     table_name = "table_name"
@@ -205,6 +199,11 @@ class TablePermissions:
         )
 
 
+class simple_table_model(ResourceModel):
+    attributes: FrozenSet[attribute_definition_model]
+    keys: FrozenSet[key_definition_model]
+
+
 class Table(Resource):
     RUUID = "cdev::simple::table"
 
@@ -213,7 +212,7 @@ class Table(Resource):
         cdev_name: str,
         attributes: List[AttributeDefinition],
         keys: List[KeyDefinition],
-        table_name: str = "",
+        _nonce: str = "",
     ) -> None:
         super().__init__(cdev_name)
 
@@ -221,13 +220,8 @@ class Table(Resource):
         if not rv[0]:
             print(rv[1])
             raise Exception
-
     
-        self.table_name = (
-            table_name
-            if table_name
-            else "cdevtable"
-        )
+        self._nonce = _nonce
 
         self.attributes = attributes
         self.keys = keys
@@ -235,14 +229,13 @@ class Table(Resource):
 
         self.permissions = TablePermissions(cdev_name)
 
-        self.hash = hasher.hash_list([self.table_name, self.attributes, self.keys])
+        self.hash = hasher.hash_list([self.attributes, self.keys, self._nonce])
 
     def render(self) -> simple_table_model:
         return simple_table_model(
             ruuid=self.RUUID,
             name=self.name,
             hash=self.hash,
-            table_name=self.table_name,
             attributes=[x.render() for x in self.attributes],
             keys=[x.render() for x in self.keys],
         )

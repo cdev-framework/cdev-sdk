@@ -125,5 +125,9 @@ class ImmutableModel(BaseModel):
         else:
             return v
 
+    class Config:
+        extra = "allow"
+        frozen = True
+
 
         

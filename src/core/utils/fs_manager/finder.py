@@ -71,6 +71,7 @@ def parse_folder(
     return resources_rv, references_rv
 
 
+
 def _get_module_name_from_path(fp):
     relative_to_project_path = paths.get_relative_to_workspace_path(fp)
 
@@ -114,9 +115,9 @@ def _find_resources_information_from_file(
             #print(obj)
             print(f"FOUND {obj} as Cdev_Resource in {mod}")
             if isinstance(obj, SimpleFunction):
-                preparsed_info = obj.render()
-                functions_to_parse.append(preparsed_info.configuration.handler)
-                function_name_to_info[preparsed_info.configuration.handler] = preparsed_info
+                #preparsed_info = obj.render()
+                functions_to_parse.append(obj.configuration.handler)
+                function_name_to_info[obj.configuration.handler] = obj
                 
             else:
                 resource_rv.append(obj.render())
@@ -143,7 +144,7 @@ def _find_resources_information_from_file(
 def _parse_serverless_functions(
     filepath: FilePath,
     functions_names_to_parse: List[str],
-    handler_name_to_info: Dict[str, simple_function_model],
+    handler_name_to_info: Dict[str, SimpleFunction],
     manual_includes: Dict = {},
     global_includes: List = [],
 ) -> List[simple_function_model]:
@@ -158,7 +159,7 @@ def _parse_serverless_functions(
     for parsed_function in parsed_file_info.parsed_functions:
 
         cleaned_name = _clean_function_name(parsed_function.name)
-        print(cleaned_name)
+        
         intermediate_path = fs_utils.get_parsed_path(filepath, cleaned_name)
 
         #print(f"imported modules ->>> {parsed_function.imported_packages}")
@@ -196,12 +197,12 @@ def _parse_serverless_functions(
         new_function = SimpleFunction(
             cdev_name=previous_info.name,
             filepath=paths.get_full_path_from_workspace_base(handler_archive_path),
-            function_name=previous_info.function_name,
             events=previous_info.events,
             configuration=new_configuration,
-            function_permissions=previous_info.permissions,
+            function_permissions=previous_info._permissions,
             external_dependencies=dependencies_info if dependencies_info else [],
-            src_code_hash=handler_archive_hash
+            src_code_hash=handler_archive_hash,
+            _nonce=previous_info._nonce
         )
 
     

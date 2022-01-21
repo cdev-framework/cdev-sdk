@@ -47,8 +47,6 @@ class ResourceModel(ImmutableModel):
 
 
     class Config:
-        extra = "allow"
-        frozen = True
         arbitrary_types_allowed = True
 
 

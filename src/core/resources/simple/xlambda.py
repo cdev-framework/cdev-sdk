@@ -72,18 +72,21 @@ class simple_function_configuration_model(ImmutableModel):
         frozen = True
 
 
-class FunctionConfiguration():
-    pass
-
 
 class simple_function_model(ResourceModel):
-    function_name: str
+    """
+    Some Doc String
+
+    Args:
+        Filepath ([type]): [description]
+    """
     filepath: str  # Don't use FilePath because this will be a relative path and might not always point correctly to a file in all contexts
     configuration: simple_function_configuration_model
     events: FrozenSet[event_model]
     permissions: FrozenSet[Union[permission_model, permission_arn_model]]
     external_dependencies: FrozenSet[Union[deployed_layer_model, dependency_layer_model]]
     src_code_hash: str
+
 
     class Config:
         use_enum_values = True
@@ -97,27 +100,21 @@ class SimpleFunction(Resource):
         self,
         cdev_name: str,
         filepath: str,
-        function_name: str = "",
         events: List[Event] = [],
-        configuration: FunctionConfiguration = {},
+        configuration: simple_function_configuration_model = {},
         function_permissions: List[Union[Permission, PermissionArn]] = [],
         includes: List[str] = [],
         external_dependencies: List[Union[DeployedLayer, DependencyLayer]]=[],
-        src_code_hash: str = None
+        src_code_hash: str = None,
+        _nonce: str = "",
     ) -> None:
         super().__init__(cdev_name)
 
         self.filepath = filepath
         self.includes = includes
         self.events = events
-        self.function_name = (
-            function_name
-            if function_name
-            else "cdev_serverless_function"
-        )
-
+        
         self.configuration = configuration
-
 
         self._permissions = function_permissions
         
@@ -131,13 +128,15 @@ class SimpleFunction(Resource):
 
         self.external_dependencies = external_dependencies
 
+        self._nonce = _nonce
+
         self.full_hash = hasher.hash_list(
             [
-                self.function_name,
                 self.src_code_hash,
                 self.config_hash,
                 self.events_hash,
                 self.permissions_hash,
+                self._nonce
             ]
         )
 
@@ -148,7 +147,6 @@ class SimpleFunction(Resource):
             name=self.name,
             ruuid=LAMBDA_FUNCTION_RUUID,
             hash=self.full_hash,
-            function_name=self.function_name,
             filepath=self.filepath,
             configuration=self.configuration,
             events=frozenset([x.render() for x in self.events]),
@@ -165,11 +163,11 @@ class SimpleFunction(Resource):
 
 def simple_function_annotation(
     name: str,
-    function_name: str = "",
     events: List[Event] = [],
     environment={},
     permissions: List[Union[Permission, PermissionArn]] = [],
     includes: List[str] = [],
+    _nonce: str=""
 ) -> Callable[[Callable], SimpleFunction]:
     """
     This annotation is used to designate that a function should be deployed on the AWS lambda platform. Functions that are designated
@@ -206,11 +204,11 @@ def simple_function_annotation(
         return SimpleFunction(
             cdev_name=name,
             filepath=full_filepath,
-            function_name=function_name,
             events=events,
             configuration=final_config,
             function_permissions=permissions,
             includes=includes,
+            _nonce=_nonce
         )
 
     return create_function

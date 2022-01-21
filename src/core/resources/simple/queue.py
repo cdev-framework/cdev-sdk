@@ -94,7 +94,6 @@ class QueuePermissions:
 
 
 class simple_queue_model(ResourceModel):
-    queue_name: str
     fifo: bool
 
 
@@ -106,23 +105,20 @@ class simple_queue_output(str, Enum):
 class Queue(Resource):
     RUUID = "cdev::simple::queue"
 
-    def __init__(self, cdev_name: str, queue_name: str, is_fifo: bool = False) -> None:
+    def __init__(self, cdev_name: str, is_fifo: bool = False, _nonce: str = "") -> None:
         """
         A simple sqs queue.
 
         args:
             cdev_name (str): Name of the resource
-            queue_name (str, optional): Name of the queue in aws. Defaults to cdev_name if not provided.
             is_fifo (bool, optional, default=False): if this should be a First-in First-out queue (link to difference)
         """
         super().__init__(cdev_name)
 
-        self.queue_name = queue_name if queue_name else "cdevqueue"
-
         self.fifo = is_fifo
         self.permissions = QueuePermissions(cdev_name)
 
-        self.hash = hasher.hash_list([self.queue_name, is_fifo])
+        self.hash = hasher.hash_list([is_fifo, _nonce])
 
     def render(self) -> simple_queue_model:
         return simple_queue_model(
@@ -130,7 +126,6 @@ class Queue(Resource):
                 "ruuid": self.RUUID,
                 "name": self.name,
                 "hash": self.hash,
-                "queue_name": self.queue_name,
                 "fifo": self.fifo,
             }
         )
@@ -144,7 +139,7 @@ class Queue(Resource):
             raise Exception
 
         event = QueueEvent(
-            queue_name=self.queue_name,
+            queue_name=self.name,
             batch_size=batch_size,
             batch_window=batch_window
         )

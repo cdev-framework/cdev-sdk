@@ -17,8 +17,7 @@ class permission_model(ImmutableModel):
 
 class permission_arn_model(ImmutableModel):
     arn: str
-
-
+    
     class Config:
         use_enum_values = True
         # Beta Feature but should be fine since this is simple data 

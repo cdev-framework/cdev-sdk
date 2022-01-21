@@ -14,6 +14,7 @@ class route_event_model(event_model):
     path: str
     verb: str
 
+
 class RouteEvent(Event):
 
     def __init__(self, resource_name: str, path: str, verb: str) -> None:
@@ -34,14 +35,8 @@ class RouteEvent(Event):
         )
 
 class simple_api_model(ResourceModel):
-    api_name: str
     routes: FrozenSet[route_event_model]
     allow_cors: bool
-
-    class Config:
-        use_enum_values = True
-        # Beta Feature but should be fine since this is simple data 
-        frozen = True
 
 
 class simple_api_output(str, Enum):
@@ -54,7 +49,7 @@ class Api(Resource):
     RUUID = "cdev::simple::api"
 
     def __init__(
-        self, cdev_name: str, api_name: str = "", allow_cors: bool = True
+        self, cdev_name: str, allow_cors: bool = True, _nonce: str = "",
     ) -> None:
         """
         Create a simple http Api.
@@ -69,17 +64,14 @@ class Api(Resource):
         """
 
         super().__init__(cdev_name)
-        self.api_name = (
-            api_name
-            if api_name
-            else f"cdevapi"
-        )
         self._routes: List[RouteEvent] = []
 
         self.allow_cors = allow_cors
 
+        self._nonce = _nonce
+
         self.hash = hasher.hash_list(
-            [hasher.hash_list(self._routes), self.api_name, self.allow_cors]
+            [hasher.hash_list(self._routes), self.allow_cors, self._nonce]
         )
 
     def route(self, path: str, verb: str) -> RouteEvent:
@@ -93,7 +85,7 @@ class Api(Resource):
         self._routes.append(event)
 
         self.hash = hasher.hash_list(
-            [hasher.hash_list([x.get_hash() for x in self._routes]), self.api_name, self.allow_cors]
+            [hasher.hash_list([x.get_hash() for x in self._routes]), self.allow_cors]
         )
 
         return event
@@ -106,7 +98,6 @@ class Api(Resource):
                 "ruuid": self.RUUID,
                 "name": self.name,
                 "hash": self.hash,
-                "api_name": self.api_name,
                 "routes": frozenset([x.render() for x in routes]),
                 "allow_cors": self.allow_cors,
             }
