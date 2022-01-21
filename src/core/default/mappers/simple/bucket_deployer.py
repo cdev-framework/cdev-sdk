@@ -1,5 +1,4 @@
 from enum import Enum
-from types import new_class
 from typing import Any, Dict, List
 from uuid import uuid4
 
@@ -213,34 +212,32 @@ def handle_simple_bucket_deployment(
         previous_output: Dict[simple_object_store.simple_bucket_output, Any],
         output_task: OutputTask
     ) -> Dict:
-    try:
-        if resource_diff.action_type == Resource_Change_Type.CREATE:
-            return _create_simple_bucket(
-                transaction_token,
-                namespace_token,
-                resource_diff.new_resource,
-                output_task
-            )
-            
-        elif resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY:
-            return _update_simple_bucket(
-                transaction_token,
-                namespace_token,
-                simple_object_store.simple_bucket_model(**resource_diff.previous_resource.dict()),
-                resource_diff.new_resource,
-                previous_output,
-                output_task
-            )
+    
+    if resource_diff.action_type == Resource_Change_Type.CREATE:
+        return _create_simple_bucket(
+            transaction_token,
+            namespace_token,
+            resource_diff.new_resource,
+            output_task
+        )
+        
+    elif resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY:
+        return _update_simple_bucket(
+            transaction_token,
+            namespace_token,
+            simple_object_store.simple_bucket_model(**resource_diff.previous_resource.dict()),
+            resource_diff.new_resource,
+            previous_output,
+            output_task
+        )
 
-        elif resource_diff.action_type == Resource_Change_Type.DELETE:
-            _remove_simple_bucket(
-               transaction_token,
-               previous_output,
-               output_task
-            )
+    elif resource_diff.action_type == Resource_Change_Type.DELETE:
+        _remove_simple_bucket(
+            transaction_token,
+            previous_output,
+            output_task
+        )
 
-            return {}
+        return {}
 
-    except Exception as e:
-        print(e)
-        raise Exception("COULD NOT DEPLOY")
+    

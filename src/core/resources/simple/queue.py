@@ -58,7 +58,7 @@ class QueuePermissions:
                 "sqs:DeleteMessage",
                 "sqs:GetQueueAttributes",
             ],
-            resource=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{self.RUUID}::{resource_name}",
             effect="Allow",
         )
 
@@ -67,7 +67,7 @@ class QueuePermissions:
                 "sqs:SendMessage",
                 "sqs:GetQueueAttributes",
             ],
-            resource=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{self.RUUID}::{resource_name}",
             effect="Allow",
         )
 
@@ -78,7 +78,7 @@ class QueuePermissions:
                 "sqs:GetQueueAttributes",
                 "sqs:SendMessage",
             ],
-            resource=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{self.RUUID}::{resource_name}",
             effect="Allow",
         )
 
@@ -88,7 +88,7 @@ class QueuePermissions:
                 "sqs:DeleteMessage",
                 "sqs:GetQueueAttributes",
             ],
-            resource=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{self.RUUID}::{resource_name}",
             effect="Allow",
         )
 
