@@ -50,31 +50,31 @@ class BucketPermissions:
     def __init__(self, resource_name) -> None:
         self.READ_BUCKET = Permission(
             actions=["s3:GetObject", "s3:GetObjectVersion", "s3:ListBucket"],
-            resource=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{self.RUUID}::{resource_name}",
             effect="Allow",
         )
 
         self.WRITE_BUCKET = Permission(
             actions=["s3:PutObject", "s3:PutObjectAcl", "s3:ListBucket"],
-            resource=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{self.RUUID}::{resource_name}",
             effect="Allow",
         )
 
         self.READ_AND_WRITE_BUCKET = Permission(
             actions=["s3:*Object", "s3:ListBucket"],
-            resource=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{self.RUUID}::{resource_name}",
             effect="Allow",
         )
 
         self.READ_EVENTS = Permission(
             actions=["s3:*Object", "s3:ListBucket"],
-            resource=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{self.RUUID}::{resource_name}",
             effect="Allow",
         )
 
 
 class simple_bucket_model(ResourceModel):
-    bucket_name: str
+    pass
 
 
 class simple_bucket_output(str, Enum):
@@ -85,14 +85,12 @@ class simple_bucket_output(str, Enum):
 class SimpleBucket(Resource):
     RUUID = "cdev::simple::bucket"
 
-    def __init__(self, cdev_name: str, bucket_name: str, _nonce: str) -> None:
+    def __init__(self, cdev_name: str, _nonce: str="") -> None:
         """
         Create a simple S3 bucket that can be used as an object store.
 
         Args:
             cdev_name (str): Name of the resource
-            bucket_name (str): base name of the bucket in the cloud. This name should differ from the cdev name 
-            and also differ from any other buckets in the same namespace.
         """
         super().__init__(cdev_name)
 

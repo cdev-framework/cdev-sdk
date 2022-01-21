@@ -1,6 +1,7 @@
 from enum import Enum
 from types import new_class
 from typing import Any, Dict, List
+from uuid import uuid4
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
 from core.resources.simple import object_store as simple_object_store
@@ -27,17 +28,18 @@ def _create_simple_bucket(
     output_task: OutputTask
 ) -> Dict:
 
+    full_namespace_suffix = hasher.hash_list([namespace_token, str(uuid4())])
 
-    cloud_bucket_name = f"{resource.bucket_name}-{namespace_token}"
+    cloud_bucket_name = full_namespace_suffix
 
-    output_task.update(advance=1, comment=f'Creating Bucket {cloud_bucket_name}')
+    output_task.update(comment=f'Creating Bucket {cloud_bucket_name}')
     
     # TODO create buckets in different region
     rv = raw_aws_client.run_client_function(
         "s3", "create_bucket", {"Bucket": cloud_bucket_name}
     )
 
-    output_task.update(advance=1, comment=f'Created Bucket {cloud_bucket_name}')
+    output_task.update(comment=f'Created Bucket {cloud_bucket_name}')
 
     output_info = {
         "bucket_name": cloud_bucket_name,
@@ -224,7 +226,7 @@ def handle_simple_bucket_deployment(
             return _update_simple_bucket(
                 transaction_token,
                 namespace_token,
-                simple_object_store.simple_bucket_model(resource_diff.previous_resource.dict()),
+                simple_object_store.simple_bucket_model(**resource_diff.previous_resource.dict()),
                 resource_diff.new_resource,
                 previous_output,
                 output_task
