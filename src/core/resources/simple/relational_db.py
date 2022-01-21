@@ -6,7 +6,7 @@ from core.utils import hasher
 from .iam import Permission, PermissionArn
 
 
-class db_engine(Enum):
+class db_engine(str, Enum):
     aurora = "aurora"
     """MySQL 5.6-compatible Aurora"""
 
@@ -18,8 +18,6 @@ class db_engine(Enum):
 
 
 class simple_relational_db_model(ResourceModel):
-    DBClusterIdentifier: str
-    """Replacement"""
     DatabaseName: str
     """Replacement"""
     EnableHttpEndpoint: bool
@@ -58,7 +56,7 @@ class RelationalDBPermissions:
                 "rds-data:ExecuteStatement",
                 "rds-data:RollbackTransaction",
             ],
-            resource=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{self.RUUID}::{resource_name}",
             effect="Allow",
         )
 

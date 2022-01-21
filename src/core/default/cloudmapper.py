@@ -14,7 +14,8 @@ from .mappers.simple import (
     bucket_deployer,
     lambda_deployer,
     dynamodb_deployer,
-    queue_deployer
+    queue_deployer,
+    relational_db_deployer
 )
 
 class DefaultMapper(CloudMapper):   
@@ -28,7 +29,8 @@ class DefaultMapper(CloudMapper):
             "cdev::simple::bucket",
             "cdev::simple::function",
             "cdev::simple::table",
-            "cdev::simple::queue"
+            "cdev::simple::queue",
+            "cdev::simple::relationaldb"
         ]
 
     def deploy_resource(self, transaction_token: str, namespace_token: str, resource_diff: Resource_Difference, previous_output: Dict, output_task: OutputTask) -> Dict:
@@ -46,34 +48,12 @@ class DefaultMapper(CloudMapper):
 
 
 RESOURCE_TO_HANDLER_FUNCTION = {
-    #"cdev::aws::lambda_function": aws_lambda.handle_aws_lambda_deployment,
-    #"cdev::aws::dynamodb::table": dynamodb.handle_table_deployment,
-    #"cdev::aws::iam::policy": iam.handle_policy_deployment,
-    #"cdev::aws::iam::role": iam.handle_role_deployment,
-    #"cdev::aws::s3::bucket": s3.handle_bucket_deployment,
-    #"cdev::aws::sqs::queue": sqs.handle_queue_deployment,
-    #"cdev::aws::apigatewayv2::api": apigatewayv2.handle_api_deployment,
-    #"cdev::aws::apigatewayv2::route": apigatewayv2.handle_route_deployment,
-    #"cdev::aws::apigatewayv2::integration": apigatewayv2.handle_integration_deployment,
-    #"cdev::aws::apigatewayv2::stage": apigatewayv2.handle_stage_deployment,
-    #"cdev::aws::apigatewayv2::deployment": apigatewayv2.handle_deployment_deployment,
-    #"cdev::aws::apigateway::restapi": apigateway.handle_restapi_deployment,
-    #"cdev::aws::apigateway::resource":  apigateway.handle_resource_deployment,
-    #"cdev::aws::apigateway::deployment":  apigateway.handle_deployment_deployment,
-    #"cdev::aws::apigateway::integration":  apigateway.handle_integration_deployment,
-    #"cdev::aws::apigateway::stage":  apigateway.handle_stage_deployment,
-    #"cdev::aws::apigateway::method": apigateway.handle_method_deployment,
-    #"cdev::aws::apigateway::integration_response": apigateway.handle_integrationresponse_deployment,
+   
     "cdev::simple::function": lambda_deployer.handle_simple_lambda_function_deployment,
     "cdev::simple::api": api_deployer.handle_simple_api_deployment,
     "cdev::simple::bucket": bucket_deployer.handle_simple_bucket_deployment,
     "cdev::simple::table": dynamodb_deployer.handle_simple_table_deployment,
-    "cdev::simple::queue": queue_deployer.handle_simple_queue_deployment
-    #"cdev::simple::lambda_function": lambda_deployer.handle_simple_lambda_function_deployment,
-    #"cdev::simple::table": dynamodb_deployer.handle_simple_table_deployment,
-    #"cdev::simple::bucket": bucket_deployer.handle_simple_bucket_deployment,
-    #"cdev::simple::queue": queue_deployer.handle_simple_queue_deployment,
-    #"cdev::simple::topic": topic_deployer.handle_simple_topic_deployment,
-    #"cdev::simple::relationaldb": relational_db_deployer.handle_simple_relational_db_deployment,
-    #"cdev::simple::staticsite": static_site_deployer.handle_simple_static_site_deployment
+    "cdev::simple::queue": queue_deployer.handle_simple_queue_deployment,
+    "cdev::simple::relationaldb": relational_db_deployer.handle_simple_relational_db_deployment,
+    
 }

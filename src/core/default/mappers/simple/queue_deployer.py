@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import Any, Dict, List
 from uuid import uuid4
 
@@ -88,7 +87,8 @@ def _remove_simple_queue(
     )
 
 
-def handle_simple_queue_deployment(transaction_token: str, 
+def handle_simple_queue_deployment(
+        transaction_token: str, 
         namespace_token: str, 
         resource_diff: Resource_Difference, 
         previous_output: Dict[queue.simple_queue_output, Any],

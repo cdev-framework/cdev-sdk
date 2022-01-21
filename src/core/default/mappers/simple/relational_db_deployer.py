@@ -1,34 +1,38 @@
-from time import sleep
 import boto3
-from cdev.models import Resource_State_Difference, Action_Type
-from cdev.utils import logger
-from cdev.resources.simple import relational_db
-from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
-from ..aws import aws_client as raw_aws_client
-from cdev.output import print_deployment_step
 import json
+from typing import Any, Dict, List
+from uuid import uuid4
 
-from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
+from core.constructs.resource import Resource_Difference, Resource_Change_Type
+from core.resources.simple import relational_db 
+from core.output.output_manager import OutputTask
+from core.utils import hasher
 
-log = logger.get_cdev_logger(__name__)
+from .. import aws_client
+
+
 
 RUUID = "cdev::simple::relationaldb"
 
 
 def _create_simple_relational_db(
-    identifier: str, resource: relational_db.simple_relational_db_model
+    transaction_token: str, 
+    namespace_token: str, 
+    resource:  relational_db.simple_relational_db_model,
+    output_task: OutputTask
 ) -> bool:
-    # Create Table
-    print_deployment_step(
-        "CREATE",
-        f"[blink]Creating relational db {resource.name} (this will take a few minutes)[/blink]",
-    )
-    rv = raw_aws_client.run_client_function(
+
+    full_namespace_suffix = hasher.hash_list([namespace_token, str(uuid4())])
+    cluster_name = f"cdev-relationaldb-{full_namespace_suffix}"
+    
+    output_task.update(comment=f'Creating DB {cluster_name}')
+
+    rv = aws_client.run_client_function(
         "rds",
         "create_db_cluster",
         {
             "DatabaseName": resource.DatabaseName,
-            "DBClusterIdentifier": resource.DBClusterIdentifier,
+            "DBClusterIdentifier": cluster_name,
             "Engine": resource.Engine.value,
             "MasterUsername": resource.MasterUsername,
             "MasterUserPassword": resource.MasterUserPassword,
@@ -45,16 +49,16 @@ def _create_simple_relational_db(
         },
     )
 
-    print_deployment_step("CREATE", f"  Created database")
+    output_task.update(comment=f'Creating Secrets for DB')    
     # Need to create secret for this information so that it can be used with the data api
-    secret_rv = raw_aws_client.run_client_function(
+    secret_rv = aws_client.run_client_function(
         "secretsmanager",
         "create_secret",
         {
-            "Name": f"{resource.DBClusterIdentifier}-config",
+            "Name": f"{cluster_name}-config",
             "SecretString": json.dumps(
                 {
-                    "dbInstanceIdentifier": resource.DBClusterIdentifier,
+                    "dbInstanceIdentifier": cluster_name,
                     "engine": resource.Engine.value,
                     "host": rv.get("DBCluster").get("Endpoint"),
                     "port": rv.get("DBCluster").get("Port"),
@@ -66,62 +70,47 @@ def _create_simple_relational_db(
         },
     )
 
-    print_deployment_step("CREATE", f"  Created database configuration secret")
-    print_deployment_step("CREATE", f"  Waiting for database to become available")
-
-    raw_aws_client.monitor_status(
+    output_task.update(comment=f'Wating for DB to become available. This might take a minute.')
+    aws_client.monitor_status(
         boto3.client("rds").describe_db_clusters,
         {
-            "DBClusterIdentifier": resource.DBClusterIdentifier,
+            "DBClusterIdentifier": cluster_name,
         },
         "creating",
         lambda x: x.get("DBClusters")[0].get("Status"),
     )
 
-    print_deployment_step("CREATE", f"  {resource.name} is available")
-
+   
     output_info = {
         "endpoint": rv.get("DBCluster").get("Endpoint"),
         "secret_arn": secret_rv.get("ARN"),
         "cloud_id": rv.get("DBCluster").get("DBClusterArn"),
         "arn": rv.get("DBCluster").get("DBClusterArn"),
         "cdev_name": resource.name,
-        "ruuid": resource.ruuid,
+        "cluster_id": cluster_name
     }
 
-    cdev_cloud_mapper.add_identifier(identifier),
-    cdev_cloud_mapper.update_output_value(identifier, output_info)
-
-    return True
+    return output_info
 
 
 def _update_simple_relational_db(
+    transaction_token: str, 
     previous_resource: relational_db.simple_relational_db_model,
     new_resource: relational_db.simple_relational_db_model,
+    previous_output: Dict,
+    output_task: OutputTask
 ) -> bool:
     if not new_resource.Engine.value == previous_resource.Engine:
-        print(
-            f"Cant not update Engine; {previous_resource.Engine} -> {new_resource.Engine}"
-        )
-        return False
+        raise Exception
 
     if not new_resource.MasterUsername == previous_resource.MasterUsername:
-        print("Cant update Master Username")
-        return False
-
-    if not new_resource.DBClusterIdentifier == previous_resource.DBClusterIdentifier:
-        print("Cant update DB cluster info")
-        return False
+        raise Exception
 
     if not new_resource.DatabaseName == previous_resource.DatabaseName:
-        print("Cant update db name")
-        return False
+        raise Exception
 
-    if not new_resource.Port == previous_resource.Port:
-        print("Cant update db port")
-        return False
 
-    update_args = {"DBClusterIdentifier": new_resource.DBClusterIdentifier}
+    update_args = {"DBClusterIdentifier": previous_output.get('cluster_id')}
 
     scaling_config = {}
 
@@ -149,21 +138,21 @@ def _update_simple_relational_db(
     if scaling_config:
         update_args["ScalingConfiguration"] = scaling_config
 
-    raw_aws_client.run_client_function("rds", "modify_db_cluster", update_args)
+    output_task.update(comment=f'Updating DB Configuration')
+    aws_client.run_client_function("rds", "modify_db_cluster", update_args)
 
     if update_configuration_secret:
         # Update the password in the secret
-        secret_arn = cdev_cloud_mapper.get_output_value_by_hash(
-            previous_resource.hash, "secret_arn"
-        )
+        secret_arn = previous_output.get("secret_arn")
 
-        current_secret_rv = raw_aws_client.run_client_function(
+        current_secret_rv = aws_client.run_client_function(
             "secretsmanager", "get_secret_value", {"SecretId": secret_arn}
         )
 
         current_secret_obj = json.loads(current_secret_rv.get("SecretString"))
 
-        secret_rv = raw_aws_client.run_client_function(
+        output_task.update(comment=f'Updating DB Secret Configuration')
+        aws_client.run_client_function(
             "secretsmanager",
             "put_secret_value",
             {
@@ -183,73 +172,71 @@ def _update_simple_relational_db(
                 ),
             },
         )
-        print_deployment_step(
-            "UPDATE", f"  Updated configuration secret {new_resource.name}"
-        )
 
-    cdev_cloud_mapper.reidentify_cloud_resource(
-        previous_resource.hash, new_resource.hash
-    )
-    print_deployment_step(
-        "UPDATE", f"  Finished updating relational db {new_resource.name}"
-    )
-
-    return True
+    # None of the updatable values actually effect the output 
+    return previous_output
 
 
 def _remove_simple_relational_db(
-    identifier: str, resource: relational_db.simple_relational_db_model
+    transaction_token: str, 
+    previous_output: Dict,
+    output_task: OutputTask
 ) -> bool:
-    print_deployment_step(
-        "DELETE",
-        f"[blink]Deleting relational db {resource.name} (this will take a few minutes)[/blink]",
-    )
+    cluster_id = previous_output.get('cluster_id')
 
-    raw_aws_client.run_client_function(
+
+    output_task.update(comment=f'[blink]Deleting DB. This could take a few minutes[/blink]')
+
+    aws_client.run_client_function(
         "rds",
         "delete_db_cluster",
         {
-            "DBClusterIdentifier": resource.DBClusterIdentifier,
+            "DBClusterIdentifier": cluster_id,
             "SkipFinalSnapshot": True,
         },
     )
 
     # Update the password in the secret
-    secret_arn = cdev_cloud_mapper.get_output_value_by_hash(resource.hash, "secret_arn")
+    secret_arn = previous_output.get("secret_arn")
 
-    raw_aws_client.run_client_function(
+    output_task.update(comment=f'Deleting DB Secret')
+
+    aws_client.run_client_function(
         "secretsmanager", "delete_secret", {"SecretId": secret_arn}
     )
-    print_deployment_step("DELETE", f"Removed configuration secret {resource.name}")
-
-    print_deployment_step("DELETE", f"Removed relational db {resource.name}")
-
-    cdev_cloud_mapper.remove_cloud_resource(identifier, resource)
-    cdev_cloud_mapper.remove_identifier(identifier)
-    log.debug(f"Delete information in resource and cloud state")
-
-    return True
+    
+    return {}
 
 
 def handle_simple_relational_db_deployment(
-    resource_diff: Resource_State_Difference,
-) -> bool:
-    try:
-        if resource_diff.action_type == Action_Type.CREATE:
-            return _create_simple_relational_db(
-                resource_diff.new_resource.hash, resource_diff.new_resource
-            )
-        elif resource_diff.action_type == Action_Type.UPDATE_IDENTITY:
+        transaction_token: str, 
+        namespace_token: str, 
+        resource_diff: Resource_Difference, 
+        previous_output: Dict[relational_db.simple_relational_db_output, Any],
+        output_task: OutputTask
+    ) -> Dict:
+    if resource_diff.action_type == Resource_Change_Type.CREATE:
+        return _create_simple_relational_db(
+            transaction_token,
+            namespace_token,
+            resource_diff.new_resource,
+            output_task
+        )
+        
+    elif resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY:
+        return _update_simple_relational_db(
+            transaction_token,
+            relational_db.simple_relational_db_model(**resource_diff.previous_resource.dict()),
+            resource_diff.new_resource,
+            previous_output,
+            output_task
+        )
 
-            return _update_simple_relational_db(
-                resource_diff.previous_resource, resource_diff.new_resource
-            )
-        elif resource_diff.action_type == Action_Type.DELETE:
+    elif resource_diff.action_type == Resource_Change_Type.DELETE:
+        _remove_simple_relational_db(
+            transaction_token,
+            previous_output,
+            output_task
+        )
 
-            return _remove_simple_relational_db(
-                resource_diff.previous_resource.hash, resource_diff.previous_resource
-            )
-
-    except Exception as e:
-        print(e)
-        raise Exception("COULD NOT DEPLOY")
+        return {}
