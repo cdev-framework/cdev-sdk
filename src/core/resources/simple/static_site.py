@@ -36,7 +36,6 @@ class StaticSite(Resource):
 
         Args:
             cdev_name (str): Name of the resource
-            site_name (str, optional): base name of the bucket in s3.
         """
         super().__init__(cdev_name)
 
