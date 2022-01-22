@@ -137,7 +137,6 @@ class SimpleFunction(Resource):
     def events(self, value: List[Event]):
         self._events = value
 
-
     @property
     def configuration(self):
         return self._configuration
@@ -146,7 +145,6 @@ class SimpleFunction(Resource):
     @update_hash
     def configuration(self, value: simple_function_configuration_model):
         self._configuration = value
-
 
     @property
     def permissions(self):
@@ -157,7 +155,6 @@ class SimpleFunction(Resource):
     def permissions(self, value: List[Union[Permission, PermissionArn]]):
         self._permissions = value
 
-
     @property
     def external_dependencies(self):
         return self._external_dependencies
@@ -167,10 +164,7 @@ class SimpleFunction(Resource):
     def external_dependencies(self, value: List[Union[DeployedLayer, DependencyLayer]]):
         self._external_dependencies = value
 
-
-
     def compute_hash(self):
-        
         self._permissions_hash = "1"
         self._config_hash = "1"
         self._events_hash = "1"
@@ -185,7 +179,6 @@ class SimpleFunction(Resource):
             ]
         )
 
-        
     def render(self) -> simple_function_model:
 
         return simple_function_model(
@@ -210,11 +203,12 @@ def simple_function_annotation(
     environment={},
     permissions: List[Union[Permission, PermissionArn]] = [],
     includes: List[str] = [],
-    _nonce: str=""
+    nonce: str=""
 ) -> Callable[[Callable], SimpleFunction]:
-    """
-    This annotation is used to designate that a function should be deployed on the AWS lambda platform. Functions that are designated
-    using this annotation should have a signature that takes two inputs (event,context) to conform to the aws lambda handler signature.
+    """This annotation is used to designate that a function should be deployed as a Serverless function. 
+    
+    Functions that are designated using this annotation should have a signature that takes two inputs (event,context) 
+    to conform to the aws lambda handler signature.
 
     Functions that are annotated with this symbol will be put through the cdev function parser to optimize the final deployed artifact
     to only contain global statements needed for this function. For more information on this process read <link>.
@@ -251,7 +245,7 @@ def simple_function_annotation(
             configuration=final_config,
             function_permissions=permissions,
             includes=includes,
-            _nonce=_nonce
+            nonce=nonce
         )
 
     return create_function
