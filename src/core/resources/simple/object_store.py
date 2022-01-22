@@ -99,10 +99,6 @@ class SimpleBucket(Resource):
 
         self.permissions = BucketPermissions(cdev_name)
 
-        self.hash = hasher.hash_list([self._nonce])
-
-
-    
 
     def create_event_trigger(
         self, event_type: Bucket_Event_Type

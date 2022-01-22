@@ -22,7 +22,6 @@ DEFAULT_ENVIRONMENTS = ["prod", "stage", "dev"]
 
 
 def create_project_cli(args):
-    print(args)
     create_project(args.name)
 
 
@@ -34,7 +33,6 @@ def create_project(project_name: str, base_directory: DirectoryPath = None):
     if check_if_project_exists(base_directory):
         raise Exception("Project Already Created")
 
-    print(f"Create project")
 
     _create_folder_structure(base_directory)
 
@@ -84,7 +82,6 @@ def load_project(args):
     project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)
 
     local_project(project_info_location)
-    print("loaded project")
 
 
 def load_and_initialize_project(args):

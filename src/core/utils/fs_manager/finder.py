@@ -109,11 +109,10 @@ def _find_resources_information_from_file(
 
     for i in dir(mod):
         obj = getattr(mod, i)
-        #print(obj)
+
         if isinstance(obj, Resource):
             # Find all the Resources in the module and render them
-            #print(obj)
-            print(f"FOUND {obj} as Cdev_Resource in {mod}")
+
             if isinstance(obj, SimpleFunction):
                 #preparsed_info = obj.render()
                 functions_to_parse.append(obj.configuration.handler)
@@ -125,8 +124,6 @@ def _find_resources_information_from_file(
         elif isinstance(obj, Resource_Reference):
             reference_rv.append(obj.render())
 
-
-    print(f"FUNCTIONS TO PARSE: {functions_to_parse}")
     if functions_to_parse:
         parsed_function_info = _parse_serverless_functions(
             fp, 
@@ -162,15 +159,9 @@ def _parse_serverless_functions(
         
         intermediate_path = fs_utils.get_parsed_path(filepath, cleaned_name)
 
-        #print(f"imported modules ->>> {parsed_function.imported_packages}")
         needed_module_information = cdev_package_manager.get_top_level_module_info(
             parsed_function.imported_packages, filepath
         )
-        #print(f"Need modules infos ->>> { needed_module_information}")
-
-        #fs_utils.print_dependency_tree(
-        #    parsed_function.name, [v for k, v in needed_module_information.items()]
-        #)
 
         (
             handler_archive_path,
@@ -202,7 +193,7 @@ def _parse_serverless_functions(
             function_permissions=previous_info._permissions,
             external_dependencies=dependencies_info if dependencies_info else [],
             src_code_hash=handler_archive_hash,
-            _nonce=previous_info._nonce
+            nonce=previous_info.nonce
         )
 
     

@@ -31,7 +31,6 @@ def execute_frontend(workspace: Workspace, output: OutputManager, previous_compo
 
     differences = workspace.create_state_differences(current_state, diff_previous_component_names)
 
-    print(differences)
     if any(x for x in differences):
         output.print_state_differences(differences)
 

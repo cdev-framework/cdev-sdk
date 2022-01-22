@@ -244,7 +244,6 @@ def simple_function_annotation(
             events=events,
             configuration=final_config,
             function_permissions=permissions,
-            includes=includes,
             nonce=nonce
         )
 

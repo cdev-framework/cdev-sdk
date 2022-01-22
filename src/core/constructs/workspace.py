@@ -431,7 +431,6 @@ class Workspace:
 
                 try:
                     output_task.update(advance=5, comment="Deploying on Cloud :cloud:")
-                    print(self.get_mapper_namespace())
                     mapper = self.get_mapper_namespace().get(ruuid)
                     cloud_output = mapper.deploy_resource(transaction_token, namespace_token, change, previous_output, output_task)
                     output_task.update(advance=3, comment="Completing transaction with Backend")
