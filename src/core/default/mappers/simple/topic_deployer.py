@@ -19,10 +19,10 @@ def _create_simple_topic(
 
     full_namespace_suffix = hasher.hash_list([namespace_token, str(uuid4())])
 
-    topic_name = f"cdev-topic-{full_namespace_suffix}.fifo" if resource.fifo else f"cdev-topic-{full_namespace_suffix}"
+    topic_name = f"cdev-topic-{full_namespace_suffix}.fifo" if resource.is_fifo else f"cdev-topic-{full_namespace_suffix}"
 
-    if resource.fifo:
-        attributes.update({"FifoTopic": str(resource.fifo)})
+    if resource.is_fifo:
+        attributes.update({"FifoTopic": str(resource.is_fifo)})
 
     output_task.update(comment=f'Creating Topic {topic_name}')
 

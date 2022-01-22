@@ -1,46 +1,17 @@
 from enum import Enum
 
-from core.constructs.resource import Resource, ResourceModel, Cloud_Output
+from core.constructs.resource import Resource, ResourceModel, Cloud_Output, update_hash
 from core.utils import hasher
 
 from .iam import Permission, PermissionArn
 
 
-class db_engine(str, Enum):
-    aurora = "aurora"
-    """MySQL 5.6-compatible Aurora"""
-
-    aurora_mysql = "aurora-mysql"
-    """MySQL 5.7-compatible Aurora"""
-
-    aurora_postgresql = "aurora-postgresql"
-    """Postgres 10.4-compatible Aurora"""
+RUUID = "cdev::simple::relationaldb"
 
 
-class simple_relational_db_model(ResourceModel):
-    DatabaseName: str
-    """Replacement"""
-    EnableHttpEndpoint: bool
-    """No Interruption"""
-    Engine: db_engine
-    """Some Interruption"""
-    MasterUsername: str
-    """Replacement"""
-    MasterUserPassword: str
-    """No Interruption"""
-    MaxCapacity: int
-    """No Interruption"""
-    MinCapacity: int
-    """No Interruption"""
-    SecondsToPause: int
-    """No Interruption"""
-
-
-class simple_relational_db_output(str, Enum):
-    endpoint = "cloud_id"
-    secret_arn = "secret_arn"
-
-
+#####################
+###### Permission
+######################
 class RelationalDBPermissions:
     RUUID = "cdev::simple::relationaldb"
     
@@ -65,68 +36,179 @@ class RelationalDBPermissions:
         )
 
 
-class RelationalDB(Resource):
-    RUUID = "cdev::simple::relationaldb"
+##############
+##### Output
+##############
+class simple_relational_db_output(str, Enum):
+    endpoint = "cloud_id"
+    secret_arn = "secret_arn"
 
+
+###############
+##### RelationalDB
+###############
+class db_engine(str, Enum):
+    aurora = "aurora"
+    """MySQL 5.6-compatible Aurora"""
+
+    aurora_mysql = "aurora-mysql"
+    """MySQL 5.7-compatible Aurora"""
+
+    aurora_postgresql = "aurora-postgresql"
+    """Postgres 10.4-compatible Aurora"""
+
+
+
+class simple_relational_db_model(ResourceModel):
+    Engine: db_engine
+    """Some Interruption"""
+    MasterUsername: str
+    """Replacement"""
+    MasterUserPassword: str
+    """No Interruption"""
+    DatabaseName: str
+    """Replacement"""
+    EnableHttpEndpoint: bool
+    """No Interruption"""
+    MaxCapacity: int
+    """No Interruption"""
+    MinCapacity: int
+    """No Interruption"""
+    SecondsToPause: int
+    """No Interruption"""
+
+
+class RelationalDB(Resource):
+    
+    @update_hash
     def __init__(
         self,
         cdev_name: str,
         engine: db_engine,
         username: str,
         password: str,
-        httpendpoint: bool = True,
         database_name: str = "",
+        enable_http_endpoint: bool = True,
         max_capacity: int = 64,
         min_capacity: int = 2,
         seconds_to_pause: int = 300,
-        _nonce: str = ""
+        nonce: str = ""
     ) -> None:
 
-        super().__init__(cdev_name)
+        super().__init__(cdev_name, RUUID, nonce)
 
-        self.Engine = engine.value
-        self.MasterUsername = username
-        self.MasterUserPassword = password
-
-        self._nonce = _nonce
-
-        self.DatabaseName = database_name
-        self.EnableHttpEndpoint = httpendpoint
-
-        self.MaxCapacity = max_capacity
-        self.MinCapacity = min_capacity
-        self.SecondsToPause = seconds_to_pause
+        self._engine = engine.value
+        self._master_username = username
+        self._master_user_password = password
+        self._database_name = database_name
+        self._enable_http_endpoint = enable_http_endpoint
+        self._max_capacity = max_capacity
+        self._min_capacity = min_capacity
+        self._seconds_to_pause = seconds_to_pause
 
         self.permissions = RelationalDBPermissions(cdev_name)
 
-        self.hash = hasher.hash_list(
+    @property
+    def seconds_to_pause(self):
+        return self._seconds_to_pause
+
+    @seconds_to_pause.setter
+    @update_hash
+    def seconds_to_pause(self, value: int):
+        self._seconds_to_pause = value
+
+    @property
+    def min_capacity(self):
+        return self._min_capacity
+
+    @min_capacity.setter
+    @update_hash
+    def min_capacity(self, value: int):
+        self._min_capacity = value
+
+    @property
+    def max_capacity(self):
+        return self._max_capacity
+
+    @max_capacity.setter
+    @update_hash
+    def max_capacity(self, value: int):
+        self._max_capacity = value
+
+    @property
+    def enable_http_endpoint(self):
+        return self._enable_http_endpoint
+
+    @enable_http_endpoint.setter
+    @update_hash
+    def enable_http_endpoint(self, value: bool):
+        self._enable_http_endpoint = value
+
+    @property
+    def database_name(self):
+        return self._database_name
+
+    @database_name.setter
+    @update_hash
+    def database_name(self, value: str):
+        self._database_name = value
+
+    @property
+    def master_user_password(self):
+        return self._master_user_password
+
+    @master_user_password.setter
+    @update_hash
+    def master_user_password(self, value: str):
+        self._master_user_password = value
+
+    @property
+    def master_username(self):
+        return self._master_username
+
+    @master_username.setter
+    @update_hash
+    def master_username(self, value: str):
+        self._master_username = value
+
+    @property
+    def engine(self):
+        return self._engine
+
+    @engine.setter
+    @update_hash
+    def engine(self, value: db_engine):
+        self._engine = value
+
+    def compute_hash(self):
+        self._hash = hasher.hash_list(
             [
-                self.Engine,
-                self.MasterUsername,
-                self.MasterUserPassword,
-                self.DatabaseName,
-                self.EnableHttpEndpoint,
-                self.MaxCapacity,
-                self.MinCapacity,
-                self.SecondsToPause,
-                self._nonce
+                self.engine,
+                self.master_username,
+                self.master_user_password,
+                self.database_name,
+                self.enable_http_endpoint,
+                self.max_capacity,
+                self.min_capacity,
+                self.seconds_to_pause,
+                self.nonce
             ]
         )
 
     def render(self) -> simple_relational_db_model:
         return simple_relational_db_model(
             **{
-                "ruuid": self.RUUID,
+                "ruuid": self.ruuid,
                 "name": self.name,
                 "hash": self.hash,
-                "DatabaseName": self.DatabaseName,
-                "EnableHttpEndpoint": self.EnableHttpEndpoint,
-                "Engine": self.Engine,
-                "MasterUsername": self.MasterUsername,
-                "MasterUserPassword": self.MasterUserPassword,
-                "MaxCapacity": self.MaxCapacity,
-                "MinCapacity": self.MinCapacity,
-                "SecondsToPause": self.SecondsToPause,
+                "Engine": self.engine,
+                "MasterUsername": self.master_username,
+                "MasterUserPassword": self.master_user_password,
+                "DatabaseName": self.database_name,
+                "EnableHttpEndpoint": self.enable_http_endpoint,
+                "MaxCapacity": self.max_capacity,
+                "MinCapacity": self.min_capacity,
+                "SecondsToPause": self.seconds_to_pause,
             }
         )
 

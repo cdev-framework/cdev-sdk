@@ -1,11 +1,13 @@
 from enum import Enum
 
-from core.constructs.resource import Resource, ResourceModel, Cloud_Output
+from core.constructs.resource import Resource, ResourceModel, Cloud_Output, update_hash
 from core.utils import hasher
 
 from .iam import Permission
 
 from .events import Event, event_model, EventTypes
+
+RUUID = "cdev::simple::bucket"
 
 class Bucket_Event_Type(str, Enum):
     Object_Created = "s3:ObjectCreated:*"
@@ -83,31 +85,24 @@ class simple_bucket_output(str, Enum):
 
 
 class SimpleBucket(Resource):
-    RUUID = "cdev::simple::bucket"
-
-    def __init__(self, cdev_name: str, _nonce: str="") -> None:
+    
+    @update_hash
+    def __init__(self, cdev_name: str, nonce: str="") -> None:
         """
         Create a simple S3 bucket that can be used as an object store.
 
         Args:
             cdev_name (str): Name of the resource
         """
-        super().__init__(cdev_name)
+        super().__init__(cdev_name, RUUID, nonce)
 
-        self._nonce = _nonce
 
         self.permissions = BucketPermissions(cdev_name)
 
         self.hash = hasher.hash_list([self._nonce])
 
 
-    def render(self) -> simple_bucket_model:
-        return simple_bucket_model(
-            ruuid=self.RUUID,
-            name=self.name,
-            hash=self.hash,
-        )
-
+    
 
     def create_event_trigger(
         self, event_type: Bucket_Event_Type
@@ -119,6 +114,16 @@ class SimpleBucket(Resource):
         )
 
         return event
+
+    def compute_hash(self):
+        self._hash = hasher.hash_list([self.nonce])
+        
+    def render(self) -> simple_bucket_model:
+        return simple_bucket_model(
+            ruuid=self.ruuid,
+            name=self.name,
+            hash=self.hash,
+        )
 
     def from_output(self, key: simple_bucket_output) -> Cloud_Output:
         return super().from_output(key)

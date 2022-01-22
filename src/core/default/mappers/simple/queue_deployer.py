@@ -19,10 +19,10 @@ def _create_simple_queue(
 
     full_namespace_suffix = hasher.hash_list([namespace_token, str(uuid4())])
 
-    queue_name = f"cdev-queue-{full_namespace_suffix}.fifo" if resource.fifo else f"cdev-queue-{full_namespace_suffix}"
+    queue_name = f"cdev-queue-{full_namespace_suffix}.fifo" if resource.is_fifo else f"cdev-queue-{full_namespace_suffix}"
 
-    if resource.fifo:
-        attributes.update({"FifoQueue": str(resource.fifo)})
+    if resource.is_fifo:
+        attributes.update({"FifoQueue": str(resource.is_fifo)})
 
     output_task.update(comment=f'Creating Queue {queue_name}')
 

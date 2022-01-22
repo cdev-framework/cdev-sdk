@@ -1,13 +1,17 @@
 from enum import Enum
 
-from core.constructs.resource import Resource, ResourceModel, Cloud_Output
+from core.constructs.resource import Resource, ResourceModel, Cloud_Output, update_hash
 from core.utils import hasher
 
 from .events import Event, event_model, EventTypes
 from .iam import Permission
 
+RUUID = "cdev::simple::queue"
 
 
+######################
+##### Events
+######################
 class queue_event_model(event_model):
     """
     something
@@ -24,8 +28,7 @@ class queue_event_model(event_model):
 
 
 class QueueEvent(Event):
-    RUUID = "cdev::simple::queue"
-
+    
     def __init__(self, queue_name: str, batch_size: int, batch_window: int) -> None:
 
         if batch_size > 10000 or batch_size < 0:
@@ -39,15 +42,17 @@ class QueueEvent(Event):
     def render(self) -> queue_event_model:
         return queue_event_model(
             original_resource_name=self.queue_name,
-            original_resource_type=self.RUUID,
+            original_resource_type=RUUID,
             event_type=EventTypes.QUEUE_TRIGGER,
             batch_size=self.batch_size,
             batch_window=self.batch_window,
         )
 
 
+######################
+###### Permission
+######################
 class QueuePermissions:
-    RUUID = "cdev::simple::queue"
 
     def __init__(self, resource_name) -> None:
         self.READ_QUEUE = Permission(
@@ -56,7 +61,7 @@ class QueuePermissions:
                 "sqs:DeleteMessage",
                 "sqs:GetQueueAttributes",
             ],
-            cloud_id=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{RUUID}::{resource_name}",
             effect="Allow",
         )
 
@@ -65,7 +70,7 @@ class QueuePermissions:
                 "sqs:SendMessage",
                 "sqs:GetQueueAttributes",
             ],
-            cloud_id=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{RUUID}::{resource_name}",
             effect="Allow",
         )
 
@@ -76,7 +81,7 @@ class QueuePermissions:
                 "sqs:GetQueueAttributes",
                 "sqs:SendMessage",
             ],
-            cloud_id=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{RUUID}::{resource_name}",
             effect="Allow",
         )
 
@@ -86,54 +91,57 @@ class QueuePermissions:
                 "sqs:DeleteMessage",
                 "sqs:GetQueueAttributes",
             ],
-            cloud_id=f"{self.RUUID}::{resource_name}",
+            cloud_id=f"{RUUID}::{resource_name}",
             effect="Allow",
         )
 
 
-class simple_queue_model(ResourceModel):
-    fifo: bool
-
-
+######################
+##### Output
+######################
 class simple_queue_output(str, Enum):
     cloud_id = "cloud_id"
     queue_name = "queue_name"
 
 
-class Queue(Resource):
-    RUUID = "cdev::simple::queue"
+######################
+##### Queue
+######################
+class simple_queue_model(ResourceModel):
+    is_fifo: bool
 
-    def __init__(self, cdev_name: str, is_fifo: bool = False, _nonce: str = "") -> None:
+
+class Queue(Resource):
+
+    @update_hash
+    def __init__(self, cdev_name: str, is_fifo: bool = False, nonce: str = "") -> None:
         """
         A simple sqs queue.
 
         args:
             cdev_name (str): Name of the resource
-            is_fifo (bool, optional, default=False): if this should be a First-in First-out queue (link to difference)
+            is_fifo (bool, default=False): if this should be a First-in First-out queue (link to difference)
         """
-        super().__init__(cdev_name)
+        super().__init__(cdev_name, RUUID, nonce)
 
-        self.fifo = is_fifo
+        self.is_fifo = is_fifo
         self.permissions = QueuePermissions(cdev_name)
 
-        self.hash = hasher.hash_list([is_fifo, _nonce])
+    @property
+    def is_fifo(self):
+        return self._is_fifo
 
-    def render(self) -> simple_queue_model:
-        return simple_queue_model(
-            **{
-                "ruuid": self.RUUID,
-                "name": self.name,
-                "hash": self.hash,
-                "fifo": self.fifo,
-            }
-        )
+    @is_fifo.setter
+    @update_hash
+    def is_fifo(self, value: bool):
+        self._is_fifo = value
 
     def create_event_trigger(
         self, batch_size: int = 10, batch_window: int = 5
     ) -> QueueEvent:
     
         # https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#events-sqs-eventsource
-        if self.fifo and batch_size > 10:
+        if self.is_fifo and batch_size > 10:
             raise Exception
 
         event = QueueEvent(
@@ -143,6 +151,17 @@ class Queue(Resource):
         )
 
         return event
+        
+    def compute_hash(self):
+        self._hash = hasher.hash_list([self.is_fifo, self.nonce])
+        
+    def render(self) -> simple_queue_model:
+        return simple_queue_model(
+            name=self.name,
+            ruuid=self.ruuid,
+            hash=self.hash,
+            is_fifo=self.is_fifo,
+        )
 
     def from_output(self, key: simple_queue_output) -> Cloud_Output:
         return super().from_output(key)

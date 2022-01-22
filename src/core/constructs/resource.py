@@ -11,28 +11,19 @@ from ..utils.hasher import hash_list
 
 
 class ResourceModel(ImmutableModel):
-    """
-    This is the most basic information needed to describe a resource.
+    """Base class with basic information about a defined resource.
+    
+    All classes derived from this should contain additional information about the state of a resource. 
+    Within the life cycle of the Cdev Core framework,this is used to represent resources after any
+    configuration; hence the need to make these immutable data
+    classes. 
 
-    --- Attributes ---
-
-    - ruuid ->  a string that represents the resource identifier (provider::resource-type)
-
-    - hash  ->  a string that is the hash of this object. This hash must be computed such that
-                it changes only if a change in the state is desired.
-    """
-
-    ruuid: str
-    """
-    Name space identifier that is used to pass this resource to a downstream mapper
-
-    Form: (top-level-namespace)::(resource-type-id)
-    """
-
-    hash: str
-    """
-    This is a hash that is used to identify if changes in the resources have occurred. It should have the property:
-    - This value changes only if a there is a change in the resource. 
+    Attributes:
+        name: The name of the resource. Note that the combination of a name and ruuid should be unique 
+          within a namespace
+        ruuid: The identifier of this resource type.
+        hash: A string that is the hash of this object. This hash must be computed such that it changes 
+          only if a change in the state is desired.
     """
 
     name: str
@@ -45,6 +36,17 @@ class ResourceModel(ImmutableModel):
     instead of update. 
     """
 
+    ruuid: str
+    """
+    Name space identifier that is used to pass this resource to a downstream mapper
+
+    Form: (top-level-namespace)::(resource-type-id)
+    """
+
+    hash: str
+    """
+    This is a hash that is used to identify if changes in the resources have occurred.
+    """
 
     class Config:
         arbitrary_types_allowed = True
@@ -222,23 +224,79 @@ class Cloud_Output(BaseModel):
             "component_name": component_name
         })
 
+F = TypeVar("F", bound=Callable[..., Any])
+
+def update_hash(func: F) -> F:
+    """Wrap a function that modifies the state of a Resource so that the hash is properly updated when a change occurs.
+
+    Args:
+        func (F): State modifying method.
+
+    Returns:
+        F: Wrapped function to compute new hash after changes have been made
+    """
+    def wrapped_func(resource: "Resource", *func_posargs, **func_kwargs):
+        rv = func(resource, *func_posargs, **func_kwargs)
+        resource.compute_hash()
+        return rv
+
+    return wrapped_func
+
 
 class Resource:
-    RUUID: str = None
-
-    def __init__(self, name: str):
-        self.name = name
+    def __init__(self, name: str, ruuid: str, nonce: str = ""):
+        self._name = name
+        self._ruuid = ruuid
+        self._hash = None
+        self._nonce = nonce
 
     def render(self) -> ResourceModel:
-        pass
+        raise NotImplementedError
+
+    @property
+    def name(self):
+        """The name of the created resource"""
+        return self._name
+
+    @name.setter
+    def name(self, value: str):
+        raise Exception("The Name of a resource can only be set when initialized.")
+
+    @property
+    def ruuid(self):
+        """The ruuid of the created resource"""
+        return self._ruuid
+
+    @ruuid.setter
+    def ruuid(self, value: str):
+        raise Exception("The Ruuid of a resource can only be set when initialized.")
+
+    @property
+    def nonce(self):
+        """The nonce of the created resource"""
+        return self._nonce
+
+    @nonce.setter
+    def nonce(self, value: str):
+        raise Exception("The nonce of a resource can only be set when initialized.")
+
+    @property
+    def hash(self):
+        """The cdev hash of the resource"""
+        if self._hash is None:
+            raise Exception
+
+        return self._hash
+
+    @hash.setter
+    def hash(self, value: str):
+        raise Exception("The `hash` of a Resource can only be set by the `compute_hash` method")
+
+    def compute_hash(self):
+        raise NotImplementedError
 
     def from_output(self, key: Enum) -> Cloud_Output:
-        return Cloud_Output(
-            ruuid= self.RUUID,
-            name= self.name,
-            key= key.value,
-            type= 'resource'
-        )
+        raise NotImplementedError
 
 
 class Resource_Reference:

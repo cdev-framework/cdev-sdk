@@ -5,7 +5,7 @@ import os
 from pydantic import FilePath
 from typing import Callable, FrozenSet, List, Optional, Union
 
-from core.constructs.resource import Resource, ResourceModel, Cloud_Output
+from core.constructs.resource import Resource, ResourceModel, Cloud_Output, update_hash
 from core.utils import hasher
 from core.utils.types import frozendict, ImmutableModel
 
@@ -14,7 +14,7 @@ from .events import Event, event_model
 
 
 LAMBDA_LAYER_RUUID = "cdev::simple::lambda_layer"
-LAMBDA_FUNCTION_RUUID = "cdev::simple::function"
+RUUID = "cdev::simple::function"
 
 ################
 ##### Dependencies 
@@ -59,7 +59,7 @@ class DependencyLayer(Resource):
 
 
 ################
-##### Functions
+##### Function
 ################
 class simple_function_configuration_model(ImmutableModel):
     handler: str
@@ -96,6 +96,7 @@ class simple_function_model(ResourceModel):
 
 
 class SimpleFunction(Resource):
+    @update_hash
     def __init__(
         self,
         cdev_name: str,
@@ -103,39 +104,83 @@ class SimpleFunction(Resource):
         events: List[Event] = [],
         configuration: simple_function_configuration_model = {},
         function_permissions: List[Union[Permission, PermissionArn]] = [],
-        includes: List[str] = [],
         external_dependencies: List[Union[DeployedLayer, DependencyLayer]]=[],
         src_code_hash: str = None,
-        _nonce: str = "",
+        nonce: str = "",
     ) -> None:
-        super().__init__(cdev_name)
+        super().__init__(cdev_name, RUUID, nonce)
 
-        self.filepath = filepath
-        self.includes = includes
-        self.events = events
-        
-        self.configuration = configuration
-
+        self._filepath = filepath
+        self._events = events
+        self._configuration = configuration
         self._permissions = function_permissions
+        self._external_dependencies = external_dependencies
         
-        self.permissions_hash = "1"
-
         self.src_code_hash = src_code_hash if src_code_hash else hasher.hash_file(filepath)
+        
 
-        self.config_hash = "1"
+    @property
+    def filepath(self):
+        return self._filepath
 
-        self.events_hash = hasher.hash_list([x.get_hash() for x in events])
+    @filepath.setter
+    @update_hash
+    def filepath(self, value: str):
+        self._filepath = value
 
-        self.external_dependencies = external_dependencies
+    @property
+    def events(self):
+        return self._events
 
-        self._nonce = _nonce
+    @events.setter
+    @update_hash
+    def events(self, value: List[Event]):
+        self._events = value
 
-        self.full_hash = hasher.hash_list(
+
+    @property
+    def configuration(self):
+        return self._configuration
+
+    @configuration.setter
+    @update_hash
+    def configuration(self, value: simple_function_configuration_model):
+        self._configuration = value
+
+
+    @property
+    def permissions(self):
+        return self._permissions
+
+    @permissions.setter
+    @update_hash
+    def permissions(self, value: List[Union[Permission, PermissionArn]]):
+        self._permissions = value
+
+
+    @property
+    def external_dependencies(self):
+        return self._external_dependencies
+
+    @external_dependencies.setter
+    @update_hash
+    def external_dependencies(self, value: List[Union[DeployedLayer, DependencyLayer]]):
+        self._external_dependencies = value
+
+
+
+    def compute_hash(self):
+        
+        self._permissions_hash = "1"
+        self._config_hash = "1"
+        self._events_hash = "1"
+
+        self._hash = hasher.hash_list(
             [
                 self.src_code_hash,
-                self.config_hash,
-                self.events_hash,
-                self.permissions_hash,
+                self._config_hash,
+                self._events_hash,
+                self._permissions_hash,
                 self._nonce
             ]
         )
@@ -145,18 +190,16 @@ class SimpleFunction(Resource):
 
         return simple_function_model(
             name=self.name,
-            ruuid=LAMBDA_FUNCTION_RUUID,
-            hash=self.full_hash,
+            ruuid=self.ruuid,
+            hash=self.hash,
             filepath=self.filepath,
             configuration=self.configuration,
             events=frozenset([x.render() for x in self.events]),
-            permissions=frozenset([x.render() for x in self._permissions]),
+            permissions=frozenset([x.render() for x in self.permissions]),
             external_dependencies=self.external_dependencies,
             src_code_hash=self.src_code_hash
         )
 
-    def get_includes(self) -> List[str]:
-        return self.includes
 
 
 

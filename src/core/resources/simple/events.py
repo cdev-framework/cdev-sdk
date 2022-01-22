@@ -1,4 +1,5 @@
 from enum import Enum
+
 from core.utils.types import frozendict, ImmutableModel
 ################
 ##### Events

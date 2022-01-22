@@ -1,22 +1,27 @@
 from enum import Enum
 from typing import FrozenSet, List
-from pydantic import Field
 
-from core.constructs.resource import Resource, ResourceModel, Cloud_Output
+from core.constructs.resource import Resource, ResourceModel, Cloud_Output, update_hash
 from core.utils import hasher
 from core.utils.types import ImmutableModel
 
 from .events import Event, event_model, EventTypes
 from .iam import Permission
 
-# log = logger.get_cdev_logger(__name__)
+RUUID = "cdev::simple::table"
+
+
+#################
+##### Events
+#################
 class stream_type(str, Enum):
-    """
-    Type of streams for a table. Can be values:\n
-    KEYS_ONLY -> Only the key attributes of the modified item.\n
-    NEW_IMAGE -> The entire item, as it appears after it was modified.\n
-    OLD_IMAGE -> The entire item, as it appeared before it was modified.\n
-    NEW_AND_OLD_IMAGES -> Both the new and the old item images of the item.\n
+    """Type of streams for a table. 
+    
+    attributes:
+        KEYS_ONLY: Only the key attributes of the modified item.
+        NEW_IMAGE: The entire item, as it appears after it was modified.
+        OLD_IMAGE: The entire item, as it appeared before it was modified.
+        NEW_AND_OLD_IMAGES: Both the new and the old item images of the item.
     """
 
     KEYS_ONLY = "KEYS_ONLY"
@@ -60,79 +65,9 @@ class StreamEvent(Event):
         )
 
 
-
-class attribute_type(str, Enum):
-    """
-    Attributes of a table can be of the values:\n
-    S -> String\n
-    N -> Number\n
-    B -> Binary\n
-
-    These values will be used by the table to do type checks on data for the defined attribute.
-
-    visit https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.create_table for more details
-    """
-
-    S = "S"
-    N = "N"
-    B = "B"
-
-
-class key_type(str, Enum):
-    """
-    Type of key for a defined key on a table. Can be values:
-    HASH -> Partion Key
-    RANGE -> Sort key
-
-    These value will be used by the primary key to determine how the data is stored in the table.
-    visit https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.CoreComponents.html#HowItWorks.CoreComponents.PrimaryKey for more details.
-    """
-
-    HASH = "HASH"
-    RANGE = "RANGE"
-
-
-class attribute_definition_model(ImmutableModel):
-    attribute_name: str 
-    attribute_type: attribute_type
-
-    
-
-class AttributeDefinition:
-    def __init__(self, name:str, type: attribute_type) -> None:
-        self.name = name
-        self.type = type
-
-
-    def render(self) -> attribute_definition_model:
-        return attribute_definition_model(
-            attribute_name=self.name,
-            attribute_type=self.type
-        )
-
-class key_definition_model(ImmutableModel):
-    attribute_name: str 
-    key_type: key_type
-
-
-class KeyDefinition:
-    def __init__(self, name:str, type: key_type) -> None:
-        self.name = name
-        self.type = type
-
-
-    def render(self) -> key_definition_model:
-        return key_definition_model(
-            attribute_name=self.name,
-            key_type=self.type
-        )
-
-
-class simple_table_output(str, Enum):
-    cloud_id = "cloud_id"
-    table_name = "table_name"
-
-
+#####################
+###### Permission
+######################
 class TablePermissions:
     RUUID = "cdev::simple::table"
 
@@ -200,46 +135,126 @@ class TablePermissions:
         )
 
 
+##############
+##### Output
+##############
+class simple_table_output(str, Enum):
+    cloud_id = "cloud_id"
+    table_name = "table_name"
+
+
+###############
+##### Table
+###############
+class attribute_type(str, Enum):
+    """Attributes of a table.
+
+    These values will be used by the table to do type checks on data for the defined attribute.
+
+    visit https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.create_table for more details
+
+    Values:
+        S: String
+        N: Number
+        B: Binary
+    """
+
+    S = "S"
+    N = "N"
+    B = "B"
+
+
+class key_type(str, Enum):
+    """Type of key for a defined key on a table.
+    
+    These value will be used by the primary key to determine how the data is stored in the table.
+    visit https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.CoreComponents.html#HowItWorks.CoreComponents.PrimaryKey for more details.
+
+    Values:
+        HASH: Partion Key
+        RANGE: Sort key
+    """
+
+    HASH = "HASH"
+    RANGE = "RANGE"
+
+
+class attribute_definition_model(ImmutableModel):
+    attribute_name: str 
+    attribute_type: attribute_type
+
+    
+class AttributeDefinition:
+    def __init__(self, name:str, type: attribute_type) -> None:
+        self.name = name
+        self.type = type
+
+
+    def render(self) -> attribute_definition_model:
+        return attribute_definition_model(
+            attribute_name=self.name,
+            attribute_type=self.type
+        )
+
+
+class key_definition_model(ImmutableModel):
+    attribute_name: str 
+    key_type: key_type
+
+
+class KeyDefinition:
+    def __init__(self, name:str, type: key_type) -> None:
+        self.name = name
+        self.type = type
+
+
+    def render(self) -> key_definition_model:
+        return key_definition_model(
+            attribute_name=self.name,
+            key_type=self.type
+        )
+
+
 class simple_table_model(ResourceModel):
     attributes: FrozenSet[attribute_definition_model]
     keys: FrozenSet[key_definition_model]
 
 
 class Table(Resource):
-    RUUID = "cdev::simple::table"
 
+    @update_hash
     def __init__(
         self,
         cdev_name: str,
         attributes: List[AttributeDefinition],
         keys: List[KeyDefinition],
-        _nonce: str = "",
+        nonce: str = "",
     ) -> None:
-        super().__init__(cdev_name)
+        super().__init__(cdev_name, RUUID, nonce)
 
-        rv = Table.check_attributes_and_keys(attributes, keys)
-        if not rv[0]:
-            print(rv[1])
-            raise Exception
-    
-        self._nonce = _nonce
-
-        self.attributes = attributes
-        self.keys = keys
+        self._attributes = attributes
+        self._keys = keys
         self._stream = None
 
         self.permissions = TablePermissions(cdev_name)
 
-        self.hash = hasher.hash_list([self.attributes, self.keys, self._nonce])
+    @property
+    def attributes(self):
+        return self._attributes
 
-    def render(self) -> simple_table_model:
-        return simple_table_model(
-            ruuid=self.RUUID,
-            name=self.name,
-            hash=self.hash,
-            attributes=[x.render() for x in self.attributes],
-            keys=[x.render() for x in self.keys],
-        )
+    @attributes.setter
+    @update_hash
+    def attributes(self, value: List[AttributeDefinition]):
+        self._attributes = value
+
+    @property
+    def keys(self):
+        return self._keys
+
+    @keys.setter
+    @update_hash
+    def keys(self, value: List[KeyDefinition]):
+        self._keys = value
 
     def create_stream(
         self, view_type: stream_type, batch_size: int = 100
@@ -268,48 +283,65 @@ class Table(Resource):
 
         return self._stream
 
-    def check_attributes_and_keys(
-        attributes: List[AttributeDefinition], keys: List[KeyDefinition]
-    ) -> bool:
+
+    def _check_attributes_and_keys(
+        self
+    ) -> None:
         """
         Check key constraints based on https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.create_table
         """
-        if len(keys) > 2:
-            return (False, "Only two primary keys can be used")
+        if len(self.keys) > 2:
+            raise Exception("Only two primary keys can be used")
 
-        primary_key = keys[0]
+        primary_key = self.keys[0]
 
         if not primary_key:
-            return (False, "No Hash key provided")
+            raise Exception("No Hash key provided")
 
         if not primary_key.type == key_type.HASH:
-            return (False, "First key is not Hash key")
+            raise Exception("First key is not Hash key")
 
         if not primary_key.name in set(
-            [x.name for x in attributes]
+            [x.name for x in self.attributes]
         ):
-            return (
-                False,
+            raise Exception(
                 f"Hash key 'AttributeName' ({primary_key.name}) not defined in attributes",
             )
 
-        if len(keys) == 1:
-            return (True, "")
+        if len(self.keys) == 1:
+            return 
 
-        range_key = keys[1]
+        range_key = self.keys[1]
 
         if not range_key.type == key_type.RANGE:
-            return (False, "Second key is not a Range key")
+            raise Exception("Second key is not a Range key")
 
         if not range_key.name in set(
-            [x.name for x in attributes]
+            [x.name for x in self.attributes]
         ):
-            return (
-                False,
+            raise Exception(
                 f"Range key 'AttributeName' ({range_key.name}) not defined in attributes",
             )
 
-        return (True, "")
+    def compute_hash(self):
+        self._hash = hasher.hash_list(
+            [
+                self.attributes, 
+                self.keys, 
+                self.nonce
+            ]
+        )
+
+    def render(self) -> simple_table_model:
+        self._check_attributes_and_keys()
+        
+        return simple_table_model(
+            ruuid=RUUID,
+            name=self.name,
+            hash=self.hash,
+            attributes=[x.render() for x in self.attributes],
+            keys=[x.render() for x in self.keys],
+        )
 
     def from_output(self, key: simple_table_output) -> Cloud_Output:
         return super().from_output(key)
