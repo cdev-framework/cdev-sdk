@@ -230,6 +230,14 @@ class Table(Resource):
         keys: List[KeyDefinition],
         nonce: str = "",
     ) -> None:
+        """[summary]
+
+        Args:
+            cdev_name (str): [description]
+            attributes (List[AttributeDefinition]): [description]
+            keys (List[KeyDefinition]): [description]
+            nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+        """
         super().__init__(cdev_name, RUUID, nonce)
 
         self._attributes = attributes

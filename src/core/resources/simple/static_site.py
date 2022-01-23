@@ -43,8 +43,7 @@ class StaticSite(Resource):
             error_document (str): [description]
             sync_folder (bool): [description]
             content_folder (str): [description]
-            nonce (str): [description]
-            cdev_name (str): Name of the resource
+            nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
         """
         super().__init__(cdev_name, RUUID, nonce)
 

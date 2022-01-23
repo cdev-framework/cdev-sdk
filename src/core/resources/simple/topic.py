@@ -53,7 +53,13 @@ class Topic(Resource):
     def __init__(
         self, cdev_name: str, is_fifo: bool = False, nonce: str = ''
     ) -> None:
-        
+        """[summary]
+
+        Args:
+            cdev_name (str): [description]
+            is_fifo (bool, optional): [description]. Defaults to False.
+            nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+        """
         super().__init__(cdev_name, RUUID, nonce)
 
         self._is_fifo = is_fifo

@@ -94,7 +94,20 @@ class RelationalDB(Resource):
         seconds_to_pause: int = 300,
         nonce: str = ""
     ) -> None:
+        """[summary]
 
+        Args:
+            cdev_name (str): [description]
+            engine (db_engine): [description]
+            username (str): [description]
+            password (str): [description]
+            database_name (str, optional): [description]. Defaults to "".
+            enable_http_endpoint (bool, optional): [description]. Defaults to True.
+            max_capacity (int, optional): [description]. Defaults to 64.
+            min_capacity (int, optional): [description]. Defaults to 2.
+            seconds_to_pause (int, optional): [description]. Defaults to 300.
+            nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+        """
         super().__init__(cdev_name, RUUID, nonce)
 
         self._engine = engine.value

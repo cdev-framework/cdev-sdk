@@ -62,7 +62,8 @@ class Api(Resource):
 
         Args
             cdev_name (str): Name for the resource.
-            allow_cors (bool, Default: True): Allow Cross Origin Resource Sharing (CORS) on the api. 
+            allow_cors (bool, Default: True): Allow Cross Origin Resource Sharing (CORS) on the api.
+            nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
 
         Note:
             To create routes for the api use the `route` method
@@ -84,6 +85,22 @@ class Api(Resource):
 
     @update_hash
     def route(self, path: str, verb: str) -> RouteEvent:
+        """Create a route for the API.
+
+        Generate a `RouteEvent` that can be used as a trigger for other resources. In particular, you can attach a serverless
+        function to the route to handle the event.
+
+        ```
+        route = myApi.route('/hello_world')
+        ```
+
+        Args:
+            path (str): The http path of the route created. Path must start with '/'.
+            verb (str): Options: GET, PUT, POST, DELETE, ANY 
+
+        Returns:
+            RouteEvent: The event is created. 
+        """
     
         event = RouteEvent(
             self.name,

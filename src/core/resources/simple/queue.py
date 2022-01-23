@@ -119,8 +119,9 @@ class Queue(Resource):
         A simple sqs queue.
 
         args:
-            cdev_name (str): Name of the resource
-            is_fifo (bool, default=False): if this should be a First-in First-out queue (link to difference)
+            cdev_name (str): Name of the resource.
+            is_fifo (bool, default=False): if this should be a First-in First-out queue (link to difference).
+            nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
         """
         super().__init__(cdev_name, RUUID, nonce)
 

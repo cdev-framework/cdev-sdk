@@ -108,6 +108,18 @@ class SimpleFunction(Resource):
         src_code_hash: str = None,
         nonce: str = "",
     ) -> None:
+        """[summary]
+
+        Args:
+            cdev_name (str): [description]
+            filepath (str): [description]
+            events (List[Event], optional): [description]. Defaults to [].
+            configuration (simple_function_configuration_model, optional): [description]. Defaults to {}.
+            function_permissions (List[Union[Permission, PermissionArn]], optional): [description]. Defaults to [].
+            external_dependencies (List[Union[DeployedLayer, DependencyLayer]], optional): [description]. Defaults to [].
+            src_code_hash (str, optional): [description]. Defaults to None.
+            nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+        """
         super().__init__(cdev_name, RUUID, nonce)
 
         self._filepath = filepath

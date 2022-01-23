@@ -88,11 +88,11 @@ class SimpleBucket(Resource):
     
     @update_hash
     def __init__(self, cdev_name: str, nonce: str="") -> None:
-        """
-        Create a simple S3 bucket that can be used as an object store.
+        """Create a simple S3 bucket that can be used as an object store.
 
         Args:
             cdev_name (str): Name of the resource
+            nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
         """
         super().__init__(cdev_name, RUUID, nonce)
 
