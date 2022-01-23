@@ -178,52 +178,6 @@ class Resource_Reference_Difference(ImmutableModel):
         frozen = True
 
     
-Output_Type = Union[Literal['resource'], Literal['reference']]
-
-
-class Cloud_Output(BaseModel):
-    """
-    Often we want resources that depend on the value of output of other resources that is only known after a cloud resource is created. This servers
-    as an placeholder for that desired value until it is available.
-    """
-
-    ruuid: str
-    """
-    Ruuid of the resource
-    """
-
-    name: str
-    """
-    Name of the resource
-    """
-
-    key: str
-    """
-    The key to lookup the output value by (ex: arn)
-    """
-
-    type: Output_Type
-
-
-    id: str
-
-
-    component_name: Optional[str]
-
-    def __str__(self) -> str:
-        return f"{self.ruuid}$${self.name}$${self.key}"
-
-
-    def __init__(__pydantic_self__, ruuid: str, name: str, key: str, type: Output_Type, component_name: str = None, id: str=None) -> None:
-        super().__init__(**{
-            "ruuid": ruuid,
-            "name": name,
-            "key": key,
-            "type": type,
-            "id": 'cdev_output',
-            "component_name": component_name
-        })
-
 F = TypeVar("F", bound=Callable[..., Any])
 
 def update_hash(func: F) -> F:
