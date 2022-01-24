@@ -77,16 +77,16 @@ For guides on how to deploy any of these resources, check out our [documentation
 
 
 ## Road Map and Current Limitations
-We are currently in the **very very** early stage of creating a comprehensive framework that helps teams throughout the whole cloud development process. As with any tool, it is important to understand what it is and **is not** capable of doing. Here are a list of outstanding things that we are working (or thinking) on. 
+We are currently in the **very very** early stage of creating a comprehensive framework that helps teams throughout the whole cloud development process. As with any tool, it is important to understand what it is capabale and **not** capable of doing. Here are a list of outstanding things that we are working (or thinking) on. 
 
 - Remote Backend
     - The current state of cloud resources are stored in json files. This is extremely limiting as it prevents multiple people from working on the same state at the same time. We are working on creating a DB that can used as a remote backend that will allow teams to collaborate more effectively.
 
 - Limited Resources and Options on Resources
-    - We are starting by focusing on a set of resource that we feel provide value while not being too complex. We have plans to add more resource and customization as time goes on. [Our custom Infrastructure as Code framework](/src/core) provides the flexibility to deploy any resource on any cloud, but we have to put in work to generate the configurations to talk to different clouds. In the future, we hope to support a large number of Aws and non Aws resources through the standardized cloud API's like the [Aws Cloud Control API](https://aws.amazon.com/cloudcontrolapi/). 
+    - We are starting by focusing on a set of resource that we feel provide value while not being too complex. We have plans to add more resource and customization as time goes on. [Our custom Infrastructure as Code framework](/src/core) provides the flexibility to deploy any resource on any cloud, but we have to put in work to generate the configurations to talk to different clouds. In the future, we hope to support a large number of Aws and non Aws resources through standardized cloud API's like the [Aws Cloud Control API](https://aws.amazon.com/cloudcontrolapi/). 
 
 - The Framework is Python Only
-    - We started out with building the sdk in python first because that is the language we know best. We want the sdk to feel natural in whatever language is being used, which will require adding expertise to our team from our ecosystems. The underlying primitives that make up the framework are language agnostic, so we hope to one day support a wide range of languages.
+    - We started out with building the sdk in python first because that is the language we know best. We want the sdk to feel natural in whatever language is being used, which will require adding expertise to our team from other ecosystems. The underlying primitives that make up the framework are language agnostic, so we hope to one day support a wide range of languages.
 
 - Can I export my project to an industry standard tool like Aws Cloudformation or Terraform?
     - We understand the benefits that come from avoiding lock-in by providing the ability to interpolate with the industry standard tools. We currently provision all resources with our custom [Infrastructure as Code Framework](/src/core) and store the state of the resources in local json files, which makes created projects not compatible with other tools. We felt that with building our own framework, we could explore new optimizations and ideas that could improve the developer experience. With some work, it is possible to make our framework work with and compatible with other Infrastructure as Code Frameworks, and we will be investigating this work as we move forward. 
