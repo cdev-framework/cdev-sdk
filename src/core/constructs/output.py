@@ -283,7 +283,6 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def __len__(self):
         raise Exception
 
-
     def __getitem__(self, key) -> 'Cloud_Output_Str':
         self._operations.append(
             (
@@ -291,8 +290,7 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
                 [key],
                 {}
             )
-        )
-    
+        )    
 
     def __contains__(self, _o: str) -> Cloud_Output_Bool:
         self._operations.append(
