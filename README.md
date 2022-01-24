@@ -77,7 +77,7 @@ For guides on how to deploy any of these resources, check out our [documentation
 
 
 ## Road Map and Current Limitations
-We are currently in the **very very** early stage of creating a comprehensive framework that helps teams throughout the whole cloud development process. As with any tool, it is important to understand what it is and **is not** capable of doing. Here are a list of outstanding things that we are working (or thinking) on. 
+We are currently in the **very very** early stage of creating a comprehensive framework that helps teams throughout the whole cloud development process. As with any tool, it is important to understand what it is capabale and **not** capable of doing. Here are a list of outstanding things that we are working (or thinking) on. 
 
 - Remote Backend
     - The current state of cloud resources are stored in json files. This is extremely limiting as it prevents multiple people from working on the same state at the same time. We are working on creating a DB that can used as a remote backend that will allow teams to collaborate more effectively.
