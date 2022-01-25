@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Union
 
-from core.constructs.types import ImmutableModel
+from core.constructs.models import ImmutableModel
 
 
 class permission_model(ImmutableModel):

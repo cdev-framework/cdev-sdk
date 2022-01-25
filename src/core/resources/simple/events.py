@@ -1,6 +1,6 @@
 from enum import Enum
 
-from core.constructs.types import frozendict, ImmutableModel
+from core.constructs.models import frozendict, ImmutableModel
 ################
 ##### Events
 ################

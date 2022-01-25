@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, FrozenSet
 
-from core.constructs.resource import Resource, ResourceModel, Cloud_Output, update_hash
+from core.constructs.resource import Resource, ResourceModel, update_hash
 from core.utils import hasher
 
 from core.resources.simple import events
@@ -129,6 +129,3 @@ class Api(Resource):
             routes=frozenset([x.render() for x in routes]),
             allow_cors=self.allow_cors,
         )
-
-    def from_output(self, key: simple_api_output) -> Cloud_Output:
-        return super().from_output(key)

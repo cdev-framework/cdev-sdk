@@ -3,7 +3,7 @@ from typing import FrozenSet, List
 
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output, update_hash
 from core.utils import hasher
-from core.constructs.types import ImmutableModel
+from core.constructs.models import ImmutableModel
 
 from .events import Event, event_model, EventTypes
 from .iam import Permission

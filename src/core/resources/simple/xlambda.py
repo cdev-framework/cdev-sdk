@@ -2,12 +2,15 @@ from enum import Enum
 import importlib
 import inspect
 import os
+from pydoc import describe
 from pydantic import FilePath
-from typing import Callable, FrozenSet, List, Optional, Union
+from typing import Callable, Dict, FrozenSet, List, Optional, Union
+from core.constructs.output import Cloud_Output_Dynamic
 
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output, update_hash
 from core.utils import hasher
-from core.constructs.types import frozendict, ImmutableModel
+from core.constructs.models import frozendict, ImmutableModel
+from core.constructs.types import cdev_str_model, cdev_str
 
 from .iam import Permission, PermissionArn, permission_arn_model, permission_model
 from .events import Event, event_model
@@ -63,13 +66,30 @@ class DependencyLayer(Resource):
 ################
 class simple_function_configuration_model(ImmutableModel):
     handler: str
-    description: Optional[str]
+    description: Optional[cdev_str_model]
     environment_variables: frozendict
 
     class Config:
         use_enum_values = True
         # Beta Feature but should be fine since this is simple data 
         frozen = True
+
+
+class SimpleFunctionConfiguration():
+    def __init__(self, handler: cdev_str, description: cdev_str = "", environment_variables: Dict[str, cdev_str] = {} ) -> None:
+        self.handler = handler
+        self.description = description
+        self.environment_variables = environment_variables
+
+
+    def render(self) -> simple_function_configuration_model:
+        return simple_function_configuration_model(
+            handler=self.handler.render() if isinstance(self.handler, Cloud_Output_Dynamic) else self.handler,
+            description=self.description.render() if isinstance(self.description, Cloud_Output_Dynamic) else self.description,
+            environment_variables = frozendict(
+                {k:v.render() if isinstance(v, Cloud_Output_Dynamic) else v for k,v in self.environment_variables}
+            )
+        )
 
 
 
@@ -101,8 +121,8 @@ class SimpleFunction(Resource):
         self,
         cdev_name: str,
         filepath: str,
+        configuration: SimpleFunctionConfiguration,
         events: List[Event] = [],
-        configuration: simple_function_configuration_model = {},
         function_permissions: List[Union[Permission, PermissionArn]] = [],
         external_dependencies: List[Union[DeployedLayer, DependencyLayer]]=[],
         src_code_hash: str = None,
@@ -113,8 +133,8 @@ class SimpleFunction(Resource):
         Args:
             cdev_name (str): [description]
             filepath (str): [description]
+            configuration (SimpleFunctionConfiguration): [description]. 
             events (List[Event], optional): [description]. Defaults to [].
-            configuration (simple_function_configuration_model, optional): [description]. Defaults to {}.
             function_permissions (List[Union[Permission, PermissionArn]], optional): [description]. Defaults to [].
             external_dependencies (List[Union[DeployedLayer, DependencyLayer]], optional): [description]. Defaults to [].
             src_code_hash (str, optional): [description]. Defaults to None.
@@ -155,7 +175,7 @@ class SimpleFunction(Resource):
 
     @configuration.setter
     @update_hash
-    def configuration(self, value: simple_function_configuration_model):
+    def configuration(self, value: SimpleFunctionConfiguration):
         self._configuration = value
 
     @property
@@ -197,8 +217,8 @@ class SimpleFunction(Resource):
             name=self.name,
             ruuid=self.ruuid,
             hash=self.hash,
+            configuration=self.configuration.render(),
             filepath=self.filepath,
-            configuration=self.configuration,
             events=frozenset([x.render() for x in self.events]),
             permissions=frozenset([x.render() for x in self.permissions]),
             external_dependencies=self.external_dependencies,
