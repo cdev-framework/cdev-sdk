@@ -1,18 +1,15 @@
 from typing import Dict, TypeVar, Union, List, Optional, Set, Callable, Any
-from typing_extensions import Literal
 
 from enum import Enum
 
-from pydantic import BaseModel
-
 from core.constructs.models import ImmutableModel
-from core.constructs.output import Cloud_Output
+from core.constructs.output import OutputType, Cloud_Output_Str
 
 from ..utils.hasher import hash_list
-
-
-
-
+    
+##################
+##### Resource
+##################
 class ResourceModel(ImmutableModel):
     """Base class with basic information about a defined resource.
     
@@ -55,77 +52,10 @@ class ResourceModel(ImmutableModel):
         arbitrary_types_allowed = True
 
 
-    
-
-class ResourceReferenceModel(ImmutableModel):
-    """
-    This is the information needed to reference a resource that is defined outside this component
-
-    --- Attributes ---
-
-    - ruuid ->  a string that represents the resource identifier (provider::resource-type)
-
-    - hash  ->  a string that is the hash of this object. This hash must be computed such that
-                it changes only if a change in the state is desired.
-    """
-
-    component_name: str
-    """
-    Name of the component that this resources resides in
-    """
-
-    ruuid: str
-    """
-    Name space identifier that is used to pass this resource to a downstream mapper
-
-    Form: (top-level-namespace)::(resource-type-id)
-    """
-
-    name: str
-    """
-    This is a human readable logical name for the resource. This must be unique for the resource within the namespace and resource type
-    (i.e. the concat value of <ruuid>:<name> must be unique)
-
-    This value is important for allow human level refactoring of resources. To update a resources name once created, you must edit only the 
-    name and not change the hash. If you change both the hash and name in the same deployment, it will register this as a delete and create 
-    instead of update. 
-    """
-
-    is_in_parent_resource_state: Optional[bool]
-    """
-    Boolean to determine if the reference should be resolved in the same resource state or from the parent resource state.
-    """
-
-    def __init__(
-        __pydantic_self__,
-        component_name: str,
-        ruuid: str,
-        name: str,
-        is_in_parent_resource_state: bool = False,
-    ) -> None:
-        super().__init__(
-            **{
-                "component_name": component_name,
-                "ruuid": ruuid,
-                "name": name,
-                "is_in_parent_resource_state": is_in_parent_resource_state,
-            }
-        )
-
-    class Config:
-        extra = "allow"
-        frozen = True
-
-
 class Resource_Change_Type(str, Enum):
     CREATE = "CREATE"
     UPDATE_IDENTITY = "UPDATE_IDENTITY"
     UPDATE_NAME = "UPDATE_NAME"
-    DELETE = "DELETE"
-
-
-class Resource_Reference_Change_Type(str, Enum):
-    CREATE = "CREATE"
     DELETE = "DELETE"
 
 
@@ -156,31 +86,7 @@ class Resource_Difference(ImmutableModel):
         # Beta Feature but should be fine since this is simple data 
         frozen = True
 
-
-class Resource_Reference_Difference(ImmutableModel):
-    action_type: Resource_Reference_Change_Type
-    originating_component_name: str
-    resource_reference: ResourceReferenceModel
-
-    def __init__(
-        __pydantic_self__,
-        action_type: Resource_Reference_Change_Type,
-        originating_component_name: str,
-        resource_reference: ResourceReferenceModel,
-    ) -> None:
-        super().__init__(
-            **{
-                "action_type": action_type,
-                "originating_component_name": originating_component_name,
-                "resource_reference": resource_reference,
-            }
-        )
-
-    class Config:
-        use_enum_values = True
-        frozen = True
-
-    
+# Helper type to denoted any callable
 F = TypeVar("F", bound=Callable[..., Any])
 
 def update_hash(func: F) -> F:
@@ -253,6 +159,120 @@ class Resource:
         raise NotImplementedError
 
 
+class ResourceOutputs():
+    """Container object for the returned values from the cloud after the resource has been deployed."""
+    OUTPUT_TYPE = OutputType.RESOURCE
+
+    def __init__(self, name: str, ruuid: str) -> None:
+        self._name = name
+        self._ruuid = ruuid
+
+    @property
+    def cloud_id(self) -> 'Cloud_Output_Str':
+        return Cloud_Output_Str(
+            name=self._name,
+            ruuid=self._ruuid,
+            key='cloud_id',
+            type=self.OUTPUT_TYPE
+        )
+
+    @cloud_id.setter
+    def cloud_id(self, value: Any):
+        raise Exception
+
+##################
+##### Reference
+##################
+
+class ResourceReferenceModel(ImmutableModel):
+    """
+    This is the information needed to reference a resource that is defined outside this component
+
+    --- Attributes ---
+
+    - ruuid ->  a string that represents the resource identifier (provider::resource-type)
+
+    - hash  ->  a string that is the hash of this object. This hash must be computed such that
+                it changes only if a change in the state is desired.
+    """
+
+    component_name: str
+    """
+    Name of the component that this resources resides in
+    """
+
+    ruuid: str
+    """
+    Name space identifier that is used to pass this resource to a downstream mapper
+
+    Form: (top-level-namespace)::(resource-type-id)
+    """
+
+    name: str
+    """
+    This is a human readable logical name for the resource. This must be unique for the resource within the namespace and resource type
+    (i.e. the concat value of <ruuid>:<name> must be unique)
+
+    This value is important for allow human level refactoring of resources. To update a resources name once created, you must edit only the 
+    name and not change the hash. If you change both the hash and name in the same deployment, it will register this as a delete and create 
+    instead of update. 
+    """
+
+    is_in_parent_resource_state: Optional[bool]
+    """
+    Boolean to determine if the reference should be resolved in the same resource state or from the parent resource state.
+    """
+
+    def __init__(
+        __pydantic_self__,
+        component_name: str,
+        ruuid: str,
+        name: str,
+        is_in_parent_resource_state: bool = False,
+    ) -> None:
+        super().__init__(
+            **{
+                "component_name": component_name,
+                "ruuid": ruuid,
+                "name": name,
+                "is_in_parent_resource_state": is_in_parent_resource_state,
+            }
+        )
+
+    class Config:
+        extra = "allow"
+        frozen = True
+
+
+class Resource_Reference_Change_Type(str, Enum):
+    CREATE = "CREATE"
+    DELETE = "DELETE"
+
+
+class Resource_Reference_Difference(ImmutableModel):
+    action_type: Resource_Reference_Change_Type
+    originating_component_name: str
+    resource_reference: ResourceReferenceModel
+
+    def __init__(
+        __pydantic_self__,
+        action_type: Resource_Reference_Change_Type,
+        originating_component_name: str,
+        resource_reference: ResourceReferenceModel,
+    ) -> None:
+        super().__init__(
+            **{
+                "action_type": action_type,
+                "originating_component_name": originating_component_name,
+                "resource_reference": resource_reference,
+            }
+        )
+
+    class Config:
+        use_enum_values = True
+        frozen = True
+
+
 class Resource_Reference:
     RUUID: str = None
 
@@ -266,15 +286,6 @@ class Resource_Reference:
     def render(self) -> ResourceReferenceModel:
         raise NotImplementedError
 
-    def from_output(self, key: Enum) -> Cloud_Output:
-        return Cloud_Output(
-            ruuid= self.RUUID,
-            name= self.name,
-            key= key.value,
-            type= 'reference',
-            component_name= self.component_name
-        )
-
     def compute_hash(self) -> str:
         return hash_list(
             [
@@ -284,3 +295,8 @@ class Resource_Reference:
                 str(self.is_in_parent_resource_state),
             ]
         )
+
+
+
+
+

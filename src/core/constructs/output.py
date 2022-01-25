@@ -1,23 +1,26 @@
-from distutils.ccompiler import new_compiler
 from enum import Enum
-from typing import Any, FrozenSet, List, NamedTuple, Tuple, NewType, overload, Optional, Union, Iterable, Mapping, TypeVar, Generic
+from typing import Any, List, Tuple, NewType, overload, Optional, Union, Iterable, Mapping, TypeVar, Generic
 from typing_extensions import Literal, SupportsIndex
 from collections.abc import Sequence
-
 
 from core.constructs.models import ImmutableModel, frozendict
 
 CLOUD_OUTPUT_ID = 'cdev_cloud_output'
 
+# Wrapper type to help keep annotations compact
+output_operation = NewType('output_operation', Tuple[str, Tuple, frozendict])
 
 class OutputType(str, Enum):
+    """Type of Cloud Output 
+    
+    Since Cloud Output can be derived from resources and references, we need to denote where the Output is coming from.
+    """
     RESOURCE = 'resource'
     REFERENCE = 'reference'
 
-output_operation = NewType('output_operation', Tuple[str, Tuple, frozendict])
-
-
-
+########################
+##### Immutable Models
+########################
 class cloud_output_model(ImmutableModel):
     """
     Often we want resources that depend on the value of output of other resources that is only known after a cloud resource is created. This serves
@@ -40,78 +43,41 @@ class cloud_output_model(ImmutableModel):
     """
 
     type: OutputType
-
+    """
+    Type of the underlying item we want to get the output of
+    """
 
     id: Literal['cdev_cloud_output']
+    """
+    Literal that allows a dict to be identified as a Cloud Output Model
+    """
 
 
 class cloud_output_dynamic_model(cloud_output_model):
+    """
+    A cloud output model that has accompanying operations to be applied to the derived value
+    """
+
     output_operations: Tuple[output_operation,...]
-
-
-class Cloud_Output():
-    def __init__(self, name: str, ruuid: str, key: str, type: OutputType) -> None:
-        self._name = name
-        self._ruuid = ruuid
-        self._key = key
-        self._type = type
-
-
-    def render(self) -> cloud_output_dynamic_model:
-        return cloud_output_model(
-            name=self._name,
-            ruuid=self._ruuid,
-            key=self._key,
-            type=self._type,
-            id='cdev_cloud_output',
-        )
-
-
-class Cloud_Output_Dynamic(Cloud_Output):
-    def __init__(self, name: str, ruuid: str, key: str, type: OutputType) -> None:
-        super().__init__(name, ruuid, key, type)
-        self._operations: List[output_operation] = []
-
-    def render(self) -> cloud_output_dynamic_model:
-        operations = tuple([(x[0], tuple(x[1]), frozendict(x[2])) for x in self._operations])
-
-        return cloud_output_dynamic_model(
-            name=self._name,
-            ruuid=self._ruuid,
-            key=self._key,
-            type=self._type,
-            id='cdev_cloud_output',
-            output_operations=operations
-        )
-
-
-class ResourceOutputs():
-    """Container object for the returned values from the cloud after the resource has been deployed."""
-    OUTPUT_TYPE = OutputType.RESOURCE
-
-    def __init__(self, name: str, ruuid: str) -> None:
-        self._name = name
-        self._ruuid = ruuid
-        
-    @property
-    def cloud_id(self) -> 'Cloud_Output_Str':
-        return Cloud_Output_Str(
-            name=self._name,
-            ruuid=self._ruuid,
-            key='cloud_id',
-            type=self.OUTPUT_TYPE
-        )
-
-    @cloud_id.setter
-    def cloud_id(self, value: Any):
-        raise Exception
-
-    
+    """
+    Tuple of all the operations to be applied to the derived value
+    """
 
 
 
 def evaluate_dynamic_output(original_value: Any, cloud_output_dynamic: cloud_output_dynamic_model) -> Any:
-   
+    """Evaluate a set of operations on a value
+
+    Args:
+        original_value (Any): The original value to operate on
+        cloud_output_dynamic (cloud_output_dynamic_model): The model containing the operations to execute
+
+    Raises:
+        Exception: [description]
+
+    Returns:
+        Any: The transformed value
+    """
     operations = cloud_output_dynamic.output_operations
 
     intermediate_value = original_value
@@ -141,7 +107,6 @@ def evaluate_dynamic_output(original_value: Any, cloud_output_dynamic: cloud_out
                 print(object_methods)
                 raise Exception(f"'{func_name}' not in available methods for {intermediate_value} ({type(intermediate_value)})")
     
-            print(func_name)
             if xargs and kwargs:
                 new_rv = getattr(intermediate_value, func_name)(**kwargs)
             elif (not xargs) and kwargs:
@@ -158,7 +123,61 @@ def evaluate_dynamic_output(original_value: Any, cloud_output_dynamic: cloud_out
     return intermediate_value
 
 
+########################
+##### Helper Classes
+########################
+class Cloud_Output():
+    """
+    Mutable Class that can used during the creation phases to represent a desired cloud output model.
+    """
+    def __init__(self, name: str, ruuid: str, key: str, type: OutputType) -> None:
+        self._name = name
+        self._ruuid = ruuid
+        self._key = key
+        self._type = type
+
+
+    def render(self) -> cloud_output_dynamic_model:
+        return cloud_output_model(
+            name=self._name,
+            ruuid=self._ruuid,
+            key=self._key,
+            type=self._type,
+            id='cdev_cloud_output',
+        )
+
+
+class Cloud_Output_Dynamic(Cloud_Output):
+    """
+    Mutable Class that can used during the creation phases to represent a desired cloud output model. Allows the user to define
+    a list of operations that should be applied to the retrieved value. 
+    """
+    def __init__(self, name: str, ruuid: str, key: str, type: OutputType) -> None:
+        super().__init__(name, ruuid, key, type)
+        self._operations: List[output_operation] = []
+
+    def render(self) -> cloud_output_dynamic_model:
+        operations = tuple([(x[0], tuple(x[1]), frozendict(x[2])) for x in self._operations])
+
+        return cloud_output_dynamic_model(
+            name=self._name,
+            ruuid=self._ruuid,
+            key=self._key,
+            type=self._type,
+            id='cdev_cloud_output',
+            output_operations=operations
+        )
+
+
+
+########################
+##### Types of Output
+########################
+    
 class Cloud_Output_Bool(Cloud_Output_Dynamic):
+    """
+    Cloud Output that will resolve to a Boolean value after being retrieve or after all the operations have been executed
+    """
     def __init__(self, name: str, ruuid: str, key: str, type: OutputType) -> None:
         super().__init__(name, ruuid, key, type)
 
@@ -230,6 +249,9 @@ class Cloud_Output_Bool(Cloud_Output_Dynamic):
 
 
 class Cloud_Output_Int(Cloud_Output_Dynamic):
+    """
+    Cloud Output that will resolve to a Integer value after being retrieve or after all the operations have been executed
+    """
     def __init__(self, name: str, ruuid: str, key: str, type: OutputType) -> None:
         super().__init__(name, ruuid, key, type)
 
@@ -298,24 +320,10 @@ class Cloud_Output_Int(Cloud_Output_Dynamic):
         return self
 
     
-    #def abs(self) -> 'Cloud_Output_Int':
-    #    """Return absolute value
-#
-    #    Returns a Cloud Output Int on which further operations can be chained.
-    #    """
-    #    self._operations.append(
-    #        (
-    #            '__abs__', 
-    #            (), 
-    #            {},
-    #        )
-    #    )
-#
-    #    return self
-
-
 class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
-
+    """
+    Cloud Output that will resolve to a String value after being retrieve or after all the operations have been executed
+    """
     def __init__(self, name: str, ruuid: str, key: str, type: OutputType) -> None:
         super().__init__(name, ruuid, key, type)
 
@@ -1282,9 +1290,13 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
         return self
 
 
+# Wrapper type to denote all the possible single value outputs
 T = TypeVar('T', Cloud_Output_Dynamic, Cloud_Output_Str, Cloud_Output_Int, Cloud_Output_Bool)
 
 class Cloud_Output_Sequence(Sequence, Cloud_Output_Dynamic, Generic[T]):
+    """
+    Cloud Output that will resolve to a Sequence of values after being retrieve or after all the operations have been executed
+    """
     def __init__(self, name: str, ruuid: str, key: str, type: OutputType, _member_class) -> None:
         super().__init__(name, ruuid, key, type)
 
