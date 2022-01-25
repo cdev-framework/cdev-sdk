@@ -5,7 +5,7 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-from core.utils.types import ImmutableModel
+from core.constructs.types import ImmutableModel
 from core.constructs.output import Cloud_Output
 
 from ..utils.hasher import hash_list

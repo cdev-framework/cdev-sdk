@@ -5,7 +5,7 @@ from typing_extensions import Literal, SupportsIndex
 from collections.abc import Sequence
 
 
-from core.utils.types import ImmutableModel, frozendict
+from core.constructs.types import ImmutableModel, frozendict
 
 CLOUD_OUTPUT_ID = 'cdev_cloud_output'
 

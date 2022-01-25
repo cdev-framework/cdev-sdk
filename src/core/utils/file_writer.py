@@ -6,7 +6,7 @@ from typing import Dict
 from types import MappingProxyType
 
 from core.constructs.resource_state import Resource_State  
-from .types import frozendict
+from ..constructs.types import frozendict
 
 class CustomEncoder(json.JSONEncoder):
     def default(self, obj):

@@ -12,7 +12,7 @@ from time import sleep
 from core.constructs.resource import Cloud_Output, Resource_Change_Type, Resource_Reference_Change_Type, ResourceModel, Resource_Difference, Resource_Reference_Difference
 from core.constructs.components import Component_Change_Type, Component_Difference
 from core.output.output_manager import OutputManager, OutputTask
-from core.utils.types import frozendict
+from core.constructs.types import frozendict
 
 
 from .file_writer import CustomEncoder

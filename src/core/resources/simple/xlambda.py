@@ -7,7 +7,7 @@ from typing import Callable, FrozenSet, List, Optional, Union
 
 from core.constructs.resource import Resource, ResourceModel, Cloud_Output, update_hash
 from core.utils import hasher
-from core.utils.types import frozendict, ImmutableModel
+from core.constructs.types import frozendict, ImmutableModel
 
 from .iam import Permission, PermissionArn, permission_arn_model, permission_model
 from .events import Event, event_model
