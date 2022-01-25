@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import Any, FrozenSet, List
 
-from core.constructs.resource import Resource, ResourceModel, update_hash
-from core.constructs.output import ResourceOutputs, Cloud_Output_Str
+from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
+from core.constructs.output import  Cloud_Output_Str
 from core.utils import hasher
 from core.constructs.models import ImmutableModel
 

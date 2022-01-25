@@ -2,8 +2,8 @@ from enum import Enum
 from os import name
 from typing import Any
 
-from core.constructs.resource import Resource, ResourceModel, update_hash
-from core.constructs.output import ResourceOutputs, Cloud_Output_Str
+from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
+from core.constructs.output import  Cloud_Output_Str
 from core.utils import hasher
 
 from .events import Event, event_model, EventTypes

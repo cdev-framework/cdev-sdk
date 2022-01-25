@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import Any
 
-from core.constructs.resource import Resource, ResourceModel, update_hash
-from core.constructs.output import ResourceOutputs, Cloud_Output_Str
+from core.constructs.resource import Resource, ResourceModel, ResourceOutputs, update_hash
+from core.constructs.output import  Cloud_Output_Str
 from core.utils import hasher
 
 from .iam import Permission, PermissionArn
@@ -61,11 +61,7 @@ class RelationalDBOutput(ResourceOutputs):
 
     @property
     def secret_arn(self) -> Cloud_Output_Str:
-        """The arn of the secret value create that holds the password for the db
-
-        Returns:
-            Cloud_Output_Str: base url
-        """
+        """The arn of the secret value create that holds the password for the db"""
         return Cloud_Output_Str(
             name=self._name,
             ruuid=RUUID,
