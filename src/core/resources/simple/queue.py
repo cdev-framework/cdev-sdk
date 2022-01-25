@@ -1,6 +1,9 @@
 from enum import Enum
+from os import name
+from typing import Any
 
-from core.constructs.resource import Resource, ResourceModel, Cloud_Output, update_hash
+from core.constructs.resource import Resource, ResourceModel, update_hash
+from core.constructs.output import ResourceOutputs, Cloud_Output_Str
 from core.utils import hasher
 
 from .events import Event, event_model, EventTypes
@@ -99,9 +102,23 @@ class QueuePermissions:
 ######################
 ##### Output
 ######################
-class simple_queue_output(str, Enum):
-    cloud_id = "cloud_id"
-    queue_name = "queue_name"
+class QueueOutput(ResourceOutputs):
+    def __init__(self, name: str) -> None:
+        super().__init__(name, RUUID)
+
+    @property
+    def queue_name(self) -> Cloud_Output_Str:
+        """The name of the generated queue"""
+        return Cloud_Output_Str(
+            name=self._name,
+            ruuid=RUUID,
+            key='queue_name',
+            type=self.OUTPUT_TYPE
+        )
+
+    @queue_name.setter
+    def queue_name(self, value: Any):
+        raise Exception
 
 
 ######################
@@ -126,6 +143,7 @@ class Queue(Resource):
         super().__init__(cdev_name, RUUID, nonce)
 
         self.is_fifo = is_fifo
+        self.output = QueueOutput(name)
         self.permissions = QueuePermissions(cdev_name)
 
     @property
@@ -163,6 +181,3 @@ class Queue(Resource):
             hash=self.hash,
             is_fifo=self.is_fifo,
         )
-
-    def from_output(self, key: simple_queue_output) -> Cloud_Output:
-        return super().from_output(key)

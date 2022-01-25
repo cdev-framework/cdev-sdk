@@ -9,8 +9,6 @@ from core.constructs.models import ImmutableModel, frozendict
 
 CLOUD_OUTPUT_ID = 'cdev_cloud_output'
 
-class Cloud_Output:
-    pass
 
 class OutputType(str, Enum):
     RESOURCE = 'resource'
@@ -74,7 +72,6 @@ class Cloud_Output_Dynamic(Cloud_Output):
         super().__init__(name, ruuid, key, type)
         self._operations: List[output_operation] = []
 
-
     def render(self) -> cloud_output_dynamic_model:
         operations = tuple([(x[0], tuple(x[1]), frozendict(x[2])) for x in self._operations])
 
@@ -86,6 +83,31 @@ class Cloud_Output_Dynamic(Cloud_Output):
             id='cdev_cloud_output',
             output_operations=operations
         )
+
+
+class ResourceOutputs():
+    """Container object for the returned values from the cloud after the resource has been deployed."""
+    OUTPUT_TYPE = OutputType.RESOURCE
+
+    def __init__(self, name: str, ruuid: str) -> None:
+        self._name = name
+        self._ruuid = ruuid
+        
+    @property
+    def cloud_id(self) -> 'Cloud_Output_Str':
+        return Cloud_Output_Str(
+            name=self._name,
+            ruuid=self._ruuid,
+            key='cloud_id',
+            type=self.OUTPUT_TYPE
+        )
+
+    @cloud_id.setter
+    def cloud_id(self, value: Any):
+        raise Exception
+
+    
+
 
 
 def evaluate_dynamic_output(original_value: Any, cloud_output_dynamic: cloud_output_dynamic_model) -> Any:

@@ -9,17 +9,15 @@ from networkx.classes.reportviews import NodeView
 from typing import Callable, Dict, List, Set, Tuple
 from time import sleep
 
-from core.constructs.resource import Cloud_Output, Resource_Change_Type, Resource_Reference_Change_Type, ResourceModel, Resource_Difference, Resource_Reference_Difference
+from core.constructs.resource import Resource_Change_Type, Resource_Reference_Change_Type, ResourceModel, Resource_Difference, Resource_Reference_Difference
+from core.constructs.output import cloud_output_model
 from core.constructs.components import Component_Change_Type, Component_Difference
 from core.output.output_manager import OutputManager, OutputTask
 from core.constructs.models import frozendict
 
-
-from .file_writer import CustomEncoder
-
 deliminator = '+'
 
-def find_parents(resource: ResourceModel) -> List[Cloud_Output]:
+def find_parents(resource: ResourceModel) -> List[cloud_output_model]:
     resource_as_obj = resource.dict()
     
     cloud_outputs = find_cloud_output(resource_as_obj)
@@ -27,21 +25,21 @@ def find_parents(resource: ResourceModel) -> List[Cloud_Output]:
     return cloud_outputs
 
 
-def find_cloud_output(obj: dict) -> List[Cloud_Output]:
+def find_cloud_output(obj: dict) -> List[cloud_output_model]:
 
     rv = _recursive_replace_output(obj)
 
     return rv
 
 
-def _recursive_replace_output(obj) -> List[Cloud_Output]:
+def _recursive_replace_output(obj) -> List[cloud_output_model]:
     rv = []
 
     if isinstance(obj, frozendict) or isinstance(obj, dict): 
         for k,v in obj.items():
             if isinstance(v, frozendict) or isinstance(v, dict):
-                if "id" in v and v.get("id") == 'cdev_output':
-                    rv.append(Cloud_Output(**v))
+                if "id" in v and v.get("id") == 'cdev_cloud_output':
+                    rv.append(cloud_output_model(**v))
                 else:
                     rv.extend(_recursive_replace_output(v))
 

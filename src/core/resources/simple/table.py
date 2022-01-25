@@ -1,7 +1,8 @@
 from enum import Enum
-from typing import FrozenSet, List
+from typing import Any, FrozenSet, List
 
-from core.constructs.resource import Resource, ResourceModel, Cloud_Output, update_hash
+from core.constructs.resource import Resource, ResourceModel, update_hash
+from core.constructs.output import ResourceOutputs, Cloud_Output_Str
 from core.utils import hasher
 from core.constructs.models import ImmutableModel
 
@@ -138,9 +139,23 @@ class TablePermissions:
 ##############
 ##### Output
 ##############
-class simple_table_output(str, Enum):
-    cloud_id = "cloud_id"
-    table_name = "table_name"
+class TableOutput(ResourceOutputs):
+    def __init__(self, name: str) -> None:
+        super().__init__(name, RUUID)
+
+    @property
+    def table_name(self) -> Cloud_Output_Str:
+        """The name of the generated table"""
+        return Cloud_Output_Str(
+            name=self._name,
+            ruuid=RUUID,
+            key='table_name',
+            type=self.OUTPUT_TYPE
+        )
+
+    @table_name.setter
+    def table_name(self, value: Any):
+        raise Exception
 
 
 ###############
@@ -350,6 +365,3 @@ class Table(Resource):
             attributes=[x.render() for x in self.attributes],
             keys=[x.render() for x in self.keys],
         )
-
-    def from_output(self, key: simple_table_output) -> Cloud_Output:
-        return super().from_output(key)

@@ -2,15 +2,16 @@ from enum import Enum
 import importlib
 import inspect
 import os
-from pydoc import describe
 from pydantic import FilePath
 from typing import Callable, Dict, FrozenSet, List, Optional, Union
-from core.constructs.output import Cloud_Output_Dynamic
 
-from core.constructs.resource import Resource, ResourceModel, Cloud_Output, update_hash
-from core.utils import hasher
+from core.constructs.output import Cloud_Output_Dynamic
+from core.constructs.resource import Resource, ResourceModel, update_hash
+from core.constructs.output import ResourceOutputs
 from core.constructs.models import frozendict, ImmutableModel
 from core.constructs.types import cdev_str_model, cdev_str
+
+from core.utils import hasher
 
 from .iam import Permission, PermissionArn, permission_arn_model, permission_model
 from .events import Event, event_model
@@ -26,8 +27,6 @@ class deployed_layer_model(ResourceModel):
     arn: str
     version: str
 
-class layer_output(str, Enum):
-    arn = "arn"
 
 class DeployedLayer():
     pass
@@ -37,28 +36,34 @@ class dependency_layer_model(ResourceModel):
     artifact_path: str
 
 
-class simple_lambda_layer_output(str, Enum):
-    arn = "arn"
-
-
 class DependencyLayer(Resource):
-    RUUID = "cdev::simple::dependencylayer"
 
-    def __init__(self, name: str, artifact_path: FilePath = None) -> None:
-        super().__init__(name)
+    def __init__(self, cdev_name: str, artifact_path: FilePath = None) -> None:
+        super().__init__(cdev_name)
         self.artifact_path = artifact_path
-
-    def from_output(self, key: layer_output) -> Cloud_Output:
-        return super().from_output(key)
-
+        self.output = DependencyLayerOutput(cdev_name)
 
     def render(self) -> dependency_layer_model:
         return dependency_layer_model(
-            ruuid=self.RUUID,
+            ruuid=LAMBDA_LAYER_RUUID,
             name=self.name, 
             hash='1',
             artifact_path=self.artifact_path
         )
+
+################
+##### Output
+################
+
+
+class DependencyLayerOutput(ResourceOutputs):
+    def __init__(self, name: str) -> None:
+        super().__init__(name, LAMBDA_LAYER_RUUID)
+
+
+class FunctionOutput(ResourceOutputs):
+    def __init__(self, name: str) -> None:
+        super().__init__(name, RUUID)
 
 
 ################
@@ -224,9 +229,6 @@ class SimpleFunction(Resource):
             external_dependencies=self.external_dependencies,
             src_code_hash=self.src_code_hash
         )
-
-
-
 
 
 def simple_function_annotation(

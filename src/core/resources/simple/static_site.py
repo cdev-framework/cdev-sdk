@@ -1,15 +1,55 @@
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
-from core.constructs.resource import Resource, ResourceModel, Cloud_Output, update_hash
+from core.constructs.resource import Resource, ResourceModel, update_hash
+from core.constructs.output import ResourceOutputs, Cloud_Output_Str
 from core.utils import hasher
 
 RUUID = "cdev::simple::staticsite"
 
-class simple_static_site_output(str, Enum):
-    cloud_id = "cloud_id"
-    bucket_name = "bucket_name"
-    site_url = "site_url"
+
+class StaticSiteOutput(ResourceOutputs):
+    def __init__(self, name: str) -> None:
+        super().__init__(name, RUUID)
+
+
+    @property
+    def bucket_name(self) -> Cloud_Output_Str:
+        """The name of the underlying S3 Bucket where the content for the site is stored.
+
+        Returns:
+            Cloud_Output_Str: base url
+        """
+        return Cloud_Output_Str(
+            name=self._name,
+            ruuid=RUUID,
+            key='bucket_name',
+            type=self.OUTPUT_TYPE
+        )
+
+    @bucket_name.setter
+    def bucket_name(self, value: Any):
+        raise Exception
+
+
+    @property
+    def site_url(self) -> Cloud_Output_Str:
+        """The url of the created site
+
+        Returns:
+            Cloud_Output_Str: base url
+        """
+        return Cloud_Output_Str(
+            name=self._name,
+            ruuid=RUUID,
+            key='site_url',
+            type=self.OUTPUT_TYPE
+        )
+
+    @site_url.setter
+    def site_url(self, value: Any):
+        raise Exception
+
 
 ###############
 ##### Static Site
@@ -51,6 +91,8 @@ class StaticSite(Resource):
         self._error_document = error_document
         self._sync_folder = sync_folder
         self._content_folder = content_folder
+
+        self.output = StaticSiteOutput(cdev_name)
 
     @property
     def index_document(self):
@@ -119,5 +161,4 @@ class StaticSite(Resource):
             content_folder=self.content_folder,   
         )
 
-    def from_output(self, key: simple_static_site_output) -> Cloud_Output:
-        return super().from_output(key)
+

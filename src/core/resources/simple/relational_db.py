@@ -1,6 +1,8 @@
 from enum import Enum
+from typing import Any
 
-from core.constructs.resource import Resource, ResourceModel, Cloud_Output, update_hash
+from core.constructs.resource import Resource, ResourceModel, update_hash
+from core.constructs.output import ResourceOutputs, Cloud_Output_Str
 from core.utils import hasher
 
 from .iam import Permission, PermissionArn
@@ -39,9 +41,41 @@ class RelationalDBPermissions:
 ##############
 ##### Output
 ##############
-class simple_relational_db_output(str, Enum):
-    endpoint = "cloud_id"
-    secret_arn = "secret_arn"
+class RelationalDBOutput(ResourceOutputs):
+    def __init__(self, name: str) -> None:
+        super().__init__(name, RUUID)
+
+    @property
+    def cluster_name(self) -> Cloud_Output_Str:
+        """The name of the generated db cluster"""
+        return Cloud_Output_Str(
+            name=self._name,
+            ruuid=RUUID,
+            key='cluster_name',
+            type=self.OUTPUT_TYPE
+        )
+
+    @cluster_name.setter
+    def cluster_name(self, value: Any):
+        raise Exception
+
+    @property
+    def secret_arn(self) -> Cloud_Output_Str:
+        """The arn of the secret value create that holds the password for the db
+
+        Returns:
+            Cloud_Output_Str: base url
+        """
+        return Cloud_Output_Str(
+            name=self._name,
+            ruuid=RUUID,
+            key='secret_arn',
+            type=self.OUTPUT_TYPE
+        )
+
+    @secret_arn.setter
+    def secret_arn(self, value: Any):
+        raise Exception
 
 
 ###############
@@ -119,6 +153,7 @@ class RelationalDB(Resource):
         self._min_capacity = min_capacity
         self._seconds_to_pause = seconds_to_pause
 
+        self.output = RelationalDBOutput(cdev_name)
         self.permissions = RelationalDBPermissions(cdev_name)
 
     @property
@@ -225,5 +260,3 @@ class RelationalDB(Resource):
             }
         )
 
-    def from_output(self, key: simple_relational_db_output) -> Cloud_Output:
-        return super().from_output(key)

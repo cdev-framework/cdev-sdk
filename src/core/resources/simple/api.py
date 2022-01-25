@@ -1,5 +1,6 @@
 from enum import Enum
-from typing import List, FrozenSet
+from typing import Any, List, FrozenSet
+from core.constructs.output import Cloud_Output_Sequence, Cloud_Output_Str, ResourceOutputs
 
 from core.constructs.resource import Resource, ResourceModel, update_hash
 from core.utils import hasher
@@ -38,12 +39,54 @@ class simple_api_model(ResourceModel):
     routes: FrozenSet[route_event_model]
     allow_cors: bool
 
+class ApiOutput(ResourceOutputs):
+    """Container object for the returned values from the cloud after the resource has been deployed."""
+    def __init__(self, name: str) -> None:
+        super().__init__(name, RUUID)
+    
+    @property
+    def endpoint(self) -> Cloud_Output_Str:
+        """The base url for the created API
 
-class simple_api_output(str, Enum):
-    cloud_id = "cloud_id"
-    endpoints = "endpoints"
-    endpoint = "endpoint"
+        Returns:
+            Cloud_Output_Str: base url
+        """
+        return Cloud_Output_Str(
+            name=self._name,
+            ruuid=RUUID,
+            key='endpoint',
+            type=self.OUTPUT_TYPE
+        )
 
+    @endpoint.setter
+    def endpoint(self, value: Any):
+        raise Exception
+
+
+    @property
+    def endpoints(self) -> Cloud_Output_Sequence[Cloud_Output_Str]:
+        """The created routes for the API
+
+        Values are stored as a list of str of the form '<route> <verb>'. 
+        
+        ex:
+            [
+                '/hello_world [GET]'
+            ]
+
+        Returns:
+            Cloud_Output_Sequence[Cloud_Output_Str]: Create Routes
+        """
+        return Cloud_Output_Sequence(
+            name=self._name,
+            ruuid=RUUID,
+            key='endpoints',
+            type=self.OUTPUT_TYPE
+        )
+
+    @endpoints.setter
+    def endpoints(self, value: Any):
+        raise Exception
 
 class Api(Resource):
     """Simple HTTP Api that can be produce events.
@@ -71,6 +114,7 @@ class Api(Resource):
         
         self._allow_cors = allow_cors
         self._routes: List[RouteEvent] = []
+        self.output = ApiOutput(cdev_name)
 
     @property
     def allow_cors(self):

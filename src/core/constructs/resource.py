@@ -252,9 +252,6 @@ class Resource:
     def compute_hash(self):
         raise NotImplementedError
 
-    def from_output(self, key: Enum) -> Cloud_Output:
-        raise NotImplementedError
-
 
 class Resource_Reference:
     RUUID: str = None

@@ -1,6 +1,8 @@
 from enum import Enum
+from typing import Any
 
-from core.constructs.resource import Resource, ResourceModel, Cloud_Output, update_hash
+from core.constructs.resource import Resource, ResourceModel, update_hash
+from core.constructs.output import ResourceOutputs, Cloud_Output_Str
 from core.utils import hasher
 
 from .iam import Permission
@@ -79,9 +81,24 @@ class simple_bucket_model(ResourceModel):
     pass
 
 
-class simple_bucket_output(str, Enum):
-    cloud_id = "cloud_id"
-    cloud_name = "cloud_name"
+class BucketOutput(ResourceOutputs):
+    def __init__(self, name: str) -> None:
+        super().__init__(name, RUUID)
+
+
+    @property
+    def bucket_name(self) -> Cloud_Output_Str:
+        """The name of the generated bucket"""
+        return Cloud_Output_Str(
+            name=self._name,
+            ruuid=RUUID,
+            key='bucket_name',
+            type=self.OUTPUT_TYPE
+        )
+
+    @bucket_name.setter
+    def bucket_name(self, value: Any):
+        raise Exception
 
 
 class SimpleBucket(Resource):
@@ -98,6 +115,8 @@ class SimpleBucket(Resource):
 
 
         self.permissions = BucketPermissions(cdev_name)
+
+        self.output = BucketOutput(cdev_name)
 
 
     def create_event_trigger(
@@ -121,5 +140,3 @@ class SimpleBucket(Resource):
             hash=self.hash,
         )
 
-    def from_output(self, key: simple_bucket_output) -> Cloud_Output:
-        return super().from_output(key)

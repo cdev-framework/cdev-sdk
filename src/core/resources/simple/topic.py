@@ -1,6 +1,8 @@
 from enum import Enum
+from typing import Any
 
-from core.constructs.resource import Resource, ResourceModel, Cloud_Output, update_hash
+from core.constructs.resource import Resource, ResourceModel, update_hash
+from core.constructs.output import ResourceOutputs, Cloud_Output_Str
 from core.utils import hasher
 
 from .iam import Permission
@@ -32,9 +34,23 @@ class TopicPermissions:
 ##############
 ##### Output
 ##############
-class simple_topic_output(str, Enum):
-    cloud_id = "cloud_id"
-    topic_name = "topic_name"
+class TopicOutput(ResourceOutputs):
+    def __init__(self, name: str) -> None:
+        super().__init__(name, RUUID)
+
+    @property
+    def topic_name(self) -> Cloud_Output_Str:
+        """The name of the generated table"""
+        return Cloud_Output_Str(
+            name=self._name,
+            ruuid=RUUID,
+            key='topic_name',
+            type=self.OUTPUT_TYPE
+        )
+
+    @topic_name.setter
+    def topic_name(self, value: Any):
+        raise Exception
 
 
 ###############
@@ -63,6 +79,7 @@ class Topic(Resource):
         super().__init__(cdev_name, RUUID, nonce)
 
         self._is_fifo = is_fifo
+        self.output = TopicOutput(cdev_name)
         self.permissions = TopicPermissions(cdev_name)
     
     @property
@@ -84,7 +101,4 @@ class Topic(Resource):
             hash=self.hash,
             is_fifo=self.is_fifo,
         )
-
-    def from_output(self, key: simple_topic_output) -> Cloud_Output:
-        return super().from_output(key)
 

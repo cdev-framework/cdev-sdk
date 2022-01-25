@@ -4,8 +4,9 @@ from typing import Dict, Tuple, List, Union
 
 
 from core.constructs.components import Component, Component_Change_Type, ComponentModel, Component_Difference
-from core.constructs.resource import Cloud_Output, Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference, ResourceModel, Resource_Change_Type, ResourceReferenceModel
-
+from core.constructs.resource import Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference, ResourceModel, Resource_Change_Type, ResourceReferenceModel
+from core.constructs.output import Cloud_Output, Cloud_Output_Str, cloud_output_model
+from core.constructs.types import cdev_str_model
 
 class simple_component(Component):
     def __init__(self, name: str):
@@ -20,7 +21,7 @@ class simple_component(Component):
 
 
 class simple_resource_model(ResourceModel):
-    val: Union[str, Cloud_Output] 
+    val: Union[str, cdev_str_model] 
         
         
 
@@ -451,12 +452,12 @@ def simple_resources_for_find_parents() -> List[Tuple[ResourceModel, int]]:
             "ruuid": "cdev::test:r1",
             "name": "resource2",
             "hash": "2",
-            "val": Cloud_Output(
+            "val": Cloud_Output_Str(
                 ruuid='cdev::test:r1',
                 name='resource1',
                 key='val',
                 type='resource'
-            )
+            ).render()
         }),1),
         (simple_resource_model(**{
             "ruuid": "cdev::test:r1",

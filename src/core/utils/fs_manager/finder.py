@@ -115,8 +115,9 @@ def _find_resources_information_from_file(
 
             if isinstance(obj, SimpleFunction):
                 #preparsed_info = obj.render()
-                functions_to_parse.append(obj.configuration.handler)
-                function_name_to_info[obj.configuration.handler] = obj
+                #functions_to_parse.append(obj.configuration.handler)
+                #function_name_to_info[obj.configuration.handler] = obj
+                resource_rv.append(obj.render())
                 
             else:
                 resource_rv.append(obj.render())
