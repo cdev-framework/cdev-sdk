@@ -4,7 +4,7 @@ from typing import Dict, Tuple, List, Union
 
 
 from core.constructs.components import Component, Component_Change_Type, ComponentModel, Component_Difference
-from core.constructs.resource import Cloud_Output, Output_Type, Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference, ResourceModel, Resource_Change_Type, ResourceReferenceModel
+from core.constructs.resource import Cloud_Output, Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference, ResourceModel, Resource_Change_Type, ResourceReferenceModel
 
 
 class simple_component(Component):

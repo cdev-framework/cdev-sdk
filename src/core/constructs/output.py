@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, FrozenSet, List, NamedTuple, Tuple, NewType, overload, Optional, Union, Iterable, Mapping
+from typing import Any, FrozenSet, List, NamedTuple, Tuple, NewType, overload, Optional, Union, Iterable, Mapping, TypeVar, Generic
 from typing_extensions import Literal, SupportsIndex
 from collections.abc import Sequence
 
@@ -8,12 +8,15 @@ from core.utils.types import ImmutableModel, frozendict
 
 CLOUD_OUTPUT_ID = 'cdev_cloud_output'
 
+class Cloud_Output:
+    pass
 
 class OutputType(str, Enum):
     RESOURCE = 'resource'
     REFERENCE = 'reference'
 
 output_operation = NewType('output_operation', Tuple[str, Tuple, frozendict])
+
 
 
 class cloud_output_model(ImmutableModel):
@@ -84,8 +87,10 @@ class Cloud_Output_Dynamic(Cloud_Output):
         )
 
 
-def evaluate_dynamic_output(original_value: Union[str, int], operations: Tuple[output_operation]) -> Any:
+def evaluate_dynamic_output(original_value: Any, cloud_output_dynamic: cloud_output_dynamic_model) -> Any:
    
+    operations = cloud_output_dynamic.output_operations
+
     intermediate_value = original_value
     for x in operations:
         func_name = x[0]
@@ -103,6 +108,7 @@ def evaluate_dynamic_output(original_value: Union[str, int], operations: Tuple[o
             print(object_methods)
             raise Exception(f"'{func_name}' not in available methods for {intermediate_value} ({type(intermediate_value)})")
 
+        print(func_name)
         if xargs and kwargs:
             new_rv = getattr(intermediate_value, func_name)(**kwargs)
         elif (not xargs) and kwargs:
@@ -832,17 +838,23 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
         )
         return self
 
-    def ljust(self, __width: SupportsIndex, __fillchar: str = None) -> 'Cloud_Output_Str':
+    def ljust(self, __width: SupportsIndex, __fillchar: str = "") -> 'Cloud_Output_Str':
         """Return S left-justified in a Unicode string of length __width. 
 
         Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
 
         Padding is done using the specified fill character (default is a space).
         """
+
+        args = [__width]
+
+        if __fillchar:
+            args.append(__fillchar)
+
         self._operations.append(
             (
                 'ljust',
-                (__width, __fillchar),
+                tuple(args),
                 {},
             )
         )
@@ -869,21 +881,21 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
         
         If chars is given and not None, remove characters in chars instead.
         """
+
+        args = []
+
+        if __chars:
+            args.append(__chars)
         self._operations.append(
             (
                 'lstrip', 
-                (__chars), 
+                tuple(args), 
                 {},
             )
         )
 
-    #def partition(self, __sep: str) -> (head, sep, tail):
-    #    """
-    #    Search for the separator sep in S, and return the part before it,
-    #    the separator itself, and the part after it.  If the separator is not
-    #    found, return S and two empty strings.
-    #    """
-    #    self._operations.append(('partition', (), {}))
+        return self
+
 
 
     def replace(self, __old: str, __new: str, __count: SupportsIndex = None) -> 'Cloud_Output_Str':
@@ -908,6 +920,8 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
                 },
             )
         )
+
+        return self
 
     def rfind(self, __sub: str, __start: Optional[SupportsIndex] = None, __end: Optional[SupportsIndex] = None) -> Cloud_Output_Int:
         """Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].  
@@ -983,28 +997,31 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
 
         return rv
 
+
     def rjust(self, __width: SupportsIndex, __fillchar: str = None) -> 'Cloud_Output_Str':
         """Right-justify S in a string of length width. Padding is
         done using the specified fill character (default is a space).
 
         Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
         """
+
+        args = [__width]
+
+        if __fillchar:
+            args.append(__fillchar)
+
+        print(args)
         self._operations.append(
             (
                 'rjust',
-                (__width, __fillchar),
+                tuple(args),
                 {},
             )
         )
 
-    #def rpartition(self, sep) -> (head, sep, tail):
-    #    """
-    #    Search for the separator sep in S, starting at the end of S, and return
-    #    the part before it, the separator itself, and the part after it.  If the
-    #    """
-    #    self._operations.append(('rpartition', (), {}))
+        return self
 
-    
+
     def rsplit(self, sep: Optional[str] = None, maxsplit: Optional[SupportsIndex] = None) -> List['Cloud_Output_Str']:
         """Return a list of the words in S, using sep as the
         delimiter string, starting at the end of the string and
@@ -1213,6 +1230,7 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
 
         return self
 
+
     def zfill(self, __width: SupportsIndex) -> 'Cloud_Output_Str':
         """Pad a numeric string S with zeros on the left, to fill a field of the specified width. 
         
@@ -1223,7 +1241,61 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
         self._operations.append(
             (
                 'zfill', 
-                (__width), 
+                tuple([__width]), 
+                {}
+            )
+        )
+
+        return self
+
+
+T = TypeVar('T', Cloud_Output_Dynamic, Cloud_Output_Str, Cloud_Output_Int, Cloud_Output_Bool)
+
+class Cloud_Output_Sequence(Sequence, Cloud_Output_Dynamic, Generic[T]):
+    def __init__(self, name: str, ruuid: str, key: str, type: OutputType, _member_class) -> None:
+        super().__init__(name, ruuid, key, type)
+
+        self._member_class = _member_class
+
+    def __len__(self):
+        raise Exception
+
+    @overload
+    def __getitem__(self, key: int) -> T:
+        self._operations.append(
+            (
+                '__getitem__',
+                [key],
+                {}
+            )
+        )
+
+        rv = self._member_class(
+            self._name, self._ruuid, self._key, self._type
+        )
+
+        rv._operations = self._operations.copy()
+
+        return rv
+
+
+        
+
+    @overload
+    def __getitem__(self, key: slice) -> 'Cloud_Output_Sequence[T]':
+        self._operations.append(
+            (
+                '__getitem__',
+                [key],
+                {}
+            )
+        )  
+
+    def __contains__(self, _o: str) -> Cloud_Output_Bool:
+        self._operations.append(
+            (
+                '__contains__',
+                [_o],
                 {}
             )
         )

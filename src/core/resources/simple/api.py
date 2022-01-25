@@ -50,8 +50,6 @@ class Api(Resource):
 
     Args:
         Resource ([type]): [description]
-
-    
     """
 
     @update_hash
