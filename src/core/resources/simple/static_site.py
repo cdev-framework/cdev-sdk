@@ -15,11 +15,7 @@ class StaticSiteOutput(ResourceOutputs):
 
     @property
     def bucket_name(self) -> Cloud_Output_Str:
-        """The name of the underlying S3 Bucket where the content for the site is stored.
-
-        Returns:
-            Cloud_Output_Str: base url
-        """
+        """The name of the underlying S3 Bucket where the content for the site is stored."""
         return Cloud_Output_Str(
             name=self._name,
             ruuid=RUUID,
@@ -34,11 +30,7 @@ class StaticSiteOutput(ResourceOutputs):
 
     @property
     def site_url(self) -> Cloud_Output_Str:
-        """The url of the created site
-
-        Returns:
-            Cloud_Output_Str: base url
-        """
+        """The url of the created site"""
         return Cloud_Output_Str(
             name=self._name,
             ruuid=RUUID,
