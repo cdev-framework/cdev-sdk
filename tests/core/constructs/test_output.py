@@ -4,9 +4,8 @@ from core.constructs.output import *
 import pytest
 
 
-# Arrange
 @pytest.fixture
-def str_examples() -> List[Tuple[str, Cloud_Output_Str, str]]:
+def simple_str_examples() -> List[Tuple[str, Cloud_Output_Str, str]]:
     return [
         ("demo", _cloud_output_str_factory().capitalize(), "demo".capitalize()),
         ("belligerent", _cloud_output_str_factory().casefold(),"belligerent"),
@@ -42,6 +41,16 @@ def str_examples() -> List[Tuple[str, Cloud_Output_Str, str]]:
         ("wandering", _cloud_output_str_factory().zfill(5), "wandering".zfill(5)),
     ]
 
+@pytest.fixture
+def simple_int_examples() -> List[Tuple[int, Cloud_Output_Str, int]]:
+    return [
+        (1, _cloud_output_int_factory().add(2), 1+2),
+        (2, _cloud_output_int_factory().multiply(3), 2*3),
+        (3, _cloud_output_int_factory().subtract(1), 3-1),
+        #(-4, _cloud_output_int_factory().abs(), -4),
+    ]
+
+
 def _cloud_output_str_factory() -> Cloud_Output_Str:
     return Cloud_Output_Str(
         'r1',
@@ -76,13 +85,23 @@ def _cloud_output_list_factory() -> Cloud_Output_Sequence[Cloud_Output_Str]:
 
 
 
-def test_cloud_output_str(str_examples):
-    for test in str_examples:
+def test_cloud_output_str(simple_str_examples):
+    for test in simple_str_examples:
         input_str = test[0]
         cloud_output: Cloud_Output_Str = test[1]
         final_result = test[2]
 
-        print(test)
-        print(cloud_output._operations)
         assert final_result == evaluate_dynamic_output(input_str, cloud_output.render())
+
+
+
+def test_cloud_output_int(simple_int_examples):
+    for test in simple_int_examples:
+        input_int = test[0]
+        cloud_output: Cloud_Output_Int = test[1]
+        final_result = test[2]
+
+        print(cloud_output._operations)
+        assert final_result == evaluate_dynamic_output(input_int, cloud_output.render())
+
 

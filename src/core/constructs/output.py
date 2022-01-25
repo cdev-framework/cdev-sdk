@@ -209,7 +209,7 @@ class Cloud_Output_Int(Cloud_Output_Dynamic):
         self._operations.append(
             (
                 '__add__', 
-                (__x), 
+                tuple([__x]), 
                 {},
             )
         )
@@ -224,8 +224,8 @@ class Cloud_Output_Int(Cloud_Output_Dynamic):
         """
         self._operations.append(
             (
-                '__sub__', 
-                (__x), 
+                '__add__', 
+                tuple([__x*-1]), 
                 {},
             )
         )
@@ -241,7 +241,7 @@ class Cloud_Output_Int(Cloud_Output_Dynamic):
         self._operations.append(
             (
                 '__mul__', 
-                (__x), 
+                tuple([__x]), 
                 {},
             )
         )
@@ -257,28 +257,28 @@ class Cloud_Output_Int(Cloud_Output_Dynamic):
         self._operations.append(
             (
                 '__divmod__', 
-                (__x), 
+                tuple([__x]), 
                 {},
             )
         )
 
         return self
 
-
-    def abs(self) -> 'Cloud_Output_Int':
-        """Return absolute value
-
-        Returns a Cloud Output Int on which further operations can be chained.
-        """
-        self._operations.append(
-            (
-                '__abs__', 
-                (), 
-                {},
-            )
-        )
-
-        return self
+    
+    #def abs(self) -> 'Cloud_Output_Int':
+    #    """Return absolute value
+#
+    #    Returns a Cloud Output Int on which further operations can be chained.
+    #    """
+    #    self._operations.append(
+    #        (
+    #            '__abs__', 
+    #            (), 
+    #            {},
+    #        )
+    #    )
+#
+    #    return self
 
 
 class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
