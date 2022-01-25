@@ -1,3 +1,4 @@
+from distutils.ccompiler import new_compiler
 from enum import Enum
 from typing import Any, FrozenSet, List, NamedTuple, Tuple, NewType, overload, Optional, Union, Iterable, Mapping, TypeVar, Generic
 from typing_extensions import Literal, SupportsIndex
@@ -101,24 +102,34 @@ def evaluate_dynamic_output(original_value: Any, cloud_output_dynamic: cloud_out
             # There is not hidden method that implements not, so we need to hard code this.
             new_rv = not intermediate_value
 
-        object_methods = set([method_name for method_name in dir(str) if callable(getattr(str, method_name))])
+        elif func_name == "**and":
+            new_rv = intermediate_value and xargs[0]
 
+        elif func_name == "**or":
+            new_rv = intermediate_value or xargs[0]
 
-        if not func_name in object_methods:
-            print(object_methods)
-            raise Exception(f"'{func_name}' not in available methods for {intermediate_value} ({type(intermediate_value)})")
+        elif func_name == "**xor":
+            new_rv = intermediate_value ^ xargs[0]
 
-        print(func_name)
-        if xargs and kwargs:
-            new_rv = getattr(intermediate_value, func_name)(**kwargs)
-        elif (not xargs) and kwargs:
-            new_rv = getattr(intermediate_value, func_name)(**kwargs)
-        elif xargs and (not kwargs):
-            new_rv = getattr(intermediate_value, func_name)(*xargs)
-        elif (not xargs) and (not kwargs):
-            new_rv = getattr(intermediate_value, func_name)() 
-
-
+        else:
+            object_methods = set([method_name for method_name in dir(str) if callable(getattr(str, method_name))])
+    
+    
+            if not func_name in object_methods:
+                print(object_methods)
+                raise Exception(f"'{func_name}' not in available methods for {intermediate_value} ({type(intermediate_value)})")
+    
+            print(func_name)
+            if xargs and kwargs:
+                new_rv = getattr(intermediate_value, func_name)(**kwargs)
+            elif (not xargs) and kwargs:
+                new_rv = getattr(intermediate_value, func_name)(**kwargs)
+            elif xargs and (not kwargs):
+                new_rv = getattr(intermediate_value, func_name)(*xargs)
+            elif (not xargs) and (not kwargs):
+                new_rv = getattr(intermediate_value, func_name)() 
+    
+    
         intermediate_value = new_rv
 
 
@@ -137,8 +148,8 @@ class Cloud_Output_Bool(Cloud_Output_Dynamic):
         """
         self._operations.append(
             (
-                '__and__', 
-                (__x), 
+                '**and', 
+                tuple([__x]), 
                 {},
             )
         )
@@ -153,8 +164,8 @@ class Cloud_Output_Bool(Cloud_Output_Dynamic):
         """
         self._operations.append(
             (
-                '__or__', 
-                (__x), 
+                '**or', 
+                tuple([__x]), 
                 {},
             )
         )
@@ -169,8 +180,8 @@ class Cloud_Output_Bool(Cloud_Output_Dynamic):
         """
         self._operations.append(
             (
-                '__xor__', 
-                (__x), 
+                '**xor', 
+                tuple([__x]), 
                 {},
             )
         )

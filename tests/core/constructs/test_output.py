@@ -50,6 +50,15 @@ def simple_int_examples() -> List[Tuple[int, Cloud_Output_Str, int]]:
         #(-4, _cloud_output_int_factory().abs(), -4),
     ]
 
+@pytest.fixture
+def simple_bool_examples() -> List[Tuple[bool, Cloud_Output_Str, bool]]:
+    return [
+        (True, _cloud_output_bool_factory().and_(False), True and False),
+        (True, _cloud_output_bool_factory().or_(False), True or False),
+        (True, _cloud_output_bool_factory().xor_(False), True ^ False),
+        (False, _cloud_output_bool_factory().not_(), not False),
+    ]
+
 
 def _cloud_output_str_factory() -> Cloud_Output_Str:
     return Cloud_Output_Str(
@@ -99,6 +108,17 @@ def test_cloud_output_int(simple_int_examples):
     for test in simple_int_examples:
         input_int = test[0]
         cloud_output: Cloud_Output_Int = test[1]
+        final_result = test[2]
+
+        print(cloud_output._operations)
+        assert final_result == evaluate_dynamic_output(input_int, cloud_output.render())
+
+
+
+def test_cloud_output_bool(simple_bool_examples):
+    for test in simple_bool_examples:
+        input_int = test[0]
+        cloud_output: Cloud_Output_Bool = test[1]
         final_result = test[2]
 
         print(cloud_output._operations)
