@@ -212,7 +212,7 @@ def handle_simple_relational_db_deployment(
         transaction_token: str, 
         namespace_token: str, 
         resource_diff: Resource_Difference, 
-        previous_output: Dict[relational_db.simple_relational_db_output, Any],
+        previous_output: Dict[str, Any],
         output_task: OutputTask
     ) -> Dict:
     if resource_diff.action_type == Resource_Change_Type.CREATE:

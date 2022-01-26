@@ -86,7 +86,7 @@ def _remove_simple_dynamodb_table(
 def handle_simple_table_deployment(transaction_token: str, 
         namespace_token: str, 
         resource_diff: Resource_Difference, 
-        previous_output: Dict[table.simple_table_output, Any],
+        previous_output: Dict[str, Any],
         output_task: OutputTask
         ) -> Dict:
     

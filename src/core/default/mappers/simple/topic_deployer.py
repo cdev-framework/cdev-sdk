@@ -86,7 +86,7 @@ def handle_simple_topic_deployment(
         transaction_token: str, 
         namespace_token: str, 
         resource_diff: Resource_Difference, 
-        previous_output: Dict[topic.simple_topic_output, Any],
+        previous_output: Dict[str, Any],
         output_task: OutputTask
     ) -> Dict:
     if resource_diff.action_type == Resource_Change_Type.CREATE:

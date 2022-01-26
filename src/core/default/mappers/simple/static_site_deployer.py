@@ -186,7 +186,7 @@ def handle_simple_static_site_deployment(
         transaction_token: str, 
         namespace_token: str, 
         resource_diff: Resource_Difference, 
-        previous_output: Dict[static_site.simple_static_site_output, Any],
+        previous_output: Dict[str, Any],
         output_task: OutputTask
     ) -> Dict:
     if resource_diff.action_type == Resource_Change_Type.CREATE:
