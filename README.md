@@ -49,9 +49,10 @@ $ cdev deploy
 
 Invoke the deployed function directly from the cli
 ```
-$ cdev run simple.function.execute demo.hello_world
+$ cdev run simple.function.execute hello_world_comp.hello_world_function
 
-$ cdev run simple.function.logs demo.hello_world 
+# might have to wait a sec for the logs to process in the cloud
+$ cdev run simple.function.logs hello_world_comp.hello_world_function
 ```
 
 # Not implemented
