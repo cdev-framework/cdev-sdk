@@ -1,4 +1,4 @@
-from cdev.management.base import BaseCommandContainer
+from core.constructs.commands import BaseCommandContainer
 
 
 class SimpleCommandContainer(BaseCommandContainer):

@@ -1,4 +1,4 @@
-from argparse import ArgumentParser
+'''from argparse import ArgumentParser
 import json
 from typing import Dict, List
 
@@ -68,3 +68,4 @@ class put_object(BaseCommand):
             return
 
         self.stdout.write(f"Wrote {data} to {resource_name}")
+'''

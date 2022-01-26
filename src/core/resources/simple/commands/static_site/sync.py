@@ -1,4 +1,4 @@
-from cdev.management.base import BaseCommand, OutputWrapper
+"""from cdev.management.base import BaseCommand, OutputWrapper
 from argparse import ArgumentParser
 import boto3
 import os
@@ -11,9 +11,9 @@ RUUID = "cdev::simple::staticsite"
 
 class sync_files(BaseCommand):
 
-    help = """
-        Get the logs of a deployed lambda function
-    """
+    
+    ##    Get the logs of a deployed lambda function
+    ##
 
     def add_arguments(self, parser: ArgumentParser):
         parser.add_argument(
@@ -63,3 +63,4 @@ class sync_files(BaseCommand):
                 bucket.upload_file(
                     full_path, key_name, ExtraArgs={"ContentType": mimetype}
                 )
+"""

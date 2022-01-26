@@ -1,4 +1,4 @@
-from cdev.management.base import BaseCommand
+from core.constructs.commands import BaseCommand
 
 
 class put_object(BaseCommand):

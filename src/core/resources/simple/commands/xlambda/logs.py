@@ -1,13 +1,15 @@
-from cdev.management.base import BaseCommand, OutputWrapper
-from cdev.backend import cloud_mapper_manager
-from cdev.utils import hasher
+
 from argparse import ArgumentParser
 import time, math, datetime
 
 from typing import List, Dict
 from boto3 import client
 
-RUUID = "cdev::simple::lambda_function"
+from core.constructs.commands import BaseCommand, OutputWrapper
+from core.constructs.workspace import Workspace
+from core.utils import hasher
+
+RUUID = "cdev::simple::function"
 
 
 class show_logs(BaseCommand):
@@ -18,7 +20,7 @@ class show_logs(BaseCommand):
 
     def add_arguments(self, parser: ArgumentParser):
         parser.add_argument(
-            "function_name", type=str, help="The function that you want to watch"
+            "function_name", type=str, help="The function that you want to watch. Name must include component name. ex: comp1.demo_function"
         )
         parser.add_argument(
             "--watch",
@@ -36,15 +38,17 @@ class show_logs(BaseCommand):
 
     def command(self, *args, **kwargs):
 
-        function_name = kwargs.get("function_name")
+        full_function_name: str = kwargs.get("function_name")
+        component_name = full_function_name.split('.')[0]
+        function_name = full_function_name.split('.')[1]
         watch_val = kwargs.get("watch")
         tail_val = kwargs.get("tail")
         number_val = kwargs.get("number")
 
-        cloud_name = _get_aws_name_from_cdev_name(function_name)
+        cloud_name = _get_aws_name_from_cdev_name(component_name, function_name)
 
         if not cloud_name:
-            self.stdout.write(f"Could not find function name {function_name}")
+            self.stdout.write(f"Could not find function {function_name} in component {component_name}")
             return
 
         cloud_watch_group_name = f"/aws/lambda/{cloud_name}"
@@ -127,13 +131,23 @@ def _watch_log_group(group_name: str, stdout: OutputWrapper, args=None):
             return
 
 
-def _get_aws_name_from_cdev_name(cdev_function_name):
+def _get_aws_name_from_cdev_name(component_name: str, cdev_function_name: str) -> str:
     try:
-        cloud_id = cloud_mapper_manager.get_output_value_by_name(
-            RUUID, cdev_function_name, "cloud_id"
+        ws = Workspace.instance()
+
+
+        cloud_id = ws.get_backend().get_cloud_output_value_by_name(
+            ws.get_resource_state_uuid(),
+            component_name,
+            RUUID, 
+            cdev_function_name, 
+            "cloud_id"
         )
+
         return cloud_id.split(":")[-1]
     except Exception as e:
+        print(f"Could not find cloud id")
+        print(e)
         return None
 
 

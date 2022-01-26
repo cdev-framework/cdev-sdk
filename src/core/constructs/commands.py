@@ -2,6 +2,7 @@ import os
 from argparse import ArgumentParser, HelpFormatter
 import sys
 from io import TextIOBase
+from rich.console import Console
 
 
 class CdevCommandError(BaseException):
@@ -23,7 +24,7 @@ class CdevCommandError(BaseException):
         super().__init__(*args, **kwargs)
 
 
-class DjangoHelpFormatter(HelpFormatter):
+class CdevHelpFormatter(HelpFormatter):
     """
     This is just a nice feature of the formatter. Thank you Django.
 
@@ -93,6 +94,45 @@ class OutputWrapper(TextIOBase):
         self._out.write(style_func(msg))
 
 
+class ConsoleOutputWrapper(TextIOBase):
+    """
+    Wrapper around a `rich` console. 
+    """
+
+    @property
+    def style_func(self):
+        return self._style_func
+
+    @style_func.setter
+    def style_func(self, style_func):
+        if style_func and self.isatty():
+            self._style_func = style_func
+        else:
+            self._style_func = lambda x: x
+
+    def __init__(self, console: Console, ending="\n"):
+        self._out = console
+        self.style_func = None
+        self.ending = ending
+
+    def __getattr__(self, name):
+        return getattr(self._out, name)
+
+    def flush(self):
+        self._out.clear()
+
+    def isatty(self):
+        return self._out.is_terminal
+
+    def write(self, msg: str ="", style_func=None, ending=None):
+        ending = self.ending if ending is None else ending
+        if ending and not msg.endswith(ending):
+            msg += ending
+        style_func = style_func or self.style_func
+        self._out.print(style_func(msg))
+
+
+
 class BaseCommand:
     """
     This command system is heavily influenced/inspired by the Django command system (https://github.com/django/django/blob/b0ed619303d2fb723330ca9efa3acf23d49f1d19/django/core/management/base.py).
@@ -111,20 +151,20 @@ class BaseCommand:
     help = ""
 
     # If this command requires the project to have been initialized
-    requires_initialized_project = True
+    requires_initialized_workspace = True
 
     # If the command should look to substitute args with cloud output values
     substitute_from_output = True
 
-    def __init__(self, stdout=None, stderr=None, no_color=False, force_color=False):
-        self.stdout = OutputWrapper(stdout or sys.stdout)
-        self.stderr = OutputWrapper(stderr or sys.stderr)
+    def __init__(self, stdout: Console = None, stderr: Console = None, no_color=False, force_color=False):
+        self.stdout = ConsoleOutputWrapper(stdout) if stdout else OutputWrapper(sys.stdout)
+        self.stderr = ConsoleOutputWrapper(stderr) if stderr else OutputWrapper(sys.stderr)
 
     def create_arg_parser(self, prog_name, subcommand, **kwargs) -> ArgumentParser:
         parser = ArgumentParser(
             prog="%s %s" % (os.path.basename(prog_name), subcommand),
             description=self.help or None,
-            formatter_class=DjangoHelpFormatter,
+            formatter_class=CdevHelpFormatter,
             **kwargs
         )
 
@@ -198,9 +238,9 @@ class BaseCommandContainer:
     # Help message for this container
     help = ""
 
-    def __init__(self, stdout=None, stderr=None, no_color=False, force_color=False):
-        self.stdout = OutputWrapper(stdout or sys.stdout)
-        self.stderr = OutputWrapper(stderr or sys.stderr)
+    def __init__(self, stdout: Console = None, stderr: Console = None, no_color=False, force_color=False):
+        self.stdout = ConsoleOutputWrapper(stdout) if stdout else OutputWrapper(sys.stdout)
+        self.stderr = ConsoleOutputWrapper(stderr) if stderr else OutputWrapper(sys.stderr)
 
     def display_help_message(self) -> str:
         self.stdout.write(self.help)

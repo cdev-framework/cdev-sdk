@@ -25,6 +25,11 @@ from ..settings import SETTINGS as cdev_settings
 from ..utils import module_loader, file_writer
 
 
+DEFAULT_COMMAND_LOCATIONS = [
+    'core.resources.simple'
+]
+
+
 class local_workspace_configuration(BaseModel):
     initialization_module: str
     backend_configuration: Backend_Configuration
@@ -39,7 +44,7 @@ class local_workspace(Workspace):
 
     _instance = None
 
-    _COMMANDS = []
+    _COMMANDS = DEFAULT_COMMAND_LOCATIONS
     _MAPPERS = []
     _COMPONENTS = []
 
@@ -59,7 +64,7 @@ class local_workspace(Workspace):
             # Load the backend
             cls._instance._backend = None
 
-            cls._instance._COMMANDS = []
+            cls._instance._COMMANDS = DEFAULT_COMMAND_LOCATIONS
             cls._instance._MAPPERS = []
             cls._instance._COMPONENTS = []
             cls._instance._resource_state_uuid = None

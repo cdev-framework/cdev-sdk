@@ -1,4 +1,4 @@
-from argparse import ArgumentParser
+'''from argparse import ArgumentParser
 import json
 from typing import Dict, List
 
@@ -67,3 +67,4 @@ class clear_table(BaseCommand):
                     break
 
         self.stdout.write(f"Deleted {counter}")
+'''

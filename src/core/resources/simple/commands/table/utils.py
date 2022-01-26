@@ -1,4 +1,4 @@
-from typing import Dict, List
+'''from typing import Dict, List
 
 _attribute_types_to_python_type = {"S": [str], "N": [int, float], "B": [bytes]}
 
@@ -57,3 +57,4 @@ def recursive_translate_data(value) -> Dict:
         raise Exception
 
     return transformed_val
+'''
