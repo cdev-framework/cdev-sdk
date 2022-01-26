@@ -95,7 +95,10 @@ The project is still in a pre-alpha state, so not all the features of the alpha 
 - General polish of output 
 - General work on documentation
 
-
+For testing parts of the early alpha, it helps to start from the `resources-test` project template as that will have a bunch of preconfigured resoures.
+```
+$ cdev init demo --template resources-test
+```
 
 ## Post Alpha Road Map and Limitations
 We are currently in the **very very** early stage of creating a comprehensive framework that helps teams throughout the whole cloud development process. As with any tool, it is important to understand what it is capabale and **not** capable of doing. Here are a list of outstanding things that we are working (or thinking) on. 
