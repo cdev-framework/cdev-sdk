@@ -49,7 +49,7 @@ $ cdev deploy
 
 Invoke the deployed function directly from the cli
 ```
-$ cdev run simple.function.invoke demo.hello_world
+$ cdev run simple.function.execute demo.hello_world
 
 $ cdev run simple.function.logs demo.hello_world 
 ```
