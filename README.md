@@ -17,16 +17,23 @@ The Cdev framework is designed to create a development environment that allows t
 
 ## Getting Started 
 - [An Aws account and credentials](https://aws.amazon.com/)
+    - Should have the `aws cli` and then run `aws configure` to set your credenentials. 
 - Requires Python>=3.6 and pip
 - **Highly** encourage using a python virtual environment
 
-Set up your python virtual environment and install the Cdev cli
+Clone the repository somewhere on your computer (pre alpha only step)
+```
+git clone git@github.com:cdev-framework/cdev-sdk.git
+```
+
+Starting from an empty directory. Set up your python virtual environment and install the Cdev cli. 
 ```
 $ python -m virtualenv .venv
 
-$ . ./.venv/activate
+$ . ./.venv/bin/activate
 
-$ pip install https://github.com/cdev-framework/cdev-sdk/src/
+# Early alpha... this will be a published pip package later.
+$ pip install -e <path_to_repo>/src
 ```
 
 Create a new project, see the resources in the created project, and create the project
@@ -42,11 +49,13 @@ $ cdev deploy
 
 Invoke the deployed function directly from the cli
 ```
-$ cdev run simple.function.invoke demo.hello_world
+$ cdev run simple.function.execute hello_world_comp.hello_world_function
 
-$ cdev run simple.function.logs demo.hello_world 
+# might have to wait a sec for the logs to process in the cloud
+$ cdev run simple.function.logs hello_world_comp.hello_world_function
 ```
 
+# Not implemented
 Invoke the deployed function via the created HTTP Api
 ```
 $ cdev output demo.api
@@ -55,6 +64,7 @@ $ cdev output demo.api
 $ curl <url>/hello_world
 ```
 
+# Not implemented
 Delete the project
 ```
 $ cdev destroy
@@ -75,8 +85,22 @@ For a more in depth project that goes into the capabilities of Cdev, check out o
 
 For guides on how to deploy any of these resources, check out our [documentation](https://cdevframework.io/docs/)
 
+## Early Alpha Notes
+The project is still in a pre-alpha state, so not all the features of the alpha are implemented. The main branch will be the most stable branch and should not have any breaking changes as work on the alpha continues. The alpha will be ready for a public launch by March 1st. Things left to do in alpha:
+- Reimplement permissions for resources for the new architecture
+- Reimplement events for resources for the new architecture
+- Add better Settings management
+- Readd logs
+- More unit and integraiton tests
+- General polish of output 
+- General work on documentation
 
-## Road Map and Current Limitations
+For testing parts of the early alpha, it helps to start from the `resources-test` project template as that will have a bunch of preconfigured resoures.
+```
+$ cdev init demo --template resources-test
+```
+
+## Post Alpha Road Map and Limitations
 We are currently in the **very very** early stage of creating a comprehensive framework that helps teams throughout the whole cloud development process. As with any tool, it is important to understand what it is capabale and **not** capable of doing. Here are a list of outstanding things that we are working (or thinking) on. 
 
 - Remote Backend
