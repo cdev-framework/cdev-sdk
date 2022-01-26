@@ -30,7 +30,7 @@ Starting from an empty directory. Set up your python virtual environment and ins
 ```
 $ python -m virtualenv .venv
 
-$ . ./.venv/activate
+$ . ./.venv/bin/activate
 
 # Early alpha... this will be a published pip package later.
 $ pip install -e <path_to_repo>/src
