@@ -300,7 +300,7 @@ def handle_simple_api_deployment(
         transaction_token: str, 
         namespace_token: str, 
         resource_diff: Resource_Difference, 
-        previous_output: Dict[simple_api.simple_api_output, Any],
+        previous_output: Dict[str, Any],
         output_task: OutputTask
         ) -> Dict:
     

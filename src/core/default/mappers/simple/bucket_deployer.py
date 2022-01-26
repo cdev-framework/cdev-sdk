@@ -209,7 +209,7 @@ def handle_simple_bucket_deployment(
         transaction_token: str, 
         namespace_token: str, 
         resource_diff: Resource_Difference, 
-        previous_output: Dict[simple_object_store.simple_bucket_output, Any],
+        previous_output: Dict[str, Any],
         output_task: OutputTask
     ) -> Dict:
     

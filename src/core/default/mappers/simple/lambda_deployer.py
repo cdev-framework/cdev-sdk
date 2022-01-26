@@ -551,7 +551,7 @@ def handle_simple_lambda_function_deployment(
         transaction_token: str, 
         namespace_token: str, 
         resource_diff: Resource_Difference, 
-        previous_output: Dict[simple_xlambda.layer_output, Any],
+        previous_output: Dict[str, Any],
         output_task: OutputTask
     ) -> Dict:
     try:
