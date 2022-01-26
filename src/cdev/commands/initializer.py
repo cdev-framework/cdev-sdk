@@ -1,15 +1,17 @@
 import json
 import os
 from pydantic.types import DirectoryPath
+import shutil
 from typing import Dict, Tuple
 
 from rich.prompt import Prompt
 from cdev.constructs.environment import environment_info
 from cdev.default.project import local_project
+
 from core.constructs.backend import Backend, Backend_Configuration
 from core.constructs.workspace import Workspace_Info
-
 from core.default.backend import Local_Backend_Configuration, LocalBackend
+from core.settings import SETTINGS
 
 from ..constructs.project import Project_State, check_if_project_exists, project_info
 
@@ -20,11 +22,14 @@ CDEV_FOLDER = ".cdev"
 CDEV_PROJECT_FILE = "cdev_project.json"
 CENTRAL_STATE_FILE = "central_state.json"
 DEFAULT_ENVIRONMENTS = ["prod", "stage", "dev"]
+TEMPLATE_LOCATIONS = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'project_templates')
 
+
+BASE_PROJECT_LOCATION = SETTINGS.get('BASE_PATH')
 
 AVAILABLE_TEMPLATES = [
     'quick-start',
-    'test-resources'
+    'resources-test'
 ]
 
 def create_project_cli(args):
@@ -42,11 +47,31 @@ def create_project_cli(args):
 
     create_project(args.name)
     print(f"Loading Template {template_name}")
+    _load_template(template_name)
     
 
-    
+def _load_template(template_name: str):
+    if not template_name:
+        return
+
+    template_folder_name = template_name.replace('-','_')
+
+
+    if not template_folder_name in os.listdir(TEMPLATE_LOCATIONS):
+        print(f"Could not finder template for {template_folder_name}")
+        return
+
+    template_location = os.path.join(TEMPLATE_LOCATIONS, template_folder_name)
+    for x in os.listdir(template_location):
         
+        full_location = os.path.join(template_location, x)
+        if os.path.isdir(full_location):
+            shutil.copytree(full_location, os.path.join(BASE_PROJECT_LOCATION, x))
+        elif os.path.isfile(full_location):
+            shutil.copyfile(full_location, os.path.join(BASE_PROJECT_LOCATION, x))
 
+
+    print(f"Created Project From Template: {template_name}")
 
 def create_project(project_name: str, base_directory: DirectoryPath = None):
 
