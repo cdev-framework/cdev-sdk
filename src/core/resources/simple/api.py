@@ -81,7 +81,8 @@ class ApiOutput(ResourceOutputs):
             name=self._name,
             ruuid=RUUID,
             key='endpoints',
-            type=self.OUTPUT_TYPE
+            type=self.OUTPUT_TYPE,
+            _member_class=Cloud_Output_Str
         )
 
     @endpoints.setter

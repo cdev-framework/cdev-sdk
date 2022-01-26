@@ -92,7 +92,7 @@ class SimpleFunctionConfiguration():
             description=self.description.render() if isinstance(self.description, Cloud_Output_Dynamic) else self.description,
             environment_variables = frozendict(
                 {k:v.render() if isinstance(v, Cloud_Output_Dynamic) else v for k,v in self.environment_variables}
-            )
+            ) if self.environment_variables else frozendict({})
         )
 
 
@@ -261,10 +261,10 @@ def simple_function_annotation(
                     mod_name = item[1]
 
 
-        final_config = simple_function_configuration_model(
+        final_config = SimpleFunctionConfiguration(
             handler=handler_name,
             description=description,
-            environment_variables= frozendict(environment) if environment else frozendict({})
+            environment_variables=environment
         )
 
         mod = importlib.import_module(mod_name)

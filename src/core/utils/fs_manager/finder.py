@@ -12,9 +12,8 @@ from core.constructs.resource import (
 
 from core.resources.simple.xlambda import (
     SimpleFunction,
-    simple_function_annotation,
-    simple_function_configuration_model,
     simple_function_model,
+    SimpleFunctionConfiguration
 )
 
 from core.utils import hasher, module_loader, paths, logger
@@ -115,9 +114,9 @@ def _find_resources_information_from_file(
 
             if isinstance(obj, SimpleFunction):
                 #preparsed_info = obj.render()
-                #functions_to_parse.append(obj.configuration.handler)
-                #function_name_to_info[obj.configuration.handler] = obj
-                resource_rv.append(obj.render())
+                functions_to_parse.append(obj.configuration.handler)
+                function_name_to_info[obj.configuration.handler] = obj
+                #resource_rv.append(obj.render())
                 
             else:
                 resource_rv.append(obj.render())
@@ -180,7 +179,7 @@ def _parse_serverless_functions(
 
         previous_info = handler_name_to_info.get(parsed_function.name)
 
-        new_configuration = simple_function_configuration_model(
+        new_configuration = SimpleFunctionConfiguration(
             handler=handler_path,
             description=previous_info.configuration.description,
             environment_variables=previous_info.configuration.environment_variables

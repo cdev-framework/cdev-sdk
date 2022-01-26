@@ -1,0 +1,42 @@
+# Generated as part of Resource Test project template 
+from cdev.resources.simple.xlambda import simple_function_annotation
+from cdev.resources.simple.api import Api
+from cdev.resources.simple.object_store import SimpleBucket
+from cdev.resources.simple.queue import Queue
+from cdev.resources.simple.relational_db import RelationalDB, db_engine
+from cdev.resources.simple.static_site import StaticSite
+from cdev.resources.simple.table import Table, AttributeDefinition, KeyDefinition, attribute_type, key_type
+from cdev.resources.simple.topic import Topic
+
+
+# Api
+myApi = Api("demoapi")
+route1 = myApi.route('/hello', 'GET')
+
+# Bucket
+bucket = SimpleBucket('demobucket')
+
+# Queue
+myQueue = Queue('bigqueue')
+
+# Relational DB
+relationDB = RelationalDB('demordb', db_engine.aurora_postgresql, "bobbytables", "password123")
+
+# Static Site
+mySite = StaticSite('site')
+
+# Table
+attributes = [AttributeDefinition('id', attribute_type.S)]
+keys = [KeyDefinition('id', key_type.HASH)]
+
+dinner_table = Table('dinner', attributes, keys)
+dinner_table2 = Table('dinner2', attributes, keys, nonce='2')
+
+# Topic
+good_dinner_conversation_topic = Topic('of_discussion', nonce='1')
+
+
+# Function
+@simple_function_annotation("hello_world_function")
+def hello_world(event, context):
+    print('Hellow World!')

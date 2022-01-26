@@ -15,14 +15,37 @@ from ..constructs.project import Project_State, check_if_project_exists, project
 
 
 STATE_FOLDER = "state"
+INTERMEDIATE_FOLDER = 'intermediate'
 CDEV_FOLDER = ".cdev"
 CDEV_PROJECT_FILE = "cdev_project.json"
 CENTRAL_STATE_FILE = "central_state.json"
 DEFAULT_ENVIRONMENTS = ["prod", "stage", "dev"]
 
 
+AVAILABLE_TEMPLATES = [
+    'quick-start',
+    'test-resources'
+]
+
 def create_project_cli(args):
+
+    print(args)
+    if args.template:
+        template_name = args.template
+
+        if template_name not in AVAILABLE_TEMPLATES:
+            print(f"{template_name} is not one of the available templates. {AVAILABLE_TEMPLATES}")
+            return
+
+    else:
+        template_name = None
+
     create_project(args.name)
+    print(f"Loading Template {template_name}")
+    
+
+    
+        
 
 
 def create_project(project_name: str, base_directory: DirectoryPath = None):
@@ -74,6 +97,9 @@ def _create_folder_structure(base_directory: DirectoryPath):
 
     if not os.path.isdir(os.path.join(base_directory, CDEV_FOLDER, STATE_FOLDER)):
         os.mkdir(os.path.join(base_directory, CDEV_FOLDER, STATE_FOLDER))
+
+    if not os.path.isdir(os.path.join(base_directory, CDEV_FOLDER, INTERMEDIATE_FOLDER)):
+        os.mkdir(os.path.join(base_directory, CDEV_FOLDER, INTERMEDIATE_FOLDER))
 
 
 def load_project(args):

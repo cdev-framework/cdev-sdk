@@ -124,7 +124,10 @@ CDEV_COMMANDS = [
         "name": "init",
         "help": "Create a new project",
         "default": initializer.create_project_cli,
-        "args": [{"dest": "name", "type": str, "help": "Name of the new project"}],
+        "args": [
+            {"dest": "name", "type": str, "help": "Name of the new project"},
+            {"dest": "--template", "type": str, "help": "Name of the template for the new project"}
+        ],
     },
     {
         "name": "environment",

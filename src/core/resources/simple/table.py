@@ -349,8 +349,8 @@ class Table(Resource):
     def compute_hash(self):
         self._hash = hasher.hash_list(
             [
-                self.attributes, 
-                self.keys, 
+                [x.render() for x in self.attributes], 
+                [x.render() for x in self.keys], 
                 self.nonce
             ]
         )

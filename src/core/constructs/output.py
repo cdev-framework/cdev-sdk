@@ -1305,7 +1305,7 @@ class Cloud_Output_Sequence(Sequence, Cloud_Output_Dynamic, Generic[T]):
     def __len__(self):
         raise Exception
 
-    @overload
+
     def __getitem__(self, key: int) -> T:
         self._operations.append(
             (
@@ -1324,9 +1324,6 @@ class Cloud_Output_Sequence(Sequence, Cloud_Output_Dynamic, Generic[T]):
         return rv
 
 
-        
-
-    @overload
     def __getitem__(self, key: slice) -> 'Cloud_Output_Sequence[T]':
         self._operations.append(
             (
