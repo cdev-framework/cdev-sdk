@@ -41,17 +41,15 @@ class execute(BaseCommand):
         component_name = full_function_name.split('.')[0]
         function_name = full_function_name.split('.')[1]
 
-        print(component_name)
-        print(function_name)
-
-
         cloud_name = get_cloud_id_from_cdev_name(component_name, function_name)
 
         lambda_client = client('lambda')    
 
+        self.stdout.write(f'executing {full_function_name}')
         response = lambda_client.invoke(
             FunctionName=cloud_name,
             InvocationType='RequestResponse',
         )
+
 
         print(response)
