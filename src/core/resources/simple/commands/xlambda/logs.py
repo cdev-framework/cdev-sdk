@@ -6,10 +6,12 @@ from typing import List, Dict
 from boto3 import client
 
 from core.constructs.commands import BaseCommand, OutputWrapper
-from core.constructs.workspace import Workspace
+
 from core.utils import hasher
 
-RUUID = "cdev::simple::function"
+from .utils import get_cloud_id_from_cdev_name
+
+
 
 
 class show_logs(BaseCommand):
@@ -45,7 +47,7 @@ class show_logs(BaseCommand):
         tail_val = kwargs.get("tail")
         number_val = kwargs.get("number")
 
-        cloud_name = _get_aws_name_from_cdev_name(component_name, function_name)
+        cloud_name = get_cloud_id_from_cdev_name(component_name, function_name).split(":")[-1]
 
         if not cloud_name:
             self.stdout.write(f"Could not find function {function_name} in component {component_name}")
@@ -131,24 +133,6 @@ def _watch_log_group(group_name: str, stdout: OutputWrapper, args=None):
             return
 
 
-def _get_aws_name_from_cdev_name(component_name: str, cdev_function_name: str) -> str:
-    try:
-        ws = Workspace.instance()
-
-
-        cloud_id = ws.get_backend().get_cloud_output_value_by_name(
-            ws.get_resource_state_uuid(),
-            component_name,
-            RUUID, 
-            cdev_function_name, 
-            "cloud_id"
-        )
-
-        return cloud_id.split(":")[-1]
-    except Exception as e:
-        print(f"Could not find cloud id")
-        print(e)
-        return None
 
 
 def _get_needed_streams(streams: List[Dict], start_time: float = None) -> List[str]:
