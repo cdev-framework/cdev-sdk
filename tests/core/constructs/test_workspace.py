@@ -81,12 +81,6 @@ def _get_fake_backend():
 
 
 def simple_evaluate_and_replace_cloud_output(workspace: Workspace):
-    #workspace.set_state(Workspace_State.EXECUTING_BACKEND)
-
-    workspace.get_backend = _get_fake_backend
-    workspace.get_state = lambda: Workspace_State.EXECUTING_BACKEND
-    workspace.get_resource_state_uuid = lambda: "1"
-
     data = [
         (
             ResourceModel(
@@ -173,7 +167,18 @@ def simple_evaluate_and_replace_cloud_output(workspace: Workspace):
         assert rv == expected_result
 
 
+#######################
+##### Base Class Tests
+#######################
+
+# The base class implements some of the generic functionality so test that here
+
 def test_evaluate_and_replace_cloud_output():
+    
     ws = Workspace()
+
+    ws.get_backend = _get_fake_backend
+    ws.get_state = lambda: Workspace_State.EXECUTING_BACKEND
+    ws.get_resource_state_uuid = lambda: "1"
 
     simple_evaluate_and_replace_cloud_output(ws)
