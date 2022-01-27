@@ -6,7 +6,7 @@ import uuid
 
 from core.default.workspace import local_workspace
 
-from ..constructs import workspace as workspace_tests
+from ..constructs import test_workspace as workspace_tests
 
 # Monkey patch the file location to be ./tmp
 base_dir = os.path.join(os.path.dirname(__file__), "tmp")

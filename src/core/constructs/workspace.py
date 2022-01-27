@@ -410,19 +410,6 @@ class Workspace:
 
         return mark_failure_by_parent
 
-    def fake_deploy(self, change: NodeView):
-        print(change)
-        if isinstance(change, Resource_Difference):
-            try:
-                # Substitute the model with a model that has the cloud outputs evaluated.
-                changed_resource = self.evaluate_and_replace_cloud_output(change.component_name, change.new_resource)
-                print(f"after switching output")
-                print(changed_resource)
-            except Exception as e:
-                print(e)
-                print(f"Error evaluating cloud output from change: {change}")
-
-        
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
     def wrap_output_deploy_change(self, tasks: Dict[NodeView, OutputTask]):
