@@ -186,11 +186,14 @@ class node_state(str, Enum):
 
 
 def topological_iteration(dag: DiGraph, process: Callable[[NodeView], None], failed_parent_handler: Callable[[NodeView], None]=None, thread_count: int = 1, interval: float = .3, pass_through_exceptions: bool = False):
-    """
-    Execute a given 'process' over a DAG in a topologically constrained way. This means that the 'process' will not be executed on a node until the 'process' has been executed on all
-    parents of that node. If the process throws an Exception when executing on a Node, then any child nodes will not be executed over (if provided, the failed_parent_handler will
-    be executed on any child nodes). This iteration supports multiple threads via the thread count param, which can speed up the total iteration time if the 'process' is IO bound and 
-    there are non dependant paths through the DAG. 
+    """Execute the `process` over a DAG in a topologically constrained way. 
+    
+    This means that the `process` will not be executed on a node until the 'process' has been executed on all parents of that node. 
+    If the `process` throws an Exception when executing on a Node, then any child nodes will not be executed (if provided, the 
+    failed_parent_handler will be executed on the child nodes). 
+    
+    This iteration supports multiple threads via the `thread_count` param. Multiple threads can speed up the total iteration time if the `process` 
+    is IO bound and there are non-dependant paths through the DAG. 
 
     Args:
         dag (DiGraph): [description]

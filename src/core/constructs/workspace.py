@@ -508,7 +508,7 @@ class Workspace:
 
         return deploy_change
 
-
+    @wrap_phase([Workspace_State.EXECUTING_BACKEND])
     def evaluate_and_replace_cloud_output(self, component_name: str, original_resource: ResourceModel) -> ResourceModel:
         if not original_resource:
             return original_resource
@@ -516,8 +516,7 @@ class Workspace:
         original_resource_dict = frozendict(original_resource.dict())
         
         evaluated_resource = original_resource.__class__(**self._recursive_replace_output(component_name, original_resource_dict))
-        print("======================")
-        print(evaluated_resource)
+
         return evaluated_resource
 
 
@@ -526,7 +525,7 @@ class Workspace:
         # the collections will be `frozendict` and `frozenset` instead of `dict` and `list`
         if isinstance(original, frozendict):
             if "id" in original and original.get("id") == 'cdev_cloud_output':
-                print(f'ATTEMPTING REPLACEMENT')
+                
                 _value = self.get_backend().get_cloud_output_value_by_name(
                     self.get_resource_state_uuid(),
                     component_name,
@@ -534,7 +533,7 @@ class Workspace:
                     original.get('name'),
                     original.get('key')
                 )
-                print(f"FOUND VALUE {_value}")
+                
 
                 if original.get('output_operations'):
                     return evaluate_dynamic_output(_value, cloud_output_dynamic_model(**original))
