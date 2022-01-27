@@ -2,23 +2,23 @@ from enum import Enum
 import inspect
 from rich.console import Console, ConsoleOptions
 from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn, SpinnerColumn
-from typing import Callable, List, Dict, Any, Tuple, TypeVar, Union
+from typing import Callable, FrozenSet, List, Dict, Any, Tuple, TypeVar, Union
 
 from networkx.algorithms.dag import topological_sort
 from networkx.classes.digraph import DiGraph
 from networkx.classes.graph import NodeView
 
 from pydantic import BaseModel
+from core.constructs.models import frozendict
 
 from core.output.output_manager import OutputManager, OutputTask
 
-from .resource import Resource_Change_Type, Resource_Difference, Resource_Reference_Difference, Resource_Reference_Change_Type
+from .resource import Resource_Change_Type, Resource_Difference, Resource_Reference_Difference, Resource_Reference_Change_Type, ResourceModel
 from .backend import Backend
 from .mapper import CloudMapper
 from .components import Component, Component_Change_Type, Component_Difference, ComponentModel
-
-
 from .commands import BaseCommand, BaseCommandContainer
+from .output import evaluate_dynamic_output, cloud_output_dynamic_model
 
 from ..settings import SETTINGS as cdev_settings
 
@@ -399,17 +399,30 @@ class Workspace:
             node_to_task= {x: output_manager.create_task(output_manager.create_output_description(x), start=False, total=10, comment='Waiting') for x in all_nodes_sorted}
 
             topological_helper.topological_iteration(differences_dag, self.wrap_output_deploy_change(node_to_task), failed_parent_handler=self.wrap_output_failed_child(node_to_task))
+            #topological_helper.topological_iteration(differences_dag, self.fake_deploy, failed_parent_handler=self.wrap_output_failed_child(node_to_task))
 
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
     def wrap_output_failed_child(self, tasks: Dict[NodeView, OutputTask]):
-        
-
         def mark_failure_by_parent(change: NodeView) -> None:
             output_task = tasks.get(change)
             output_task.update(advance=10, comment="Failed because parent resource failed to deploy :cross_mark:")
 
         return mark_failure_by_parent
+
+    def fake_deploy(self, change: NodeView):
+        print(change)
+        if isinstance(change, Resource_Difference):
+            try:
+                # Substitute the model with a model that has the cloud outputs evaluated.
+                changed_resource = self.evaluate_and_replace_cloud_output(change.component_name, change.new_resource)
+                print(f"after switching output")
+                print(changed_resource)
+            except Exception as e:
+                print(e)
+                print(f"Error evaluating cloud output from change: {change}")
+
+        
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
     def wrap_output_deploy_change(self, tasks: Dict[NodeView, OutputTask]):
@@ -419,10 +432,12 @@ class Workspace:
             output_task.start_task()
 
             if isinstance(change, Resource_Difference):
+                # Step 1 is to register a transaction with the backend
                 transaction_token, namespace_token = self.get_backend().create_resource_change_transaction(self.get_resource_state_uuid(), change.component_name, change)
 
                 ruuid = change.new_resource.ruuid if change.new_resource else change.previous_resource.ruuid
 
+                # The Previous output is used by the mappers to make changes to the underlying resources.
                 previous_output = (
                     self.get_backend().get_cloud_output_by_name(self.get_resource_state_uuid(), change.component_name, ruuid, change.previous_resource.name)
                     if not change.action_type == Resource_Change_Type.CREATE else
@@ -430,9 +445,33 @@ class Workspace:
                 )
 
                 try:
+                    # Substitute the model with a model that has the cloud outputs evaluated.
+                    new_resource = self.evaluate_and_replace_cloud_output(change.component_name, change.new_resource)
+
+                    if not new_resource == change.new_resource:
+                        # There was some change to the new resource because of the evaluation of the cloud output 
+                        # so we must create a new resource difference (since the obj is immutable) to be used in
+                        # the actual deployment.
+                        _evaluate_change = Resource_Difference(
+                            change.action_type,
+                            change.component_name,
+                            change.previous_resource,
+                            new_resource,
+                        )
+
+                    else:
+                        # No change means that there was not replacement of output
+                        _evaluate_change = change
+                except Exception as e:
+                    print(e)
+                    print(f"Error evaluating cloud output from change: {change}")
+
+                
+
+                try:
                     output_task.update(advance=5, comment="Deploying on Cloud :cloud:")
                     mapper = self.get_mapper_namespace().get(ruuid)
-                    cloud_output = mapper.deploy_resource(transaction_token, namespace_token, change, previous_output, output_task)
+                    cloud_output = mapper.deploy_resource(transaction_token, namespace_token, _evaluate_change, previous_output, output_task)
                     output_task.update(advance=3, comment="Completing transaction with Backend")
 
                 except Exception as e:
@@ -468,6 +507,52 @@ class Workspace:
 
 
         return deploy_change
+
+
+    def evaluate_and_replace_cloud_output(self, component_name: str, original_resource: ResourceModel) -> ResourceModel:
+        if not original_resource:
+            return original_resource
+
+        original_resource_dict = frozendict(original_resource.dict())
+        
+        evaluated_resource = original_resource.__class__(**self._recursive_replace_output(component_name, original_resource_dict))
+        print("======================")
+        print(evaluated_resource)
+        return evaluated_resource
+
+
+    def _recursive_replace_output(self, component_name:str, original: Any) -> Any:
+        # This function works over ImmutableModel that were converted using the `.dict` method. Therefore,
+        # the collections will be `frozendict` and `frozenset` instead of `dict` and `list`
+        if isinstance(original, frozendict):
+            if "id" in original and original.get("id") == 'cdev_cloud_output':
+                print(f'ATTEMPTING REPLACEMENT')
+                _value = self.get_backend().get_cloud_output_value_by_name(
+                    self.get_resource_state_uuid(),
+                    component_name,
+                    original.get('ruuid'),
+                    original.get('name'),
+                    original.get('key')
+                )
+                print(f"FOUND VALUE {_value}")
+
+                if original.get('output_operations'):
+                    return evaluate_dynamic_output(_value, cloud_output_dynamic_model(**original))
+
+                return _value
+
+            rv = {}
+            for k,v in original.items():
+                rv[k] = self._recursive_replace_output(component_name, v)
+
+            return frozendict(rv)
+
+        elif isinstance(original, frozenset):           
+            return frozenset([self._recursive_replace_output(component_name, x) for x in original])
+
+
+        return original
+
 
     @wrap_phase([Workspace_State.INITIALIZED])
     def execute_command(self, command: str, args: List):

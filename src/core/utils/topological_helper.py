@@ -112,9 +112,6 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
                 parent_resource_id = _create_resource_id( resource.component_name, parent_cloudoutput.ruuid, parent_cloudoutput.name)
 
                 if parent_resource_id in resource_ids:
-                    if resource_ids.get(parent_resource_id).action_type == Resource_Change_Type.DELETE:
-                        raise Exception(f"Attemping to use output of Resource that is going to be deleted {resource} {parent_cloudoutput}")
-
                     # Make this resource change a child of the parent resource change
                     change_dag.add_edge(resource_ids.get(parent_resource_id), resource)
 

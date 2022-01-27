@@ -103,9 +103,9 @@ def _create_policy(permission: permission_model) -> str:
         "Version": "2012-10-17",
     }
 
-    statement = {"Effect": permission.effect, "Action": permission.actions}
+    statement = {"Effect": permission.effect, "Action": list(permission.actions)}
 
-    statement["Resource"] = permission_model.cloud_id
+    statement["Resource"] = permission.cloud_id
     policy["Statement"] = [statement]
 
     permission_name = str(uuid4())

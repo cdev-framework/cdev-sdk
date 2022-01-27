@@ -80,9 +80,6 @@ def _create_simple_lambda(
         comment=f"Create role for lambda function {resource.name}"
     )
 
-
-    
-
     final_info["role_name"] = role_name
     final_info["role_id"] = role_arn
     final_info["permissions"] = permission_info
