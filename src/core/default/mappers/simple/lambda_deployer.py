@@ -15,7 +15,7 @@ from boto3.s3.transfer import TransferConfig
 
 
 #from .lambda_event_deployer import EVENT_TO_HANDLERS
-from .lambda_role_deployer import (
+from .role_deployer import (
     create_role_with_permissions,
     delete_role_and_permissions,
     add_policy,
@@ -25,6 +25,19 @@ from .lambda_role_deployer import (
 from core.settings import SETTINGS
 import os
 
+
+AssumeRolePolicyDocumentJSON = """{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}"""
 
 
 BUCKET = SETTINGS.get("S3_ARTIFACTS_BUCKET")
@@ -61,7 +74,7 @@ def _create_simple_lambda(
     )
     # Step 1
     role_name = f"role_{function_name}"
-    role_arn, permission_info = create_role_with_permissions(role_name, resource.permissions)
+    role_arn, permission_info = create_role_with_permissions(role_name, resource.permissions, AssumeRolePolicyDocumentJSON)
 
     output_task.update(
         comment=f"Create role for lambda function {resource.name}"

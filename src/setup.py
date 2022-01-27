@@ -14,7 +14,7 @@ setuptools.setup(
         "charset-normalizer==2.0.10",
         "colorama==0.4.4",
         "commonmark==0.9.1",
-        "dataclasses==0.8",
+        "dataclasses==0.8; python_version == '3.6'",
         "decorator==4.4.2",
         "docker==5.0.3",
         "gelidum==0.5.7",

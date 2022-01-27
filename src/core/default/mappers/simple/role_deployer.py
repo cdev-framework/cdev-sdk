@@ -6,23 +6,11 @@ from core.resources.simple.iam import permission_model, permission_arn_model
 
 from .. import aws_client 
 
-AssumeRolePolicyDocumentJSON = """{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}"""
-
 
 def create_role_with_permissions(
     role_name: str,
     permissions: FrozenSet[Union[permission_model, permission_arn_model]],
+    assume_role_policy: str
 ) -> Tuple[str, List[Tuple[Union[permission_model, permission_arn_model], str]]]:
     """
     This function creates a new IAM role and policies such that the function will have correct access to resources.
@@ -37,9 +25,8 @@ def create_role_with_permissions(
     
     """
 
-    role_arn = _create_role(role_name)
+    role_arn = _create_role(role_name, assume_role_policy)
     permission_info: List[Tuple[Union[permission_model, permission_arn_model], str]] = []
-
 
 
     for permission in permissions:
@@ -135,7 +122,7 @@ def _create_policy(permission: permission_model) -> str:
     return rv.get("Policy").get("Arn")
 
 
-def _create_role(name: str) -> str:
+def _create_role(name: str, assume_role_policy: str) -> str:
     """
     Creates the role and returns the arn
     """
@@ -145,7 +132,7 @@ def _create_role(name: str) -> str:
         "create_role",
         {
             "RoleName": name,
-            "AssumeRolePolicyDocument": AssumeRolePolicyDocumentJSON,
+            "AssumeRolePolicyDocument": assume_role_policy,
         },
     )
 
