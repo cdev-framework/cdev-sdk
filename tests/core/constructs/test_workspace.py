@@ -112,15 +112,64 @@ def simple_evaluate_and_replace_cloud_output(workspace: Workspace):
                     "hash": "0",
                     "val": "val1"
                 }
+            ),
+        ),
+        (
+            ResourceModel(
+                **{
+                    "name": "e1",
+                    "ruuid": "r",
+                    "hash": "0",
+                    "val": cloud_output_model(
+                        **{
+                            "name": "r2",
+                            "ruuid": "r",
+                            "key": "cloud_id",
+                            "type": "resource",
+                            "id": "cdev_cloud_output"
+                        }
+                    )
+                }
+            ),
+            ResourceModel(
+                **{
+                    "name": "e1",
+                    "ruuid": "r",
+                    "hash": "0",
+                    "val": "val2"
+                }
+            ),
+        ),
+        (
+            ResourceModel(
+                **{
+                    "name": "e1",
+                    "ruuid": "r",
+                    "hash": "0",
+                    "val": cloud_output_model(
+                        **{
+                            "name": "r3",
+                            "ruuid": "r",
+                            "key": "cloud_id",
+                            "type": "resource",
+                            "id": "cdev_cloud_output"
+                        }
+                    )
+                }
+            ),
+            ResourceModel(
+                **{
+                    "name": "e1",
+                    "ruuid": "r",
+                    "hash": "0",
+                    "val": "val3"
+                }
             )
         )
     ]
 
     for input, expected_result in data:
         rv = workspace.evaluate_and_replace_cloud_output("comp1", input)
-        print(rv)
-        print(expected_result)
-
         assert rv == expected_result
 
 
