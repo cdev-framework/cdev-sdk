@@ -298,5 +298,21 @@ class Resource_Reference:
 
 
 
+####################
+##### Mixins
+####################
+class PermissionsAvailableMixin:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)  # forwards all unused arguments
+        self._available_permissions = None # Needs to be set later in the calling subclass
+
+    @property
+    def available_permissions(self):
+        """The available permissions of the created resource"""
+        return self._available_permissions
+
+    @available_permissions.setter
+    def available_permissions(self, permissions: Any):
+        self._available_permissions = permissions
 
 

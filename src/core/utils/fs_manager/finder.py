@@ -190,7 +190,7 @@ def _parse_serverless_functions(
             filepath=paths.get_full_path_from_workspace_base(handler_archive_path),
             events=previous_info.events,
             configuration=new_configuration,
-            function_permissions=previous_info._permissions,
+            function_permissions=previous_info.granted_permissions,
             external_dependencies=dependencies_info if dependencies_info else [],
             src_code_hash=handler_archive_hash,
             nonce=previous_info.nonce

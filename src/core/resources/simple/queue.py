@@ -2,7 +2,7 @@ from enum import Enum
 from os import name
 from typing import Any
 
-from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
+from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsAvailableMixin
 from core.constructs.output import  Cloud_Output_Str, OutputType
 from core.utils import hasher
 
@@ -128,7 +128,7 @@ class simple_queue_model(ResourceModel):
     is_fifo: bool
 
 
-class Queue(Resource):
+class Queue(PermissionsAvailableMixin, Resource):
 
     @update_hash
     def __init__(self, cdev_name: str, is_fifo: bool = False, nonce: str = "") -> None:

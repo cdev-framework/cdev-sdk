@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, FrozenSet, List
 
-from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
+from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsAvailableMixin
 from core.constructs.output import  Cloud_Output_Str, OutputType
 from core.utils import hasher
 from core.constructs.models import ImmutableModel
@@ -233,7 +233,7 @@ class simple_table_model(ResourceModel):
     keys: FrozenSet[key_definition_model]
 
 
-class Table(Resource):
+class Table(PermissionsAvailableMixin, Resource):
 
     @update_hash
     def __init__(

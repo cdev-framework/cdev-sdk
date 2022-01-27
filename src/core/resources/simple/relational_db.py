@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any
 
-from core.constructs.resource import Resource, ResourceModel, ResourceOutputs, update_hash
+from core.constructs.resource import Resource, ResourceModel, ResourceOutputs, update_hash, PermissionsAvailableMixin
 from core.constructs.output import  Cloud_Output_Str, OutputType
 from core.utils import hasher
 
@@ -105,7 +105,7 @@ class simple_relational_db_model(ResourceModel):
     """No Interruption"""
 
 
-class RelationalDB(Resource):
+class RelationalDB(PermissionsAvailableMixin, Resource):
     
     @update_hash
     def __init__(

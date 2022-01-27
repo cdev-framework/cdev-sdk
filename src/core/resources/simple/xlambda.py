@@ -217,6 +217,8 @@ class SimpleFunction(Resource):
 
     def render(self) -> simple_function_model:
 
+        premissions = [x.render() for x in self.granted_permissions]
+        print(premissions)
         return simple_function_model(
             name=self.name,
             ruuid=self.ruuid,
@@ -224,7 +226,7 @@ class SimpleFunction(Resource):
             configuration=self.configuration.render(),
             filepath=self.filepath,
             events=frozenset([x.render() for x in self.events]),
-            permissions=frozenset([x.render() for x in self.granted_permissions]),
+            permissions=frozenset(premissions),
             external_dependencies=self.external_dependencies,
             src_code_hash=self.src_code_hash
         )

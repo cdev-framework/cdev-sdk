@@ -27,12 +27,12 @@ def find_parents(resource: ResourceModel) -> List[cloud_output_model]:
 
 def find_cloud_output(obj: dict) -> List[cloud_output_model]:
 
-    rv = _recursive_replace_output(obj)
+    rv = _recursive_find_output(obj)
 
     return rv
 
 
-def _recursive_replace_output(obj) -> List[cloud_output_model]:
+def _recursive_find_output(obj) -> List[cloud_output_model]:
     rv = []
 
     if isinstance(obj, frozendict) or isinstance(obj, dict): 
@@ -41,10 +41,10 @@ def _recursive_replace_output(obj) -> List[cloud_output_model]:
                 if "id" in v and v.get("id") == 'cdev_cloud_output':
                     rv.append(cloud_output_model(**v))
                 else:
-                    rv.extend(_recursive_replace_output(v))
+                    rv.extend(_recursive_find_output(v))
 
             elif isinstance(v, frozenset) or isinstance(v, list):
-                all_items_rendered = [_recursive_replace_output(x) for x in v]
+                all_items_rendered = [_recursive_find_output(x) for x in v]
                 
                 for item in all_items_rendered:
                     rv.extend(item)
@@ -52,7 +52,7 @@ def _recursive_replace_output(obj) -> List[cloud_output_model]:
         return rv
 
     elif isinstance(obj, frozenset) or isinstance(obj, list):
-        all_items_rendered = [_recursive_replace_output(x) for x in obj]
+        all_items_rendered = [_recursive_find_output(x) for x in obj]
                 
         for item in all_items_rendered:
             rv.extend(item)

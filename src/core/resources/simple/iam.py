@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Dict, FrozenSet, List, Optional, Union
 
 from core.constructs.models import ImmutableModel
 from core.constructs.output import Cloud_Output_Str
@@ -7,7 +7,7 @@ from core.utils import hasher
 
 
 class permission_model(ImmutableModel):
-    actions: List[str]
+    actions: FrozenSet[str]
     cloud_id: cdev_str_model
     effect: str
     resource_suffix: Optional[str]
@@ -46,12 +46,13 @@ class Permission():
             effect ('Allow', 'Deny'): Allow or Deny the permission
             resource_suffix (Optional[str]): Some permissions need suffixes added to the looked up aws resource (i.e. dynamodb streams )
         """
-        self.actions = actions,
-        self.cloud_id = cloud_id,
-        self.effect = effect,
-        self.resource_suffix = resource_suffix,
+        self.actions = actions
+        self.cloud_id = cloud_id
+        self.effect = effect
+        self.resource_suffix = resource_suffix
             
     def render(self) -> permission_model:
+
         return permission_model(
             actions=frozenset(self.actions),
             cloud_id=self.cloud_id.render() if isinstance(self.cloud_id, Cloud_Output_Str) else self.cloud_id,

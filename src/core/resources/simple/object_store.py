@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any
 
-from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
+from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsAvailableMixin
 from core.constructs.output import Cloud_Output_Str, OutputType
 from core.utils import hasher
 
@@ -115,7 +115,7 @@ class BucketOutput(ResourceOutputs):
         raise Exception
 
 
-class SimpleBucket(Resource):
+class SimpleBucket(PermissionsAvailableMixin, Resource):
     
     @update_hash
     def __init__(self, cdev_name: str, nonce: str="") -> None:
@@ -127,9 +127,7 @@ class SimpleBucket(Resource):
         """
         super().__init__(cdev_name, RUUID, nonce)
 
-
-        self.available_permissions = BucketPermissions(cdev_name)
-
+        self.available_permissions: BucketPermissions = BucketPermissions(cdev_name)
         self.output = BucketOutput(cdev_name)
 
 

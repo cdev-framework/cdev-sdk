@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any
 
-from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
+from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsAvailableMixin
 from core.constructs.output import Cloud_Output_Str, OutputType
 from core.utils import hasher
 
@@ -63,7 +63,7 @@ class simple_topic_model(ResourceModel):
     is_fifo: bool
 
 
-class Topic(Resource):
+class Topic(PermissionsAvailableMixin, Resource):
     """Simple SNS topic.
     
     """
