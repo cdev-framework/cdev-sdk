@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
-from core.constructs.output import Cloud_Output_Str
+from core.constructs.output import Cloud_Output_Str, OutputType
 from core.utils import hasher
 
 from .iam import Permission
@@ -20,13 +20,16 @@ class TopicPermissions:
                 "sns:GetTopicAttributes",
                 "sns:Subscribe",
             ],
-            cloud_id=f"{RUUID}::{resource_name}",
+            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
 
         self.PUBLISH = Permission(
-            actions=["sns:GetTopicAttributes", "sns:Publish"],
-            cloud_id=f"{RUUID}::{resource_name}",
+            actions=[
+                "sns:GetTopicAttributes",
+                "sns:Publish"
+            ],
+            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
 

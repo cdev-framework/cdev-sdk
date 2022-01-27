@@ -149,7 +149,7 @@ class SimpleFunction(Resource):
         self._filepath = filepath
         self._events = events
         self._configuration = configuration
-        self._permissions = function_permissions
+        self._granted_permissions = function_permissions
         self._external_dependencies = external_dependencies
         
         self.src_code_hash = src_code_hash if src_code_hash else hasher.hash_file(filepath)
@@ -183,13 +183,13 @@ class SimpleFunction(Resource):
         self._configuration = value
 
     @property
-    def permissions(self):
-        return self._permissions
+    def granted_permissions(self):
+        return self._granted_permissions
 
-    @permissions.setter
+    @granted_permissions.setter
     @update_hash
-    def permissions(self, value: List[Union[Permission, PermissionArn]]):
-        self._permissions = value
+    def granted_permissions(self, value: List[Union[Permission, PermissionArn]]):
+        self._granted_permissions = value
 
     @property
     def external_dependencies(self):
@@ -201,7 +201,7 @@ class SimpleFunction(Resource):
         self._external_dependencies = value
 
     def compute_hash(self):
-        self._permissions_hash = "1"
+        self._permissions_hash = hasher.hash_list([x.hash() for x in self.granted_permissions])
         self._config_hash = "1"
         self._events_hash = "1"
 
@@ -224,7 +224,7 @@ class SimpleFunction(Resource):
             configuration=self.configuration.render(),
             filepath=self.filepath,
             events=frozenset([x.render() for x in self.events]),
-            permissions=frozenset([x.render() for x in self.permissions]),
+            permissions=frozenset([x.render() for x in self.granted_permissions]),
             external_dependencies=self.external_dependencies,
             src_code_hash=self.src_code_hash
         )

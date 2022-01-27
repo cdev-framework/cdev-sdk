@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
-from core.constructs.output import Cloud_Output_Str
+from core.constructs.output import Cloud_Output_Str, OutputType
 from core.utils import hasher
 
 from .iam import Permission
@@ -51,28 +51,42 @@ class BucketEvent(Event):
 class BucketPermissions:
     RUUID = "cdev::simple::bucket"
 
-    def __init__(self, resource_name) -> None:
+    def __init__(self, resource_name: str) -> None:
         self.READ_BUCKET = Permission(
-            actions=["s3:GetObject", "s3:GetObjectVersion", "s3:ListBucket"],
-            cloud_id=f"{self.RUUID}::{resource_name}",
+            actions=[
+                "s3:GetObject",
+                "s3:GetObjectVersion", 
+                "s3:ListBucket"
+            ],
+            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
 
         self.WRITE_BUCKET = Permission(
-            actions=["s3:PutObject", "s3:PutObjectAcl", "s3:ListBucket"],
-            cloud_id=f"{self.RUUID}::{resource_name}",
+            actions=[
+                "s3:PutObject",
+                "s3:PutObjectAcl", 
+                "s3:ListBucket"
+            ],
+            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
 
         self.READ_AND_WRITE_BUCKET = Permission(
-            actions=["s3:*Object", "s3:ListBucket"],
-            cloud_id=f"{self.RUUID}::{resource_name}",
+            actions=[
+                "s3:*Object",
+                "s3:ListBucket"
+            ],
+            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
 
         self.READ_EVENTS = Permission(
-            actions=["s3:*Object", "s3:ListBucket"],
-            cloud_id=f"{self.RUUID}::{resource_name}",
+            actions=[
+                "s3:*Object",
+                "s3:ListBucket"
+            ],
+            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
 
@@ -114,7 +128,7 @@ class SimpleBucket(Resource):
         super().__init__(cdev_name, RUUID, nonce)
 
 
-        self.permissions = BucketPermissions(cdev_name)
+        self.available_permissions = BucketPermissions(cdev_name)
 
         self.output = BucketOutput(cdev_name)
 

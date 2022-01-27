@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any, FrozenSet, List
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
-from core.constructs.output import  Cloud_Output_Str
+from core.constructs.output import  Cloud_Output_Str, OutputType
 from core.utils import hasher
 from core.constructs.models import ImmutableModel
 
@@ -82,7 +82,7 @@ class TablePermissions:
                 "dynamodb:Query",
                 "dynamodb:ConditionCheckItem",
             ],
-            cloud_id=f"{self.RUUID}::{resource_name}",
+            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
 
@@ -100,7 +100,7 @@ class TablePermissions:
                 "dynamodb:UpdateItem",
                 "dynamodb:DescribeLimits",
             ],
-            cloud_id=f"{self.RUUID}::{resource_name}",
+            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
 
@@ -118,7 +118,7 @@ class TablePermissions:
                 "dynamodb:Scan",
                 "dynamodb:UpdateItem",
             ],
-            cloud_id=f"{self.RUUID}::{resource_name}",
+            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
 
@@ -130,11 +130,9 @@ class TablePermissions:
                 "dynamodb:ListShards",
                 "dynamodb:ListStreams",
             ],
-            cloud_id=f"{self.RUUID}::{resource_name}",
+            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
-            resource_suffix="/stream/*",
         )
-
 
 ##############
 ##### Output
@@ -259,7 +257,7 @@ class Table(Resource):
         self._keys = keys
         self._stream = None
 
-        self.permissions = TablePermissions(cdev_name)
+        self.available_permissions = TablePermissions(cdev_name)
 
     @property
     def attributes(self):

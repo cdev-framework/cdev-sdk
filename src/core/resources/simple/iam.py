@@ -1,11 +1,14 @@
 from typing import Dict, List, Optional, Union
 
 from core.constructs.models import ImmutableModel
+from core.constructs.output import Cloud_Output_Str
+from core.constructs.types import cdev_str_model, cdev_str
+from core.utils import hasher
 
 
 class permission_model(ImmutableModel):
     actions: List[str]
-    cloud_id: str
+    cloud_id: cdev_str_model
     effect: str
     resource_suffix: Optional[str]
 
@@ -32,14 +35,14 @@ class Permission():
     def __init__(
         self,
         actions: List[str],
-        cloud_id: str,
+        cloud_id: cdev_str,
         effect: str,
         resource_suffix: Optional[str] = "",
     ):
         """
         Arguments:
             actions (List[str]): List of the actions that this policy will include
-            cloud_id (str): 
+            cloud_id (cdev_str): The cloud id of the resource that is giving the permission
             effect ('Allow', 'Deny'): Allow or Deny the permission
             resource_suffix (Optional[str]): Some permissions need suffixes added to the looked up aws resource (i.e. dynamodb streams )
         """
@@ -50,11 +53,17 @@ class Permission():
             
     def render(self) -> permission_model:
         return permission_model(
-            actions=self.actions,
-            cloud_id=self.cloud_id,
-            effect=self.effect,
-            resource_suffix=self.resource_suffix
+            actions=frozenset(self.actions),
+            cloud_id=self.cloud_id.render() if isinstance(self.cloud_id, Cloud_Output_Str) else self.cloud_id,
+            effect=self.effect
         )
+
+    def hash(self) -> str:
+        return hasher.hash_list([
+            hasher.hash_list(self.actions),
+            self.cloud_id,
+            self.effect
+        ])
 
 
 class PermissionArn():
@@ -69,4 +78,7 @@ class PermissionArn():
         return permission_arn_model(
             arn=self.arn
         )
+
+    def hash(self) -> str:
+        return hasher.hash_string(self.arn)
 

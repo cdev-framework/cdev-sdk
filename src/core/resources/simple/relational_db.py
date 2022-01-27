@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any
 
 from core.constructs.resource import Resource, ResourceModel, ResourceOutputs, update_hash
-from core.constructs.output import  Cloud_Output_Str
+from core.constructs.output import  Cloud_Output_Str, OutputType
 from core.utils import hasher
 
 from .iam import Permission, PermissionArn
@@ -14,11 +14,8 @@ RUUID = "cdev::simple::relationaldb"
 #####################
 ###### Permission
 ######################
-class RelationalDBPermissions:
-    RUUID = "cdev::simple::relationaldb"
-    
-    
-    def __init__(self, resource_name) -> None:
+class RelationalDBPermissions:    
+    def __init__(self, resource_name: str) -> None:
         
 
         self.DATABASE_ACCESS = Permission(
@@ -29,7 +26,7 @@ class RelationalDBPermissions:
                 "rds-data:ExecuteStatement",
                 "rds-data:RollbackTransaction",
             ],
-            cloud_id=f"{self.RUUID}::{resource_name}",
+            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
 
@@ -150,7 +147,7 @@ class RelationalDB(Resource):
         self._seconds_to_pause = seconds_to_pause
 
         self.output = RelationalDBOutput(cdev_name)
-        self.permissions = RelationalDBPermissions(cdev_name)
+        self.available_permissions = RelationalDBPermissions(cdev_name)
 
     @property
     def seconds_to_pause(self):

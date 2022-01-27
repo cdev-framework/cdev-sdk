@@ -3,7 +3,7 @@ from os import name
 from typing import Any
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
-from core.constructs.output import  Cloud_Output_Str
+from core.constructs.output import  Cloud_Output_Str, OutputType
 from core.utils import hasher
 
 from .events import Event, event_model, EventTypes
@@ -57,14 +57,14 @@ class QueueEvent(Event):
 ######################
 class QueuePermissions:
 
-    def __init__(self, resource_name) -> None:
+    def __init__(self, resource_name: str) -> None:
         self.READ_QUEUE = Permission(
             actions=[
                 "sqs:ReceiveMessage",
                 "sqs:DeleteMessage",
                 "sqs:GetQueueAttributes",
             ],
-            cloud_id=f"{RUUID}::{resource_name}",
+            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
 
@@ -73,7 +73,7 @@ class QueuePermissions:
                 "sqs:SendMessage",
                 "sqs:GetQueueAttributes",
             ],
-            cloud_id=f"{RUUID}::{resource_name}",
+            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
 
@@ -84,7 +84,7 @@ class QueuePermissions:
                 "sqs:GetQueueAttributes",
                 "sqs:SendMessage",
             ],
-            cloud_id=f"{RUUID}::{resource_name}",
+            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
 
@@ -94,7 +94,7 @@ class QueuePermissions:
                 "sqs:DeleteMessage",
                 "sqs:GetQueueAttributes",
             ],
-            cloud_id=f"{RUUID}::{resource_name}",
+            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
 
@@ -144,7 +144,7 @@ class Queue(Resource):
 
         self.is_fifo = is_fifo
         self.output = QueueOutput(name)
-        self.permissions = QueuePermissions(cdev_name)
+        self.available_permissions = QueuePermissions(cdev_name)
 
     @property
     def is_fifo(self):

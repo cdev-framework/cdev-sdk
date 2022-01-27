@@ -2,9 +2,7 @@ import json
 from typing import FrozenSet, List, Tuple, Union, Dict
 from uuid import uuid4
 
-
-from cdev.resources.simple import xlambda as simple_lambda
-from core.resources.simple.iam import permission_model
+from core.resources.simple.iam import permission_model, permission_arn_model
 
 from .. import aws_client 
 
@@ -24,23 +22,23 @@ AssumeRolePolicyDocumentJSON = """{
 
 def create_role_with_permissions(
     role_name: str,
-    permissions: FrozenSet[Union[simple_lambda.permission_model, simple_lambda.permission_arn_model]],
-) -> Tuple[str, List[Tuple[Union[simple_lambda.permission_model, simple_lambda.permission_arn_model], str]]]:
+    permissions: FrozenSet[Union[permission_model, permission_arn_model]],
+) -> Tuple[str, List[Tuple[Union[permission_model, permission_arn_model], str]]]:
     """
     This function creates a new IAM role and policies such that the function will have correct access to resources.
 
     Arguments:
         role_name: Name of the role
-        permissions [List[Union[simple_lambda.permission_model, simple_lambda.permission_arn_model]]]: The permission to assign to the role
+        permissions [List[Union[permission_model, permission_arn_model]]]: The permission to assign to the role
     
     Returns:
         str: The arn of the role created
-        Dict[Union[simple_lambda.permission_model, simple_lambda.permission_arn_model], str]]: Permission to the arn of the created permission
+        Dict[Union[permission_model, permission_arn_model], str]]: Permission to the arn of the created permission
     
     """
 
     role_arn = _create_role(role_name)
-    permission_info: List[Tuple[Union[simple_lambda.permission_model, simple_lambda.permission_arn_model], str]] = []
+    permission_info: List[Tuple[Union[permission_model, permission_arn_model], str]] = []
 
 
 
@@ -49,7 +47,7 @@ def create_role_with_permissions(
         permission_info.append((permission, rv))
 
 
-    basic_execution_permission_arn = simple_lambda.permission_arn_model(
+    basic_execution_permission_arn = permission_arn_model(
         arn="arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
     )
 
@@ -64,7 +62,7 @@ def create_role_with_permissions(
 
 
 def delete_role_and_permissions(
-    role_name: str, permission_arns: List[Tuple[Union[simple_lambda.permission_model, simple_lambda.permission_arn_model], str]]
+    role_name: str, permission_arns: List[Tuple[Union[permission_model, permission_arn_model], str]]
 ) -> bool:
     """
     Delete all permissions and the associated role
@@ -92,12 +90,12 @@ def delete_policy(permission_arn: str):
 
 def add_policy(
     role_name: str,
-    permission: Union[simple_lambda.Permission, simple_lambda.PermissionArn]
+    permission: Union[permission_model, permission_arn_model]
 ):
     """
-    Creates a policy if need and then adds the policy to the given role
+    Creates a policy if needed and then adds the policy to the given role
     """
-    if isinstance(permission, simple_lambda.permission_arn_model):
+    if isinstance(permission, permission_arn_model):
         # Already deployed policy so just append arn
         returned_permission_arn = permission.arn
         
@@ -109,7 +107,7 @@ def add_policy(
     return returned_permission_arn
 
 
-def _create_policy(permission: simple_lambda.permission_model) -> str:
+def _create_policy(permission: permission_model) -> str:
     """
     Creates the policy and returns the arn
     """
