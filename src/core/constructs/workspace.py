@@ -24,6 +24,7 @@ from ..settings import SETTINGS as cdev_settings
 
 from ..utils.command_finder import find_specified_command, find_unspecified_command
 from ..utils import module_loader, topological_helper
+from core.constructs import output
 
 
 WORKSPACE_INFO_DIR = cdev_settings.get("ROOT_FOLDER_NAME")
@@ -396,10 +397,20 @@ class Workspace:
             output_manager = OutputManager(console, progress)
             all_nodes_sorted: List[NodeView] = [x for x in topological_sort(differences_dag)]
 
+            # There seems to be some bug in Rich that causes a deadlock when creating a bunch of Tasks in a row.
+            # The problem seems to be around it refreshing after creating each task, so to avoid this problem,
+            # we are disabling the console while the task are created. Then turn the console back on when they 
+            # are created.
+            # TODO: Recreate problem in isolated environment, and submit bug report.
+            output_manager._progress.disable = True
+
             node_to_task= {x: output_manager.create_task(output_manager.create_output_description(x), start=False, total=10, comment='Waiting') for x in all_nodes_sorted}
 
+            # Re-enable to console to update
+            output_manager._progress.disable = False
+
             topological_helper.topological_iteration(differences_dag, self.wrap_output_deploy_change(node_to_task), failed_parent_handler=self.wrap_output_failed_child(node_to_task))
-            #topological_helper.topological_iteration(differences_dag, self.fake_deploy, failed_parent_handler=self.wrap_output_failed_child(node_to_task))
+            
 
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
