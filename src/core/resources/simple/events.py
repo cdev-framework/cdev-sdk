@@ -1,36 +1,23 @@
-from enum import Enum
+from typing import Optional, Union
 
 from core.constructs.models import frozendict, ImmutableModel
+from core.resources.simple.iam import permission_arn_model, permission_model
+
 ################
 ##### Events
 ################
-
-class EventTypes(str, Enum):
-    HTTP_API_ENDPOINT = "api::endpoint"
-    TABLE_STREAM = "table::stream"
-    BUCKET_TRIGGER = "bucket:trigger"
-    QUEUE_TRIGGER = "queue::trigger"
-    TOPIC_TRIGGER = "topic::trigger"
-
-
 class event_model(ImmutableModel):
     """
     Arguments:
-        original_resource_name: str
-        original_resource_type: str
-        event_type: EventTypes
+        original_resource_name (str): [description]
+        original_resource_type (str): [description]
+        granting_permission (Optional[Union[permission_model, permission_arn_model]]): [description]
     """
-    original_resource_name: str
+    originating_resource_name: str
 
-    original_resource_type: str
+    originating_resource_type: str
 
-    event_type: EventTypes
-
-    class Config:
-        use_enum_values = True
-        # Beta Feature but should be fine since this is simple data 
-        frozen = True
-
+    granting_permission: Optional[Union[permission_model, permission_arn_model]]
 
 
 class Event():

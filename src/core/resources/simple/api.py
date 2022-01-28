@@ -28,9 +28,8 @@ class RouteEvent(events.Event):
 
     def render(self) -> events.event_model:
         return route_event_model(
-            original_resource_name= self.resource_name,
-            original_resource_type= RUUID,
-            event_type= events.EventTypes.HTTP_API_ENDPOINT,
+            original_resource_name=self.resource_name,
+            original_resource_type=RUUID,
             path=self.path,
             verb=self.verb   
         )

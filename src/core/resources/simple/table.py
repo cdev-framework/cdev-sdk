@@ -6,7 +6,7 @@ from core.constructs.output import  Cloud_Output_Str, OutputType
 from core.utils import hasher
 from core.constructs.models import ImmutableModel
 
-from .events import Event, event_model, EventTypes
+from .events import Event, event_model
 from .iam import Permission
 
 RUUID = "cdev::simple::table"
@@ -60,9 +60,9 @@ class StreamEvent(Event):
         return stream_event_model(
             original_resource_name=self.table_name,
             original_resource_type=self.RUUID,
-            event_type=EventTypes.TABLE_STREAM,
             batch_size=self.batch_size,
             view_type=self.view_type.value,
+            granting_permission=TablePermissions(self.table_name).READ_STREAM.render()
         )
 
 
