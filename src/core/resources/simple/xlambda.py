@@ -6,7 +6,7 @@ from pydantic import FilePath
 from typing import Callable, Dict, FrozenSet, List, Optional, Union
 
 from core.constructs.output import Cloud_Output_Dynamic
-from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
+from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsGrantableMixin
 from core.constructs.models import frozendict, ImmutableModel
 from core.constructs.types import cdev_str_model, cdev_str
 
@@ -119,7 +119,7 @@ class simple_function_model(ResourceModel):
         extra = "ignore"
 
 
-class SimpleFunction(Resource):
+class SimpleFunction(PermissionsGrantableMixin, Resource):
     @update_hash
     def __init__(
         self,
@@ -149,9 +149,9 @@ class SimpleFunction(Resource):
         self._filepath = filepath
         self._events = events
         self._configuration = configuration
-        self._granted_permissions = function_permissions
         self._external_dependencies = external_dependencies
-        
+        self._granted_permissions: List[Union[Permission, PermissionArn]] = function_permissions
+
         self.src_code_hash = src_code_hash if src_code_hash else hasher.hash_file(filepath)
         
 
@@ -183,15 +183,6 @@ class SimpleFunction(Resource):
         self._configuration = value
 
     @property
-    def granted_permissions(self):
-        return self._granted_permissions
-
-    @granted_permissions.setter
-    @update_hash
-    def granted_permissions(self, value: List[Union[Permission, PermissionArn]]):
-        self._granted_permissions = value
-
-    @property
     def external_dependencies(self):
         return self._external_dependencies
 
@@ -202,6 +193,8 @@ class SimpleFunction(Resource):
 
     def compute_hash(self):
         self._permissions_hash = hasher.hash_list([x.hash() for x in self.granted_permissions])
+
+        print(self._permissions_hash)
         self._config_hash = "1"
         self._events_hash = "1"
 
@@ -218,7 +211,7 @@ class SimpleFunction(Resource):
     def render(self) -> simple_function_model:
 
         premissions = [x.render() for x in self.granted_permissions]
-        print(premissions)
+        
         return simple_function_model(
             name=self.name,
             ruuid=self.ruuid,

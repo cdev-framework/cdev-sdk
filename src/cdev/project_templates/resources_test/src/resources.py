@@ -34,6 +34,6 @@ good_dinner_conversation_topic = Topic('of_discussion', nonce='1')
 
 
 # Function
-@simple_function_annotation("hello_world_function")
+@simple_function_annotation("hello_world_function", permissions=[bucket.available_permissions.READ_AND_WRITE_BUCKET])
 def hello_world(event, context):
     print('Hellow World!')

@@ -60,11 +60,13 @@ class Permission():
         )
 
     def hash(self) -> str:
-        return hasher.hash_list([
+        _hash = hasher.hash_list([
             hasher.hash_list(self.actions),
-            self.cloud_id,
+            self.cloud_id.hash() if isinstance(self.cloud_id, Cloud_Output_Str) else self.cloud_id,
             self.effect
         ])
+
+        return _hash
 
 
 class PermissionArn():

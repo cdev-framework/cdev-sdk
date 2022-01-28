@@ -4,6 +4,7 @@ from typing_extensions import Literal, SupportsIndex
 from collections.abc import Sequence
 
 from core.constructs.models import ImmutableModel, frozendict
+from core.utils import hasher
 
 CLOUD_OUTPUT_ID = 'cdev_cloud_output'
 
@@ -146,6 +147,13 @@ class Cloud_Output():
             id='cdev_cloud_output',
         )
 
+    def hash(self) -> str:
+        return hasher.hash_list([
+            self._name,
+            self._ruuid,
+            self._key,
+            self._type
+        ])
 
 class Cloud_Output_Dynamic(Cloud_Output):
     """
@@ -168,6 +176,14 @@ class Cloud_Output_Dynamic(Cloud_Output):
             output_operations=operations
         )
 
+
+    def hash(self) -> str:
+        return hasher.hash_list([
+            super().hash(),
+            self.render().output_operations if self._operations else ""
+        ])
+
+   
 
 
 ########################

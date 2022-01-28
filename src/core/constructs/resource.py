@@ -316,3 +316,19 @@ class PermissionsAvailableMixin:
         self._available_permissions = permissions
 
 
+
+class PermissionsGrantableMixin:
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)  # forwards all unused arguments
+        self._granted_permissions = [] # Needs to be set later in the calling subclass
+
+
+    @property
+    def granted_permissions(self):
+        return self._granted_permissions
+
+    @granted_permissions.setter
+    @update_hash
+    def granted_permissions(self, value: List):
+        self._granted_permissions = value
