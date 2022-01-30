@@ -131,6 +131,8 @@ class Cloud_Output():
     """
     Mutable Class that can used during the creation phases to represent a desired cloud output model.
     """
+
+
     def __init__(self, name: str, ruuid: str, key: str, type: OutputType) -> None:
         self._name = name
         self._ruuid = ruuid
@@ -194,6 +196,7 @@ class Cloud_Output_Bool(Cloud_Output_Dynamic):
     """
     Cloud Output that will resolve to a Boolean value after being retrieve or after all the operations have been executed
     """
+
     def __init__(self, name: str, ruuid: str, key: str, type: OutputType) -> None:
         super().__init__(name, ruuid, key, type)
 
@@ -268,6 +271,7 @@ class Cloud_Output_Int(Cloud_Output_Dynamic):
     """
     Cloud Output that will resolve to a Integer value after being retrieve or after all the operations have been executed
     """
+
     def __init__(self, name: str, ruuid: str, key: str, type: OutputType) -> None:
         super().__init__(name, ruuid, key, type)
 
@@ -340,6 +344,8 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     """
     Cloud Output that will resolve to a String value after being retrieve or after all the operations have been executed
     """
+
+
     def __init__(self, name: str, ruuid: str, key: str, type: OutputType) -> None:
         super().__init__(name, ruuid, key, type)
 
@@ -1325,15 +1331,105 @@ class Cloud_Output_Sequence(Sequence, Cloud_Output_Dynamic, Generic[T]):
     def __len__(self):
         raise Exception
 
+    # Use these stub methods to define the typing signature so that the output is correct based on the input given
+    @overload
+    def __getitem__(self, key: slice) -> 'Cloud_Output_Sequence[T]': 
+        pass
 
-    def __getitem__(self, key: int) -> T:
+    @overload
+    def  __getitem__(self, key: int) ->  T: 
+        pass
+
+    # implementation
+    def __getitem__(self, key):
+        self._operations.append(
+                (
+                    '__getitem__',
+                    [key],
+                    {}
+                )
+            )  
+        
+        if isinstance(key, slice):
+            return self
+
+        elif isinstance(key, int):
+            rv = self._member_class(
+                self._name, self._ruuid, self._key, self._type
+            )
+
+            rv._operations = self._operations.copy()
+
+            return rv
+
+        else:
+            raise Exception
+
+
+    def __contains__(self, _o: Any) -> Cloud_Output_Bool:
         self._operations.append(
             (
-                '__getitem__',
-                [key],
+                '__contains__',
+                [_o],
                 {}
             )
         )
+
+        rv = Cloud_Output_Bool(
+            self._name, self._ruuid, self._key, self._type
+        )
+
+        rv._operations = self._operations.copy()
+
+        return rv
+
+
+    def __len__(self) -> Cloud_Output_Int:
+        self._operations.append(
+            (
+                '__len__',
+                [],
+                {}
+            )
+        )
+
+        rv = Cloud_Output_Int(
+            self._name, self._ruuid, self._key, self._type
+        )
+
+        rv._operations = self._operations.copy()
+
+        return rv
+
+
+
+class Cloud_Output_Mapping(Sequence, Cloud_Output_Dynamic, Generic[T]):
+    """
+    Cloud Output that will resolve to a Mapping of string to values (after being retrieved or after all the operations have been executed).
+    """
+    def __init__(self, name: str, ruuid: str, key: str, type: OutputType, _member_class) -> None:
+        super().__init__(name, ruuid, key, type)
+
+        self._member_class = _member_class
+
+    def __len__(self):
+        raise Exception
+
+
+    # implementation
+    def __getitem__(self, key: str) -> T: 
+        if not isinstance(key, str):
+            raise Exception
+
+
+        self._operations.append(
+                (
+                    '__getitem__',
+                    [key],
+                    {}
+                )
+            )  
+        
 
         rv = self._member_class(
             self._name, self._ruuid, self._key, self._type
@@ -1344,15 +1440,6 @@ class Cloud_Output_Sequence(Sequence, Cloud_Output_Dynamic, Generic[T]):
         return rv
 
 
-    def __getitem__(self, key: slice) -> 'Cloud_Output_Sequence[T]':
-        self._operations.append(
-            (
-                '__getitem__',
-                [key],
-                {}
-            )
-        )  
-
     def __contains__(self, _o: str) -> Cloud_Output_Bool:
         self._operations.append(
             (
@@ -1361,3 +1448,11 @@ class Cloud_Output_Sequence(Sequence, Cloud_Output_Dynamic, Generic[T]):
                 {}
             )
         )
+
+        rv = Cloud_Output_Bool(
+            self._name, self._ruuid, self._key, self._type
+        )
+
+        rv._operations = self._operations.copy()
+
+        return rv

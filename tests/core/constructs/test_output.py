@@ -59,6 +59,64 @@ def simple_bool_examples() -> List[Tuple[bool, Cloud_Output_Str, bool]]:
         (False, _cloud_output_bool_factory().not_(), not False),
     ]
 
+@pytest.fixture
+def simple_list_str_examples() -> List[Tuple[List[str], Cloud_Output_Sequence, List[str]]]:
+    test_list = [
+            "demo",
+            "belligerent",
+            "classy",
+            "gold",
+            "downtown",
+            "cold",
+            "twig"
+        ]
+
+    return [
+        (
+            test_list,
+            _cloud_output_list_str_factory()[1:3],
+            test_list[1:3]
+        ),
+        (
+            test_list,
+            _cloud_output_list_str_factory().__contains__("twig"),
+            test_list.__contains__("twig")
+        ),
+        (
+            test_list,
+            _cloud_output_list_str_factory().__len__(),
+            len(test_list)
+        ),
+    ]
+
+
+@pytest.fixture
+def simple_mapping_str_examples() -> List[Tuple[List[str], Cloud_Output_Mapping, List[str]]]:
+    test_dict = {
+            "demo": "1",
+            "belligerent": "2",
+            "classy": "3",
+            "gold": "4",
+            "downtown": "4",
+            "cold": "6",
+            "twig": "7",
+        }
+
+    return [
+        (
+            test_dict,
+            _cloud_output_mapping_str_factory()['demo'],
+            test_dict['demo']
+        ),
+        (
+            test_dict,
+            _cloud_output_mapping_str_factory().__contains__("twig"),
+            test_dict.__contains__("twig")
+        ),
+        
+    ]
+
+
 
 def _cloud_output_str_factory() -> Cloud_Output_Str:
     return Cloud_Output_Str(
@@ -84,13 +142,26 @@ def _cloud_output_bool_factory() -> Cloud_Output_Bool:
         OutputType.RESOURCE
     )
 
-def _cloud_output_list_factory() -> Cloud_Output_Sequence[Cloud_Output_Str]:
+def _cloud_output_list_str_factory() -> Cloud_Output_Sequence[Cloud_Output_Str]:
     return Cloud_Output_Sequence(
         'r1',
         'r',
         'k',
-        OutputType.RESOURCE
+        OutputType.RESOURCE,
+        Cloud_Output_Str
     )
+
+
+def _cloud_output_mapping_str_factory() -> Cloud_Output_Mapping[Cloud_Output_Str]:
+    return Cloud_Output_Mapping(
+        'r1',
+        'r',
+        'k',
+        OutputType.RESOURCE,
+        Cloud_Output_Str
+    )
+
+
 
 
 
@@ -125,3 +196,22 @@ def test_cloud_output_bool(simple_bool_examples):
         assert final_result == evaluate_dynamic_output(input_int, cloud_output.render())
 
 
+def test_cloud_output_sequence(simple_list_str_examples):
+    for test in simple_list_str_examples:
+        print(test)
+        input_list = test[0]
+        cloud_output: Cloud_Output_Sequence = test[1]
+        final_result = test[2]
+
+        print(cloud_output)
+        assert final_result == evaluate_dynamic_output(input_list, cloud_output.render())
+
+
+def test_cloud_output_sequence(simple_mapping_str_examples):
+    for test in simple_mapping_str_examples:
+        input_dict = test[0]
+        cloud_output: Cloud_Output_Mapping = test[1]
+        final_result = test[2]
+
+        print(cloud_output)
+        assert final_result == evaluate_dynamic_output(input_dict, cloud_output.render())
