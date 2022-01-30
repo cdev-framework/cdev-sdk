@@ -1398,17 +1398,8 @@ class Cloud_Output_Sequence(Sequence, Cloud_Output_Dynamic, Generic[T]):
         return rv
 
 
-    def __reverse__(self) -> 'Cloud_Output_Sequence[T]':
-        self._operations.append(
-            (
-                '__reverse__',
-                [],
-                {}
-            )
-        )
 
-
-class Cloud_Output_Mapping(Mapping, Cloud_Output_Dynamic, Generic[T]):
+class Cloud_Output_Mapping(Sequence, Cloud_Output_Dynamic, Generic[T]):
     """
     Cloud Output that will resolve to a Mapping of string to values (after being retrieved or after all the operations have been executed).
     """
@@ -1445,8 +1436,7 @@ class Cloud_Output_Mapping(Mapping, Cloud_Output_Dynamic, Generic[T]):
         return rv
 
 
-
-    def __contains__(self, _o: Any) -> Cloud_Output_Bool:
+    def __contains__(self, _o: str) -> Cloud_Output_Bool:
         self._operations.append(
             (
                 '__contains__',
