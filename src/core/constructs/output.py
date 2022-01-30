@@ -355,6 +355,8 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
             )
         )    
 
+        return self
+
     def __contains__(self, _o: str) -> Cloud_Output_Bool:
         self._operations.append(
             (
@@ -363,6 +365,8 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
                 {}
             )
         )
+
+        return self
 
     def capitalize(self) -> 'Cloud_Output_Str':
         """Make the first character have upper case and the rest lower case.

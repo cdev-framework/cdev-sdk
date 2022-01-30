@@ -22,7 +22,7 @@ class event_model(ImmutableModel):
 
 class Event():
     
-    def get_hash(self) -> str:
+    def hash(self) -> str:
         raise NotImplementedError
 
     def render(self,) -> event_model:

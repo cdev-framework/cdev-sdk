@@ -22,6 +22,11 @@ from .role_deployer import (
     delete_policy,
 )
 
+
+from .event_deployer import (
+    EVENT_TO_HANDLERS
+)
+
 from core.settings import SETTINGS
 import os
 
@@ -143,31 +148,28 @@ def _create_simple_lambda(
 
     # Step 5
     
-    #if resource.events:
-    #    event_hash_to_output = {}
-    #    for event in resource.events:
-    #        
-#
-    #        key = event.event_type
-    #        
-    #        if not key in EVENT_TO_HANDLERS:
-    #            raise Exception
-#
-    #        output = EVENT_TO_HANDLERS.get(key).get("CREATE")(
-    #            event, final_info.get("cloud_id")
-    #        )
-    #        event_hash_to_output[event.get_hash()] = output
-    #        print_deployment_step(
-    #            "CREATE",
-    #            f"  Create event {event.event_type.value} {event.original_resource_name} for lambda {resource.name}",
-    #        )
-#
-    #    final_info["events"] = event_hash_to_output
+    if resource.events:
+        print(resource.events)
+        available_event_handlers = EVENT_TO_HANDLERS.get(simple_xlambda.RUUID)
+        function_cloud_id = final_info.get("cloud_id")
 
-    
-    output_task.update(
-        comment=f"Created lambda function resources for lambda {resource.name}"
-    )
+        event_hash_to_output = {}
+        for event in resource.events:
+
+            if not event.originating_resource_type in available_event_handlers:
+                raise Exception(f'No handlers for {event.originating_resource_type} to {simple_xlambda.RUUID} events')            
+
+
+            output = EVENT_TO_HANDLERS.get(simple_xlambda.RUUID).get(event.originating_resource_type).get("CREATE")(
+                event, function_cloud_id
+            )
+
+
+            event_hash_to_output['1'] = output
+            
+
+        final_info["events"] = event_hash_to_output
+
     return final_info
 
 

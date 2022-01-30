@@ -1,5 +1,6 @@
 from enum import Enum
 import inspect
+from numpy import diff
 from rich.console import Console, ConsoleOptions
 from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn, SpinnerColumn
 from typing import Callable, FrozenSet, List, Dict, Any, Tuple, TypeVar, Union
@@ -395,6 +396,14 @@ class Workspace:
                 console=console
             ) as progress:
             output_manager = OutputManager(console, progress)
+            print(len(differences_dag.edges))
+
+            for edge in differences_dag.edges:
+                print("----------------------")
+                print(edge[0])
+                print("->")
+                print(edge[1])
+
             all_nodes_sorted: List[NodeView] = [x for x in topological_sort(differences_dag)]
 
             # There seems to be some bug in Rich that causes a deadlock when creating a bunch of Tasks in a row.
@@ -463,6 +472,7 @@ class Workspace:
                 except Exception as e:
                     print(e)
                     print(f"Error evaluating cloud output from change: {change}")
+                    raise e
 
                 
 
@@ -510,15 +520,20 @@ class Workspace:
     def evaluate_and_replace_cloud_output(self, component_name: str, original_resource: ResourceModel) -> ResourceModel:
         if not original_resource:
             return original_resource
-
+        print(f"123")
         original_resource_dict = frozendict(original_resource.dict())
-        
-        evaluated_resource = original_resource.__class__(**self._recursive_replace_output(component_name, original_resource_dict))
+        print("321")
+        print(original_resource_dict)
+        print("-----------")
+        updated=self._recursive_replace_output(component_name, original_resource_dict)
+        print(updated)
+
+        evaluated_resource = original_resource.__class__(**updated)
 
         return evaluated_resource
 
 
-    def _recursive_replace_output(self, component_name:str, original: Any) -> Any:
+    def _recursive_replace_output(self, component_name: str, original: Any) -> Any:
         # This function works over ImmutableModel that were converted using the `.dict` method. Therefore,
         # the collections will be `frozendict` and `frozenset` instead of `dict` and `list`
         if isinstance(original, frozendict):
@@ -540,7 +555,10 @@ class Workspace:
 
             rv = {}
             for k,v in original.items():
-                rv[k] = self._recursive_replace_output(component_name, v)
+                new_v = self._recursive_replace_output(component_name, v)
+                
+                rv[k] = new_v
+
 
             return frozendict(rv)
 

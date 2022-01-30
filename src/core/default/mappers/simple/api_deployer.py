@@ -174,9 +174,9 @@ def _update_simple_api(
     
    
     # Delete any route that is not in the new routes but in previous routes
-    routes_to_be_deleted: FrozenSet[simple_api.route_event_model] = previous_resource.routes.difference(new_resource.routes)
+    routes_to_be_deleted: FrozenSet[simple_api.route_model] = previous_resource.routes.difference(new_resource.routes)
     # Create any route that is in the new routes but not in previous routes
-    routes_to_be_created: FrozenSet[simple_api.route_event_model] = new_resource.routes.difference(previous_resource.routes)
+    routes_to_be_created: FrozenSet[simple_api.route_model] = new_resource.routes.difference(previous_resource.routes)
 
     new_output_info = {}
     for route in routes_to_be_created:
@@ -255,7 +255,7 @@ def _remove_simple_api(
 
 
 
-def _create_route(api_id: str, route: simple_api.route_event_model) -> str:
+def _create_route(api_id: str, route: simple_api.route_model) -> str:
     """
     Helper Function for creating routes on an API. Note that any error raised by the aws client will not be caught by this function and should
     be handled by the caller of this function.

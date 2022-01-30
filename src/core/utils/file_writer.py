@@ -63,6 +63,8 @@ def load_resource_state(fp: FilePath) -> Resource_State:
         # __hash__ value.
         component['resources'] = [_recursive_make_immutable(x) for x in component.get('resources')]
         component['references'] = [_recursive_make_immutable(x) for x in component.get('references')]
+        if component.get('cloud_output'):
+            component['cloud_output'] = _recursive_make_immutable(component.get('cloud_output'))
 
     return Resource_State(**_mutable_json)
     

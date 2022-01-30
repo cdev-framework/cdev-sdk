@@ -1,8 +1,10 @@
 from enum import Enum
 from typing import Any, List, FrozenSet
-from core.constructs.output import Cloud_Output_Sequence, Cloud_Output_Str
+from core.constructs.models import ImmutableModel
+from core.constructs.output import Cloud_Output_Sequence, Cloud_Output_Str, OutputType
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
+from core.constructs.types import cdev_str_model
 from core.utils import hasher
 
 from core.resources.simple import events
@@ -10,32 +12,89 @@ from core.resources.simple import events
 
 RUUID = "cdev::simple::api"
 
+"""
+
+"""
+
+
+########################
+##### Route
+########################
+class route_model(ImmutableModel):
+    api_name: str
+    path: str
+    verb: str
+
+class Route():
+    def __init__(self, api_name: str, path: str, verb: str) -> None:
+        self.api_name = api_name
+        self.path = path
+        self.verb = verb
+       
+    def hash(self) -> str:
+        return hasher.hash_list([self.api_name, self.path, self.verb])
+
+    def render(self) -> route_model:
+        return route_model(
+            api_name=self.api_name,
+            path=self.path,
+            verb=self.verb,
+        )
+
+
+    def event(self) -> 'RouteEvent':
+        return RouteEvent(
+            resource_name=self.api_name,
+            path=self.path,
+            verb=self.verb
+        )
 
 class route_event_model(events.event_model):
     path: str
     verb: str
+    api_id: cdev_str_model
+    route_id: cdev_str_model
 
 
-class RouteEvent(events.Event):
+class RouteEvent():
 
     def __init__(self, resource_name: str, path: str, verb: str) -> None:
         self.resource_name = resource_name
         self.path = path
         self.verb = verb
+        self.api_id = Cloud_Output_Str(
+                name=resource_name, 
+                ruuid=RUUID, 
+                key='cloud_id',
+                type=OutputType.RESOURCE 
+            )
+        self.route_id = Cloud_Output_Str(
+                name=resource_name, 
+                ruuid=RUUID, 
+                key='endpoints',
+                type=OutputType.RESOURCE,
+            )
 
-    def get_hash(self) -> str:
-        return hasher.hash_list([self.path, self.verb])
+    def hash(self) -> str:
+        return hasher.hash_list([self.resource_name, self.path, self.verb])
 
-    def render(self) -> events.event_model:
+    def render(self) -> route_event_model:
         return route_event_model(
-            original_resource_name=self.resource_name,
-            original_resource_type=RUUID,
+            originating_resource_name=self.resource_name,
+            originating_resource_type=RUUID,
             path=self.path,
-            verb=self.verb   
+            verb=self.verb,
+            api_id=self.api_id.render(),
+            route_id=self.route_id.render()
         )
 
+
+
+########################
+##### Api
+########################
 class simple_api_model(ResourceModel):
-    routes: FrozenSet[route_event_model]
+    routes: FrozenSet[route_model]
     allow_cors: bool
 
 class ApiOutput(ResourceOutputs):
@@ -113,7 +172,7 @@ class Api(Resource):
         super().__init__(cdev_name, RUUID, nonce)
         
         self._allow_cors = allow_cors
-        self._routes: List[RouteEvent] = []
+        self._routes: List[Route] = []
         self.output = ApiOutput(cdev_name)
 
     @property
@@ -126,7 +185,7 @@ class Api(Resource):
         self._allow_cors = value
 
     @update_hash
-    def route(self, path: str, verb: str) -> RouteEvent:
+    def route(self, path: str, verb: str) -> Route:
         """Create a route for the API.
 
         Generate a `RouteEvent` that can be used as a trigger for other resources. In particular, you can attach a serverless
@@ -144,7 +203,7 @@ class Api(Resource):
             RouteEvent: The event is created. 
         """
     
-        event = RouteEvent(
+        event = Route(
             self.name,
             path, 
             verb
@@ -157,7 +216,7 @@ class Api(Resource):
     def compute_hash(self):
         self._hash = hasher.hash_list(
             [
-                hasher.hash_list([x.get_hash() for x in self._routes]),
+                hasher.hash_list([x.hash() for x in self._routes]),
                 self.allow_cors, 
                 self.nonce
             ]

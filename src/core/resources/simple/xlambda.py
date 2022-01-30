@@ -194,7 +194,7 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
     def compute_hash(self):
         self._permissions_hash = hasher.hash_list([x.hash() for x in self.granted_permissions])
         self._config_hash = "1"
-        self._events_hash = "1"
+        self._events_hash = hasher.hash_list([x.hash() for x in self.events])
 
         self._hash = hasher.hash_list(
             [

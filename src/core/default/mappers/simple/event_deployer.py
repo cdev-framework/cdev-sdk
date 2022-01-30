@@ -1,17 +1,12 @@
-"""from typing import Dict
-from cdev.resources.aws.apigatewayv2_models import IntegrationType
-from cdev.utils import logger
-from cdev.resources.simple import xlambda as simple_lambda
-from cdev.backend import cloud_mapper_manager as cdev_cloud_mapper
+from typing import Dict, List
 
+from core.resources.simple import xlambda as simple_lambda
+from core.resources.simple import api as simple_api
 
-from ..aws import aws_client as raw_aws_client
+from .. import aws_client
 
-from . import bucket_deployer, topic_deployer
-
-
-from cdev.settings import SETTINGS
-
+from core.settings import SETTINGS
+from core.utils import logger
 
 log = logger.get_cdev_logger(__name__)
 
@@ -19,48 +14,32 @@ log = logger.get_cdev_logger(__name__)
 ##############################################
 ###### API GATEWAY ROUTE EVENTS
 ##############################################
+def _handle_adding_api_event(event: simple_api.route_event_model, cloud_function_id: str) -> Dict:
+    # Needed info
+    #   - Event model
+    #   - originating resource output
+    #   - responding resource output
+    
+    # Returns:
+    #   - Info about the deployed stuff
 
-
-def _handle_adding_api_event(event, cloud_function_id) -> Dict:
-    log.debug(f"Attempting to create {event} for function {cloud_function_id}")
-    api_resource = cdev_cloud_mapper.get_output_by_name(
-        "cdev::simple::api", event.original_resource_name
-    )
-    log.debug(f"Found Api info for {event} -> {api_resource}")
-    api_id = api_resource.get("cloud_id")
-    routes = api_resource.get("endpoints")
-
-    route_id = ""
-    for route in routes:
-        if routes.get(route).get("route") == event.config.get("path") and routes.get(
-            route
-        ).get("verbs") == event.config.get("verb"):
-            log.debug(f"Found route information -> {route}")
-            route_id = routes.get(route).get("cloud_id")
-            route_verb = event.config.get("verb")
-            route_path = event.config.get("path")
-            break
-
-    if not route_id:
-        log.error(
-            f"could not find route info for event {event} in routes {routes} from api info {api_resource}"
-        )
-        return False
-
-    log.debug(f"Route ID -> {route_id}")
-    log.debug(f"Route Integration Method: {route_verb}")
+    api_id = event.api_id
+    route_id = event.route_id
+    
     args = {
-        "IntegrationType": IntegrationType.AWS_PROXY,
+        "IntegrationType": "AWS_PROXY",
         "IntegrationUri": cloud_function_id,
         "PayloadFormatVersion": "2.0",
-        "IntegrationMethod": f"{route_verb}",
+        "IntegrationMethod": f"{event.verb}",
         "ApiId": api_id,
     }
+    print(f"Create integrations {args}")
 
-    integration_rv = raw_aws_client.run_client_function(
+    integration_rv = aws_client.run_client_function(
         "apigatewayv2", "create_integration", args
     )
 
+    print(integration_rv)
     # Now that the integration has been created we need to attach it to the apigateway route
     update_info = {
         "ApiId": api_id,
@@ -68,36 +47,35 @@ def _handle_adding_api_event(event, cloud_function_id) -> Dict:
         "Target": f"integrations/{integration_rv.get('IntegrationId')}",
     }
 
-    raw_aws_client.run_client_function("apigatewayv2", "update_route", update_info)
+    aws_client.run_client_function("apigatewayv2", "update_route", update_info)
 
     # Add permission to lambda to allow apigateway to invoke this function
-    stmt_id = f"stmt-{event.original_resource_name}-{route_id}"
+    stmt_id = f"stmt-{route_id}"
     permission_model_args = {
         "FunctionName": cloud_function_id,
         "Action": "lambda:InvokeFunction",
         "Principal": "apigateway.amazonaws.com",
         "StatementId": stmt_id,
-        "SourceArn": f"arn:aws:execute-api:{SETTINGS.get('AWS_REGION')}:{SETTINGS['AWS_ACCOUNT']}:{api_id}/*/{route_verb}{route_path}",
+        "SourceArn": f"arn:aws:execute-api:{SETTINGS.get('AWS_REGION')}:{SETTINGS['AWS_ACCOUNT']}:{api_id}/*/{event.verb}{event.path}",
+        
     }
 
-    raw_aws_client.run_client_function(
+    aws_client.run_client_function(
         "lambda", "add_permission", permission_model_args
     )
 
     return {
         "UUID": integration_rv.get("IntegrationId"),
-        "event_type": "api::endpoint",
         "Stmt_id": stmt_id,
     }
 
 
-def _handle_deleting_api_event(event: simple_lambda.Event, resource_hash) -> bool:
+def _handle_deleting_api_event(event: simple_api.route_model, resource_hash) -> bool:
     log.debug(f"Attempting to delete {event} from function {resource_hash}")
 
     # Go ahead and make sure we have info for this event in the function's output and cloud integration id of this event
-    function_event_info = cdev_cloud_mapper.get_output_value_by_hash(
-        resource_hash, "events"
-    )
+    function_event_info = "info"
+
     log.debug(f"Function event info {function_event_info}")
 
     if not event.get_hash() in function_event_info:
@@ -108,10 +86,10 @@ def _handle_deleting_api_event(event: simple_lambda.Event, resource_hash) -> boo
 
     integration_id = function_event_info.get(event.get_hash()).get("UUID")
     stmt_id = function_event_info.get(event.get_hash()).get("Stmt_id")
-    cloud_id = cdev_cloud_mapper.get_output_value_by_hash(resource_hash, "cloud_id")
+    cloud_id = "cloud_id"
 
     # Delete the permission on the lambda function
-    raw_aws_client.run_client_function(
+    aws_client.run_client_function(
         "lambda",
         "remove_permission",
         {"FunctionName": cloud_id, "StatementId": stmt_id},
@@ -120,16 +98,11 @@ def _handle_deleting_api_event(event: simple_lambda.Event, resource_hash) -> boo
     # To delete a route event from a simple api we need to delete the integration.
     # This requires first detaching the integration from the route then deleting the integration.
     try:
-        api_resource = cdev_cloud_mapper.get_output_by_name(
-            "cdev::simple::api", event.original_resource_name
-        )
+        api_resource = "api_id"
     except Exception as e:
         log.debug(e)
-        log.error(
-            f"Looking up 'cdev::simple::api' {event.original_resource_name} in cloud_output"
-        )
+        raise e
 
-    log.debug(f"Found api info for event -> {api_resource}")
     api_id = api_resource.get("cloud_id")
     routes = api_resource.get("endpoints")
 
@@ -149,13 +122,10 @@ def _handle_deleting_api_event(event: simple_lambda.Event, resource_hash) -> boo
 
     update_info = {"ApiId": api_id, "RouteId": route_id, "Target": ""}
 
-    raw_aws_client.run_client_function("apigatewayv2", "update_route", update_info)
+    aws_client.run_client_function("apigatewayv2", "update_route", update_info)
 
-    log.debug(
-        f"Removed integration {integration_id} from route {route_id} in api {api_id}"
-    )
 
-    raw_aws_client.run_client_function(
+    aws_client.run_client_function(
         "apigatewayv2",
         "delete_integration",
         {"ApiId": api_id, "IntegrationId": integration_id},
@@ -165,7 +135,7 @@ def _handle_deleting_api_event(event: simple_lambda.Event, resource_hash) -> boo
 
     return True
 
-
+"""
 ##############################################
 ##### DYNAMODB TABLE STREAM EVENT
 ##############################################
@@ -454,28 +424,16 @@ def _handle_deleting_topic_subscription(
     topic_deployer.remove_subscriber(subscription_arn)
 
     return True
-
+"""
 
 EVENT_TO_HANDLERS = {
-    simple_lambda.EventTypes.HTTP_API_ENDPOINT: {
-        "CREATE": _handle_adding_api_event,
-        "REMOVE": _handle_deleting_api_event,
+    simple_lambda.RUUID: {
+        simple_api.RUUID:
+            {   
+                "CREATE": _handle_adding_api_event,
+                "REMOVE": _handle_deleting_api_event,
+            },
+
     },
-    simple_lambda.EventTypes.TABLE_STREAM: {
-        "CREATE": _handle_adding_stream_event,
-        "REMOVE": _handle_deleting_stream_event,
-    },
-    simple_lambda.EventTypes.BUCKET_TRIGGER: {
-        "CREATE": _handle_adding_bucket_event,
-        "REMOVE": _handle_deleting_bucket_event,
-    },
-    simple_lambda.EventTypes.QUEUE_TRIGGER: {
-        "CREATE": _handle_adding_queue_event,
-        "REMOVE": _handle_deleting_queue_event,
-    },
-    simple_lambda.EventTypes.TOPIC_TRIGGER: {
-        "CREATE": _handle_adding_topic_subscription,
-        "REMOVE": _handle_deleting_topic_subscription,
-    },
+    
 }
-"""

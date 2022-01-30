@@ -29,7 +29,7 @@ def find_cloud_output(obj: dict) -> List[cloud_output_model]:
 
     rv = _recursive_find_output(obj)
 
-    return rv
+    return list(set(rv))
 
 
 def _recursive_find_output(obj) -> List[cloud_output_model]:
@@ -102,14 +102,17 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
         parent_cloudoutputs = find_parents(resource.new_resource) if not resource.action_type == Resource_Change_Type.DELETE else find_parents(resource.previous_resource)
 
 
+
+
         if not parent_cloudoutputs:
             continue
+
 
         for parent_cloudoutput in parent_cloudoutputs:
             # Parent resources must be in the same component
             if parent_cloudoutput.type == 'resource':
                 # Cloud outputs of a resource will always be from the same component
-                parent_resource_id = _create_resource_id( resource.component_name, parent_cloudoutput.ruuid, parent_cloudoutput.name)
+                parent_resource_id = _create_resource_id(resource.component_name, parent_cloudoutput.ruuid, parent_cloudoutput.name)
 
                 if parent_resource_id in resource_ids:
                     # Make this resource change a child of the parent resource change

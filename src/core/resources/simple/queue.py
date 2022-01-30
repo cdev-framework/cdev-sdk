@@ -6,7 +6,7 @@ from core.constructs.resource import Resource, ResourceModel, update_hash, Resou
 from core.constructs.output import  Cloud_Output_Str, OutputType
 from core.utils import hasher
 
-from .events import Event, event_model, EventTypes
+from .events import Event, event_model
 from .iam import Permission
 
 RUUID = "cdev::simple::queue"
@@ -22,7 +22,6 @@ class queue_event_model(event_model):
     Arguments:
         original_resource_name: str
         original_resource_type: str
-        event_type: EventTypes
         batch_size: int
         batch_window: int
     """
@@ -46,7 +45,6 @@ class QueueEvent(Event):
         return queue_event_model(
             original_resource_name=self.queue_name,
             original_resource_type=RUUID,
-            event_type=EventTypes.QUEUE_TRIGGER,
             batch_size=self.batch_size,
             batch_window=self.batch_window,
         )
