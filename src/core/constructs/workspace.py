@@ -465,10 +465,7 @@ class Workspace:
                     print(f"Error evaluating cloud output from change: {change}")
                     raise e
 
-                
-
                 try:
-                    print(_evaluated_change)
                     output_task.update(advance=5, comment="Deploying on Cloud :cloud:")
                     mapper = self.get_mapper_namespace().get(ruuid)
                     cloud_output = mapper.deploy_resource(transaction_token, namespace_token, _evaluated_change, previous_output, output_task)
