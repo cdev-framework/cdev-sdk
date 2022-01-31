@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, List, FrozenSet
 from core.constructs.models import ImmutableModel
-from core.constructs.output import Cloud_Output_Sequence, Cloud_Output_Str, OutputType
+from core.constructs.output import Cloud_Output_Mapping, Cloud_Output_Sequence, Cloud_Output_Str, OutputType
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
 from core.constructs.types import cdev_str_model
@@ -68,12 +68,13 @@ class RouteEvent():
                 key='cloud_id',
                 type=OutputType.RESOURCE 
             )
-        self.route_id = Cloud_Output_Str(
+        self.route_id = Cloud_Output_Mapping[Cloud_Output_Str](
                 name=resource_name, 
                 ruuid=RUUID, 
                 key='endpoints',
                 type=OutputType.RESOURCE,
-            )
+                _member_class=Cloud_Output_Str
+            )[f'{self.path} {self.verb}']
 
     def hash(self) -> str:
         return hasher.hash_list([self.resource_name, self.path, self.verb])
@@ -82,21 +83,16 @@ class RouteEvent():
         return route_event_model(
             originating_resource_name=self.resource_name,
             originating_resource_type=RUUID,
+            hash=self.hash(),
             path=self.path,
             verb=self.verb,
             api_id=self.api_id.render(),
             route_id=self.route_id.render()
         )
 
-
-
 ########################
-##### Api
+##### Output
 ########################
-class simple_api_model(ResourceModel):
-    routes: FrozenSet[route_model]
-    allow_cors: bool
-
 class ApiOutput(ResourceOutputs):
     """Container object for the returned values from the cloud after the resource has been deployed."""
     def __init__(self, name: str) -> None:
@@ -122,20 +118,20 @@ class ApiOutput(ResourceOutputs):
 
 
     @property
-    def endpoints(self) -> Cloud_Output_Sequence[Cloud_Output_Str]:
-        """The created routes for the API
+    def endpoints(self) -> Cloud_Output_Mapping[Cloud_Output_Str]:
+        """The created routes for the API.
 
-        Values are stored as a list of str of the form '<route> <verb>'. 
+        Values are stored as a mapping of the (path,verb) to cloud route_id.  
         
         ex:
-            [
-                '/hello_world [GET]'
-            ]
+            {
+                '/hello_world [GET]': <route_id>
+            }
 
         Returns:
-            Cloud_Output_Sequence[Cloud_Output_Str]: Create Routes
+            Cloud_Output_Mapping[Cloud_Output_Str]: Routes
         """
-        return Cloud_Output_Sequence(
+        return Cloud_Output_Mapping[Cloud_Output_Str](
             name=self._name,
             ruuid=RUUID,
             key='endpoints',
@@ -146,6 +142,17 @@ class ApiOutput(ResourceOutputs):
     @endpoints.setter
     def endpoints(self, value: Any):
         raise Exception
+
+
+########################
+##### Api
+########################
+
+
+class simple_api_model(ResourceModel):
+    routes: FrozenSet[route_model]
+    allow_cors: bool
+
 
 class Api(Resource):
     """Simple HTTP Api that can be produce events.

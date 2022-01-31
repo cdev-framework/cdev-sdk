@@ -11,11 +11,14 @@ class event_model(ImmutableModel):
     Arguments:
         original_resource_name (str): [description]
         original_resource_type (str): [description]
+        hash (str): [description]
         granting_permission (Optional[Union[permission_model, permission_arn_model]]): [description]
     """
     originating_resource_name: str
 
     originating_resource_type: str
+
+    hash: str
 
     granting_permission: Optional[Union[permission_model, permission_arn_model]]
 

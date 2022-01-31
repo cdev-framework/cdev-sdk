@@ -1,5 +1,6 @@
 from typing import Any, Dict, FrozenSet
 from uuid import uuid4
+from core.constructs.models import frozendict
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
 from core.output.output_manager import OutputTask
@@ -82,6 +83,8 @@ def _create_simple_api(
         raise e 
 
     info["endpoint"] = f"{rv.get('ApiEndpoint')}/{rv2.get('StageName')}"
+
+
     api_id = info.get("cloud_id")
     if resource.routes:
         for route in resource.routes:
@@ -93,16 +96,13 @@ def _create_simple_api(
                 output_task.print_error(e)
                 raise e 
 
-            route_info = {
-                "cloud_id": route_cloud_id,
-                "route": route.path,
-                "verbs": route.verb,
-            }
 
-            dict_key = f'{route.path}:{route.verb}'
+            # Add route to the return info
+            dict_key = f'{route.path} {route.verb}'
 
             tmp = info.get("endpoints")
-            tmp[dict_key] = route_info
+
+            tmp[dict_key] = route_cloud_id
 
             info["endpoints"] = tmp
 
@@ -115,7 +115,7 @@ def _update_simple_api(
     namespace_token: str,
     previous_resource: simple_api.simple_api_model,
     new_resource: simple_api.simple_api_model,
-    previous_output: Dict,
+    previous_output: frozendict,
     output_task: OutputTask
     ) -> Dict:
     """
@@ -136,7 +136,8 @@ def _update_simple_api(
         Dict: Information from the cloud about the resource.
     """
 
-    previous_cloud_id = previous_output.get('cloud_id')
+    mutable_previous_output = dict(previous_output)
+    previous_cloud_id = mutable_previous_output.get('cloud_id')
 
     output_task.print(previous_resource)
 
@@ -188,28 +189,23 @@ def _update_simple_api(
             output_task.print_error(e)
             raise e 
 
-        route_info = {
-            "cloud_id": route_cloud_id,
-            "route": route.path,
-            "verbs": route.verb,
-        }
 
-        dict_key = f'{route.path}:{route.verb}'
-        new_output_info[dict_key] = route_info
+        dict_key = f'{route.path} {route.verb}'
+        new_output_info[dict_key] = route_cloud_id
 
 
     
-    previous_route_info: Dict[str,str] = previous_output.get('endpoints')
-    
+    previous_route_info: Dict[str,str] = dict(mutable_previous_output.get('endpoints'))
+    print(previous_route_info)
     for route in routes_to_be_deleted:
         dict_key = (
-            f'{route.path}:{route.verb}'
+            f'{route.path} {route.verb}'
         )
 
         output_task.update(advance=1, comment=f'Deleting Route {route.path} [{route.verb}]')
         try:
             _delete_route(
-                previous_cloud_id, previous_route_info.get(dict_key).get("cloud_id")
+                previous_cloud_id, previous_route_info.get(dict_key)
             )
         except Exception as e:
             output_task.print_error(e)
@@ -219,9 +215,9 @@ def _update_simple_api(
 
 
     previous_route_info.update(new_output_info)
-    previous_output['endpoints'] = previous_route_info
+    mutable_previous_output['endpoints'] = previous_route_info
 
-    return previous_output
+    return mutable_previous_output
 
 
 def _remove_simple_api(

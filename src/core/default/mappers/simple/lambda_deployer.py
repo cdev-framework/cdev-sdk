@@ -85,7 +85,6 @@ def _create_simple_lambda(
         comment=f"Create role for lambda function {resource.name}"
     )
 
-    final_info["role_name"] = role_name
     final_info["role_id"] = role_arn
     final_info["permissions"] = permission_info
 
@@ -153,7 +152,7 @@ def _create_simple_lambda(
         available_event_handlers = EVENT_TO_HANDLERS.get(simple_xlambda.RUUID)
         function_cloud_id = final_info.get("cloud_id")
 
-        event_hash_to_output = {}
+        event_to_output = {}
         for event in resource.events:
 
             if not event.originating_resource_type in available_event_handlers:
@@ -165,16 +164,19 @@ def _create_simple_lambda(
             )
 
 
-            event_hash_to_output['1'] = output
+            event_to_output[event.hash] = output
             
 
-        final_info["events"] = event_hash_to_output
+        final_info["events"] = event_to_output
 
     return final_info
 
 
 def _remove_simple_lambda(
-    transaction_token: str,  previous_output: Dict, output_task: OutputTask
+    transaction_token: str,  
+    previous_resource: simple_xlambda.simple_function_model, 
+    previous_output: Dict,
+    output_task: OutputTask
 ) -> bool:
     # Steps:
     # Remove and event that is on the function to make sure resources are properly cleaned up
@@ -182,22 +184,26 @@ def _remove_simple_lambda(
     # Remove the role associated with the function
     
     cloud_id = previous_output.get('cloud_id')
-    
 
-    #for event in resource.events:
-    #    casted_event = simple_lambda.Event(**event)
-#
-    #    key = casted_event.event_type
-#
-    #    if not key in EVENT_TO_HANDLERS:
-    #        raise Exception
-#
-    #    output = EVENT_TO_HANDLERS.get(key).get("REMOVE")(casted_event, resource.hash)
-    #    print_deployment_step(
-    #        "DELETE",
-    #        f"  Remove event {casted_event.event_type.value} {casted_event.original_resource_name} for lambda {resource.name}",
-    #    )
-#
+
+
+    event_hashes_to_events = {
+        x.get('hash'):x for x in [dict(y) for y in previous_resource.events]
+    }
+    
+    print("================")
+    print(event_hashes_to_events)
+    for event_id, event_output in previous_output.get('events').items():
+        
+        print(f"> {event_id}")
+        originating_resource_type = event_hashes_to_events.get(event_id).get('originating_resource_type')
+
+        print(f"> {originating_resource_type}")
+        EVENT_TO_HANDLERS.get(simple_xlambda.RUUID).get(originating_resource_type).get("REMOVE")(
+            event_output,  cloud_id
+        )
+        
+
     output_task.update(
         comment=f"Deleting function resource for {cloud_id}"
     )
@@ -455,7 +461,7 @@ def _create_dependency(
 ) -> Dict:
 
     if isinstance(dependency, simple_xlambda.deployed_layer_model):
-        return dependency.dict()
+        return dependency.arn
 
     key_name = _upload_s3_dependency(dependency)
 
@@ -588,6 +594,7 @@ def handle_simple_lambda_function_deployment(
 
             return _remove_simple_lambda(
                 transaction_token,
+                resource_diff.previous_resource,
                 previous_output,
                 output_task
             )

@@ -3,12 +3,10 @@ from typing import Dict, List
 from core.resources.simple import xlambda as simple_lambda
 from core.resources.simple import api as simple_api
 
-from .. import aws_client
 
 from core.settings import SETTINGS
-from core.utils import logger
 
-log = logger.get_cdev_logger(__name__)
+from .. import aws_client
 
 
 ##############################################
@@ -30,16 +28,15 @@ def _handle_adding_api_event(event: simple_api.route_event_model, cloud_function
         "IntegrationType": "AWS_PROXY",
         "IntegrationUri": cloud_function_id,
         "PayloadFormatVersion": "2.0",
-        "IntegrationMethod": f"{event.verb}",
+        "IntegrationMethod": event.verb,
         "ApiId": api_id,
     }
-    print(f"Create integrations {args}")
-
+    
     integration_rv = aws_client.run_client_function(
         "apigatewayv2", "create_integration", args
     )
 
-    print(integration_rv)
+
     # Now that the integration has been created we need to attach it to the apigateway route
     update_info = {
         "ApiId": api_id,
@@ -65,61 +62,35 @@ def _handle_adding_api_event(event: simple_api.route_event_model, cloud_function
     )
 
     return {
-        "UUID": integration_rv.get("IntegrationId"),
-        "Stmt_id": stmt_id,
+        "integration_id": integration_rv.get("IntegrationId"),
+        "permission_stmt_id": stmt_id,
+        "api_id": api_id,
+        "route_id": route_id
     }
 
 
-def _handle_deleting_api_event(event: simple_api.route_model, resource_hash) -> bool:
-    log.debug(f"Attempting to delete {event} from function {resource_hash}")
-
-    # Go ahead and make sure we have info for this event in the function's output and cloud integration id of this event
-    function_event_info = "info"
-
-    log.debug(f"Function event info {function_event_info}")
-
-    if not event.get_hash() in function_event_info:
-        log.error(
-            f"Could not find info for {event} ({event.get_hash()}) in function ({resource_hash}) output"
-        )
-        return False
-
-    integration_id = function_event_info.get(event.get_hash()).get("UUID")
-    stmt_id = function_event_info.get(event.get_hash()).get("Stmt_id")
-    cloud_id = "cloud_id"
+def _handle_deleting_api_event(event: dict, function_cloud_id: str) -> bool:
+   
+    cloud_id = function_cloud_id
+    integration_id = event.get("integration_id")
+    stmt_id = event.get("permission_stmt_id")
+    
+    api_id = event.get("api_id")
+    route_id = event.get("route_id")
 
     # Delete the permission on the lambda function
     aws_client.run_client_function(
         "lambda",
         "remove_permission",
-        {"FunctionName": cloud_id, "StatementId": stmt_id},
+        {
+            "FunctionName": cloud_id, 
+            "StatementId": stmt_id
+        },
     )
 
-    # To delete a route event from a simple api we need to delete the integration.
-    # This requires first detaching the integration from the route then deleting the integration.
-    try:
-        api_resource = "api_id"
-    except Exception as e:
-        log.debug(e)
-        raise e
-
-    api_id = api_resource.get("cloud_id")
-    routes = api_resource.get("endpoints")
-
-    route_id = ""
-    for route in routes:
-        if routes.get(route).get("route") == event.config.get("path") and routes.get(
-            route
-        ).get("verbs") == event.config.get("verb"):
-            log.debug(f"Found route information -> {route}")
-            route_id = routes.get(route).get("cloud_id")
-
-    if not route_id:
-        log.error(
-            f"could not find route info for event {event} in routes {routes} from api info {api_resource}"
-        )
-        return False
-
+    # To delete a route event from a simple api we need to delete the integration.    
+    # Leave the target blank so that the route has no integration.
+    # Then delete the actual integration cloud obj
     update_info = {"ApiId": api_id, "RouteId": route_id, "Target": ""}
 
     aws_client.run_client_function("apigatewayv2", "update_route", update_info)
@@ -128,12 +99,12 @@ def _handle_deleting_api_event(event: simple_api.route_model, resource_hash) -> 
     aws_client.run_client_function(
         "apigatewayv2",
         "delete_integration",
-        {"ApiId": api_id, "IntegrationId": integration_id},
+        {
+            "ApiId": api_id, 
+            "IntegrationId": integration_id
+        },
     )
 
-    log.debug(f"Removed integration {integration_id} from api {api_id}")
-
-    return True
 
 """
 ##############################################
