@@ -187,6 +187,7 @@ class Backend:
         diff: Resource_Difference,
         transaction_token: str,
         cloud_output: Dict,
+        resolved_cloud_information: Dict={}
     ):
         """
         Notify the resource state that all changes to a resource have completed successfully. This will cause the resource to
@@ -198,6 +199,7 @@ class Backend:
             diff (Resource_Difference): The desired change in the resource
             transaction_token (str): Identifying token representing what transaction is being completed
             cloud_output (Dict): Output information from the cloud provider
+            resolved_cloud_information (Dict): Information that was resolved from the cloud output of the component to deploy this change. 
 
 
         Raises:

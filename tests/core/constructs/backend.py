@@ -356,7 +356,7 @@ def simple_differences(test_backend: Backend):
 
     rename_component =  test_backend.get_component(resource_state_uuid, previous_components[-1].name)
 
-    rename_component.name =  f"{ rename_component.name}{ rename_component.name}"
+    rename_component.name =  f"{rename_component.name}{rename_component.name}"
 
     new_components.append(rename_component)
     
@@ -367,6 +367,7 @@ def simple_differences(test_backend: Backend):
     assert 4 == len(resource_diffs)
     assert 4 == len(component_diffs)
     assert 2 == len(reference_diffs)
+
 
 
 def _create_simple_resource_state_and_component(

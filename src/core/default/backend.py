@@ -416,6 +416,7 @@ class LocalBackend(Backend):
         diff: Resource_Difference,
         transaction_token: str,
         cloud_output: Dict = None,
+        resolved_cloud_information: Dict={}
     ):
 
         resource_state = self.get_resource_state(resource_state_uuid)
@@ -432,7 +433,7 @@ class LocalBackend(Backend):
 
         component = self.get_component(resource_state_uuid, component_name)
         
-        new_component = self._update_component(component, diff, cloud_output)
+        new_component = self._update_component(component, diff, cloud_output, resolved_cloud_information)
         
         
         resource_state.components = [
@@ -822,7 +823,7 @@ class LocalBackend(Backend):
             previous_components: List[ComponentModel] = [
                 self.get_component(resource_state_uuid, x) for x in old_components
             ]
-
+           
         except Exception as e:
             raise e
 
@@ -833,6 +834,7 @@ class LocalBackend(Backend):
         component: ComponentModel,
         diff: Resource_Difference,
         new_cloud_output: Dict = {},
+        resolved_cloud_information: Dict={}
     ) -> ComponentModel:
         """
         Apply a resource difference over a component model and return the updated component model
@@ -840,7 +842,8 @@ class LocalBackend(Backend):
         Arguments:
             component(ComponentModel): The component to update
             diff (Resource_Difference): The difference to apply
-            cloud_output (Dict): The updated output if needed
+            new_cloud_output (Dict): The updated output if needed
+            resolved_cloud_information (Dict): cloud output information used to deploy resource
 
         Returns:
             new_component(ComponentModel): The update component model
@@ -861,6 +864,10 @@ class LocalBackend(Backend):
             
             if previous_resource_cloud_output_id in component.cloud_output:
                 component.cloud_output.pop(previous_resource_cloud_output_id)
+
+
+            if previous_resource_cloud_output_id  in component.previous_resolved_cloud_values:
+                component.previous_resolved_cloud_values.pop(previous_resource_cloud_output_id)
             
 
         elif (
@@ -882,15 +889,22 @@ class LocalBackend(Backend):
             if previous_resource_cloud_output_id in component.cloud_output:
                 component.cloud_output.pop(previous_resource_cloud_output_id)
 
+            if previous_resource_cloud_output_id  in component.previous_resolved_cloud_values:
+                component.previous_resolved_cloud_values.pop(previous_resource_cloud_output_id)
             
             cloud_output_id = self._get_cloud_output_id(diff.new_resource)
             component.cloud_output[cloud_output_id] = new_cloud_output
+
+            component.previous_resolved_cloud_values[cloud_output_id] = resolved_cloud_information
         
 
         elif diff.action_type == Resource_Change_Type.CREATE:
             component.resources.append(diff.new_resource)            
+
             cloud_output_id = self._get_cloud_output_id(diff.new_resource)
+
             component.cloud_output[cloud_output_id] = new_cloud_output
+            component.previous_resolved_cloud_values[cloud_output_id] = resolved_cloud_information
 
         # recompute hash
         component.hash = _compute_component_hash(component)
@@ -1144,7 +1158,6 @@ def _create_differences(
             ):
                 # Since the hash is the same we can infer all the resource hashes and reference hashes are the same
                 # Even though the hash has remained the same we need to check for name changes in the resources
-
                 previous_component = previous_name_to_component.get(component.name)
 
                 # Should only output resource name changes

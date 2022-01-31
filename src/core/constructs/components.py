@@ -53,6 +53,11 @@ class ComponentModel(BaseModel):
     Output values from the cloud provider of deployed resources
     """
 
+    previous_resolved_cloud_values: Optional[Dict[str, Dict]]
+    """
+    Previously resolved cloud output
+    """
+
     external_references: Optional[Dict[str, Dict]]
     """
     Dictionary of the resources to information about references to them from other components
@@ -65,6 +70,7 @@ class ComponentModel(BaseModel):
         resources: List[ResourceModel] = [],
         references: List[ResourceReferenceModel] = [],
         cloud_output: Dict[str, Dict] = {},
+        previous_resolved_cloud_values: Dict[str, Dict]={},
         external_references: Dict[str, Dict] = {},
     ) -> None:
         super().__init__(
@@ -74,7 +80,9 @@ class ComponentModel(BaseModel):
                 "resources": list(resources),
                 "references": list(references),
                 "cloud_output": dict(cloud_output),
+                "previous_resolved_cloud_values": dict(previous_resolved_cloud_values),
                 "external_references": dict(external_references),
+
             }
         )
 

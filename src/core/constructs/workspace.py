@@ -446,8 +446,8 @@ class Workspace:
 
                 try:
                     # Substitute the model with a model that has the cloud outputs evaluated.
-                    new_evaluated_resource = self.evaluate_and_replace_cloud_output(change.component_name, change.new_resource)
-                    previous_evaluated_resource = self.evaluate_and_replace_cloud_output(change.component_name, change.previous_resource)
+                    new_evaluated_resource, evaluated_keys = self.evaluate_and_replace_cloud_output(change.component_name, change.new_resource)
+                    previous_evaluated_resource = self.evaluate_and_replace_previous_cloud_output(change.component_name, change.previous_resource)
 
                     
                     # If there was no cloud output in the resource, then the evaluated resources will equal the original resources
@@ -478,7 +478,14 @@ class Workspace:
                     raise e
 
                 try:
-                    self.get_backend().complete_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, cloud_output)
+                    self.get_backend().complete_resource_change(
+                        self.get_resource_state_uuid(),
+                        change.component_name,
+                        change,
+                        transaction_token,
+                        cloud_output,
+                        evaluated_keys
+                    )
 
                 except Exception as e:
                     self.get_backend().fail_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, {"message": "backend error"})
@@ -506,53 +513,129 @@ class Workspace:
         return deploy_change
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
-    def evaluate_and_replace_cloud_output(self, component_name: str, original_resource: ResourceModel) -> ResourceModel:
+    def evaluate_and_replace_cloud_output(self, component_name: str, original_resource: ResourceModel) -> Tuple[ResourceModel, Dict]:
+        """[stuff]
+
+        Args:
+            component_name (str): [description]
+            original_resource (ResourceModel): [description]
+
+        Returns:
+            Tuple[ResourceModel, Dict]: [description]
+        """
         if not original_resource:
             return original_resource
         
         original_resource_dict = frozendict(original_resource.dict())
+        
+        def _resolver(ruuid, name, key) -> Any:
+            return self.get_backend().get_cloud_output_value_by_name(
+                self.get_resource_state_uuid(),
+                component_name,
+                ruuid,
+                name,
+                key
+            )
+            
+        updated_resource, resolved_value = self._recursive_replace_output(_resolver, original_resource_dict, {})
+        
+        evaluated_resource = original_resource.__class__(**updated_resource)
 
-        updated=self._recursive_replace_output(component_name, original_resource_dict)
+        return evaluated_resource, resolved_value
 
-        evaluated_resource = original_resource.__class__(**updated)
+
+    @wrap_phase([Workspace_State.EXECUTING_BACKEND])
+    def evaluate_and_replace_previous_cloud_output(self, component_name: str, previous_resource: ResourceModel) -> ResourceModel:
+        """[stuff]
+
+        Args:
+            component_name (str): [description]
+            original_resource (ResourceModel): [description]
+
+        Returns:
+            Tuple[ResourceModel, Dict]: [description]
+        """
+        if not previous_resource:
+            return previous_resource
+        
+        original_resource_dict = frozendict(previous_resource.dict())
+        
+
+        def wrap_resolver() -> Callable:
+            previous_resolved_values = self.get_backend().get_component(self.get_resource_state_uuid(), component_name).previous_resolved_cloud_values
+
+            if not previous_resolved_values:
+                raise Exception
+
+            previous_resource_resolved_values = previous_resolved_values.get(f'{previous_resource.ruuid};{previous_resource.name}')
+
+            def _resolver(ruuid, name, key) -> Any:
+
+                if not previous_resource_resolved_values:
+                    raise Exception
+
+                key  = f"{ruuid};{name};{key}"
+
+                if not key in previous_resource_resolved_values:
+                    raise Exception
+
+                return previous_resource_resolved_values.get(key)
+
+            return _resolver
+            
+            
+        updated_resource, _ = self._recursive_replace_output(wrap_resolver(), original_resource_dict, {})
+        
+        evaluated_resource = previous_resource.__class__(**updated_resource)
 
         return evaluated_resource
 
 
-    def _recursive_replace_output(self, component_name: str, original: Any) -> Any:
+    def _recursive_replace_output(self, resolver: Callable, original: Any, resolved_values: Dict = {}) -> Tuple[Any, Dict]:
         # This function works over ImmutableModel that were converted using the `.dict` method. Therefore,
         # the collections will be `frozendict` and `frozenset` instead of `dict` and `list`
+        
         if isinstance(original, frozendict):
             if "id" in original and original.get("id") == 'cdev_cloud_output':
                 
-                _value = self.get_backend().get_cloud_output_value_by_name(
-                    self.get_resource_state_uuid(),
-                    component_name,
+                _value = resolver(
                     original.get('ruuid'),
                     original.get('name'),
                     original.get('key')
                 )
                 
+                values_key = f"{original.get('ruuid')};{original.get('name')};{original.get('key')}"
+                resolved_values[values_key] = _value
 
                 if original.get('output_operations'):
-                    return evaluate_dynamic_output(_value, cloud_output_dynamic_model(**original))
+                    return (evaluate_dynamic_output(_value, cloud_output_dynamic_model(**original)), resolved_values)
 
-                return _value
+                return (_value, resolved_values)
 
             rv = {}
             for k,v in original.items():
-                new_v = self._recursive_replace_output(component_name, v)
+                new_v, tmp_resolved_values = self._recursive_replace_output(resolver, v, resolved_values)
                 
                 rv[k] = new_v
 
-
-            return frozendict(rv)
-
-        elif isinstance(original, frozenset):           
-            return frozenset([self._recursive_replace_output(component_name, x) for x in original])
+                resolved_values.update(tmp_resolved_values)
 
 
-        return original
+            return (frozendict(rv), resolved_values)
+
+        elif isinstance(original, frozenset): 
+            rv = []
+            for x in original:
+                new_v, tmp_resolved_values = self._recursive_replace_output(resolver, x)
+                
+                rv.append(new_v)
+
+                resolved_values.update(tmp_resolved_values)
+
+            return frozenset(rv), resolved_values
+
+        
+        return original, resolved_values
 
 
     @wrap_phase([Workspace_State.INITIALIZED])

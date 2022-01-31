@@ -3,6 +3,7 @@ from core.constructs.backend import Backend
 from core.constructs.output import cloud_output_model
 from core.constructs.workspace import Workspace, Workspace_State, Workspace_Info
 from core.constructs.resource import ResourceModel
+from core.constructs.components import ComponentModel
 
 from .. import sample_data
 
@@ -76,11 +77,137 @@ def _get_fake_backend():
 
             return data.get(id)
 
+
+        def get_component(self, resource_state_uuid: str, component_name: str) -> ComponentModel:
+            
+            if not resource_state_uuid == "1":
+                raise Exception
+            
+            if not component_name == "comp1":
+                raise Exception
+
+
+            return ComponentModel(
+                name="comp1",
+                hash="0",
+                previous_resolved_cloud_values={
+                    "r;e1": {
+                        "r;r1;cloud_id": "val1",
+                        "r;r2;cloud_id": "val2",
+                        "r;r3;cloud_id": "val3",
+                        "r;r4;cloud_id": "val4",
+                        "r;r5;cloud_id": "val5",
+                    }
+                }
+            )
+
     return FakeBackend()
 
 
 
 def simple_evaluate_and_replace_cloud_output(workspace: Workspace):
+    data = [
+        (
+            ResourceModel(
+                **{
+                    "name": "e1",
+                    "ruuid": "r",
+                    "hash": "0",
+                    "val": cloud_output_model(
+                        **{
+                            "name": "r1",
+                            "ruuid": "r",
+                            "key": "cloud_id",
+                            "type": "resource",
+                            "id": "cdev_cloud_output"
+                        }
+                    )
+                }
+            ),
+            (
+                ResourceModel(
+                    **{
+                        "name": "e1",
+                        "ruuid": "r",
+                        "hash": "0",
+                        "val": "val1"
+                    }
+                ),
+                {
+                    "r;r1;cloud_id": "val1"
+                }
+            )
+        ),
+        (
+            ResourceModel(
+                **{
+                    "name": "e1",
+                    "ruuid": "r",
+                    "hash": "0",
+                    "val": cloud_output_model(
+                        **{
+                            "name": "r2",
+                            "ruuid": "r",
+                            "key": "cloud_id",
+                            "type": "resource",
+                            "id": "cdev_cloud_output"
+                        }
+                    )
+                }
+            ),
+            (
+                ResourceModel(
+                    **{
+                        "name": "e1",
+                        "ruuid": "r",
+                        "hash": "0",
+                        "val": "val2"
+                    }
+                ),
+                {
+                    "r;r2;cloud_id": "val2"
+                }
+            )
+        ),
+        (
+            ResourceModel(
+                **{
+                    "name": "e1",
+                    "ruuid": "r",
+                    "hash": "0",
+                    "val": cloud_output_model(
+                        **{
+                            "name": "r3",
+                            "ruuid": "r",
+                            "key": "cloud_id",
+                            "type": "resource",
+                            "id": "cdev_cloud_output"
+                        }
+                    )
+                }
+            ),
+            (
+                ResourceModel(
+                    **{
+                        "name": "e1",
+                        "ruuid": "r",
+                        "hash": "0",
+                        "val": "val3"
+                    }
+                ),
+                {
+                    "r;r3;cloud_id": "val3"
+                }
+            )
+        )
+    ]
+
+    for input, expected_result in data:
+        rv = workspace.evaluate_and_replace_cloud_output("comp1", input)
+        assert rv == expected_result
+
+
+def simple_evaluate_and_replace_previous_cloud_output(workspace: Workspace):
     data = [
         (
             ResourceModel(
@@ -107,6 +234,7 @@ def simple_evaluate_and_replace_cloud_output(workspace: Workspace):
                     "val": "val1"
                 }
             ),
+               
         ),
         (
             ResourceModel(
@@ -150,7 +278,7 @@ def simple_evaluate_and_replace_cloud_output(workspace: Workspace):
                         }
                     )
                 }
-            ),
+            ), 
             ResourceModel(
                 **{
                     "name": "e1",
@@ -158,12 +286,13 @@ def simple_evaluate_and_replace_cloud_output(workspace: Workspace):
                     "hash": "0",
                     "val": "val3"
                 }
-            )
+            ),    
         )
     ]
 
     for input, expected_result in data:
-        rv = workspace.evaluate_and_replace_cloud_output("comp1", input)
+        rv = workspace.evaluate_and_replace_previous_cloud_output("comp1", input)
+        print(rv)
         assert rv == expected_result
 
 
@@ -182,3 +311,15 @@ def test_evaluate_and_replace_cloud_output():
     ws.get_resource_state_uuid = lambda: "1"
 
     simple_evaluate_and_replace_cloud_output(ws)
+
+
+def test_evaluate_and_replace_previous_cloud_output():
+    
+    ws = Workspace()
+
+    ws.get_backend = _get_fake_backend
+    ws.get_state = lambda: Workspace_State.EXECUTING_BACKEND
+    ws.get_resource_state_uuid = lambda: "1"
+
+    simple_evaluate_and_replace_previous_cloud_output(ws)
+

@@ -21,7 +21,6 @@ RUUID = "cdev::simple::api"
 ##### Route
 ########################
 class route_model(ImmutableModel):
-    api_name: str
     path: str
     verb: str
 
@@ -32,11 +31,10 @@ class Route():
         self.verb = verb
        
     def hash(self) -> str:
-        return hasher.hash_list([self.api_name, self.path, self.verb])
+        return hasher.hash_list([self.path, self.verb])
 
     def render(self) -> route_model:
         return route_model(
-            api_name=self.api_name,
             path=self.path,
             verb=self.verb,
         )
