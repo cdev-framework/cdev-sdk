@@ -8,6 +8,7 @@ from core.resources.simple import xlambda as simple_xlambda
 from core.resources.simple.iam import permission_arn_model, permission_model
 
 from core.utils import paths as core_paths, hasher
+from core.constructs.models import frozendict
 
 
 from .. import aws_client 
@@ -186,22 +187,21 @@ def _remove_simple_lambda(
     cloud_id = previous_output.get('cloud_id')
 
 
-
-    event_hashes_to_events = {
-        x.get('hash'):x for x in [dict(y) for y in previous_resource.events]
-    }
-    
-    print("================")
-    print(event_hashes_to_events)
-    for event_id, event_output in previous_output.get('events').items():
-        
-        print(f"> {event_id}")
-        originating_resource_type = event_hashes_to_events.get(event_id).get('originating_resource_type')
-
-        print(f"> {originating_resource_type}")
-        EVENT_TO_HANDLERS.get(simple_xlambda.RUUID).get(originating_resource_type).get("REMOVE")(
-            event_output,  cloud_id
+    if previous_resource.events:
+        output_task.update(
+            comment=f"Removing Events"
         )
+        event_hashes_to_events = {
+            x.get('hash'):x for x in [dict(y) for y in previous_resource.events]
+        }
+
+
+        for event_id, event_output in previous_output.get('events').items():        
+            originating_resource_type = event_hashes_to_events.get(event_id).get('originating_resource_type')
+
+            EVENT_TO_HANDLERS.get(simple_xlambda.RUUID).get(originating_resource_type).get("REMOVE")(
+                event_output,  cloud_id
+            )
         
 
     output_task.update(
@@ -213,10 +213,10 @@ def _remove_simple_lambda(
         "lambda", "delete_function", {"FunctionName": cloud_id}
     )
 
-    role_name = previous_output.get("role_name")
-    permissions =  previous_output.get("permissions")
-
-    delete_role_and_permissions(role_name, permissions)
+    #role_name = previous_output.get("role_name")
+    #permissions =  previous_output.get("permissions")
+#
+    #delete_role_and_permissions(role_name, permissions)
 
     output_task.update(
         comment=f"Deleting permissions for the resource ({cloud_id})"
@@ -253,9 +253,12 @@ def _update_simple_lambda(
     output_task.update(
         comment=f"Updating lambda function {new_resource.name}"
     )
-    
+
+    cloud_id = previous_output['cloud_id']
+
     did_update_permission = False
-    updated_info = {}
+
+    mutable_previous_output = dict(previous_output)
     
     # TODO all configurations
     if not previous_resource.configuration == new_resource.configuration:
@@ -270,7 +273,7 @@ def _update_simple_lambda(
                 "lambda",
                 "update_function_configuration",
                 {
-                    "FunctionName": previous_output.get("cloud_id"),
+                    "FunctionName": cloud_id,
                     "Environment": {
                         "Variables":new_resource.configuration.environment_variables._d
                     }
@@ -281,15 +284,13 @@ def _update_simple_lambda(
         output_task.update(
             comment=f"Updating Policies"
         )
+        permission_output: Dict[Union[permission_model, permission_arn_model], str] = previous_output.get("permissions")
+        role_name_output = previous_output.get("role_name")
 
-        did_update_permission = True
+        
         remove_permissions = previous_resource.permissions.difference(new_resource.permissions)
         create_permissions = new_resource.permissions.difference(previous_resource.permissions)
 
-
-        permission_output: Dict[Union[permission_model, permission_arn_model], str] = previous_output.get("permissions")
-        role_name_output = previous_output.get("role_name")
-        
 
         for permission in create_permissions:
             
@@ -305,7 +306,9 @@ def _update_simple_lambda(
             permission_output.pop(permission)
 
 
-        previous_output['permissions'] = permission_output
+        mutable_previous_output['permissions'] = permission_output
+        
+        did_update_permission = True
 
 
     if not previous_resource.src_code_hash == new_resource.src_code_hash:
@@ -314,18 +317,19 @@ def _update_simple_lambda(
         )
 
         keyname = _upload_s3_code_artifact(previous_output.get('function_name'), new_resource)
-        updated_info["artifact_key"] = keyname
-
+        
         aws_client.run_client_function(
             "lambda",
             "update_function_code",
             {
-                "FunctionName": previous_output.get("cloud_id"),
+                "FunctionName": cloud_id,
                 "S3Key": keyname,
                 "S3Bucket": BUCKET,
                 "Publish": True,
             },
         )
+
+        mutable_previous_output["artifact_key"] = keyname
 
     if (
         not previous_resource.external_dependencies
@@ -338,15 +342,7 @@ def _update_simple_lambda(
         remove_dependencies = previous_resource.external_dependencies.difference(new_resource.external_dependencies)
         create_dependencies = new_resource.external_dependencies.difference(previous_resource.external_dependencies)
         
-        previous_dependency_output =  previous_resource.get("layers")
-
-
-        for dependency in remove_dependencies:
-            _remove_dependency(dependency)
-
-            previous_dependency_output.pop(dependency)
-
-
+        previous_dependency_output: Dict =  mutable_previous_output.get("layers")
 
         for dependency in create_dependencies:
             new_layer_rv = _create_dependency(
@@ -355,13 +351,18 @@ def _update_simple_lambda(
 
             previous_dependency_output[dependency] = new_layer_rv
 
+        for dependency in remove_dependencies:
+            _remove_dependency(dependency)
+
+            previous_dependency_output.pop(dependency)
+
         sleep(5)
 
         aws_client.run_client_function(
             "lambda",
             "update_function_configuration",
             {
-                "FunctionName": previous_resource.get("cloud_id"),
+                "FunctionName": cloud_id,
             
                 "Layers": [
                     f'{x.get("arn")}:{x.get("version")}' for x in previous_dependency_output
@@ -369,87 +370,59 @@ def _update_simple_lambda(
             },
         )
 
-        previous_resource['layers'] = previous_dependency_output
+        mutable_previous_output['layers'] = previous_dependency_output
 
-    #if not previous_resource.events_hash == new_resource.events_hash:
-    #    log.debug(
-    #        f"UPDATE EVENT HASH: {previous_resource.events} -> {new_resource.events}"
-    #    )
-    #    if did_update_permission:
-    #        print_deployment_step(
-    #            "UPDATE",
-    #            "   [blink]Wait for new permissions to take effect (~10s)[blink]",
-    #        )
-    #        sleep(10)
-#
-    #    previous_hashes = set(
-    #        [simple_lambda.Event(**x).get_hash() for x in previous_resource.events]
-    #    )
-    #    new_hashes = set([x.get_hash() for x in new_resource.events])
-#
-    #    create_events = []
-    #    remove_events = []
-#
-    #    event_output = cdev_cloud_mapper.get_output_value_by_hash(
-    #        previous_resource.hash, "events"
-    #    )
-    #    if not event_output:
-    #        event_output = {}
-#
-    #    for event in new_resource.events:
-    #        if not event.get_hash() in previous_hashes:
-    #            create_events.append(event)
-#
-    #    for event in previous_resource.events:
-    #        if not simple_lambda.Event(**event).get_hash() in new_hashes:
-    #            remove_events.append(event)
-#
-    #    log.debug(f"New Events -> {create_events}")
-    #    log.debug(f"Previous Events -> {remove_events}")
-#
-    #    for event in create_events:
-    #        key = event.event_type
-    #        log.debug(key)
-    #        if not key in EVENT_TO_HANDLERS:
-    #            raise Exception
-#
-    #        output = EVENT_TO_HANDLERS.get(key).get("CREATE")(
-    #            event,
-    #            cdev_cloud_mapper.get_output_value_by_hash(
-    #                previous_resource.hash, "cloud_id"
-    #            ),
-    #        )
-    #        event_output[event.get_hash()] = output
-    #        log.debug(f"Add Event -> {event}")
-    #        print_deployment_step(
-    #            "UPDATE",
-    #            f"  Create event {event.event_type.value} {event.original_resource_name} for lambda {new_resource.name}",
-    #        )
-#
-    #    for event in remove_events:
-    #        casted_event = simple_lambda.Event(**event)
-#
-    #        key = casted_event.event_type
-#
-    #        if not key in EVENT_TO_HANDLERS:
-    #            raise Exception
-#
-    #        output = EVENT_TO_HANDLERS.get(key).get("REMOVE")(
-    #            casted_event, previous_resource.hash
-    #        )
-    #        event_output.pop(casted_event.get_hash())
-    #        log.debug(f"Remove Event -> {casted_event}")
-    #        print_deployment_step(
-    #            "UPDATE",
-    #            f"  Remove event {casted_event.event_type.value} {casted_event.original_resource_name} for lambda {new_resource.name}",
-    #        )
-#
-    #    cdev_cloud_mapper.update_output_by_key(
-    #        previous_resource.hash, "events", event_output
-    #    )
-#
+    if not previous_resource.events == new_resource.events:
+        if did_update_permission:
+            # Wait because the updated permission can effect if the event can be bound. 
+            output_task.update(
+                comment=f"[blink]Waiting for policies to complete. ~10s[/blink]"
+            )
+            sleep(10)
+
+        output_task.update(
+                comment=f"Updating Events"
+            )
+
+        create_events = new_resource.events.difference(previous_resource.events)
+        remove_events = previous_resource.events.difference(new_resource.events)
+
+        available_event_handlers = EVENT_TO_HANDLERS.get(simple_xlambda.RUUID)
+
+        previous_event_output: dict = dict(mutable_previous_output.get('events')) if mutable_previous_output.get('events') else {}
+
+        print(create_events)
+        for _event in create_events:
+            if not _event.originating_resource_type in available_event_handlers:
+                raise Exception(f'No handlers for {_event.originating_resource_type} to {simple_xlambda.RUUID} events')            
+
+
+            output = EVENT_TO_HANDLERS.get(simple_xlambda.RUUID).get(_event.originating_resource_type).get("CREATE")(
+                _event, cloud_id
+            )
+
+
+            previous_event_output[_event.hash] = output
+
+        previous_event_hashes_to_output = {
+            hash:output for hash, output in [ (y.hash, dict(previous_event_output.get(y.hash))) for y in remove_events if previous_event_output.get(y.hash)]
+        }
+
+        previous_hashes_to_events = {
+            x.get('hash'):x for x in [dict(y) for y in remove_events]
+        }
+
+        for event_id, event_output in previous_event_hashes_to_output.items():        
+            originating_resource_type = previous_hashes_to_events.get(event_id).get('originating_resource_type')
+
+            EVENT_TO_HANDLERS.get(simple_xlambda.RUUID).get(originating_resource_type).get("REMOVE")(
+                event_output,  cloud_id
+            )
+
+            previous_event_output.pop(event_id)
+        
     
-    return previous_output
+    return mutable_previous_output
 
 
 
