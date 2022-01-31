@@ -149,7 +149,6 @@ def _create_simple_lambda(
     # Step 5
     
     if resource.events:
-        print(resource.events)
         available_event_handlers = EVENT_TO_HANDLERS.get(simple_xlambda.RUUID)
         function_cloud_id = final_info.get("cloud_id")
 
