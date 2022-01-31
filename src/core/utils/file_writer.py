@@ -2,7 +2,7 @@ import json
 from pydantic import FilePath
 import os
 import shutil
-from typing import Dict
+from typing import Dict, List
 from types import MappingProxyType
 
 from core.constructs.resource_state import Resource_State  
@@ -72,7 +72,31 @@ def _recursive_make_immutable(o):
     if isinstance(o, list):
         return frozenset([_recursive_make_immutable(x) for x in o])
     elif isinstance(o, dict):
+
+        if "id" in o:
+            if o.get('id') == 'cdev_cloud_output':
+                
+                tmp = {k: _recursive_make_immutable(v) for k, v in o.items()}
+                if not o.get('output_operations'):
+                    return frozendict(tmp)
+
+                correctly_loaded_output_operations = _load_cloud_output(o.get('output_operations'))
+
+                tmp['output_operations'] = correctly_loaded_output_operations
+                
+
+                return frozendict(tmp)
+
+
         return frozendict({k: _recursive_make_immutable(v) for k, v in o.items()})
     return o
 
+
+def _load_cloud_output(cloud_output_operations: List[List]):
+    # return the cloud output operations as tuples
     
+    return tuple(
+        [
+            (x[0], tuple(x[1]), frozendict(x[2])) for x in cloud_output_operations
+        ]
+    )

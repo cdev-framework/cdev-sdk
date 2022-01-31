@@ -396,13 +396,6 @@ class Workspace:
                 console=console
             ) as progress:
             output_manager = OutputManager(console, progress)
-            print(len(differences_dag.edges))
-
-            for edge in differences_dag.edges:
-                print("----------------------")
-                print(edge[0])
-                print("->")
-                print(edge[1])
 
             all_nodes_sorted: List[NodeView] = [x for x in topological_sort(differences_dag)]
 
@@ -453,22 +446,20 @@ class Workspace:
 
                 try:
                     # Substitute the model with a model that has the cloud outputs evaluated.
-                    new_resource = self.evaluate_and_replace_cloud_output(change.component_name, change.new_resource)
+                    new_evaluated_resource = self.evaluate_and_replace_cloud_output(change.component_name, change.new_resource)
+                    previous_evaluated_resource = self.evaluate_and_replace_cloud_output(change.component_name, change.previous_resource)
 
-                    if not new_resource == change.new_resource:
-                        # There was some change to the new resource because of the evaluation of the cloud output 
-                        # so we must create a new resource difference (since the obj is immutable) to be used in
-                        # the actual deployment.
-                        _evaluate_change = Resource_Difference(
-                            change.action_type,
-                            change.component_name,
-                            change.previous_resource,
-                            new_resource,
-                        )
+                    
+                    # If there was no cloud output in the resource, then the evaluated resources will equal the original resources
+                    # so using that value is safe. 
+                    _evaluated_change = Resource_Difference(
+                        change.action_type,
+                        change.component_name,
+                        previous_evaluated_resource,
+                        new_evaluated_resource,
+                    )
 
-                    else:
-                        # No change means that there was not replacement of output
-                        _evaluate_change = change
+                    
                 except Exception as e:
                     print(e)
                     print(f"Error evaluating cloud output from change: {change}")
@@ -477,9 +468,10 @@ class Workspace:
                 
 
                 try:
+                    print(_evaluated_change)
                     output_task.update(advance=5, comment="Deploying on Cloud :cloud:")
                     mapper = self.get_mapper_namespace().get(ruuid)
-                    cloud_output = mapper.deploy_resource(transaction_token, namespace_token, _evaluate_change, previous_output, output_task)
+                    cloud_output = mapper.deploy_resource(transaction_token, namespace_token, _evaluated_change, previous_output, output_task)
                     output_task.update(advance=3, comment="Completing transaction with Backend")
 
                 except Exception as e:
@@ -520,13 +512,10 @@ class Workspace:
     def evaluate_and_replace_cloud_output(self, component_name: str, original_resource: ResourceModel) -> ResourceModel:
         if not original_resource:
             return original_resource
-        print(f"123")
+        
         original_resource_dict = frozendict(original_resource.dict())
-        print("321")
-        print(original_resource_dict)
-        print("-----------")
+
         updated=self._recursive_replace_output(component_name, original_resource_dict)
-        print(updated)
 
         evaluated_resource = original_resource.__class__(**updated)
 

@@ -387,11 +387,15 @@ def _update_simple_lambda(
         create_events = new_resource.events.difference(previous_resource.events)
         remove_events = previous_resource.events.difference(new_resource.events)
 
+
+        print(f"Create Events -> {create_events}")
+        print(f"Remove Events -> {remove_events}")
+
         available_event_handlers = EVENT_TO_HANDLERS.get(simple_xlambda.RUUID)
 
         previous_event_output: dict = dict(mutable_previous_output.get('events')) if mutable_previous_output.get('events') else {}
 
-        print(create_events)
+       
         for _event in create_events:
             if not _event.originating_resource_type in available_event_handlers:
                 raise Exception(f'No handlers for {_event.originating_resource_type} to {simple_xlambda.RUUID} events')            
