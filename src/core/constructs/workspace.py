@@ -524,7 +524,7 @@ class Workspace:
             Tuple[ResourceModel, Dict]: [description]
         """
         if not original_resource:
-            return original_resource
+            return original_resource, None
         
         original_resource_dict = frozendict(original_resource.dict())
         
@@ -555,6 +555,7 @@ class Workspace:
         Returns:
             Tuple[ResourceModel, Dict]: [description]
         """
+        
         if not previous_resource:
             return previous_resource
         
