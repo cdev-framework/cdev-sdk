@@ -401,6 +401,10 @@ def _update_simple_lambda(
                 raise Exception(f'No handlers for {_event.originating_resource_type} to {simple_xlambda.RUUID} events')            
 
 
+            output_task.update(
+                comment=f"Create Event {_event}"
+            )
+
             output = EVENT_TO_HANDLERS.get(simple_xlambda.RUUID).get(_event.originating_resource_type).get("CREATE")(
                 _event, cloud_id
             )
@@ -419,11 +423,17 @@ def _update_simple_lambda(
         for event_id, event_output in previous_event_hashes_to_output.items():        
             originating_resource_type = previous_hashes_to_events.get(event_id).get('originating_resource_type')
 
+            output_task.update(
+                comment=f"DElete Event {event_id}"
+            )
+
             EVENT_TO_HANDLERS.get(simple_xlambda.RUUID).get(originating_resource_type).get("REMOVE")(
                 event_output,  cloud_id
             )
 
             previous_event_output.pop(event_id)
+
+        mutable_previous_output['events'] = previous_event_output
         
     
     return mutable_previous_output
