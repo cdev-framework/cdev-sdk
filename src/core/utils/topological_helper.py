@@ -71,7 +71,6 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
     reference_differences = differences[2]
     
 
-    
     component_ids = {_create_component_id(x.new_name):x for x in component_differences if x.action_type == Component_Change_Type.CREATE or x.action_type == Component_Change_Type.UPDATE_NAME or x.action_type == Component_Change_Type.UPDATE_IDENTITY}
     component_ids.update({_create_component_id(x.previous_name):x for x in component_differences if x.action_type == Component_Change_Type.DELETE})
 
@@ -93,15 +92,16 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
         component_id = _create_component_id(resource.component_name)
 
         if component_id in component_ids:
-            change_dag.add_edge(component_ids.get(component_id), resource)
+            if resource.action_type == Resource_Change_Type.DELETE and component_ids.get(component_id).action_type == Component_Change_Type.DELETE:
+                # Since these are both deletes, it should happen in the reverse order
+                change_dag.add_edge(resource,component_ids.get(component_id))
 
+            else:
+                change_dag.add_edge(component_ids.get(component_id), resource)
         else:
             raise Exception(f"There should always be a change in a component for a resource change {resource}")
 
         parent_cloudoutputs = find_parents(resource.new_resource) if not resource.action_type == Resource_Change_Type.DELETE else find_parents(resource.previous_resource)
-
-
-
 
         if not parent_cloudoutputs:
             continue
@@ -114,17 +114,24 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
                 parent_resource_id = _create_resource_id(resource.component_name, parent_cloudoutput.ruuid, parent_cloudoutput.name)
 
                 if parent_resource_id in resource_ids:
-                    # Make this resource change a child of the parent resource change
-                    change_dag.add_edge(resource_ids.get(parent_resource_id), resource)
+                    if resource.action_type == Resource_Change_Type.DELETE:
+                        # Since this is a delete, it should happen in the reverse order
+                        change_dag.add_edge(resource, resource_ids.get(parent_resource_id))
+
+                    else:
+                        # Make this resource change a child of the parent resource change
+                        change_dag.add_edge(resource_ids.get(parent_resource_id), resource)
 
             elif parent_cloudoutput.type == 'reference':
-                parent_reference_id = _create_reference_id(resource.component_name, parent_cloudoutput.component_name, parent_cloudoutput.ruuid, parent_cloudoutput.name)
+                parent_reference_id = _create_reference_id(resource.component_name, resource.component_name, parent_cloudoutput.ruuid, parent_cloudoutput.name)
 
                 if parent_reference_id in reference_ids:
-                    if reference_ids.get(parent_reference_id).action_type == Resource_Reference_Change_Type.DELETE:
-                        raise Exception(f"Attempting to use output of a Reference that is going to be deleted {resource} {parent_cloudoutput}")
+                    if resource.action_type == Resource_Change_Type.DELETE:
+                        # Since this is a delete, it should happen in the reverse order
+                        change_dag.add_edge(resource, resource_ids.get(parent_reference_id))
 
-                    change_dag.add_edge(resource_ids.get(parent_reference_id), resource)
+                    else:
+                        change_dag.add_edge(resource_ids.get(parent_reference_id), resource)
 
     for _, reference in reference_ids.items():
         change_dag.add_node(reference)

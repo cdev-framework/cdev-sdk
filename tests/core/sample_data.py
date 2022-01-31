@@ -5,7 +5,7 @@ from typing import Dict, Tuple, List, Union
 
 from core.constructs.components import Component, Component_Change_Type, ComponentModel, Component_Difference
 from core.constructs.resource import Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference, ResourceModel, Resource_Change_Type, ResourceReferenceModel
-from core.constructs.output import Cloud_Output, Cloud_Output_Str, cloud_output_model
+from core.constructs.output import Cloud_Output, Cloud_Output_Str, OutputType, cloud_output_model
 from core.constructs.types import cdev_str_model
 
 class simple_component(Component):
@@ -403,6 +403,35 @@ def simple_differences_for_topo_sort() -> Tuple[List[Component_Difference], List
         )
     )
 
+    rd3 = Resource_Difference(
+        action_type=Resource_Change_Type.DELETE,
+        component_name="comp3",
+        previous_resource=ResourceModel(
+            ruuid="cdev::test::r1",
+            hash="9871",
+            name="r3",
+            val="2"
+        ),
+    )
+
+    rd4 = Resource_Difference(
+        action_type=Resource_Change_Type.DELETE,
+        component_name="comp3",
+        previous_resource=ResourceModel(
+            ruuid="cdev::test::r1",
+            hash="9871",
+            name="r4",
+            val=cloud_output_model(
+                name="r3",
+                ruuid="cdev::test::r1",
+                key='val',
+                type=OutputType.RESOURCE,
+                id='cdev_cloud_output'
+            )
+        ),
+    )
+
+
 
     refd1 = Resource_Reference_Difference(
         action_type=Resource_Reference_Change_Type.CREATE,
@@ -411,13 +440,12 @@ def simple_differences_for_topo_sort() -> Tuple[List[Component_Difference], List
             component_name="comp1",
             ruuid='cdev::test::r1',
             name='r11',
-            
         )
     )
     
     component_diffs = [ c1,c2,c3, ]
 
-    resource_diffs = [rd1, rd2]
+    resource_diffs = [rd1, rd2, rd3, rd4]
 
     reference_diffs = [
        refd1
@@ -428,12 +456,15 @@ def simple_differences_for_topo_sort() -> Tuple[List[Component_Difference], List
         (c1, rd1),
         (c1, rd2),
         (c3, refd1),
-        (rd1, refd1)
+        (c3, rd4),
+        (c3, rd3),
+        (rd1, refd1),
+        (rd4, rd3)
     ]
 
     nodes = [
         c1, c2, c3,
-        rd1, rd2,
+        rd1, rd2, rd3, rd4,
         refd1
     ]
 

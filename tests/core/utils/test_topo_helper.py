@@ -29,6 +29,7 @@ def test_sort_changes():
     # Check that all nodes from created dag are correct
     if not len(dag.nodes()) == len(correct_nodes):
         print(f"returned {len(dag.nodes())} and should have had {len(correct_nodes)} nodes")
+        
         assert False
 
     for rv_node in dag.nodes():
