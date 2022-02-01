@@ -1,23 +1,29 @@
 # Technical Todos
 
-This is a running list of tasks that need to be done on the project.
-
+This is a running list of tasks that need to be done on the project before the alpha is complete.
 
 
 ### Large
 - Add remote backends to allow more than local json state. (Maybe S3 and dynamodb)
+- Transition the backend to use the Cloud Control API 
+- Auto generation tool for resources on the Cloud Control API
+- Refactor the system to add `modifiers` and `validators` api and flow into commands
 
 
 ### Medium
-- Improve and document the functionality of the `run` command and the underlying system 
-- Add more options for the stream functionality for the data sync tool
+- Add support for some user authentication. Most likely use AWS Cognito
+- Add support for simple Websockets on API Gateway
 - Create the first tutorial on the website
+- Complete the reference system
+- Add all commands to CLI
 
 
 ### Small
+- Add Event support for Lambda events from all support resources
 - Add implementations of the sync functionality for different resources
 - Add support for Global Secondary Indexes for dynamodb
-- Add support for simple Websockets on API Gateway
+- Add more options for the stream functionality for the data sync tool
+- Improve documentation of the functionality of the `run` command and the underlying system 
 - Fix `cdev output` command because it can render some values as emoji that are not emojis (ex. arn of secret has :secret: in it)
 
 
