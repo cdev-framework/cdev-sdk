@@ -2,7 +2,7 @@ import json
 from typing import FrozenSet, List, Tuple, Union, Dict
 from uuid import uuid4
 
-from core.resources.simple.iam import permission_model, permission_arn_model
+from core.default.resources.simple.iam import permission_model, permission_arn_model
 
 from .. import aws_client 
 

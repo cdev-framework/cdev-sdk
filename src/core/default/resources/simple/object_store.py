@@ -5,9 +5,9 @@ from core.constructs.resource import Resource, ResourceModel, update_hash, Resou
 from core.constructs.output import Cloud_Output_Str, OutputType
 from core.utils import hasher
 
-from .iam import Permission
+from core.default.resources.simple.iam import Permission
 
-from .events import Event, event_model
+from core.default.resources.simple.events import Event, event_model
 RUUID = "cdev::simple::bucket"
 
 class Bucket_Event_Type(str, Enum):

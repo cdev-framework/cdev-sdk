@@ -1,1 +1,1 @@
-from core.resources.simple.api import *
+from core.default.resources.simple.api import *

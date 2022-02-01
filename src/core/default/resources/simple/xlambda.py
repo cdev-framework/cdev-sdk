@@ -1,4 +1,3 @@
-from enum import Enum
 import importlib
 import inspect
 import os
@@ -12,8 +11,8 @@ from core.constructs.types import cdev_str_model, cdev_str
 
 from core.utils import hasher
 
-from .iam import Permission, PermissionArn, permission_arn_model, permission_model
-from .events import Event, event_model
+from core.default.resources.simple.iam import Permission, PermissionArn, permission_arn_model, permission_model
+from core.default.resources.simple.events import Event, event_model
 
 
 LAMBDA_LAYER_RUUID = "cdev::simple::lambda_layer"

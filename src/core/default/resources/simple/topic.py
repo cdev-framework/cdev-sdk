@@ -5,7 +5,7 @@ from core.constructs.resource import Resource, ResourceModel, update_hash, Resou
 from core.constructs.output import Cloud_Output_Str, OutputType
 from core.utils import hasher
 
-from .iam import Permission
+from core.default.resources.simple.iam import Permission
 
 RUUID = "cdev::simple::topic"
 

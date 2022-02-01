@@ -10,7 +10,7 @@ from zipfile import ZipFile
 
 from core.settings import SETTINGS as cdev_settings
 from core.utils import paths as cdev_paths, hasher as cdev_hasher
-from core.resources.simple.xlambda import  DependencyLayer
+from core.default.resources.simple.xlambda import  DependencyLayer
 
 
 from . import utils as fs_utils

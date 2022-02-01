@@ -10,7 +10,7 @@ from core.utils import hasher
 
 
 
-from .utils import get_cloud_id_from_cdev_name
+from core.default.commands.function.utils import get_cloud_id_from_cdev_name
 
 RUUID = "cdev::simple::function"
 

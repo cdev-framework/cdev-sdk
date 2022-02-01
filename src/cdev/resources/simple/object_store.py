@@ -1,1 +1,1 @@
-from core.resources.simple.object_store import *
+from core.default.resources.simple.object_store import *

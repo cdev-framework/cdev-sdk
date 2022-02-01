@@ -4,8 +4,8 @@ from uuid import uuid4
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
 from core.output.output_manager import OutputTask
-from core.resources.simple import xlambda as simple_xlambda
-from core.resources.simple.iam import permission_arn_model, permission_model
+from core.default.resources.simple import xlambda as simple_xlambda
+from core.default.resources.simple.iam import permission_arn_model, permission_model
 
 from core.utils import paths as core_paths, hasher
 from core.constructs.models import frozendict

@@ -1,1 +1,1 @@
-from core.resources.simple.queue import *
+from core.default.resources.simple.queue import *

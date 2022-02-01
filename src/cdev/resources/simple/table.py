@@ -1,1 +1,1 @@
-from core.resources.simple.table import *
+from core.default.resources.simple.table import *

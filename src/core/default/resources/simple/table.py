@@ -6,8 +6,8 @@ from core.constructs.output import  Cloud_Output_Str, OutputType
 from core.utils import hasher
 from core.constructs.models import ImmutableModel
 
-from .events import Event, event_model
-from .iam import Permission
+from core.default.resources.simple.events import Event, event_model
+from core.default.resources.simple.iam import Permission
 
 RUUID = "cdev::simple::table"
 

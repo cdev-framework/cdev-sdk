@@ -1,1 +1,1 @@
-from core.resources.simple.iam import *
+from core.default.resources.simple.iam import *

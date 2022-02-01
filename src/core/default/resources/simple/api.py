@@ -7,7 +7,7 @@ from core.constructs.resource import Resource, ResourceModel, update_hash, Resou
 from core.constructs.types import cdev_str_model
 from core.utils import hasher
 
-from core.resources.simple import events
+from core.default.resources.simple import events
 
 
 RUUID = "cdev::simple::api"

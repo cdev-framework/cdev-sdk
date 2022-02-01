@@ -1,1 +1,1 @@
-from core.resources.simple.topic import *
+from core.default.resources.simple.topic import *

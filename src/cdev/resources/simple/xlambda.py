@@ -1,1 +1,1 @@
-from core.resources.simple.xlambda import *
+from core.default.resources.simple.xlambda import *

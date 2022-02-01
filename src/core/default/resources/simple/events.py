@@ -1,7 +1,7 @@
 from typing import Optional, Union
 
 from core.constructs.models import frozendict, ImmutableModel
-from core.resources.simple.iam import permission_arn_model, permission_model
+from core.default.resources.simple.iam import permission_arn_model, permission_model
 
 ################
 ##### Events

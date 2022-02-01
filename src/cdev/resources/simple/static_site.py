@@ -1,1 +1,1 @@
-from core.resources.simple.static_site import *
+from core.default.resources.simple.static_site import *

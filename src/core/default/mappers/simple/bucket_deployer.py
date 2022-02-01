@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 from uuid import uuid4
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
-from core.resources.simple import object_store as simple_object_store
+from core.default.resources.simple import object_store as simple_object_store
 from core.output.output_manager import OutputTask
 from core.utils import hasher
 

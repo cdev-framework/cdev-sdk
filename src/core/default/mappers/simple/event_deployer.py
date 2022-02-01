@@ -1,7 +1,7 @@
 from typing import Dict, List
 
-from core.resources.simple import xlambda as simple_lambda
-from core.resources.simple import api as simple_api
+from core.default.resources.simple import xlambda as simple_lambda
+from core.default.resources.simple import api as simple_api
 
 
 from core.settings import SETTINGS

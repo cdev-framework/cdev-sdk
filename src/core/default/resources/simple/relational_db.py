@@ -5,7 +5,7 @@ from core.constructs.resource import Resource, ResourceModel, ResourceOutputs, u
 from core.constructs.output import  Cloud_Output_Str, OutputType
 from core.utils import hasher
 
-from .iam import Permission, PermissionArn
+from core.default.resources.simple.iam import Permission, PermissionArn
 
 
 RUUID = "cdev::simple::relationaldb"

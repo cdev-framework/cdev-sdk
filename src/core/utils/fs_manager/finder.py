@@ -10,7 +10,7 @@ from core.constructs.resource import (
     Resource_Reference,
 )
 
-from core.resources.simple.xlambda import (
+from core.default.resources.simple.xlambda import (
     SimpleFunction,
     simple_function_model,
     SimpleFunctionConfiguration
