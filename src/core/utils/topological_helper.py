@@ -1,4 +1,9 @@
-import json
+"""Utilities to help work with the Resource Dependency Graph.
+
+One of the core components of the Cdev Core framework is the Resource Dependency Graph. This graph is implemented
+using the `networkx` packages as it provides helpful utilities for working with graph data structures. 
+"""
+
 from concurrent.futures import ThreadPoolExecutor, Future
 from enum import Enum
 
@@ -10,19 +15,37 @@ from typing import Callable, Dict, List, Set, Tuple
 from time import sleep
 
 from core.constructs.resource import Resource_Change_Type, Resource_Reference_Change_Type, ResourceModel, Resource_Difference, Resource_Reference_Difference
-from core.constructs.output import cloud_output_model
+from core.constructs.output import OutputType, cloud_output_model
 from core.constructs.components import Component_Change_Type, Component_Difference
 from core.output.output_manager import OutputManager, OutputTask
 from core.constructs.models import frozendict
 
 deliminator = '+'
 
-def find_parents(resource: ResourceModel) -> List[cloud_output_model]:
+def find_parents(resource: ResourceModel) -> Tuple[List, List]:
+    """Find any parents resources via any linked Cloud Output Models
+
+    If a resource constains the cloud output of another resource, the relationship
+    needs to be identified as a parent-child relationship with the Resource Dependency
+    Graph.
+
+    Args:
+        resource (ResourceModel): Resource to look for any parents with
+
+    Returns:
+        Tuple[
+            parent_resources: List[Tuple[ruuid, name]]
+            parent_resources: List[Tuple[ruuid, name]]
+        ]
+    """
     resource_as_obj = resource.dict()
     
     cloud_outputs = find_cloud_output(resource_as_obj)
+
+    parent_resources = [(x.ruuid,x.name) for x in cloud_outputs if x.type == OutputType.RESOURCE ]
+    parent_references = [(x.ruuid,x.name) for x in cloud_outputs if x.type == OutputType.REFERENCE]
     
-    return cloud_outputs
+    return parent_resources, parent_references
 
 
 def find_cloud_output(obj: dict) -> List[cloud_output_model]:
@@ -101,37 +124,37 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
         else:
             raise Exception(f"There should always be a change in a component for a resource change {resource}")
 
-        parent_cloudoutputs = find_parents(resource.new_resource) if not resource.action_type == Resource_Change_Type.DELETE else find_parents(resource.previous_resource)
+        parent_resources, parent_references = find_parents(resource.new_resource) if not resource.action_type == Resource_Change_Type.DELETE else find_parents(resource.previous_resource)
 
-        if not parent_cloudoutputs:
+        if not parent_resources and not parent_references:
             continue
 
 
-        for parent_cloudoutput in parent_cloudoutputs:
+        for parent_ruuid, parent_name in parent_resources:
             # Parent resources must be in the same component
-            if parent_cloudoutput.type == 'resource':
-                # Cloud outputs of a resource will always be from the same component
-                parent_resource_id = _create_resource_id(resource.component_name, parent_cloudoutput.ruuid, parent_cloudoutput.name)
+            
+            # Cloud outputs of a resource will always be from the same component
+            parent_resource_id = _create_resource_id(resource.component_name, parent_ruuid, parent_name)
 
-                if parent_resource_id in resource_ids:
-                    if resource.action_type == Resource_Change_Type.DELETE:
-                        # Since this is a delete, it should happen in the reverse order
-                        change_dag.add_edge(resource, resource_ids.get(parent_resource_id))
+            if parent_resource_id in resource_ids:
+                if resource.action_type == Resource_Change_Type.DELETE:
+                    # Since this is a delete, it should happen in the reverse order
+                    change_dag.add_edge(resource, resource_ids.get(parent_resource_id))
 
-                    else:
-                        # Make this resource change a child of the parent resource change
-                        change_dag.add_edge(resource_ids.get(parent_resource_id), resource)
+                else:
+                    # Make this resource change a child of the parent resource change
+                    change_dag.add_edge(resource_ids.get(parent_resource_id), resource)
 
-            elif parent_cloudoutput.type == 'reference':
-                parent_reference_id = _create_reference_id(resource.component_name, resource.component_name, parent_cloudoutput.ruuid, parent_cloudoutput.name)
+        for parent_ruuid, parent_name in parent_references:
+            parent_reference_id = _create_reference_id(resource.component_name, resource.component_name, parent_ruuid, parent_name)
 
-                if parent_reference_id in reference_ids:
-                    if resource.action_type == Resource_Change_Type.DELETE:
-                        # Since this is a delete, it should happen in the reverse order
-                        change_dag.add_edge(resource, resource_ids.get(parent_reference_id))
+            if parent_reference_id in reference_ids:
+                if resource.action_type == Resource_Change_Type.DELETE:
+                    # Since this is a delete, it should happen in the reverse order
+                    change_dag.add_edge(resource, resource_ids.get(parent_reference_id))
 
-                    else:
-                        change_dag.add_edge(resource_ids.get(parent_reference_id), resource)
+                else:
+                    change_dag.add_edge(resource_ids.get(parent_reference_id), resource)
 
     for _, reference in reference_ids.items():
         change_dag.add_node(reference)
@@ -197,17 +220,20 @@ class node_state(str, Enum):
 def topological_iteration(dag: DiGraph, process: Callable[[NodeView], None], failed_parent_handler: Callable[[NodeView], None]=None, thread_count: int = 1, interval: float = .3, pass_through_exceptions: bool = False):
     """Execute the `process` over a DAG in a topologically constrained way. 
     
-    This means that the `process` will not be executed on a node until the 'process' has been executed on all parents of that node. 
+    This means that the `process` will not be executed on a node until the `process` has been executed on all parents of that node. 
+    
     If the `process` throws an Exception when executing on a Node, then any child nodes will not be executed (if provided, the 
     failed_parent_handler will be executed on the child nodes). 
     
     This iteration supports multiple threads via the `thread_count` param. Multiple threads can speed up the total iteration time if the `process` 
-    is IO bound and there are non-dependant paths through the DAG. 
+    is not CPU bound and there are non-dependant paths through the DAG. Note that the `process` provided should be thread safe when using multiple threads.
 
     Args:
-        dag (DiGraph): [description]
-        thread_count (int, optional): [description]. Defaults to 1.
-        interval (float, optional): [description]. Defaults to .3.
+        dag (DiGraph): The graph to execute over.
+        process (Callable[[NodeView], None]): The function to call on each Node.
+        failed_parent_handler (Callable[[NodeView], None], optional): A function to call on Nodes that do not execute because a parent failed.
+        thread_count (int, optional): [description]. Defaults to 1 
+        interval (float, optional): Interval (in seconds) to poll threads for completion. Defaults to .3
     """
     
     all_children: Set[NodeView] = set(x[1] for x in dag.edges)

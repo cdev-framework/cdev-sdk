@@ -194,7 +194,7 @@ def _create_package_dependencies_info(
             directly_referenced_module_write_info.add(pkg)
 
         elif pkg.type == PackageTypes.LOCALPACKAGE:
-            if cdev_paths.is_in_project(pkg.fp):
+            if cdev_paths.is_in_workspace(pkg.fp):
                 if os.path.isdir(pkg.fp):
                     # If the fp is a dir that means we need to include the entire directory
                     for dir, _, files in os.walk(pkg.fp):
@@ -354,7 +354,7 @@ def _find_packaging_files_handler(original_path: FilePath) -> List[FilePath]:
     path_from_project_dir = os.path.dirname(
         cdev_paths.get_relative_to_workspace_path(original_path)
     ).split("/")
-    intermediate_location = cdev_paths.get_project_path()
+    intermediate_location = cdev_paths.get_workspace_path()
     rv = []
 
     while path_from_project_dir:
@@ -364,7 +364,7 @@ def _find_packaging_files_handler(original_path: FilePath) -> List[FilePath]:
         )
 
         file_loc = os.path.join(intermediate_location, "__init__.py")
-        intermediate_file_location = cdev_paths.get_full_path_from_intermediate_folder(
+        intermediate_file_location = cdev_paths.get_full_path_from_intermediate_base(
             cdev_paths.get_relative_to_workspace_path(file_loc)
         )
 
@@ -430,7 +430,7 @@ def _copy_local_dependencies(dependencies: List[FilePath]) -> List[FilePath]:
     """
     rv = []
     for dependency in dependencies:
-        intermediate_location = cdev_paths.get_full_path_from_intermediate_folder(
+        intermediate_location = cdev_paths.get_full_path_from_intermediate_base(
             cdev_paths.get_relative_to_project_path(dependency)
         )
 

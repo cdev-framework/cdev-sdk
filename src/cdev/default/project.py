@@ -13,7 +13,7 @@ from core.constructs.workspace import Workspace_State
 
 
 from core.constructs.workspace import Workspace_Info
-from core.utils import file_writer
+from core.utils import file_manager
 
 from ..constructs.environment import environment_info, Environment
 
@@ -248,7 +248,7 @@ class local_project(Project):
         return ws.get_components()
 
     def _write_state(self):
-        file_writer.safe_json_write(
+        file_manager.safe_json_write(
             self._central_state.dict(), self._project_info_location
         )
 

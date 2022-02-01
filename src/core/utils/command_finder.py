@@ -1,13 +1,20 @@
+"""Utilities for working with user defined commands
+
+[detailed description]
+
+"""
+
+
 import importlib
 import inspect
 import os
 import sys
 from typing import List, Tuple, Union
 
-from ..constructs.commands import BaseCommand, BaseCommandContainer
+from core.constructs.commands import BaseCommand, BaseCommandContainer
 
 
-from . import logger
+from core.utils import logger
 
 
 log = logger.get_cdev_logger(__name__)
@@ -187,9 +194,8 @@ def initialize_command_module(mod_path: str) -> BaseCommand:
 
 
 def initialize_command_container_module(mod_path: str) -> BaseCommandContainer:
-    print(f"fff {mod_path}")
     mod = importlib.import_module(mod_path)
-    print(f"----")
+    
 
     # Check for the class that derives from BaseCommandContainer... if there is more then one class then throw error (note this is a current implementation detail)
     # because it is easier if their is only one command per file so that we can use the file name as the command name

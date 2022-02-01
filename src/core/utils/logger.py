@@ -1,3 +1,8 @@
+"""Utilities for generating logs of framework executions
+
+"""
+
+
 import logging.config
 import logging
 import os

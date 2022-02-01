@@ -27,7 +27,7 @@ from ..constructs.resource import (
 )
 from ..constructs.resource_state import Resource_State
 from ..settings import SETTINGS as cdev_settings
-from ..utils import hasher as cdev_hasher, logger, file_writer
+from ..utils import file_manager, hasher as cdev_hasher, logger
 
 
 class LocalBackendError(BackendError):
@@ -129,10 +129,10 @@ class LocalBackend(Backend):
                 self._central_state = LocalCentralFile(**json.load(fh))
 
     def _write_central_file(self):
-        file_writer.safe_json_write(self._central_state.dict(), self.central_state_file)
+        file_manager.safe_json_write(self._central_state.dict(), self.central_state_file)
 
     def _write_resource_state_file(self, resource_state: Resource_State, fp: FilePath):
-        file_writer.safe_json_write(resource_state.dict(), fp)
+        file_manager.safe_json_write(resource_state.dict(), fp)
     
 
     # Api for working with Resource States
@@ -217,7 +217,7 @@ class LocalBackend(Backend):
             )
 
         try:
-            return file_writer.load_resource_state(file_location)
+            return file_manager.load_resource_state(file_location)
             with open(file_location, "r") as fh:
                 return Resource_State(**json.load(fh))
 

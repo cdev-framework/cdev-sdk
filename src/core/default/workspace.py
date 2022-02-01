@@ -22,7 +22,7 @@ from ..constructs.workspace import (
 
 from ..settings import SETTINGS as cdev_settings
 
-from ..utils import module_loader, file_writer
+from ..utils import file_manager, module_loader
 
 
 DEFAULT_COMMAND_LOCATIONS = [
@@ -241,7 +241,7 @@ class local_workspace_manager(WorkspaceManager):
         if not os.path.isdir(base_cdev_dir):
             os.mkdir(base_cdev_dir)
 
-        file_writer.safe_json_write(
+        file_manager.safe_json_write(
             workspace_info.dict(), os.path.join(base_cdev_dir, self.workspace_filename)
         )
 
