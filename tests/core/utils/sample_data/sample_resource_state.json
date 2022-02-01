@@ -1,0 +1,27 @@
+{
+    "name": "demo1",
+    "uuid": "1234",
+    "components": [
+        {
+            "name": "name",
+            "hash": "123",
+            "resources": [
+                {
+                    "name": "r1",
+                    "ruuid": "r",
+                    "hash": "12345",
+                    "val": "val"
+                }
+            ],
+            "references": [],
+            "cloud_output": {},
+            "previous_resolved_cloud_values": {},
+            "external_references": {}
+        }
+    ],
+    "component_name_to_uuid": {},
+    "parent_uuid": null,
+    "children": [],
+    "resource_changes": {},
+    "failed_changes": {}
+}
