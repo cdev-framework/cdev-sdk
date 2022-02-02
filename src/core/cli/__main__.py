@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import argparse
-from ast import parse
 from typing import Callable, Any
 
 from ..commands import (

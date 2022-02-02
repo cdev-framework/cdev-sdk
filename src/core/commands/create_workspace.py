@@ -1,3 +1,6 @@
+"""Utilities for creating a new resource state
+
+"""
 import os
 
 from ..constructs import workspace as cdev_workspace

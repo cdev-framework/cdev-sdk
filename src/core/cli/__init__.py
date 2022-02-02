@@ -1,3 +1,2 @@
-"""
-Wrapper around commands that allows them to interface with the CLI
+"""Wrapper around commands to make them accessible via the command line
 """

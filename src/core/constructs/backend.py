@@ -1,6 +1,20 @@
-import importlib
+"""Definition of the functionality of a Backend within the framework
+
+A Backend is designed to be the single central place for persistent storage within the framework. It is responsible
+for managing all changes within the state of a project. The backend touches almost all other primitives within
+the framework. To gain a better understanding of its larger role with the framework, refer to the documentation
+about the design of the framework (link).
+
+This file provides the definition of the functionality a backend should implement, but it does not provide 
+a concrete implementation. 
+
+This file also contains the definition of how to configure and dynamically load a backend class. To denote a 
+concrete implementation, a python `module` and `class` must be provide. These should both be strings. They are
+used to load a class that inherits from the base `Backend` class. It also takes in a generic dictionary to be 
+passed as configuration into the dynamicall loaded class.
+
+"""
 import inspect
-import sys
 from typing import Dict, Tuple, Any, List
 from pydantic import BaseModel
 
@@ -21,7 +35,7 @@ class Backend_Configuration(BaseModel):
         __pydantic_self__, python_module: str, python_class: str, config: Dict
     ) -> None:
         """
-        Represents the data needed to create a new cdev workspace:
+        Represents the data needed to create a new cdev backend:
 
         Parameters:
             python_module: The name of the python module to load as the backend
@@ -49,7 +63,7 @@ class Backend:
         """
         Create a new resource state within this stored state.
 
-        Arguments:
+        Args:
             parent_resource_state_uuid (str): The uuid of the parent resource state.
             name (str): the name of this resource state.
 
@@ -66,7 +80,7 @@ class Backend:
         """
         Delete a resource state within this store state.
 
-        Arguments:
+        Args:
             resource_state_uuid (str): The uuid of the resource state to delete
 
         Raises:
@@ -79,7 +93,7 @@ class Backend:
         """
         Load a resource state from the stored state.
 
-        Arguments:
+        Args:
             resource_state_uuid (str): The uuid of the desired resource state
 
         Raises:
@@ -107,7 +121,7 @@ class Backend:
         """
         Get a component from the resource state.
 
-        Arguments:
+        Args:
             resource_state_uuid (str): The resource state that this component will be in.
             component_name (str): Name of the component
 
@@ -126,7 +140,7 @@ class Backend:
     ):
         """Make an update to the component. 
 
-        Arguments:
+        Args:
             resource_state_uuid (str): The resource state that the change is in.
             component_difference (Component_Difference): The difference in the component to be made.
 
@@ -141,7 +155,7 @@ class Backend:
         """
         Get the unique namespace for this resource state and component. 
 
-        Arguments:
+        Args:
             resource_state_uuid (str): The resource state that this component will be in.
             component_name (str): Name of the component
 
@@ -164,7 +178,7 @@ class Backend:
         this change, it will return a base idempotency token that can be used to construct idempotency tokens for deploying the underlying
         cloud resources. If the resource state can not handle the change, it will throw an error.
 
-        Arguments:
+        Args:
             resource_state_uuid (str): The resource state for this resource change.
             component_name (str): The component this resource change is occuring in.
             diff (Resource_Difference): The desired change in the resource.
@@ -193,7 +207,7 @@ class Backend:
         Notify the resource state that all changes to a resource have completed successfully. This will cause the resource to
         update the state of the resource to the new state.
 
-        Arguments:
+        Args:
             resource_state_uuid (str): The resource state for this resource change.
             component_name (str): The component this resource change is occuring in.
             diff (Resource_Difference): The desired change in the resource
@@ -221,7 +235,7 @@ class Backend:
         Notify the resource state that an attempted change to a resource has failed. The provided failed state should encapsulate any needed information
         for a future mapper to recover the state of the resource back into a proper state.
 
-        Arguments:
+        Args:
             resource_state_uuid (str): The resource state for this resource change.
             component_name (str): The component this resource change is occuring in.
             diff (Resource_Difference): The desired change in the resource
@@ -245,7 +259,7 @@ class Backend:
         """
         Either reference or dereference a resource from a different component.
 
-        Arguments:
+        Args:
             resource_state_uuid (str): The resource state for this resource change.
             component_name (str): The component this resource change is occuring in.
             diff (Resource_Difference): The desired change in the resource
@@ -265,7 +279,7 @@ class Backend:
         """
         Update the failed state of a 'resource change'.
 
-        Arguments:
+        Args:
             resource_state_uuid (str): The resource state that this transaction is in.
             transaction_token (str): Identifying token for the failed transaction.
             new_failed_state (Dict): The new failed state of the transaction.
@@ -286,7 +300,7 @@ class Backend:
         """
         Recover the state of the change back to the previous state or forward to the new state. Note this will result in the failed resource change being removed from the stored state.
 
-        Arguments:
+        Args:
             resource_state_uuid (str): The resource state that this transaction is in.
             transaction_token (str): Identifying token for the failed transaction.
             to_previous_state (bool): Bool to decide if the resource should be transitioned to the previous state or new state.
@@ -304,7 +318,7 @@ class Backend:
         """
         Completely remove the failed resource change from the stored state. Note that this should be used with caution as it can lead to hanging cloud resources.
 
-        Arguments:
+        Args:
             resource_state_uuid (str): The resource state that this transaction is in.
             transaction_token (str): Identifying token for the failed transaction.
 
@@ -325,7 +339,7 @@ class Backend:
         """
         Get the state of a resource from a component based on the name of the resource
 
-        Arguments:
+        Args:
             resource_state_uuid (str): The resource state for this resource.
             component_name (str): The component this resource is in.
             resource_type: The RUUID of the resource desired
@@ -348,7 +362,7 @@ class Backend:
         """
         Get the state of a resource from a component based on the hash of the resource
 
-        Arguments:
+        Args:
             resource_state_uuid (str): The resource state for this resource.
             component_name (str): The component this resource is in.
             resource_type (str): The RUUID of the resource desired.
@@ -373,7 +387,7 @@ class Backend:
         Get an output value from the cloud provider for a resource by the name of the resource. This function also takes an optional function as a parameter
         that will be executed on the output and should return a transformed version of the information.
 
-        Arguments:
+        Args:
             resource_state_uuid (str): The resource state for this resource.
             component_name (str): The component this resource is in.
             resource_type (str): The RUUID of the resource desired
@@ -400,7 +414,7 @@ class Backend:
         """
         Get full output from the cloud provider for a resource by the name of the resource.
 
-        Arguments:
+        Args:
             resource_state_uuid (str): The resource state for this resource.
             component_name (str): The component this resource is in.
             resource_type (str): The RUUID of the resource desired
@@ -428,7 +442,7 @@ class Backend:
         Get an output value from the cloud provider for a resource by the name of the resource. This function also takes an optional function as a parameter
         that will be executed on the output and should return a transformed version of the information.
 
-        Arguments:
+        Args:
             resource_state_uuid (str): The resource state for this resource.
             component_name (str): The component this resource is in.
             resource_type (str): The RUUID of the resource desired.
@@ -465,7 +479,19 @@ class Backend:
 
 
 def load_backend(config: Backend_Configuration) -> Backend:
-    # sometime the module is already loaded so just reload it to capture any changes
+    """Dynamically load a backend
+
+    Load a backend by initializing the provided module and looking for the class within the loaded module.
+
+    Args:
+        config (Backend_Configuration): configuration of what backend to load.
+
+    Raises:
+        Exception: [description]
+
+    Returns:
+        Backend: [description]
+    """
     try:
         backend_module = import_module(config.python_module)
     except Exception as e:
