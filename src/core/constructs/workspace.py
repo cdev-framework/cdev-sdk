@@ -19,13 +19,13 @@ from .backend import Backend
 from .mapper import CloudMapper
 from .components import Component, Component_Change_Type, Component_Difference, ComponentModel
 from .commands import BaseCommand, BaseCommandContainer
-from .output import evaluate_dynamic_output, cloud_output_dynamic_model
+from .cloud_output import evaluate_dynamic_output, cloud_output_dynamic_model
 
 from ..settings import SETTINGS as cdev_settings
 
 from ..utils.command_finder import find_specified_command, find_unspecified_command
 from ..utils import module_loader, topological_helper
-from core.constructs import output
+from src.core.constructs import cloud_output
 
 
 WORKSPACE_INFO_DIR = cdev_settings.get("ROOT_FOLDER_NAME")

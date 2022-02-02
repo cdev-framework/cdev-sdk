@@ -4,7 +4,7 @@ import os
 from pydantic import FilePath
 from typing import Callable, Dict, FrozenSet, List, Optional, Union
 
-from core.constructs.output import Cloud_Output_Dynamic
+from src.core.constructs.cloud_output import Cloud_Output_Dynamic
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsGrantableMixin
 from core.constructs.models import frozendict, ImmutableModel
 from core.constructs.types import cdev_str_model, cdev_str

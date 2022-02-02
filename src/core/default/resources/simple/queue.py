@@ -3,7 +3,7 @@ from os import name
 from typing import Any
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsAvailableMixin
-from core.constructs.output import  Cloud_Output_Str, OutputType
+from src.core.constructs.cloud_output import  Cloud_Output_Str, OutputType
 from core.utils import hasher
 
 from core.default.resources.simple.events import Event, event_model

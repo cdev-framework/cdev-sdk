@@ -3,7 +3,7 @@ from typing import Dict, TypeVar, Union, List, Optional, Set, Callable, Any
 from enum import Enum
 
 from core.constructs.models import ImmutableModel
-from core.constructs.output import OutputType, Cloud_Output_Str
+from src.core.constructs.cloud_output import OutputType, Cloud_Output_Str
 
 from ..utils.hasher import hash_list
     

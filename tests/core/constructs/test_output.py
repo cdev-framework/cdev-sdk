@@ -1,4 +1,4 @@
-from core.constructs.output import *
+from core.constructs.cloud_output import *
 
 # contents of test_append.py
 import pytest

@@ -1,6 +1,5 @@
 from typing import Dict, List
 from networkx.classes.reportviews import NodeView
-from rich.console import ConsoleOptions
 
 from core.utils import topological_helper
 

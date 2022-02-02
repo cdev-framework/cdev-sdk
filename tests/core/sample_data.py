@@ -5,7 +5,7 @@ from typing import Dict, Tuple, List, Union
 
 from core.constructs.components import Component, Component_Change_Type, ComponentModel, Component_Difference
 from core.constructs.resource import Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference, ResourceModel, Resource_Change_Type, ResourceReferenceModel
-from core.constructs.output import Cloud_Output, Cloud_Output_Str, OutputType, cloud_output_model
+from core.constructs.cloud_output import Cloud_Output, Cloud_Output_Str, OutputType, cloud_output_model
 from core.constructs.types import cdev_str_model
 
 class simple_component(Component):

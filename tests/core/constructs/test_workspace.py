@@ -1,6 +1,6 @@
 from typing import Dict
 from core.constructs.backend import Backend
-from core.constructs.output import cloud_output_model
+from core.constructs.cloud_output import cloud_output_model
 from core.constructs.workspace import Workspace, Workspace_State, Workspace_Info
 from core.constructs.resource import ResourceModel
 from core.constructs.components import ComponentModel
