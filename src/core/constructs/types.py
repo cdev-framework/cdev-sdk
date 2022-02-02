@@ -1,3 +1,5 @@
+"""Extra types to be used within the type hints of the framework
+"""
 from typing import  TypeVar
 
 from core.constructs.cloud_output import Cloud_Output_Bool, Cloud_Output_Int, Cloud_Output_Str, cloud_output_dynamic_model

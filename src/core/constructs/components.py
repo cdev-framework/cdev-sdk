@@ -1,3 +1,9 @@
+"""Structure that encapsulates a namespace of deploy resources
+
+Properties of a component:
+[]
+"""
+
 from enum import Enum
 from typing import Dict, Union, List, Optional, Set
 

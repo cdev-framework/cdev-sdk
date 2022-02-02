@@ -1,3 +1,5 @@
+"""Set of utilities for working with immutable data within the framework
+"""
 from collections.abc import Mapping
 from enum import Enum
 from pydantic import BaseModel
@@ -11,7 +13,7 @@ from pydantic.utils import (
 from pydantic.typing import (
     is_namedtuple,
 )
-from sortedcontainers.sorteddict import SortedDict
+
 from typing import  Any
 
 class frozendict(Mapping):

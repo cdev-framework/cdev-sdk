@@ -1,10 +1,14 @@
-from typing import Dict, Union, List, Optional, Set, Tuple
+"""Structure that represents a distinct namespace of cloud resources
+
+
+"""
+
+from typing import Dict, List, Optional, Tuple
 from .resource import Resource_Difference
 
 from pydantic import BaseModel
 
-from .components import ComponentModel, Component
-from .mapper import CloudMapper
+from .components import ComponentModel
 
 
 class Resource_State(BaseModel):

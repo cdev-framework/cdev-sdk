@@ -1,3 +1,7 @@
+"""Structure that deploys the resources onto the cloud 
+
+"""
+
 from typing import Dict, Union, List, Optional, Set, Callable
 
 from .resource import Resource_Difference

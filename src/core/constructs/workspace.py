@@ -1,9 +1,14 @@
+"""Construct that represents the collection of other primitives 
+
+
+"""
+
 from enum import Enum
 import inspect
 from numpy import diff
-from rich.console import Console, ConsoleOptions
+from rich.console import Console
 from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn, SpinnerColumn
-from typing import Callable, FrozenSet, List, Dict, Any, Tuple, TypeVar, Union
+from typing import Callable, List, Dict, Any, Tuple, TypeVar
 
 from networkx.algorithms.dag import topological_sort
 from networkx.classes.digraph import DiGraph

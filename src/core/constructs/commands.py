@@ -1,3 +1,17 @@
+"""Structures for user defined command system
+
+One of the goals of the Core Framework is to provide flexibility such that end users can easily
+create custom functionality for their projects. One way of providing this flexibility, is to provide
+an easy interface for executing code from within the context of the framework from the CLI. This 
+process is heavily modeled and inspired by the `Django Command Framework` 
+(https://github.com/django/django/blob/b0ed619303d2fb723330ca9efa3acf23d49f1d19/django/core/management/base.py).
+
+The main primitive is the `BaseCommand` class. By deriving from this class, developers can create code
+that is easily accessible and discoverable from the command line. To see how these class are discovered 
+and execute see our more in depth documentation on the command system at <link>
+
+"""
+
 import os
 from argparse import ArgumentParser, HelpFormatter
 import sys
@@ -6,8 +20,7 @@ from rich.console import Console
 
 
 class CdevCommandError(BaseException):
-    """
-    This is directly from Django, but I have to rename it for consistency sake since end users will have to raise it. Thank you Django.
+    """Base exception Class
 
     Exception class indicating a problem while executing a management
     command.
@@ -134,17 +147,8 @@ class ConsoleOutputWrapper(TextIOBase):
 
 
 class BaseCommand:
-    """
-    This command system is heavily influenced/inspired by the Django command system (https://github.com/django/django/blob/b0ed619303d2fb723330ca9efa3acf23d49f1d19/django/core/management/base.py).
-
-    Steps:
-    - A command is called with `cdev run <subcommand args>
-    - Manage searches the project for the command.. TODO add more detail
-    - When the command is found, we build it's arg parser
-    - Then the command is run via the `run_command`
-
-    Note that `run_command` and `command` can both throw `CdevCommandError` and that should be caught in `run_from_command_line` and delegate the output through cdev_output.
-
+    """Base Class for a user defined command
+    
     """
 
     # Help message for this command
@@ -173,8 +177,8 @@ class BaseCommand:
         return parser
 
     def add_arguments(self, parser: ArgumentParser):
-        """
-        Must be overridden by the subclasses
+        """Add the cli arguments for the command
+        
         """
         pass
 
@@ -197,24 +201,10 @@ class BaseCommand:
         args = cmd_options.pop("args", ())
 
         try:
-            self.run_command(*args, **cmd_options)
+            self.command(*args, **cmd_options)
         except CdevCommandError as e:
             self.stderr.write("%s: %s" % (e.__class__.__name__, e))
             sys.exit(e.returncode)
-
-    def run_command(self, *args, **kwargs):
-        """
-        Actually runs the command and sets up correct output and scaffolding. Also does any project checks. This should be the entry point to all commands not the actual `command` function.
-
-        **This method should not be overridden**
-        """
-
-        output = self.command(*args, **kwargs)
-
-        if output:
-            self.stdout.write(output)
-
-        return output
 
     def command(self, *args, **kwargs):
         """

@@ -1,3 +1,6 @@
+"""Structures for representing cloud resources and references within the framework
+
+"""
 from typing import Dict, TypeVar, Union, List, Optional, Set, Callable, Any
 
 from enum import Enum

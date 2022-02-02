@@ -1,6 +1,11 @@
-from networkx.classes.reportviews import NodeView
+"""Utilities for displaying data in a unified and formatted manner
+
+
+
+"""
+
 from rich.console import Console
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Union
 
 from rich.progress import Progress, TaskID  
 
@@ -133,7 +138,7 @@ class OutputManager():
         return OutputTask(self, task_id)
 
 
-    def create_output_description(self, node: NodeView) -> str:
+    def create_output_description(self, node: Union[Resource_Difference, Resource_Reference_Difference, Component_Difference]) -> str:
         if isinstance(node, Resource_Difference):
             if node.action_type == Resource_Change_Type.CREATE:
                 return f"[bold green]Creating:[/bold green][bold blue] {node.new_resource.name} ({node.new_resource.ruuid})[/bold blue]"
