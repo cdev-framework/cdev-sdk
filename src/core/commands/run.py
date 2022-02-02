@@ -1,6 +1,6 @@
 from ..constructs.commands import BaseCommand, BaseCommandContainer
 from ..constructs.workspace import Workspace
-from ..output.output_manager import OutputManager
+from ..constructs.output_manager import OutputManager
 
 
 def execute_run_cli(args):

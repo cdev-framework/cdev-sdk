@@ -2,7 +2,7 @@ from typing import Dict, Union, List, Optional, Set, Callable
 
 from .resource import Resource_Difference
 
-from core.output.output_manager import OutputTask
+from core.constructs.output_manager import OutputTask
 
 
 class CloudMapper:

@@ -1,6 +1,6 @@
 from typing import  TypeVar
 
-from src.core.constructs.cloud_output import Cloud_Output_Bool, Cloud_Output_Int, Cloud_Output_Str, cloud_output_dynamic_model
+from core.constructs.cloud_output import Cloud_Output_Bool, Cloud_Output_Int, Cloud_Output_Str, cloud_output_dynamic_model
 
 
 cdev_str = TypeVar('cdev_str', str, Cloud_Output_Str)

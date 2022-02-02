@@ -3,7 +3,7 @@ from typing import List, Tuple
 from ..constructs.workspace import Workspace, Workspace_State
 from ..constructs.components import Component_Difference
 from ..constructs.resource import Resource_Difference, Resource_Reference_Difference
-from ..output.output_manager import OutputManager
+from ..constructs.output_manager import OutputManager
 
 
 def execute_frontend_cli(args):

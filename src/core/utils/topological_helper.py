@@ -15,9 +15,9 @@ from typing import Callable, Dict, List, Set, Tuple
 from time import sleep
 
 from core.constructs.resource import Resource_Change_Type, Resource_Reference_Change_Type, ResourceModel, Resource_Difference, Resource_Reference_Difference
-from src.core.constructs.cloud_output import OutputType, cloud_output_model
+from core.constructs.cloud_output import OutputType, cloud_output_model
 from core.constructs.components import Component_Change_Type, Component_Difference
-from core.output.output_manager import OutputManager, OutputTask
+from core.constructs.output_manager import OutputManager, OutputTask
 from core.constructs.models import frozendict
 
 deliminator = '+'

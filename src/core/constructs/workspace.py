@@ -12,7 +12,7 @@ from networkx.classes.graph import NodeView
 from pydantic import BaseModel
 from core.constructs.models import frozendict
 
-from core.output.output_manager import OutputManager, OutputTask
+from core.constructs.output_manager import OutputManager, OutputTask
 
 from .resource import Resource_Change_Type, Resource_Difference, Resource_Reference_Difference, Resource_Reference_Change_Type, ResourceModel
 from .backend import Backend
@@ -25,7 +25,7 @@ from ..settings import SETTINGS as cdev_settings
 
 from ..utils.command_finder import find_specified_command, find_unspecified_command
 from ..utils import module_loader, topological_helper
-from src.core.constructs import cloud_output
+from core.constructs import cloud_output
 
 
 WORKSPACE_INFO_DIR = cdev_settings.get("ROOT_FOLDER_NAME")

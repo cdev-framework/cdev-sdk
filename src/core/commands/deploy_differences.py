@@ -1,4 +1,4 @@
-from core.output.output_manager import OutputManager
+from core.constructs.output_manager import OutputManager
 from ..constructs.workspace import Workspace, Workspace_State
 from rich.prompt import Confirm
 from .execute_frontend import execute_frontend

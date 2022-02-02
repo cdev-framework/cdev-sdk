@@ -1,7 +1,7 @@
 from typing import Dict, FrozenSet, List, Optional, Union
 
 from core.constructs.models import ImmutableModel
-from src.core.constructs.cloud_output import Cloud_Output_Str
+from core.constructs.cloud_output import Cloud_Output_Str
 from core.constructs.types import cdev_str_model, cdev_str
 from core.utils import hasher
 

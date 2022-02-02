@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any, FrozenSet, List
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsAvailableMixin
-from src.core.constructs.cloud_output import  Cloud_Output_Str, OutputType
+from core.constructs.cloud_output import  Cloud_Output_Str, OutputType
 from core.utils import hasher
 from core.constructs.models import ImmutableModel
 

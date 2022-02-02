@@ -6,7 +6,7 @@ from time import sleep
 from typing import Callable, Dict, List, Tuple
 
 
-from core.output.output_manager import OutputManager, OutputTask
+from core.constructs.output_manager import OutputManager, OutputTask
 
 
 from tests.core.sample_data import simple_components, simple_differences_for_topo_sort, simple_change_dag

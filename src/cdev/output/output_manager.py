@@ -1,7 +1,7 @@
 from rich import print
 from typing import List
 
-from core.output.output_manager import OutputManager
+from core.constructs.output_manager import OutputManager
 
 from ..constructs.project import Project
 

@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, List, FrozenSet
 from core.constructs.models import ImmutableModel
-from src.core.constructs.cloud_output import Cloud_Output_Mapping, Cloud_Output_Sequence, Cloud_Output_Str, OutputType
+from core.constructs.cloud_output import Cloud_Output_Mapping, Cloud_Output_Sequence, Cloud_Output_Str, OutputType
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
 from core.constructs.types import cdev_str_model

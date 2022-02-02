@@ -1,7 +1,7 @@
 from typing import Callable, Dict, List, Set
 
 
-from core.output.output_manager import OutputTask
+from core.constructs.output_manager import OutputTask
 
 from ..constructs.resource import Resource_Change_Type, Resource_Reference_Difference, Resource_Difference
 from ..constructs.mapper import CloudMapper

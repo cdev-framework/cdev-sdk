@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any, Optional
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
-from src.core.constructs.cloud_output import  Cloud_Output_Str
+from core.constructs.cloud_output import  Cloud_Output_Str
 from core.utils import hasher
 
 RUUID = "cdev::simple::staticsite"

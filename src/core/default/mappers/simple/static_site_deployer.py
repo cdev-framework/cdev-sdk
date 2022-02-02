@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
 from core.default.resources.simple import static_site
-from core.output.output_manager import OutputTask
+from core.constructs.output_manager import OutputTask
 from core.utils import hasher
 
 

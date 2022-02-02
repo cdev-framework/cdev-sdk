@@ -3,7 +3,7 @@ from uuid import uuid4
 from core.constructs.models import frozendict
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
-from core.output.output_manager import OutputTask
+from core.constructs.output_manager import OutputTask
 from core.default.resources.simple import api as simple_api
 
 from .. import aws_client 
