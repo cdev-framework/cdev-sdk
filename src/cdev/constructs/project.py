@@ -168,7 +168,7 @@ class Project:
         """
         raise NotImplementedError
 
-    def create_environment(self, environment_name: str):
+    def create_environment(self, environment_name: str, settings_files: List[str]):
         """
         Create a new environment for this project.
         """

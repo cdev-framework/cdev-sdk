@@ -9,14 +9,14 @@ from rich.logging import RichHandler
 
 from rich.traceback import install
 
-from typing import Set
+from typing import List, Set
 
 from pydantic import (
     BaseModel,
     BaseSettings,
 )
 
-from core.utils.module_loader import import_class
+from core.utils.module_loader import import_class, import_module
 
 # install(show_locals=False)
 
@@ -164,7 +164,7 @@ SETTINGS["LOGGING_INFO"] = {
 class Settings_Info(BaseModel):
     base_class: str
     env_file: Optional[str]
-    user_setting_module: Optional[str]
+    user_setting_module: Optional[List[str]]
     secret_dir: Optional[str]
     
 
@@ -200,9 +200,10 @@ class Settings(BaseSettings):
 
     DEPLOYMENT_PLATFORM = "x86"
 
+
     class Config:
-        env_prefix = 'CDEV_' 
-        arbitrary_types_allowed = True
+        env_prefix = 'CDEV_'
+        validate_assignment = True
 
 
 
@@ -216,11 +217,28 @@ def initialize_settings(info: Settings_Info) -> Settings:
 
     if info.secret_dir:
         kw_args['_secrets_dir'] = info.secret_dir
-
+        
     if info.env_file:
         kw_args['_env_file'] = info.env_file
 
-    base_setting_obj = base_settings_class(**kw_args)
+
+    t = {k:os.path.join(os.getcwd(),v) for k,v in kw_args.items()}
+    
+    base_setting_obj = base_settings_class(**t)
+
+    if info.user_setting_module:
+        for settings_module in info.user_setting_module:
+            module_name = settings_module[:-3].replace('/',".")
+
+            module = import_module(module_name)
+
+            for setting in dir(module):
+                if setting.isupper():
+                    setting_value = getattr(module, setting)
+
+                    setattr(base_setting_obj, setting, setting_value)
+
+       
 
     return base_setting_obj
 

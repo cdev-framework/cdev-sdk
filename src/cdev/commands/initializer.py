@@ -2,7 +2,7 @@ import json
 import os
 from pydantic.types import DirectoryPath
 import shutil
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
 
 from rich.prompt import Prompt
 from cdev.constructs.environment import environment_info
@@ -21,6 +21,7 @@ INTERMEDIATE_FOLDER = 'intermediate'
 CDEV_FOLDER = ".cdev"
 CDEV_PROJECT_FILE = "cdev_project.json"
 CENTRAL_STATE_FILE = "central_state.json"
+SETTINGS_FOLDER_NAME = 'settings'
 DEFAULT_ENVIRONMENTS = ["prod", "stage", "dev"]
 TEMPLATE_LOCATIONS = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'project_templates')
 
@@ -34,7 +35,6 @@ AVAILABLE_TEMPLATES = [
 
 def create_project_cli(args):
 
-    print(args)
     if args.template:
         template_name = args.template
 
@@ -82,7 +82,11 @@ def create_project(project_name: str, base_directory: DirectoryPath = None):
         raise Exception("Project Already Created")
 
 
-    _create_folder_structure(base_directory)
+    _create_folder_structure(base_directory, DEFAULT_ENVIRONMENTS)
+
+    base_settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
+    
+
 
     backend_directory = os.path.join(base_directory, CDEV_FOLDER, STATE_FOLDER)
     backend_configuration = Local_Backend_Configuration(
@@ -107,15 +111,34 @@ def create_project(project_name: str, base_directory: DirectoryPath = None):
 
     new_project.initialize_project()
 
+    # TODO restructure entire creating process so that this is more explicit
+    base_dir = os.getcwd()
+
     for environment in DEFAULT_ENVIRONMENTS:
-        new_project.create_environment(environment)
+
+        environment_settings =  {
+            "user_setting_module": [
+                os.path.relpath(os.path.join(base_settings_folder, f'base_settings.py'), start=base_dir),
+                os.path.relpath(os.path.join(base_settings_folder, f'{environment}_settings.py'), start=base_dir)
+            ],
+            "secret_dir":  os.path.relpath(os.path.join(base_settings_folder, f'{environment}_secrets'), start=base_dir),
+        }
+
+        new_project.create_environment(environment, environment_settings)
+    
 
     new_project.set_state(Project_State.UNINITIALIZED)
 
     new_project.set_current_environment(DEFAULT_ENVIRONMENTS[-1])
 
 
-def _create_folder_structure(base_directory: DirectoryPath):
+def _create_folder_structure(base_directory: DirectoryPath, extra_settings: List[str]):
+    """Create a skeleton file structure needed to make a project.
+
+    Args:
+        base_directory (DirectoryPath): [description]
+        extra_settings (List[str]): [description]
+    """
 
     if not os.path.isdir(os.path.join(base_directory, CDEV_FOLDER)):
         os.mkdir(os.path.join(base_directory, CDEV_FOLDER))
@@ -125,6 +148,24 @@ def _create_folder_structure(base_directory: DirectoryPath):
 
     if not os.path.isdir(os.path.join(base_directory, CDEV_FOLDER, INTERMEDIATE_FOLDER)):
         os.mkdir(os.path.join(base_directory, CDEV_FOLDER, INTERMEDIATE_FOLDER))
+
+
+    base_settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
+
+    if not os.path.isdir(base_settings_folder):
+        os.mkdir(base_settings_folder)
+
+    with open(os.path.join( base_settings_folder, f'base_settings.py'), 'w'):
+        pass
+
+    with open(os.path.join( base_settings_folder, f'__init__.py'), 'w'):
+        pass
+    
+    for environment in extra_settings:
+        with open( os.path.join( base_settings_folder, f'{environment}_settings.py'), 'w' ):
+            pass
+
+        os.mkdir(os.path.join(base_settings_folder, f'{environment}_secrets'))
 
 
 def load_project(args):

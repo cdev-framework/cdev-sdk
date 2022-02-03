@@ -113,7 +113,7 @@ class local_project(Project):
     # parent class. 
 
     @wrap_phase(Project_State.INITIALIZED)
-    def create_environment(self, environment_name: str):
+    def create_environment(self, environment_name: str, settings_files: Dict[str,str] = None):
         self._load_state()
         resource_state_id = self._backend.create_resource_state(environment_name)
 
@@ -122,8 +122,13 @@ class local_project(Project):
         workspace_config["resource_state_uuid"] = resource_state_id
         workspace_config["initialization_module"] = "cdev_project"
 
+            
         settings = Settings_Info(
-            base_class= "core.constructs.settings.Settings_Info"
+            base_class = "core.constructs.settings.Settings"
+        ) if not settings_files else Settings_Info(
+            base_class = "core.constructs.settings.Settings",
+            user_setting_module=settings_files.get('user_setting_module'),
+            secret_dir=settings_files.get('secret_dir'),
         )
 
         self._central_state.environments.append(
