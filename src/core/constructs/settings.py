@@ -1,7 +1,6 @@
 """
 Basic available settings 
 """
-
 import os
 
 from typing import Any, Optional
@@ -18,148 +17,6 @@ from pydantic import (
 
 from core.utils.module_loader import import_class, import_module
 
-# install(show_locals=False)
-
-SETTINGS = {}
-
-
-SETTINGS["OUTPUT_PLAIN"] = False
-SETTINGS["SHOW_LOGS"] = True
-
-SETTINGS["CONSOLE_LOG_LEVEL"] = "ERROR"
-SETTINGS["CAPTURE_OUTPUT"] = False
-
-
-SETTINGS["PULL_INCOMPATIBLE_LIBRARIES"] = True
-
-SETTINGS["DEPLOYMENT_PLATFORM"] = "arm64"
-SETTINGS["DEPLOYMENT_PYTHON_VERSION"] = "py38"
-
-
-SETTINGS["LOGGING_INFO"] = {
-    "version": 1,
-    "formatters": {
-        "jsonFormatter": {
-            "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
-            "format": "%(asctime)s %(name)s %(levelname)s %(message)s",
-        },
-        "simpleFormatter": {
-            "format": "%(asctime)s %(name)s - %(levelname)s: %(message)s"
-        },
-        "richFormatter": {"format": "%(name)s - %(message)s"},
-    },
-    "handlers": {
-        "fileHandler": {
-            "class": "logging.FileHandler",
-            "level": "DEBUG",
-            "formatter": "jsonFormatter",
-            "filename": ".cdev/logs/userlogs",
-        },
-        "simpleHandler": {
-            "class": "logging.StreamHandler",
-            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
-            "formatter": "simpleFormatter",
-        },
-        "richHandler": {
-            "class": "rich.logging.RichHandler",
-            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
-            "formatter": "richFormatter",
-            "markup": True,
-            "show_path": False,
-            "show_time": False,
-            "rich_tracebacks": True,
-        },
-    },
-    "loggers": {
-        "cli": {"level": "DEBUG", "handlers": ["fileHandler"], "propagate": False},
-        "commands": {"level": "DEBUG", "handlers": ["fileHandler"], "propagate": False},
-        "frontend": {"level": "DEBUG", "handlers": ["fileHandler"], "propagate": False},
-        "backend": {"level": "DEBUG", "handlers": ["fileHandler"], "propagate": False},
-        "mapper": {"level": "DEBUG", "handlers": ["fileHandler"], "propagate": False},
-        "resources": {
-            "level": "DEBUG",
-            "handlers": ["fileHandler"],
-            "propagate": False,
-        },
-        "utils": {"level": "DEBUG", "handlers": ["fileHandler"], "propagate": False},
-        "cli_rich": {
-            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
-            "handlers": ["richHandler"],
-            "propagate": False,
-        },
-        "commands_rich": {
-            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
-            "handlers": ["richHandler"],
-            "propagate": False,
-        },
-        "frontend_rich": {
-            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
-            "handlers": ["richHandler"],
-            "propagate": False,
-        },
-        "backend_rich": {
-            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
-            "handlers": ["richHandler"],
-            "propagate": False,
-        },
-        "mapper_rich": {
-            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
-            "handlers": ["richHandler"],
-            "propagate": False,
-        },
-        "resources_rich": {
-            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
-            "handlers": ["richHandler"],
-            "propagate": False,
-        },
-        "utils_rich": {
-            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
-            "handlers": ["simpleHandler"],
-            "propagate": False,
-        },
-        "cli_simple": {
-            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
-            "handlers": ["simpleHandler"],
-            "propagate": False,
-        },
-        "commands_simple": {
-            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
-            "handlers": ["simpleHandler"],
-            "propagate": False,
-        },
-        "frontend_simple": {
-            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
-            "handlers": ["simpleHandler"],
-            "propagate": False,
-        },
-        "backend_simple": {
-            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
-            "handlers": ["simpleHandler"],
-            "propagate": False,
-        },
-        "mapper_simple": {
-            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
-            "handlers": ["simpleHandler"],
-            "propagate": False,
-        },
-        "resources_simple": {
-            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
-            "handlers": ["simpleHandler"],
-            "propagate": False,
-        },
-        "utils_simple": {
-            "level": SETTINGS["CONSOLE_LOG_LEVEL"],
-            "handlers": ["simpleHandler"],
-            "propagate": False,
-        },
-    },
-    "root": {"level": "ERROR", "handlers": ["simpleHandler"]},
-    "disable_existing_loggers": False,
-}
-
-
-
-
 
 class Settings_Info(BaseModel):
     base_class: str
@@ -167,9 +24,6 @@ class Settings_Info(BaseModel):
     user_setting_module: Optional[List[str]]
     secret_dir: Optional[str]
     
-
-
-
 
 class Settings(BaseSettings):
 
@@ -222,6 +76,7 @@ def initialize_settings(info: Settings_Info) -> Settings:
         kw_args['_env_file'] = info.env_file
 
 
+    # All the settings are stored as relative paths so they need to convert to full paths
     t = {k:os.path.join(os.getcwd(),v) for k,v in kw_args.items()}
     
     base_setting_obj = base_settings_class(**t)
