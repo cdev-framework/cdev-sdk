@@ -2,19 +2,17 @@ import os
 from typing import List, Optional, Set
 
 from pydantic.types import FilePath
-from pydantic import BaseModel
+from pydantic import BaseModel, DirectoryPath
 from enum import Enum
 from pathlib import PosixPath, WindowsPath
 
-from core.settings import SETTINGS as cdev_settings
-from core.utils import paths as cdev_paths, hasher as cdev_hasher
+from core.utils import paths as core_paths, hasher as cdev_hasher
 
 import sys
 from parsley import makeGrammar
 
 from rich import print
 
-INTERMEDIATE_FOLDER = cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION")
 
 
 def get_lines_from_file_list(file_list, function_info) -> List[str]:
@@ -62,8 +60,8 @@ def _compress_lines(original_lines):
     return rv
 
 
-def get_parsed_path(original_path, function_name, prefix=None):
-    split_path = cdev_paths.get_relative_to_workspace_path(original_path).split("/")
+def get_parsed_path(original_path, function_name, final_base_directory: DirectoryPath, prefix=None):
+    split_path = core_paths.get_relative_to_workspace_path(original_path).split("/")
     
     # the last item in the path is .py file name... change the  .py to _py so it works as a dir
     final_file_name = split_path[-1].split(".")[0] + "_" + function_name + ".py"
@@ -77,7 +75,7 @@ def get_parsed_path(original_path, function_name, prefix=None):
     if prefix:
         split_path.insert(0, prefix)
 
-    final_file_dir = cdev_paths.create_path(INTERMEDIATE_FOLDER, split_path[:-1])
+    final_file_dir = core_paths.create_path(final_base_directory, split_path[:-1])
 
 
     return os.path.join(final_file_dir, final_file_name)

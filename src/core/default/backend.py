@@ -8,6 +8,8 @@ from pydantic.types import DirectoryPath, FilePath
 from typing import Dict, List, Any, Tuple
 import uuid
 
+from core.constructs.workspace import Workspace
+
 
 from ..constructs.backend import Backend_Configuration, Backend
 from ..constructs.backend_exceptions import *
@@ -26,8 +28,7 @@ from ..constructs.resource import (
     ResourceReferenceModel,
 )
 from ..constructs.resource_state import Resource_State
-from ..settings import SETTINGS as cdev_settings
-from ..utils import file_manager, hasher as cdev_hasher, logger
+from ..utils import file_manager, hasher as cdev_hasher
 
 
 class LocalBackendError(BackendError):
@@ -42,10 +43,6 @@ class InvalidResourceStateData(LocalBackendError):
     pass
 
 
-DEFAULT_BASE = os.path.join(cdev_settings.get("ROOT_FOLDER_NAME"), "state")
-DEFAULT_CENTRAL_STATE_FILE = os.path.join(DEFAULT_BASE, "local_state.json")
-
-log = logger.get_cdev_logger(__name__)
 
 class SetEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -98,7 +95,7 @@ class LocalBackend(Backend):
     # Structurally, this implementation will have a central json that can be used as an index into more precise json files. For example, each resource state will be its own json file, but
     # the central file will keep track of each one.
     def __init__(
-        self, base_folder: DirectoryPath = None, central_state_file: FilePath = None
+        self, base_folder: DirectoryPath, central_state_file: FilePath = None
     ) -> None:
         """
         Implementation of a Backend using locally stored json files as the peristent storage medium. This backend should only be used for small project as it does not provide any mechanisms
@@ -112,7 +109,11 @@ class LocalBackend(Backend):
             central_state_file (FilePath): Path to the central state file. Defaults to cdev setting if not provided.
         """
 
-        self.base_folder = base_folder if base_folder else DEFAULT_BASE
+        
+        DEFAULT_CENTRAL_STATE_FILE = os.path.join(base_folder, "local_state.json")
+
+
+        self.base_folder = base_folder
         self.central_state_file = (
             central_state_file if central_state_file else DEFAULT_CENTRAL_STATE_FILE
         )
@@ -987,9 +988,6 @@ def _create_resource_diffs(
             and resource.name in old_name_to_resource
         ):
 
-            log.info(
-                f"same resource diff {old_hash_to_resource.get(resource.hash).name}"
-            )
             # POP the seen previous resources as we go so only remaining resources will be deletes
             old_resource.remove(old_hash_to_resource.get(resource.hash))
             continue
@@ -998,9 +996,7 @@ def _create_resource_diffs(
             resource.hash in old_hash_to_resource
             and not resource.name in old_name_to_resource
         ):
-            log.info(
-                f"update resource diff {old_hash_to_resource.get(resource.hash)} name {old_hash_to_resource.get(resource.hash).name} -> {resource.name}"
-            )
+
             rv.append(
                 Resource_Difference(
                     **{
@@ -1018,9 +1014,7 @@ def _create_resource_diffs(
             not resource.hash in old_hash_to_resource
             and resource.name in old_name_to_resource
         ):
-            log.info(
-                f"update resource diff {old_name_to_resource.get(resource.name)} hash {old_name_to_resource.get(resource.name).hash} -> {resource.hash}"
-            )
+
             rv.append(
                 Resource_Difference(
                     **{
@@ -1038,7 +1032,7 @@ def _create_resource_diffs(
             not resource.hash in old_hash_to_resource
             and not resource.name in old_name_to_resource
         ):
-            log.info(f"create resource diff {resource}")
+            
             rv.append(
                 Resource_Difference(
                     **{
@@ -1052,7 +1046,7 @@ def _create_resource_diffs(
 
     if old_resource:
         for resource in old_resource:
-            log.info(f"delete resource diff {resource}")
+           
             rv.append(
                 Resource_Difference(
                     **{
@@ -1096,7 +1090,7 @@ def _create_reference_diffs(
             )
 
     for old_reference in old_references:
-        log.info(f"delete resource diff {old_reference}")
+        
         rv.append(
             Resource_Reference_Difference(
                 Resource_Reference_Change_Type.DELETE, originating_component_name, old_reference
@@ -1137,7 +1131,7 @@ def _create_differences(
                 and not component.name in previous_name_to_component
             ):
                 # Create component and all resources and all references
-                log.info(f"CREATE COMPONENT -> {component.name}")
+            
                 component_diffs.append(
                     Component_Difference(
                         Component_Change_Type.CREATE, new_name=component.name

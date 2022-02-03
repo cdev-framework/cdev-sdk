@@ -3,9 +3,6 @@ from typing import Dict, List
 from core.default.resources.simple import xlambda as simple_lambda
 from core.default.resources.simple import api as simple_api
 
-
-from core.settings import SETTINGS
-
 from .. import aws_client
 
 
@@ -46,6 +43,9 @@ def _handle_adding_api_event(event: simple_api.route_event_model, cloud_function
 
     aws_client.run_client_function("apigatewayv2", "update_route", update_info)
 
+    aws_region = 'us-east-1'
+    aws_account = '1234567'
+
     # Add permission to lambda to allow apigateway to invoke this function
     stmt_id = f"stmt-{route_id}"
     permission_model_args = {
@@ -53,7 +53,7 @@ def _handle_adding_api_event(event: simple_api.route_event_model, cloud_function
         "Action": "lambda:InvokeFunction",
         "Principal": "apigateway.amazonaws.com",
         "StatementId": stmt_id,
-        "SourceArn": f"arn:aws:execute-api:{SETTINGS.get('AWS_REGION')}:{SETTINGS['AWS_ACCOUNT']}:{api_id}/*/{event.verb}{event.path}",
+        "SourceArn": f"arn:aws:execute-api:{aws_region}:{aws_account}:{api_id}/*/{event.verb}{event.path}",
         
     }
 

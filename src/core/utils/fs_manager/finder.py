@@ -9,6 +9,7 @@ from core.constructs.resource import (
     ResourceReferenceModel,
     Resource_Reference,
 )
+from core.constructs.workspace import Workspace
 
 from core.default.resources.simple.xlambda import (
     SimpleFunction,
@@ -26,10 +27,6 @@ from . import writer
 from . import package_mananger as cdev_package_manager
 
 log = logger.get_cdev_logger(__name__)
-
-
-ANNOTATION_LABEL = "lambda_function_annotation"
-
 
 def parse_folder(
     folder_path, prefix=None
@@ -153,11 +150,15 @@ def _parse_serverless_functions(
     )
 
     rv = []
+    artifact_path = Workspace.instance().settings.BASE_PATH
+    archive_path = Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION
     for parsed_function in parsed_file_info.parsed_functions:
 
         cleaned_name = _clean_function_name(parsed_function.name)
         
-        intermediate_path = fs_utils.get_parsed_path(filepath, cleaned_name)
+
+
+        intermediate_path = fs_utils.get_parsed_path(filepath, cleaned_name, artifact_path)
 
         needed_module_information = cdev_package_manager.get_top_level_module_info(
             parsed_function.imported_packages, filepath
@@ -172,7 +173,8 @@ def _parse_serverless_functions(
             filepath,
             parsed_function.get_line_numbers_serializeable(),
             intermediate_path,
-            needed_module_information,
+            archive_path,
+            pkgs=needed_module_information,
         )
 
         handler_path = base_handler_path + "." + parsed_function.name

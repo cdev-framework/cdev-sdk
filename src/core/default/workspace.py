@@ -1,9 +1,5 @@
-from enum import Enum
-import importlib
-import inspect
 import json
 import os
-import sys
 from typing import Callable, List, Dict, Optional, Any, Tuple, Union
 from pydantic.main import BaseModel
 
@@ -20,8 +16,6 @@ from ..constructs.workspace import (
     wrap_phase,
 )
 
-from ..settings import SETTINGS as cdev_settings
-
 from ..utils import file_manager, module_loader
 
 
@@ -29,6 +23,8 @@ DEFAULT_COMMAND_LOCATIONS = [
     'core.resources.simple'
 ]
 
+ROOT_FOLDER_NAME = ".cdev"
+WORKSPACE_FILE_NAME = "workspace_info.json"
 
 class local_workspace_configuration(BaseModel):
     initialization_module: str
@@ -219,12 +215,12 @@ class local_workspace_manager(WorkspaceManager):
     ) -> None:
         self.base_dir = base_dir
         self.workspace_dir = (
-            workspace_dir if workspace_dir else cdev_settings.get("ROOT_FOLDER_NAME")
+            workspace_dir if workspace_dir else ROOT_FOLDER_NAME
         )
         self.workspace_filename = (
             workspace_filename
             if workspace_filename
-            else cdev_settings.get("WORKSPACE_FILE_NAME")
+            else WORKSPACE_FILE_NAME
         )
 
     def create_new_workspace(self, workspace_info: Workspace_Info):

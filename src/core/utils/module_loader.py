@@ -7,6 +7,7 @@ import importlib
 from types import ModuleType
 import sys
 from typing import TextIO
+import inspect
 
 
 def import_module(module_name: str, denote_output: bool = False) -> ModuleType:
@@ -45,6 +46,33 @@ def import_module(module_name: str, denote_output: bool = False) -> ModuleType:
 
     return rv
 
+
+def import_class(module_name: str, class_name: str) -> type:
+    """Helper function for loading a specific class from a module
+
+    Import the given module name and then search through all the objects in the module
+    for a class with a matching name. Return the `class` if found.
+
+    Args:
+        module_name (str): module name
+        class_name (str): class name
+
+    Returns:
+        type: the class
+    """
+    mod = import_module(module_name)
+
+    for item_name in dir(mod):
+
+        if not item_name == class_name:
+            continue
+
+        potential_obj = getattr(mod, item_name)
+        if inspect.isclass(potential_obj):
+            return potential_obj
+
+        
+    raise Exception
 
 class override_sys_out(TextIO):
     def write(s: str):

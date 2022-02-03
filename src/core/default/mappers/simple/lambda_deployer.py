@@ -28,7 +28,6 @@ from .event_deployer import (
     EVENT_TO_HANDLERS
 )
 
-from core.settings import SETTINGS
 import os
 
 
@@ -46,7 +45,7 @@ AssumeRolePolicyDocumentJSON = """{
 }"""
 
 
-BUCKET = SETTINGS.get("S3_ARTIFACTS_BUCKET")
+BUCKET = "cdev-demo-project-artifacts"
 
 ###########################
 ###### Main Handlers

@@ -2,7 +2,6 @@ from core.constructs.workspace import Workspace, Workspace_State, initialize_wor
 
 
 from ..constructs.environment import Environment, environment_info
-from core.constructs.workspace import load_and_initialize_workspace
 from core.default.cloudmapper import DefaultMapper
 
 class local_environment(Environment):
@@ -28,7 +27,7 @@ class local_environment(Environment):
 
         ws.add_mapper(DefaultMapper())
 
-        initialize_workspace(ws, self.workspace_info.config)
+        initialize_workspace(ws, self.workspace_info.settings_info ,self.workspace_info.config)
 
         ws.set_state(Workspace_State.INITIALIZED)
 

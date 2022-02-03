@@ -5,12 +5,11 @@ from typing import Any, Dict, List, Optional, TypeVar, Callable
 
 from pydantic import BaseModel
 from pydantic.types import DirectoryPath
-from core.constructs.backend import Backend_Configuration
 
+from core.constructs.backend import Backend_Configuration
 from core.constructs.mapper import CloudMapper
 from core.constructs.components import Component
-from core.constructs.workspace import Workspace_State
-
+from core.constructs.types import F
 
 from .environment import environment_info, Environment
 
@@ -22,7 +21,6 @@ class project_info(BaseModel):
     environments: List[environment_info]
     backend_info: Backend_Configuration
     current_environment: Optional[str]
-    settings: Optional[Dict]
 
     def __init__(
         __pydantic_self__,
@@ -30,7 +28,7 @@ class project_info(BaseModel):
         environments: List[environment_info],
         backend_info: Backend_Configuration,
         current_environment: str = None,
-        settings: Dict = {},
+       
     ) -> None:
         """
         Represents the data about a cdev project object:
@@ -39,8 +37,7 @@ class project_info(BaseModel):
             project_name (str): Name of the project
             environments (List[environment_info]): The environments that are currently part of the project
             current_environment (str): The current environment
-            settings (Dict): Any setting overrides for the project
-
+            
         """
 
         super().__init__(
@@ -49,7 +46,6 @@ class project_info(BaseModel):
                 "environments": environments,
                 "backend_info": backend_info,
                 "current_environment": current_environment,
-                "settings": settings,
             }
         )
 
@@ -59,8 +55,6 @@ class Project_State(str, Enum):
     INITIALIZING = "INITIALIZING"
     INITIALIZED = "INITIALIZED"
 
-
-F = TypeVar("F", bound=Callable[..., Any])
 
 
 def wrap_phase(phase: Project_State) -> Callable[[F], F]:

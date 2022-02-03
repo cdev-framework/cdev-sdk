@@ -8,8 +8,7 @@ from typing import List, Dict, Tuple, Set
 from zipfile import ZipFile
 
 
-from core.settings import SETTINGS as cdev_settings
-from core.utils import paths as cdev_paths, hasher as cdev_hasher
+from core.utils import paths as core_paths, hasher as cdev_hasher
 from core.default.resources.simple.xlambda import  DependencyLayer
 
 
@@ -18,12 +17,12 @@ from .utils import PackageTypes, ModulePackagingInfo, ExternalDependencyWriteInf
 from .external_dependencies_index import weighted_dependency_graph, compute_index
 
 
-INTERMEDIATE_FOLDER = cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION")
+
 EXCLUDE_SUBDIRS = {"__pycache__"}
 
-CACHE_LOCATION = os.path.join(
-    cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), "writercache.json"
-)
+#CACHE_LOCATION = os.path.join(
+#    cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), "writercache.json"
+#)
 
 
 class LayerWriterCache:
@@ -31,14 +30,13 @@ class LayerWriterCache:
     Naive cache implentation for writing zip files for the lambda layers.
     """
 
-    def __init__(self) -> None:
-
-        if not os.path.isfile(CACHE_LOCATION):
+    def __init__(self, cache_location: str) -> None:
+        self._cache_location = cache_location
+        if not os.path.isfile(self._cache_location):
             self._cache = {}
 
         else:
-
-            with open(CACHE_LOCATION) as fh:
+            with open(self._cache_location) as fh:
                 self._cache = json.load(fh)
 
     def find_item(self, id: str):
@@ -47,17 +45,18 @@ class LayerWriterCache:
     def add_item(self, id: str, item: json):
         self._cache[id] = item
 
-        with open(CACHE_LOCATION, "w") as fh:
+        with open(self._cache_location , "w") as fh:
             json.dump(self._cache, fh, indent=4)
 
 
-LAYER_CACHE = LayerWriterCache()
+#LAYER_CACHE = LayerWriterCache()
 
 
 def create_full_deployment_package(
     original_path: FilePath,
     needed_lines: List[int],
     parsed_path: str,
+    base_archive_directory: DirectoryPath,
     pkgs: Dict[str, ModulePackagingInfo] = None,
     available_layers: int = 2,
 ):
@@ -69,6 +68,7 @@ def create_full_deployment_package(
         original_path (FilePath): The original file location that this function is from
         needed_lines (List[int]): The list of line numbers needed from the original function
         parsed_path (str): The final location of the parsed file
+        base_archive_directory (DirectoryPath): Base path to write final archives
         pkgs (Dict[str, ModulePackagingInfo]): The list of package info for the function
         available_layers (int): The number of layers available to use
 
@@ -92,7 +92,7 @@ def create_full_deployment_package(
     handler_files.extend(extra_handler_path_files)
 
     # Start from the base intermediate folder location then replace '/' with '.' and final remove the '.py' from the end
-    base_handler_path = cdev_paths.get_relative_to_intermediate_path(
+    base_handler_path = core_paths.get_relative_to_intermediate_path(
         parsed_path
     ).replace("/", ".")[:-3]
 
@@ -115,11 +115,9 @@ def create_full_deployment_package(
             ) = _create_layers_from_referenced_modules(
                 layer_dependencies, available_layers
             )
-            print(f"single dependency layers -> {single_dependency_layers}")
-            print(f"composite layers -> {composite_layer}")
 
             archive_dir = os.path.join(
-                INTERMEDIATE_FOLDER, os.path.dirname(parsed_path)
+                base_archive_directory, os.path.dirname(parsed_path)
             )
             dependencies_info: List[DependencyLayer] = []
             # dependencies_info = _make_layers_zips(archive_dir, filename[:-3], layer_dependencies )
@@ -140,12 +138,13 @@ def create_full_deployment_package(
             # All the local copied files are added to the set of files needed to be include in the .zip file uploaded as the handler
             # Add their copied locations into the handler_files var so that they are written to the final handler archive
             local_dependencies_intermediate_locations = _copy_local_dependencies(
-                handler_dependencies
+                handler_dependencies,
+                base_archive_directory
             )
             handler_files.extend(local_dependencies_intermediate_locations)
 
     # Create the actual handler archive by zipping the needed files
-    archive_hash = _make_intermediate_handler_zip(zip_archive_location, handler_files)
+    archive_hash = _make_intermediate_handler_zip(zip_archive_location, handler_files, base_archive_directory)
 
     return (zip_archive_location, archive_hash, base_handler_path, dependencies_info)
 
@@ -194,7 +193,7 @@ def _create_package_dependencies_info(
             directly_referenced_module_write_info.add(pkg)
 
         elif pkg.type == PackageTypes.LOCALPACKAGE:
-            if cdev_paths.is_in_workspace(pkg.fp):
+            if core_paths.is_in_workspace(pkg.fp):
                 if os.path.isdir(pkg.fp):
                     # If the fp is a dir that means we need to include the entire directory
                     for dir, _, files in os.walk(pkg.fp):
@@ -352,9 +351,9 @@ def _find_packaging_files_handler(original_path: FilePath) -> List[FilePath]:
         needed_files (List[Filepath]): The list of files that need to be included with the handler
     """
     path_from_project_dir = os.path.dirname(
-        cdev_paths.get_relative_to_workspace_path(original_path)
+        core_paths.get_relative_to_workspace_path(original_path)
     ).split("/")
-    intermediate_location = cdev_paths.get_workspace_path()
+    intermediate_location = core_paths.get_workspace_path()
     rv = []
 
     while path_from_project_dir:
@@ -364,8 +363,8 @@ def _find_packaging_files_handler(original_path: FilePath) -> List[FilePath]:
         )
 
         file_loc = os.path.join(intermediate_location, "__init__.py")
-        intermediate_file_location = cdev_paths.get_full_path_from_intermediate_base(
-            cdev_paths.get_relative_to_workspace_path(file_loc)
+        intermediate_file_location = core_paths.get_full_path_from_intermediate_base(
+            core_paths.get_relative_to_workspace_path(file_loc)
         )
 
         if os.path.isfile(file_loc):
@@ -417,28 +416,29 @@ def _clean_lines(lines: List[str]) -> List[str]:
     return rv
 
 
-def _copy_local_dependencies(dependencies: List[FilePath]) -> List[FilePath]:
+def _copy_local_dependencies(dependencies: List[FilePath], base_final_dir: DirectoryPath) -> List[FilePath]:
     """
     Copy the local dependency files from their original location into the intermediate folder with the actual handler.
     This step makes the archiving step simplier since all the need files are in the intermediate folder.
 
     Args:
         file_locations (List[str]): list of file locations that need to be copied
+        base_final_dir (DirectoryPath): base path for copied files
 
     Returns:
         copied_file_locations (List[str]): list of locations of the copied files
     """
     rv = []
     for dependency in dependencies:
-        intermediate_location = cdev_paths.get_full_path_from_intermediate_base(
-            cdev_paths.get_relative_to_project_path(dependency)
+        intermediate_location = core_paths.get_full_path_from_intermediate_base(
+            core_paths.get_relative_to_project_path(dependency)
         )
 
-        relative_to_intermediate = cdev_paths.get_relative_to_intermediate_path(
+        relative_to_intermediate = core_paths.get_relative_to_intermediate_path(
             intermediate_location
         ).split("/")[:-1]
 
-        cdev_paths.create_path(INTERMEDIATE_FOLDER, relative_to_intermediate)
+        core_paths.create_path(base_final_dir, relative_to_intermediate)
 
         if os.path.isdir(dependency):
             if os.path.isdir(intermediate_location):
@@ -479,7 +479,7 @@ def _write_intermediate_function(path: FilePath, lines: List[str]):
 
 
 def _make_intermediate_handler_zip(
-    zip_archive_location: str, paths: List[FilePath]
+    zip_archive_location: str, paths: List[FilePath], base_path: DirectoryPath
 ) -> str:
     """
     Make the archive for the handler deployment.
@@ -495,7 +495,7 @@ def _make_intermediate_handler_zip(
     paths.sort()
     with ZipFile(zip_archive_location, "w") as zipfile:
         for path in paths:
-            filename = os.path.relpath(path, INTERMEDIATE_FOLDER)
+            filename = os.path.relpath(path, base_path)
             zipfile.write(path, filename)
             hashes.append(cdev_hasher.hash_file(path))
 
@@ -530,9 +530,9 @@ def _make_single_dependency_archive(
     ids.sort()
 
     _id_hashes = cdev_hasher.hash_list(ids)
-    cache_item = LAYER_CACHE.find_item(_id_hashes)
-    if cache_item:
-        return None
+    #cache_item = LAYER_CACHE.find_item(_id_hashes)
+    #if cache_item:
+    #    return cache_item
 
     layer_name = module_info.get_id_str()
 
@@ -575,9 +575,9 @@ def _make_composite_dependency_archive(
     ids.sort()
 
     _id_hashes = cdev_hasher.hash_list(ids)
-    cache_item = LAYER_CACHE.find_item(_id_hashes)
-    if cache_item:
-        return None
+    #cache_item = LAYER_CACHE.find_item(_id_hashes)
+    #if cache_item:
+    #    return None
 
     layer_name = f"composite_{_id_hashes}"
 
@@ -695,6 +695,6 @@ def _make_layers_zips(
     full_archive_hash = cdev_hasher.hash_list(_file_hashes)
 
     return (
-        cdev_paths.get_relative_to_project_path(zip_archive_full_path),
+        core_paths.get_relative_to_project_path(zip_archive_full_path),
         full_archive_hash,
     )

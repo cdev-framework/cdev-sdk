@@ -1,6 +1,6 @@
 """Extra types to be used within the type hints of the framework
 """
-from typing import  TypeVar
+from typing import  TypeVar, Callable, Any
 
 from core.constructs.cloud_output import Cloud_Output_Bool, Cloud_Output_Int, Cloud_Output_Str, cloud_output_dynamic_model
 
@@ -8,3 +8,4 @@ from core.constructs.cloud_output import Cloud_Output_Bool, Cloud_Output_Int, Cl
 cdev_str = TypeVar('cdev_str', str, Cloud_Output_Str)
 cdev_str_model = TypeVar('cdev_str_model', str, cloud_output_dynamic_model)
 
+F = TypeVar("F", bound=Callable[..., Any])

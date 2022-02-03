@@ -5,9 +5,7 @@ from pydantic.types import FilePath
 
 from core.constructs.workspace import Workspace, Workspace_Info
 
-from core.utils.logger import get_cdev_logger
 
-log = get_cdev_logger(__name__)
 
 
 class environment_info(BaseModel):

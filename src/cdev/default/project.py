@@ -13,6 +13,7 @@ from core.constructs.workspace import Workspace_State
 
 
 from core.constructs.workspace import Workspace_Info
+from core.constructs.settings import Settings_Info
 from core.utils import file_manager
 
 from ..constructs.environment import environment_info, Environment
@@ -121,11 +122,18 @@ class local_project(Project):
         workspace_config["resource_state_uuid"] = resource_state_id
         workspace_config["initialization_module"] = "cdev_project"
 
+        settings = Settings_Info(
+            base_class= "core.constructs.settings.Settings_Info"
+        )
+
         self._central_state.environments.append(
             environment_info(
                 environment_name,
                 Workspace_Info(
-                    "core.default.workspace", "local_workspace", workspace_config
+                    "core.default.workspace", 
+                    "local_workspace", 
+                    settings,
+                    workspace_config
                 ),
             )
         )

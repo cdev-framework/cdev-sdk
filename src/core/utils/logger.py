@@ -7,9 +7,6 @@ import logging.config
 import logging
 import os
 
-from ..settings import SETTINGS as cdev_settings
-
-
 # logging.config.fileConfig(os.path.join(os.path.dirname(__file__), "..","logging.ini"), disable_existing_loggers=False)
 # logger = logging.getLogger("frontend")
 
@@ -24,36 +21,37 @@ class cdev_logger:
     """
 
     def __init__(self, module_name: str = "root") -> None:
-        log_info = cdev_settings.get("LOGGING_INFO")
-
-        fp = log_info.get("handlers").get("fileHandler").get("filename")
-
-        if not os.path.isfile(fp):
-            if not os.path.isdir(os.path.dirname(os.path.dirname(fp))):
-                os.mkdir(os.path.dirname(os.path.dirname(fp)))
-
-            if not os.path.isdir(os.path.dirname(fp)):
-                os.mkdir(os.path.dirname(fp))
-
-            with open(fp, "a"):
-                os.utime(fp, None)
-
-        logging.config.dictConfig(log_info)
-        self._json_logger = logging.getLogger(module_name)
-        self._simple_logger = logging.getLogger(f"{module_name}_simple")
-        self._rich_logger = logging.getLogger(f"{module_name}_rich")
+        pass
+        #log_info = cdev_settings.get("LOGGING_INFO")
+        #log_info  = {}
+        #fp = log_info.get("handlers").get("fileHandler").get("filename")
+#
+        #if not os.path.isfile(fp):
+        #    if not os.path.isdir(os.path.dirname(os.path.dirname(fp))):
+        #        os.mkdir(os.path.dirname(os.path.dirname(fp)))
+#
+        #    if not os.path.isdir(os.path.dirname(fp)):
+        #        os.mkdir(os.path.dirname(fp))
+#
+        #    with open(fp, "a"):
+        #        os.utime(fp, None)
+#
+        #logging.config.dictConfig(log_info)
+        #self._json_logger = logging.getLogger(module_name)
+        #self._simple_logger = logging.getLogger(f"{module_name}_simple")
+        #self._rich_logger = logging.getLogger(f"{module_name}_rich")
 
     def _write_log(self, func_name, original_msg, formatted_msg):
         # Always write a log to the json file
         getattr(self._json_logger, func_name)(original_msg)
 
-        if cdev_settings.get("SHOW_LOGS"):
-            # We need to write logs to console
-            # Either write a plain log or rich formatted log to the console
-            if cdev_settings.get("OUTPUT_PLAIN"):
-                getattr(self._simple_logger, func_name)(original_msg)
-            else:
-                getattr(self._rich_logger, func_name)(formatted_msg)
+        #if cdev_settings.get("SHOW_LOGS"):
+        #    # We need to write logs to console
+        #    # Either write a plain log or rich formatted log to the console
+        #    if cdev_settings.get("OUTPUT_PLAIN"):
+        #        getattr(self._simple_logger, func_name)(original_msg)
+        #    else:
+        #        getattr(self._rich_logger, func_name)(formatted_msg)
 
     def debug(self, msg):
         # self._logger.info(msg)

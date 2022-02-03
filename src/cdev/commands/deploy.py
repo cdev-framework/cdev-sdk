@@ -2,7 +2,7 @@ from ..constructs.project import Project
 
 from core.commands.deploy_differences import execute_deployment
 
-from ..output.output_manager import CdevOutputManager
+from cdev.default.output_manager import CdevOutputManager
 
 def deploy_command_cli(args):
     deploy_command(args)

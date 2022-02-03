@@ -1,16 +1,22 @@
 import os
 
 from core.utils import paths
+from core.constructs.settings import Settings
+from core.constructs.workspace import Workspace
 
 tmp_dir = os.path.join(os.path.dirname(__file__), "tmp")
 
-_settings = {
-    "BASE_PATH": tmp_dir,
-    "CDEV_INTERMEDIATE_FOLDER_LOCATION": tmp_dir,
-}
 
-# monkey path
-paths.SETTINGS = _settings
+settings = Settings()
+settings.BASE_PATH = tmp_dir
+settings.INTERMEDIATE_FOLDER_LOCATION = tmp_dir
+
+
+ws = Workspace()
+ws.settings = settings
+
+# monkey patch the global workspace 
+Workspace.set_global_instance(ws)
 
 
 def test_get_relative_to_workspace_path():
@@ -42,10 +48,10 @@ def test_is_in_intermediate():
     assert not paths.is_in_workspace(__file__)
 
 def test_get_workspace_path():
-    assert paths.get_workspace_path() == _settings.get('BASE_PATH')
+    assert paths.get_workspace_path() == settings.BASE_PATH
 
 def test_get_intermediate_path():
-    assert paths.get_intermediate_path() == _settings.get('CDEV_INTERMEDIATE_FOLDER_LOCATION')
+    assert paths.get_intermediate_path() == settings.INTERMEDIATE_FOLDER_LOCATION
 
 def test_create_path():
 

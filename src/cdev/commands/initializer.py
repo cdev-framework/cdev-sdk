@@ -11,7 +11,7 @@ from cdev.default.project import local_project
 from core.constructs.backend import Backend, Backend_Configuration
 from core.constructs.workspace import Workspace_Info
 from core.default.backend import Local_Backend_Configuration, LocalBackend
-from core.settings import SETTINGS
+
 
 from ..constructs.project import Project_State, check_if_project_exists, project_info
 
@@ -25,7 +25,7 @@ DEFAULT_ENVIRONMENTS = ["prod", "stage", "dev"]
 TEMPLATE_LOCATIONS = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'project_templates')
 
 
-BASE_PROJECT_LOCATION = SETTINGS.get('BASE_PATH')
+BASE_PROJECT_LOCATION = os.getcwd()
 
 AVAILABLE_TEMPLATES = [
     'quick-start',

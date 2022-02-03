@@ -1,3 +1,4 @@
+from shutil import ExecError
 import docker
 import json
 import os
@@ -5,7 +6,6 @@ from pkg_resources import Distribution
 import re
 from typing import List
 
-from core.settings import SETTINGS as CDEV_SETTINGS
 
 
 from .utils import (
@@ -15,17 +15,18 @@ from .utils import (
     parse_requirement_line,
 )
 
-DEPLOYMENT_PLATFORM = CDEV_SETTINGS.get("DEPLOYMENT_PLATFORM")
-
-DEPLOYMENT_PYTHON_VERSION = CDEV_SETTINGS.get("DEPLOYMENT_PYTHON_VERSION")
+# TODO: Set these as settings
+DEPLOYMENT_PLATFORM = "arm64"
+DEPLOYMENT_PYTHON_VERSION = "python3.7"
 
 
 def docker_available() -> bool:
     return True
 
 
+# TODO Set as a settings
 CACHE_LOCATION = os.path.join(
-    CDEV_SETTINGS.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), "dockercache.json"
+    os.getcwd(), ".cdev", "dockercache.json"
 )
 
 has_run_container = False
@@ -85,6 +86,7 @@ class DockerDownloadCache:
             json.dump(self._cache, fh, indent=4)
 
     def get_packaging_dir(self, environment: lambda_python_environments):
+        raise Exception
         BASE_PACKAGING_DIR = os.path.abspath(
             os.path.join(
                 CDEV_SETTINGS.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), ".packages"

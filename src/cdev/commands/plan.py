@@ -1,5 +1,5 @@
-from cdev.output.output_manager import CdevOutputManager
-from ..constructs.project import Project
+from cdev.default.output_manager import CdevOutputManager
+from cdev.constructs.project import Project
 
 from core.commands.execute_frontend import execute_frontend
 

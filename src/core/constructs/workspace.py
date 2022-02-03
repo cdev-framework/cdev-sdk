@@ -5,7 +5,6 @@
 
 from enum import Enum
 import inspect
-from numpy import diff
 from rich.console import Console
 from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn, SpinnerColumn
 from typing import Callable, List, Dict, Any, Tuple, TypeVar
@@ -15,39 +14,38 @@ from networkx.classes.digraph import DiGraph
 from networkx.classes.graph import NodeView
 
 from pydantic import BaseModel
-from core.constructs.models import frozendict
 
+from core.constructs.models import frozendict
 from core.constructs.output_manager import OutputManager, OutputTask
 
-from .resource import Resource_Change_Type, Resource_Difference, Resource_Reference_Difference, Resource_Reference_Change_Type, ResourceModel
-from .backend import Backend
-from .mapper import CloudMapper
-from .components import Component, Component_Change_Type, Component_Difference, ComponentModel
-from .commands import BaseCommand, BaseCommandContainer
-from .cloud_output import evaluate_dynamic_output, cloud_output_dynamic_model
+from core.constructs.resource import Resource_Change_Type, Resource_Difference, Resource_Reference_Difference, Resource_Reference_Change_Type, ResourceModel
+from core.constructs.backend import Backend
+from core.constructs.mapper import CloudMapper
+from core.constructs.components import Component, Component_Change_Type, Component_Difference, ComponentModel
+from core.constructs.commands import BaseCommand, BaseCommandContainer
+from core.constructs.cloud_output import evaluate_dynamic_output, cloud_output_dynamic_model
+from core.constructs.settings import Settings_Info, Settings, initialize_settings
 
-from ..settings import SETTINGS as cdev_settings
 
 from ..utils.command_finder import find_specified_command, find_unspecified_command
 from ..utils import module_loader, topological_helper
-from core.constructs import cloud_output
 
+from core.constructs.types import F
 
-WORKSPACE_INFO_DIR = cdev_settings.get("ROOT_FOLDER_NAME")
-WORKSPACE_INFO_FILENAME = cdev_settings.get("WORKSPACE_FILE_NAME")
 
 _GLOBAL_WORKSPACE: "Workspace" = None
 
-F = TypeVar("F", bound=Callable[..., Any])
+
 
 
 class Workspace_Info(BaseModel):
     python_module: str
     python_class: str
+    settings_info: Settings_Info
     config: Dict
 
     def __init__(
-        __pydantic_self__, python_module: str, python_class: str, config: Dict
+        __pydantic_self__, python_module: str, python_class: str, settings_info: Settings_Info, config: Dict
     ) -> None:
         """
         Represents the data needed to create a new cdev workspace:
@@ -55,6 +53,7 @@ class Workspace_Info(BaseModel):
         Parameters:
             python_module: The name of the python module to load as the workspace
             python_class: The name of the class in the python module to initialize
+            settings_info: Settings_Info
             config: configuration option for the workspace
 
         """
@@ -63,6 +62,7 @@ class Workspace_Info(BaseModel):
             **{
                 "python_module": python_module,
                 "python_class": python_class,
+                "settings_info": settings_info,
                 "config": config,
             }
         )
@@ -106,9 +106,10 @@ class Workspace:
     can be used within the different components to gain information about the higher level project that it is within. Once constructed,
     the object should remain a read only object to prevent components from changing configuration beyond their scope.
     """
+    _settings: Settings
 
     @classmethod
-    def instance(cls):
+    def instance(cls) -> 'Workspace':
         if not _GLOBAL_WORKSPACE:
             raise Exception("Currently No Global Workspace")
 
@@ -144,9 +145,24 @@ class Workspace:
     def destroy_workspace(self):
         raise NotImplementedError
 
-    ################
+    ############################
+    ##### Settings
+    ############################
+
+    
+    @property
+    def settings(cls) -> Settings:
+        return Workspace._settings
+
+    
+    @settings.setter
+    def settings(cls, value: Settings):
+        Workspace._settings = value
+
+
+    ############################
     ##### Initialized
-    ################
+    ############################
     def get_state(self) -> Workspace_State:
         """
         Get the current lifecycle state of the Workspace.
@@ -722,7 +738,7 @@ def load_and_initialize_workspace(config: Workspace_Info):
     """
     ws = load_workspace(config)
     ws.set_state(Workspace_State.INITIALIZING)
-    initialize_workspace(ws, config.config)
+    initialize_workspace(ws, config.settings_info, config.config)
     ws.set_state(Workspace_State.INITIALIZED)
 
 
@@ -764,10 +780,13 @@ def load_workspace(config: Workspace_Info) -> Workspace:
         raise e
 
 
-def initialize_workspace(workspace: Workspace, config: Dict):
+def initialize_workspace(workspace: Workspace, settings: Settings_Info , config: Dict):
     try:
+        Workspace.settings = initialize_settings(settings)
+        
         # initialize the backend obj with the provided configuration values
         workspace.initialize_workspace(config)
+        
 
     except Exception as e:
         print(

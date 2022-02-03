@@ -3,10 +3,11 @@
 """
 import os
 
-from ..constructs import workspace as cdev_workspace
-from ..constructs.backend import Backend_Configuration
+from core.constructs import workspace as cdev_workspace
+from core.constructs.backend import Backend_Configuration
+from core.constructs.settings import Settings_Info
 
-from ..default.workspace import local_workspace_manager
+from core.default.workspace import local_workspace_manager
 
 
 def create_workspace(args):
@@ -19,6 +20,9 @@ def create_workspace(args):
     workspace_info = cdev_workspace.Workspace_Info(
         "core.default.workspace",
         "local_workspace",
+        Settings_Info(
+            base_class="core.constructs.settings.Settings"
+        ),
         {
             "backend_configuration": {
                 "python_module": "core.default.backend",
@@ -29,6 +33,7 @@ def create_workspace(args):
                 },
             },
             "initialization_file": "cdev_project",
+
         },
     )
 

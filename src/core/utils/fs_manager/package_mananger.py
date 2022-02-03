@@ -7,7 +7,6 @@ from sortedcontainers.sorteddict import SortedDict
 import sys
 from typing import List, Set, Dict, Tuple, Union, Optional
 
-from core.settings import SETTINGS as CDEV_SETTINGS
 from serverless_parser import parser as cdev_parser
 
 from . import docker_package_builder
@@ -30,7 +29,7 @@ MOD_NAME_TO_PRJ_OBJ: Dict[str, pkg_resources.Distribution] = {}
 PRJ_NAME_TO_TOP_LEVEL_MODULES: Dict[str, List[str]] = {}
 
 
-DEPLOYMENT_PLATFORM = CDEV_SETTINGS.get("DEPLOYMENT_PLATFORM")
+DEPLOYMENT_PLATFORM = "arm64"
 
 INCOMPATIBLE_PROJECTS = set()
 
@@ -283,7 +282,9 @@ def _recursive_create_module_package_info(
                 # Some of the projects that can be installed are platform dependant and the users environment might not match the aws lambda
                 # environment. So, we need to use docker to pull the compatible version of the library then use that in the final archive
 
-                if CDEV_SETTINGS.get("PULL_INCOMPATIBLE_LIBRARIES"):
+                # TODO: Make this derive from the settings
+                pull_libraries = True
+                if pull_libraries:
                     if docker_package_builder.docker_available():
                         # Not that the download package function uses a cache so it will only actually pull the first time the user wants to
                         # package this function.
@@ -516,7 +517,9 @@ def _get_local_package_dependencies(
         dependencies (List[Tuple[str,str]]): List of dependant module names and an optional filepath if the module is a relative module
     """
 
-    _current_working_dir = CDEV_SETTINGS.get("CURRENT_PARSING_DIR")
+    #_current_working_dir = CDEV_SETTINGS.get("CURRENT_PARSING_DIR")
+    # TODO: Make this a setting
+    _current_working_dir = None
 
     if not _current_working_dir:
         # This setting should be set

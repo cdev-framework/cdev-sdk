@@ -27,10 +27,9 @@ This is a important part to improve the DX of the working with library.
 
 import os
 from pydantic import DirectoryPath
-
 from pydantic.types import FilePath
 
-from core.settings import SETTINGS
+from core.constructs.workspace import Workspace
 
 def get_relative_to_workspace_path(fullpath: FilePath) -> str:
     """Generate a relative path starting from the base path of the workspace. 
@@ -43,7 +42,9 @@ def get_relative_to_workspace_path(fullpath: FilePath) -> str:
     Returns:
         str: Relative to the Workspace path
     """
-    return os.path.relpath(fullpath, start=SETTINGS.get("BASE_PATH"))
+
+    base_path = Workspace.instance().settings.BASE_PATH
+    return os.path.relpath(fullpath, start=base_path)
 
 
 def get_relative_to_intermediate_path(fullpath: str) -> str:
@@ -56,8 +57,9 @@ def get_relative_to_intermediate_path(fullpath: str) -> str:
     Returns:
         str: Relative to the intermediate path path
     """
+    intermediate_path = Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION
     return os.path.relpath(
-        fullpath, start=SETTINGS.get("CDEV_INTERMEDIATE_FOLDER_LOCATION")
+        fullpath, start=intermediate_path
     )
 
 
@@ -71,8 +73,9 @@ def get_full_path_from_workspace_base(relative_path: str) -> FilePath:
     Returns:
         FilePath: Absolute path the file.
     """
+    base_path = Workspace.instance().settings.BASE_PATH
     return os.path.join(
-        SETTINGS.get("BASE_PATH"),
+        base_path,
         relative_path,
     )
 
@@ -87,8 +90,9 @@ def get_full_path_from_intermediate_base(relative_path: str) -> FilePath:
     Returns:
         FilePath: Absolute path the file.
     """
+    intermediate_path = Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION
     return os.path.join(
-        SETTINGS.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), relative_path
+        intermediate_path, relative_path
     )
 
 
@@ -101,9 +105,10 @@ def is_in_workspace(full_path: str) -> bool:
     Returns:
         bool: [description]
     """
+    base_path = Workspace.instance().settings.BASE_PATH
     return os.path.commonprefix(
-        [full_path, SETTINGS.get("BASE_PATH")]
-    ) == SETTINGS.get("BASE_PATH")
+        [full_path, base_path]
+    ) == base_path
 
 
 def is_in_intermediate(full_path: str) -> bool:
@@ -115,9 +120,10 @@ def is_in_intermediate(full_path: str) -> bool:
     Returns:
         bool: [description]
     """
+    intermediate_path = Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION
     return os.path.commonprefix(
-        [full_path, SETTINGS.get("CDEV_INTERMEDIATE_FOLDER_LOCATION")]
-    ) == SETTINGS.get("CDEV_INTERMEDIATE_FOLDER_LOCATION")
+        [full_path, intermediate_path]
+    ) == intermediate_path
 
 
 def get_workspace_path() -> DirectoryPath:
@@ -126,7 +132,8 @@ def get_workspace_path() -> DirectoryPath:
     Returns:
         DirectoryPath: Path to workspace directory
     """
-    return SETTINGS.get("BASE_PATH")
+    base_path = Workspace.instance().settings.BASE_PATH
+    return base_path
 
 
 def get_intermediate_path() -> DirectoryPath:
@@ -135,7 +142,8 @@ def get_intermediate_path() -> DirectoryPath:
     Returns:
         DirectoryPath: Path to intermediate directory
     """
-    return SETTINGS.get("CDEV_INTERMEDIATE_FOLDER_LOCATION")
+    intermediate_path = Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION
+    return intermediate_path
 
 
 def create_path(startingpath, fullpath) -> DirectoryPath:
