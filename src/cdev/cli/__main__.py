@@ -60,7 +60,7 @@ CDEV_COMMANDS = [
     {
         "name": "develop",
         "help": "Open an interactive development environment",
-        "default": local_development.develop_command_cli,
+        "default": wrap_load_and_initialize_project(local_development.develop_command_cli),
         "args": [
             {"dest": "--complex", "help": "run a simple follower instead of full development environment", "action":"store_true"}
         ]
@@ -68,13 +68,13 @@ CDEV_COMMANDS = [
     {
         "name": "destroy",
         "help": "Destroy all the resources in the current environment",
-        "default": destroy.destroy_command_cli
+        "default": wrap_load_and_initialize_project(destroy.destroy_command_cli)
     }, 
 
     {
         "name": "output",
         "help": "See the generated cloud output",
-        "default": cloud_output.cloud_output_command_cli
+        "default": wrap_load_and_initialize_project(cloud_output.cloud_output_command_cli)
     }, 
     {
         "name": "environment",
@@ -132,7 +132,7 @@ CDEV_COMMANDS = [
         "help": "Deploy a set of changes",
         "default": wrap_load_and_initialize_project(deploy.deploy_command_cli)
     },
-        {
+    {
         "name": "run",
         "help": "This command is used to run user defined and resource functions.",
         "default": wrap_load_and_initialize_project(run.run_command_cli),
