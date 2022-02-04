@@ -44,7 +44,9 @@ def _handle_adding_api_event(event: simple_api.route_event_model, cloud_function
     aws_client.run_client_function("apigatewayv2", "update_route", update_info)
 
     aws_region = 'us-east-1'
-    aws_account = '1234567'
+
+    caller_info_rv =  aws_client.run_client_function("sts", "get_caller_identity", {})
+    aws_account = caller_info_rv.get('Account')
 
     # Add permission to lambda to allow apigateway to invoke this function
     stmt_id = f"stmt-{route_id}"

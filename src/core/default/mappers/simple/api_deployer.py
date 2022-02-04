@@ -196,7 +196,8 @@ def _update_simple_api(
 
     
     previous_route_info: Dict[str,str] = dict(mutable_previous_output.get('endpoints'))
-    print(previous_route_info)
+
+
     for route in routes_to_be_deleted:
         dict_key = (
             f'{route.path} {route.verb}'
