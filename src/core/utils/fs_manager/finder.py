@@ -17,7 +17,8 @@ from core.default.resources.simple.xlambda import (
     SimpleFunctionConfiguration
 )
 
-from core.utils import hasher, module_loader, paths, logger
+from core.utils import hasher, module_loader, paths
+from core.utils.logger import log
 
 from serverless_parser import parser as serverless_parser
 
@@ -26,7 +27,6 @@ from . import utils as fs_utils
 from . import writer
 from . import package_mananger as cdev_package_manager
 
-log = logger.get_cdev_logger(__name__)
 
 def parse_folder(
     folder_path, prefix=None

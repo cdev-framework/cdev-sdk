@@ -14,65 +14,66 @@ but it also allows there to be dynamic functionality of how logs will be procces
 import logging.config
 import logging
 import os
-from typing import Dict
+from typing import Dict, Union
 
 
+def _create_logging_settings(log_level: str) -> Dict:
+    return {
+        "version": 1,
+        "filename": ".cdev/logs/userlogs",
+        "formatters": {
+            "jsonFormatter": {
+                "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+                "format": "%(asctime)s %(name)s %(levelname)s %(message)s",
+            },
+            "simpleFormatter": {
+                "format": "%(asctime)s %(name)s - %(levelname)s: %(message)s"
+            },
+            "richFormatter": {"format": "%(name)s - %(levelname)s: %(message)s"},
+        },
+        "handlers": {
+            "fileHandler": {
+                "class": "logging.FileHandler",
+                "level": log_level,
+                "formatter": "jsonFormatter",
+                "filename": ".cdev/logs/userlogs",
+            },
+            "simpleHandler": {
+                "class": "logging.StreamHandler",
+                "level": log_level,
+                "formatter": "simpleFormatter",
+            },
+            "richHandler": {
+                "class": "rich.logging.RichHandler",
+                "level": log_level,
+                "formatter": "richFormatter",
+                "markup": True,
+                "show_path": False,
+                "show_time": False,
+                "rich_tracebacks": True,
+            },
+        },
+        "loggers": {
+            "core_file": {
+                "level": log_level, 
+                "handlers": ["fileHandler"], \
+                "propagate": False
+            },
+            "core_rich": {
+                "level": log_level,
+                "handlers": ["richHandler"],
+                "propagate": False,
+            },
+            "core_simple": {
+                "level": log_level,
+                "handlers": ["simpleHandler"],
+                "propagate": False,
+            },
+        },
+        "root": {"level": "ERROR", "handlers": ["simpleHandler"]},
+        "disable_existing_loggers": False,
+    }
 
-default_logging_settings =  {
-    "version": 1,
-    "filename": ".cdev/logs/userlogs",
-    "formatters": {
-        "jsonFormatter": {
-            "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
-            "format": "%(asctime)s %(name)s %(levelname)s %(message)s",
-        },
-        "simpleFormatter": {
-            "format": "%(asctime)s %(name)s - %(levelname)s: %(message)s"
-        },
-        "richFormatter": {"format": "%(name)s - %(levelname)s: %(message)s"},
-    },
-    "handlers": {
-        "fileHandler": {
-            "class": "logging.FileHandler",
-            "level": "DEBUG",
-            "formatter": "jsonFormatter",
-            "filename": ".cdev/logs/userlogs",
-        },
-        "simpleHandler": {
-            "class": "logging.StreamHandler",
-            "level": "DEBUG",
-            "formatter": "simpleFormatter",
-        },
-        "richHandler": {
-            "class": "rich.logging.RichHandler",
-            "level": "DEBUG",
-            "formatter": "richFormatter",
-            "markup": True,
-            "show_path": False,
-            "show_time": False,
-            "rich_tracebacks": True,
-        },
-    },
-    "loggers": {
-        "core_file": {
-            "level": "DEBUG", 
-            "handlers": ["fileHandler"], \
-            "propagate": False
-        },
-        "core_rich": {
-            "level": "DEBUG",
-            "handlers": ["richHandler"],
-            "propagate": False,
-        },
-        "core_simple": {
-            "level": "DEBUG",
-            "handlers": ["simpleHandler"],
-            "propagate": False,
-        },
-    },
-    "root": {"level": "ERROR", "handlers": ["simpleHandler"]},
-    "disable_existing_loggers": False,
-}
 
 class cdev_logger:
     """Wrapper around pythons basic logger object to provide a layer of flexibility for logging. 
@@ -94,12 +95,12 @@ class cdev_logger:
     For more info read https://docs.python.org/3/howto/logging.html#optimization
     """
 
-    def __init__(self, is_rich_formatted=True, show_logs: bool=True, logging_info: Dict = default_logging_settings) -> None:
+    def __init__(self, is_rich_formatted=True, show_logs: bool=False, logging_level: Union[str,int] = "ERROR") -> None:
 
         self.is_rich_formatted = is_rich_formatted
         self.show_logs = show_logs
         
-        log_info = logging_info
+        log_info = _create_logging_settings(logging_level)
 
         fp = os.path.join(os.getcwd(), log_info.get('filename'))
     
@@ -122,26 +123,23 @@ class cdev_logger:
     def _write_log(self, func_name: str, original_msg: str, formatted_msg: str = "", *args, **kw_args):
         # Always write a log to the json file
         getattr(self._json_logger, func_name)(original_msg, *args, **kw_args)
-        print("RIGHT HERE")
-        print(self.show_logs)
         if self.show_logs:
             # We need to write logs to console
             # Either write a plain log or rich formatted log to the console
             if not self.is_rich_formatted:
-                print("HERE")
                 getattr(self._simple_logger, func_name)(original_msg)
             else:
-               
                 getattr(self._rich_logger, func_name)(formatted_msg)
+
 
     def debug(self, msg, *args, **kw_args):
 
         if self.is_rich_formatted:
             self._write_log(
+                *args,
                 func_name="debug", 
                 original_msg=msg, 
                 formatted_msg=f"[bold blue]{msg}",
-                *args,
                 **kw_args
             )
 
@@ -152,42 +150,42 @@ class cdev_logger:
                 original_msg=msg, 
                 **kw_args
             )
-
 
 
     def info(self, msg, *args, **kw_args):
         if self.is_rich_formatted:
             self._write_log(
+                *args,
                 func_name="info", 
                 original_msg=msg, 
-                formatted_msg=f"[bold blue]{msg}"
-                *args, 
+                formatted_msg=f"[bold blue]{msg}",
                 **kw_args
             )
 
         else:
             self._write_log(
+                *args,
                 func_name="info", 
                 original_msg=msg, 
-                *args, 
                 **kw_args
             )
+
 
     def warning(self, msg, *args, **kw_args):
         if self.is_rich_formatted:
             self._write_log(
+                *args,
                 func_name="warning", 
                 original_msg=msg, 
                 formatted_msg=f"[bold yellow blink]{msg}",
-                *args, 
                 **kw_args
             )
 
         else:
             self._write_log(
+                *args,
                 func_name="warning", 
                 original_msg=msg, 
-                *args, 
                 **kw_args
             )
             
@@ -195,18 +193,18 @@ class cdev_logger:
     def error(self, msg, *args, **kw_args):
         if self.is_rich_formatted:
             self._write_log(
+                *args,
                 func_name="error",
                 original_msg=msg,
                 formatted_msg=f"[bold red blink]:cross_mark: :cross_mark: :cross_mark: {msg} :cross_mark: :cross_mark: :cross_mark:",
-                *args, 
                 **kw_args
             )
 
         else:
             self._write_log(
+                *args,
                 func_name="error",
                 original_msg=msg,
-                *args, 
                 **kw_args
             )
 
@@ -226,23 +224,17 @@ class global_log_container:
     def show_logs(self) -> bool:
         return self._logger.show_logs
 
-
     def debug(self, msg, *args, **kw_args):
-        self._logger.debug(msg, *args, *kw_args)
-
-
+        self._logger.debug(msg, *args, **kw_args)
 
     def info(self, msg, *args, **kw_args):
-        self._logger.info(msg, *args, *kw_args)
-
+        self._logger.info(msg, *args, **kw_args)
 
     def warning(self, msg, *args, **kw_args):
-        self._logger.warning(msg, *args, *kw_args)
-
+        self._logger.warning(msg, *args, **kw_args)
         
     def error(self, msg, *args, **kw_args):
-        self._logger.error(msg, *args, *kw_args)
-
+        self._logger.error(msg, *args, **kw_args)
 
     def exception(self, msg):
         self._logger.exception(msg)
@@ -257,11 +249,5 @@ def set_global_logger(new_logger: cdev_logger):
 
     log._logger = new_logger
 
-    print(">>>>>>>>>>>>>")
-    print(log._logger)
-    print(new_logger)
-    print("<<<<<<<<<<<<<<")
 
-def get_cdev_logger(name: str):
-    pass
 

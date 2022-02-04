@@ -1,24 +1,34 @@
 from cdev.default.output_manager import CdevOutputManager
 from cdev.constructs.project import Project
+from cdev.cli.logger import set_global_logger_from_cli
 
 from core.commands.execute_frontend import execute_frontend
-from core.utils import logger
+from core.utils.logger import log
+
 
 
 def plan_command_cli(args):
-    plan_command(args)
+    
+    config = args[0]
+
+
+    set_global_logger_from_cli(config.loglevel)
+
+    plan_command({})
 
 
 def plan_command(args):
+    log.info(msg="Starting Plan Command")
     output_manager = CdevOutputManager()
 
     myProject = Project.instance()
+    log.debug("Loaded Project Global Instance")
     
     ws = myProject.get_current_environment().get_workspace()
 
     
-    log = logger.cdev_logger(is_rich_formatted=False)
-    logger.set_global_logger(log)
+    
     execute_frontend(ws, output_manager)
+    log.info("Finished Plan Command")
 
   
