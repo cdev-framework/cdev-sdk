@@ -1,8 +1,12 @@
 #!/bin/bash
 
 
-pdoc --html --force --output-dir documentation-output  --template-dir ./scripts/documentation-template/templates src/cdev
+pdoc --html --skip-errors --force --output-dir documentation-output --config "logo_path='https://s3.amazonaws.com/cdevframework.io/images/CdevLogo.svg'" --template-dir ./scripts/documentation-template/templates src/cdev 
 
+pdoc --html --skip-errors --force --output-dir documentation-output --config "logo_path='https://s3.amazonaws.com/cdevframework.io/images/CoreLogo.svg'"  --template-dir ./scripts/documentation-template/templates src/core
+
+
+rm -rf $cdevwebsitepath/public/docs/api/
 mkdir $cdevwebsitepath/public/docs/api/
 
-cp -r ./documentation-output/cdev/* $cdevwebsitepath/public/docs/api
+cp -r ./documentation-output/* $cdevwebsitepath/public/docs/api
