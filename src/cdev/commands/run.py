@@ -1,5 +1,6 @@
-from cdev.default.output_manager import CdevOutputManager
 from cdev.constructs.project import Project
+from cdev.cli.logger import set_global_logger_from_cli
+from cdev.default.output_manager import CdevOutputManager
 
 from core.commands.run import run_command as core_run_command
 

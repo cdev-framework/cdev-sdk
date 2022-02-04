@@ -1,9 +1,13 @@
 from typing import List, Tuple
 
-from ..constructs.project import Project
+from cdev.constructs.project import Project
+from cdev.cli.logger import set_global_logger_from_cli
 
 
 def environment_cli(args):
+    config = args[0]
+    set_global_logger_from_cli(config.loglevel)
+
     command = args[0]
     parsed_args = vars(args[1])
 

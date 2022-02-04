@@ -7,6 +7,7 @@ from typing import Dict, Tuple, List
 from rich.prompt import Prompt
 from cdev.constructs.environment import environment_info
 from cdev.default.project import local_project
+from cdev.cli.logger import set_global_logger_from_cli
 
 from core.constructs.backend import Backend, Backend_Configuration
 from core.constructs.workspace import Workspace_Info
@@ -34,6 +35,8 @@ AVAILABLE_TEMPLATES = [
 ]
 
 def create_project_cli(args):
+    config = args[0]
+    set_global_logger_from_cli(config.loglevel)
 
     if args.template:
         template_name = args.template

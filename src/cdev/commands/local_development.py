@@ -1,10 +1,13 @@
-from ..constructs.project import Project
+from cdev.constructs.project import Project
+from cdev.cli.logger import set_global_logger_from_cli
 
 from core.commands.deploy_differences import execute_deployment
-
 from cdev.default.output_manager import CdevOutputManager
 
+
 def develop_command_cli(args):
+    config = args[0]
+    set_global_logger_from_cli(config.loglevel)
     develop_command(args)
 
 
