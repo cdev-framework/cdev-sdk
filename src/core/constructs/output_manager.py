@@ -13,9 +13,6 @@ from core.constructs.components import Component_Change_Type, ComponentModel, Co
 from core.constructs.resource import Resource_Change_Type, Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference
 
 class OutputManager():
-
-
-
     def __init__(self, console: Console=None, progress: Progress=None) -> None:
 
         if console:

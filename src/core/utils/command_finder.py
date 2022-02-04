@@ -12,10 +12,7 @@ from typing import List, Tuple, Union
 from core.constructs.commands import BaseCommand, BaseCommandContainer
 
 
-from core.utils import logger
 
-
-log = logger.get_cdev_logger(__name__)
 
 
 COMMANDS_DIR = "commands"
@@ -127,7 +124,7 @@ def find_unspecified_command(
                 )
                 valid_command_locations.append(potential_location)
             except Exception as e:
-                log.debug(e)
+                
                 print("ERROR4")
                 continue
 
@@ -139,7 +136,7 @@ def find_unspecified_command(
                 )
                 valid_command_locations.append(potential_location)
             except Exception as e:
-                log.debug(e)
+                
                 print("ERROR5")
                 continue
 
@@ -177,7 +174,7 @@ def initialize_command_module(mod_path: str) -> BaseCommand:
             and not (potential_obj == BaseCommand)
         ):
             if _has_found_a_valid_command:
-                log.error(f"Found too many commands in file {mod_path}")
+                
                 raise TooManyCommandClasses
 
             _has_found_a_valid_command = True
@@ -208,7 +205,7 @@ def initialize_command_container_module(mod_path: str) -> BaseCommandContainer:
         ):
             if _has_found_a_valid_command_container:
                 # TODO better exception
-                log.error(f"Found too many commands in file {mod_path}")
+                
                 return
 
             _has_found_a_valid_command_container = True
@@ -324,5 +321,5 @@ def _recursive_find_unspecified_command(
         return (found_any_matches, new_locations)
 
     except Exception as e:
-        log.debug(f"{search_path} did not have a file commands that was importable")
+        
         return (False, [""])
