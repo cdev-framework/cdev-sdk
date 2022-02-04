@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import logging
 from typing import Callable, Any
 
 from ..commands import (
@@ -72,6 +73,28 @@ def subcommand_function_wrapper(name, subcommand):
     return inner
 
 
+def add_general_output_options(parser: argparse.ArgumentParser):
+    parser.add_argument(
+        "--output",
+        type=str,
+        choices=["json", "plain-text", "rich"],
+        help="change the type of output generated",
+    )
+
+    parser.add_argument(
+        '-d', '--debug',
+        help="Print debug log statements. This is mostly for development use",
+        action="store_const", dest="loglevel", const=logging.DEBUG,
+        default=logging.WARNING,
+    )
+
+    parser.add_argument(
+        '-v', '--verbose',
+        help="Print info log message. Use this to get a more detailed understanding of what is executing.",
+        action="store_const", dest="loglevel", const=logging.INFO,
+    )
+
+
 for command in CDEV_COMMANDS:
     tmp = subparsers.add_parser(command.get("name"), help=command.get("help"))
 
@@ -92,12 +115,7 @@ for command in CDEV_COMMANDS:
                 arg.pop("dest")
                 t2.add_argument(dest, **arg)
 
-            t2.add_argument(
-                "--output",
-                type=str,
-                choices=["json", "plain-text", "rich"],
-                help="change the type of output generated",
-            )
+            add_general_output_options(t2)
 
     else:
         if command.get("args"):
@@ -108,12 +126,7 @@ for command in CDEV_COMMANDS:
 
         tmp.set_defaults(func=command.get("default"))
 
-        tmp.add_argument(
-            "--output",
-            type=str,
-            choices=["json", "plain-text", "rich"],
-            help="change the type of output generated",
-        )
+        add_general_output_options(tmp)
 
 
 args = parser.parse_args()

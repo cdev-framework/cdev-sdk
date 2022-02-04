@@ -1,85 +1,13 @@
 import argparse
 from ast import parse
+import logging
 import traceback
-import os
 from typing import Callable, Any
 
-# from cdev import output
-
-# from ..commands import plan, deploy, destroy, environment, cloud_output, local_development, initializer
-from ..commands import initializer, environment, plan, deploy, run
+from ..commands import initializer, environment, plan, deploy, run, cloud_output, local_development, destroy
 
 parser = argparse.ArgumentParser(description="cdev cli")
 subparsers = parser.add_subparsers(title="sub_command", description="valid subcommands")
-
-
-"""CDEV_COMMANDS = [
-    {
-        "name": "plan",
-        "help": "See the differences that have been made since the last deployment",
-        "default": plan.plan_command
-    }, 
-    {
-        "name": "develop",
-        "help": "Open an interactive development environment",
-        "default": local_development.develop,
-        "args": [
-            {"dest": "--complex", "help": "run a simple follower instead of full development environment", "action":"store_true"}
-        ]
-    },
-    {
-        "name": "destroy",
-        "help": "Destroy all the resources in the current environment",
-        "default": destroy.destroy_command
-    }, 
-
-    {
-        "name": "output",
-        "help": "See the generated cloud output",
-        "default": cloud_output.cloud_output_command
-    }, 
-    {
-        "name": "init",
-        "help": "Create a new project",
-        "default": initializer.init
-    },
-    {
-        "name": "environment",
-        "help": "Change and create environments for deployment",
-        "default": environment.environment,
-        "subcommands": [
-            {
-                "command": "ls",
-                "help": "Show all available environments",
-                "args": [
-                    {"dest": "--all", "help": "show more details", "action":"store_true"}
-                ]
-            },
-            {
-                "command": "set",
-                "help": "Set the current working environment",
-                "args": [
-                    {"dest": "env", "type": str, "help": "environment you want set as the new working environment"}
-                ]
-            },
-            {
-                "command": "get",
-                "help": "Get information about an environment",
-                "args": [
-                    {"dest": "env", "type": str, "help": "environment you want info about"}
-                ]
-            },
-            {
-                "command": "create",
-                "help": "Create a new environment",
-                "args": [
-                    {"dest": "env", "type": str, "help": "name of environment you want to create"}
-                ]
-            }
-        ]
-    },
-]"""
-
 
 def wrap_load_project(command: Callable) -> Callable[[Any], Any]:
     def wrapped_caller(*args, **kwargs):
@@ -129,6 +57,25 @@ CDEV_COMMANDS = [
             {"dest": "--template", "type": str, "help": "Name of the template for the new project"}
         ],
     },
+    {
+        "name": "develop",
+        "help": "Open an interactive development environment",
+        "default": local_development.develop_command_cli,
+        "args": [
+            {"dest": "--complex", "help": "run a simple follower instead of full development environment", "action":"store_true"}
+        ]
+    },
+    {
+        "name": "destroy",
+        "help": "Destroy all the resources in the current environment",
+        "default": destroy.destroy_command_cli
+    }, 
+
+    {
+        "name": "output",
+        "help": "See the generated cloud output",
+        "default": cloud_output.cloud_output_command_cli
+    }, 
     {
         "name": "environment",
         "help": "Change and create environments for deployment",
@@ -207,6 +154,28 @@ def subcommand_function_wrapper(name, func):
     return inner
 
 
+def add_general_output_options(parser: argparse.ArgumentParser):
+    parser.add_argument(
+        "--output",
+        type=str,
+        choices=["json", "plain-text", "rich"],
+        help="change the type of output generated",
+    )
+
+    parser.add_argument(
+        '-d', '--debug',
+        help="Print debug log statements. This is mostly for development use",
+        action="store_const", dest="loglevel", const=logging.DEBUG,
+        default=logging.WARNING,
+    )
+
+    parser.add_argument(
+        '-v', '--verbose',
+        help="Print info log message. Use this to get a more detailed understanding of what is executing.",
+        action="store_const", dest="loglevel", const=logging.INFO,
+    )
+
+
 for command in CDEV_COMMANDS:
     tmp = subparsers.add_parser(command.get("name"), help=command.get("help"))
 
@@ -227,12 +196,8 @@ for command in CDEV_COMMANDS:
                 arg.pop("dest")
                 t2.add_argument(dest, **arg)
 
-            t2.add_argument(
-                "--output",
-                type=str,
-                choices=["json", "plain-text", "rich"],
-                help="change the type of output generated",
-            )
+           
+            add_general_output_options(t2)
 
     else:
         if command.get("args"):
@@ -243,12 +208,7 @@ for command in CDEV_COMMANDS:
 
         tmp.set_defaults(func=command.get("default"))
 
-        tmp.add_argument(
-            "--output",
-            type=str,
-            choices=["json", "plain-text", "rich"],
-            help="change the type of output generated",
-        )
+        add_general_output_options(tmp)
 
 
 args = parser.parse_args()
