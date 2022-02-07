@@ -499,6 +499,10 @@ class Workspace:
                     raise e
 
                 try:
+                    if change.action_type == Resource_Change_Type.CREATE:
+                        cloud_output['cloud_region'] = Workspace.instance().settings.AWS_REGION
+
+
                     self.get_backend().complete_resource_change(
                         self.get_resource_state_uuid(),
                         change.component_name,

@@ -104,22 +104,10 @@ def aws_resource_wait(service: str, wait: dict):
     waiter.wait(**final_args)
     
 
+def get_aws_region() -> str:
+    return get_boto_client('s3').meta.region_name
 
-    
 
-
-def _recursive_find_key(d: dict, keys: List):
-    if len(keys) == 0:
-        return None
-
-    if len(keys) == 1:
-        return d.get(keys[0])
-
-    else:
-        top_key = keys[0]
-        keys.pop(0)
-
-        if not top_key in d:
-            return None
-
-        return _recursive_find_key(d.get(top_key), keys)
+def get_account_number() -> str:
+    caller_info_rv =  run_client_function("sts", "get_caller_identity", {})
+    return caller_info_rv.get('Account')

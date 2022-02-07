@@ -308,8 +308,8 @@ def handle_simple_api_deployment(
             resource_diff.new_resource,
             output_task
         )
-    elif resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY:
 
+    elif resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY:
         return _update_simple_api(
             transaction_token,
             namespace_token,

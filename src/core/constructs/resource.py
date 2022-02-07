@@ -7,8 +7,10 @@ from enum import Enum
 
 from core.constructs.models import ImmutableModel
 from core.constructs.cloud_output import OutputType, Cloud_Output_Str
+from core.constructs.types import F
 
 from ..utils.hasher import hash_list
+
     
 ##################
 ##### Resource
@@ -89,8 +91,6 @@ class Resource_Difference(ImmutableModel):
         # Beta Feature but should be fine since this is simple data 
         frozen = True
 
-# Helper type to denoted any callable
-F = TypeVar("F", bound=Callable[..., Any])
 
 def update_hash(func: F) -> F:
     """Wrap a function that modifies the state of a Resource so that the hash is properly updated when a change occurs.
@@ -181,6 +181,19 @@ class ResourceOutputs():
 
     @cloud_id.setter
     def cloud_id(self, value: Any):
+        raise Exception
+
+    @property
+    def cloud_region(self) -> 'Cloud_Output_Str':
+        return Cloud_Output_Str(
+            name=self._name,
+            ruuid=self._ruuid,
+            key='cloud_region',
+            type=self.OUTPUT_TYPE
+        )
+
+    @cloud_region.setter
+    def cloud_region(self, value: Any):
         raise Exception
 
 ##################
