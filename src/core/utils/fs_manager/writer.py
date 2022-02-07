@@ -6,6 +6,7 @@ from pydantic.types import DirectoryPath, FilePath
 import shutil
 from typing import List, Dict, Tuple, Set
 from zipfile import ZipFile
+from core.constructs.workspace import Workspace
 
 
 from core.utils import paths as core_paths, hasher as cdev_hasher
@@ -55,10 +56,10 @@ class LayerWriterCache:
 def create_full_deployment_package(
     original_path: FilePath,
     needed_lines: List[int],
-    parsed_path: str,
+    function_name: str,
     base_archive_directory: DirectoryPath,
     pkgs: Dict[str, ModulePackagingInfo] = None,
-    available_layers: int = 2,
+    available_layers: int = 5,
 ):
     """
     Create all the needed deployment resources needed for a given serverless function. This includes parsing out the needed lines from
@@ -67,7 +68,7 @@ def create_full_deployment_package(
     Args:
         original_path (FilePath): The original file location that this function is from
         needed_lines (List[int]): The list of line numbers needed from the original function
-        parsed_path (str): The final location of the parsed file
+        function_name (str): The name of the function
         base_archive_directory (DirectoryPath): Base path to write final archives
         pkgs (Dict[str, ModulePackagingInfo]): The list of package info for the function
         available_layers (int): The number of layers available to use
@@ -81,24 +82,29 @@ def create_full_deployment_package(
 
     dependencies_info = None
 
+    # Clean the name of the function and create the final path of the parsed function
+    cleaned_name = function_name.replace(" ", "_")   
+    parsed_path = fs_utils.get_parsed_path(original_path, cleaned_name, base_archive_directory)
+
     # Write the actual parsed function into an intermediate folder
     _make_intermediate_handler_file(original_path, needed_lines, parsed_path)
     handler_files = [parsed_path]
 
     # The handler can be in a subdirectory and since we preserve the relative project structure, we need to bring any __init__.py files
     # to make sure the handler is in a valid path
-    extra_handler_path_files = _find_packaging_files_handler(original_path)
+    extra_handler_path_files = _find_packaging_files_handler(original_path, base_archive_directory)
 
     handler_files.extend(extra_handler_path_files)
 
     # Start from the base intermediate folder location then replace '/' with '.' and final remove the '.py' from the end
-    base_handler_path = core_paths.get_relative_to_intermediate_path(
-        parsed_path
+    base_handler_path = os.path.relpath(
+        parsed_path,
+        start=base_archive_directory
     ).replace("/", ".")[:-3]
 
-    filename = os.path.split(parsed_path)[1]
+    parsed_filename = os.path.split(parsed_path)[1]
     zip_archive_location = os.path.join(
-        os.path.dirname(parsed_path), filename[:-3] + ".zip"
+        os.path.dirname(parsed_path), parsed_filename[:-3] + ".zip"
     )
 
     if pkgs:
@@ -339,10 +345,10 @@ def _make_intermediate_handler_file(
     _write_intermediate_function(parsed_path, cleaned_actual_lines)
 
 
-def _find_packaging_files_handler(original_path: FilePath) -> List[FilePath]:
+def _find_packaging_files_handler(original_path: FilePath, base_intermediate_path: DirectoryPath) -> List[FilePath]:
     """
-    This adds additional files like __init__.py need to make the file work. Since the handler can be in submodules, it is important
-    to find all the nested __init__.py files for making sure the handler is accessible.
+    This adds additional files like __init__.py that are needed to make the file work. Since the handler can be in submodules, 
+    it is important to find all the nested __init__.py files for making sure the handler is accessible.
 
     Args:
         original_path (FilePath): The original path of the file
@@ -353,19 +359,22 @@ def _find_packaging_files_handler(original_path: FilePath) -> List[FilePath]:
     path_from_project_dir = os.path.dirname(
         core_paths.get_relative_to_workspace_path(original_path)
     ).split("/")
-    intermediate_location = core_paths.get_workspace_path()
+
+    tmp = ""
+    actual_base_path = Workspace.instance().settings.BASE_PATH
     rv = []
 
+    # Traverse the directory path looking for __init__.py files. If an __init__.py is found then copy it over
+    # else just make an empty one   
     while path_from_project_dir:
 
-        intermediate_location = os.path.join(
-            intermediate_location, path_from_project_dir.pop(0)
+        tmp = os.path.join(
+            tmp, path_from_project_dir.pop(0)
         )
 
-        file_loc = os.path.join(intermediate_location, "__init__.py")
-        intermediate_file_location = core_paths.get_full_path_from_intermediate_base(
-            core_paths.get_relative_to_workspace_path(file_loc)
-        )
+        file_loc = os.path.join(actual_base_path, tmp, "__init__.py")
+
+        intermediate_file_location = os.path.join(base_intermediate_path, tmp, "__init__.py")
 
         if os.path.isfile(file_loc):
             shutil.copyfile(file_loc, intermediate_file_location)

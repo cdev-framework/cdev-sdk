@@ -23,13 +23,13 @@ from core.utils.logger import log
 from serverless_parser import parser as serverless_parser
 
 
-from . import utils as fs_utils
 from . import writer
 from . import package_mananger as cdev_package_manager
 
 
 def parse_folder(
-    folder_path, prefix=None
+    folder_path: str, 
+    prefix=None,
 ) -> Tuple[List[ResourceModel], List[ResourceReferenceModel]]:
     """
     This function takes a folder and goes through it looking for cdev resources. Specifically, it loads all available python files
@@ -93,7 +93,6 @@ def _find_resources_information_from_file(
 
     mod_name = _get_module_name_from_path(fp)
 
-   
     # When the python file is imported and executed all the Cdev resources are created
     mod = module_loader.import_module(mod_name, denote_output=True)
 
@@ -110,10 +109,8 @@ def _find_resources_information_from_file(
             # Find all the Resources in the module and render them
 
             if isinstance(obj, SimpleFunction):
-                #preparsed_info = obj.render()
                 functions_to_parse.append(obj.configuration.handler)
                 function_name_to_info[obj.configuration.handler] = obj
-                #resource_rv.append(obj.render())
                 
             else:
                 resource_rv.append(obj.render())
@@ -143,23 +140,25 @@ def _parse_serverless_functions(
     global_includes: List = [],
 ) -> List[simple_function_model]:
 
-    include_functions_list = functions_names_to_parse
 
     parsed_file_info = serverless_parser.parse_functions_from_file(
-        filepath, include_functions=include_functions_list, remove_top_annotation=True
+        filepath, include_functions=functions_names_to_parse, remove_top_annotation=True
     )
 
+    
+    
+    base_archive_path = os.path.join(
+        Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION,
+        Workspace.instance().get_resource_state_uuid(),
+    )
+
+    if not os.path.isdir(base_archive_path):
+        # TODO improve this because it will fail if the intermediate folder doesn't 
+        # exist
+        os.mkdir(base_archive_path)
+    
     rv = []
-    artifact_path = Workspace.instance().settings.BASE_PATH
-    archive_path = Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION
     for parsed_function in parsed_file_info.parsed_functions:
-
-        cleaned_name = _clean_function_name(parsed_function.name)
-        
-
-
-        intermediate_path = fs_utils.get_parsed_path(filepath, cleaned_name, artifact_path)
-
         needed_module_information = cdev_package_manager.get_top_level_module_info(
             parsed_function.imported_packages, filepath
         )
@@ -172,8 +171,8 @@ def _parse_serverless_functions(
         ) = writer.create_full_deployment_package(
             filepath,
             parsed_function.get_line_numbers_serializeable(),
-            intermediate_path,
-            archive_path,
+            parsed_function.name,
+            base_archive_path,
             pkgs=needed_module_information,
         )
 

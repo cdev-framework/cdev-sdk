@@ -7,6 +7,7 @@ from enum import Enum
 from pathlib import PosixPath, WindowsPath
 
 from core.utils import paths as core_paths, hasher as cdev_hasher
+from core.utils.logger import log
 
 import sys
 from parsley import makeGrammar
@@ -78,6 +79,7 @@ def get_parsed_path(original_path, function_name, final_base_directory: Director
     final_file_dir = core_paths.create_path(final_base_directory, split_path[:-1])
 
 
+    log.debug("Created Parsed Path is %s", os.path.join(final_file_dir, final_file_name) )
     return os.path.join(final_file_dir, final_file_name)
 
 

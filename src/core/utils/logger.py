@@ -120,21 +120,22 @@ class cdev_logger:
         self._simple_logger = logging.getLogger("core_simple")
         self._rich_logger = logging.getLogger("core_rich")
 
-    def _write_log(self, func_name: str, original_msg: str, formatted_msg: str = "", *args, **kw_args):
+    def _write_log(self, *args, func_name: str, original_msg: str, formatted_msg: str = "",  **kw_args):
         # Always write a log to the json file
         getattr(self._json_logger, func_name)(original_msg, *args, **kw_args)
         if self.show_logs:
             # We need to write logs to console
             # Either write a plain log or rich formatted log to the console
             if not self.is_rich_formatted:
-                getattr(self._simple_logger, func_name)(original_msg)
+                getattr(self._simple_logger, func_name)(original_msg, *args, **kw_args)
             else:
-                getattr(self._rich_logger, func_name)(formatted_msg)
+                getattr(self._rich_logger, func_name)(formatted_msg, *args, **kw_args)
 
 
     def debug(self, msg, *args, **kw_args):
-
+        print(kw_args)
         if self.is_rich_formatted:
+            print(kw_args)
             self._write_log(
                 *args,
                 func_name="debug", 
@@ -225,6 +226,7 @@ class global_log_container:
         return self._logger.show_logs
 
     def debug(self, msg, *args, **kw_args):
+        print(args)
         self._logger.debug(msg, *args, **kw_args)
 
     def info(self, msg, *args, **kw_args):
