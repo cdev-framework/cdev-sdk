@@ -10,7 +10,7 @@ from typing import TextIO
 import inspect
 
 
-def import_module(module_name: str, denote_output: bool = False) -> ModuleType:
+def import_module(module_name: str, denote_output: bool = False, override_stdout: bool = True) -> ModuleType:
     """Helper function for dynamically loading python modules.
     
     This function should be used whenever a python module needs to be dynamically loaded within the framework. 
@@ -30,16 +30,17 @@ def import_module(module_name: str, denote_output: bool = False) -> ModuleType:
 
     # Sometimes the module is already loaded so just reload it to capture any changes
     # Importing the initialization file should cause it to modify the state of the Workspace however is needed
-    sys.stdout = override_sys_out
 
-    
+    if override_stdout:
+        sys.stdout = override_sys_out
 
     if sys.modules.get(module_name):
         rv = importlib.reload(sys.modules.get(module_name))
     else:
         rv = importlib.import_module(module_name)
 
-    sys.stdout = sys.__stdout__
+    if override_stdout:
+        sys.stdout = sys.__stdout__
 
     if denote_output:
         print(f"---------------------------------------------------")
@@ -75,6 +76,9 @@ def import_class(module_name: str, class_name: str) -> type:
     raise Exception
 
 class override_sys_out(TextIO):
+   
+    encoding = sys.__stdout__.encoding 
+
     def write(s: str):
         if len(s) > 0 and not s == "\n":
             sys.__stdout__.write(f"> {s}\n")

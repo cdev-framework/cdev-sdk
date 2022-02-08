@@ -133,9 +133,7 @@ class cdev_logger:
 
 
     def debug(self, msg, *args, **kw_args):
-        print(kw_args)
         if self.is_rich_formatted:
-            print(kw_args)
             self._write_log(
                 *args,
                 func_name="debug", 
@@ -226,7 +224,6 @@ class global_log_container:
         return self._logger.show_logs
 
     def debug(self, msg, *args, **kw_args):
-        print(args)
         self._logger.debug(msg, *args, **kw_args)
 
     def info(self, msg, *args, **kw_args):

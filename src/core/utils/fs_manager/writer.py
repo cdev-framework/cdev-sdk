@@ -21,9 +21,6 @@ from .external_dependencies_index import weighted_dependency_graph, compute_inde
 
 EXCLUDE_SUBDIRS = {"__pycache__"}
 
-#CACHE_LOCATION = os.path.join(
-#    cdev_settings.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), "writercache.json"
-#)
 
 
 class LayerWriterCache:
@@ -50,7 +47,7 @@ class LayerWriterCache:
             json.dump(self._cache, fh, indent=4)
 
 
-#LAYER_CACHE = LayerWriterCache()
+LAYER_CACHE = LayerWriterCache(os.path.join(os.getcwd(),".cache") )
 
 
 def create_full_deployment_package(
@@ -79,8 +76,9 @@ def create_full_deployment_package(
         base_handler_path (str): The path to the file as a python package path
         external_dependencies (LambdaLayerArtifact): List of layers that are needed for this function
     """
+    global LAYER_CACHE
 
-    dependencies_info = None
+    LAYER_CACHE = LayerWriterCache(os.path.join(base_archive_directory, "cache"))
 
     # Clean the name of the function and create the final path of the parsed function
     cleaned_name = function_name.replace(" ", "_")   
@@ -121,12 +119,18 @@ def create_full_deployment_package(
             ) = _create_layers_from_referenced_modules(
                 layer_dependencies, available_layers
             )
+            LAYERS_DIR_NAME = "layers"
 
             archive_dir = os.path.join(
-                base_archive_directory, os.path.dirname(parsed_path)
+                base_archive_directory, LAYERS_DIR_NAME
             )
+
+            if not os.path.isdir(archive_dir):
+                os.mkdir(archive_dir)
+
+
             dependencies_info: List[DependencyLayer] = []
-            # dependencies_info = _make_layers_zips(archive_dir, filename[:-3], layer_dependencies )
+        
 
             if single_dependency_layers:
                 for single_layer in single_dependency_layers:
@@ -148,6 +152,8 @@ def create_full_deployment_package(
                 base_archive_directory
             )
             handler_files.extend(local_dependencies_intermediate_locations)
+    else:
+        dependencies_info = None
 
     # Create the actual handler archive by zipping the needed files
     archive_hash = _make_intermediate_handler_zip(zip_archive_location, handler_files, base_archive_directory)
@@ -515,7 +521,7 @@ def _make_single_dependency_archive(
     module_info: ModulePackagingInfo, archive_dir: DirectoryPath
 ) -> DependencyLayer:
     needed_info: List[ExternalDependencyWriteInfo] = []
-    print(f"Making single dependency {module_info}")
+    
 
     needed_info.append(
         ExternalDependencyWriteInfo(
@@ -524,7 +530,6 @@ def _make_single_dependency_archive(
     )
 
     for child in module_info.flat:
-        print(f"Adding  {child}")
         if not child.type == PackageTypes.PIP:
             continue
 
@@ -539,20 +544,20 @@ def _make_single_dependency_archive(
     ids.sort()
 
     _id_hashes = cdev_hasher.hash_list(ids)
-    #cache_item = LAYER_CACHE.find_item(_id_hashes)
-    #if cache_item:
-    #    return cache_item
+    cache_item = LAYER_CACHE.find_item(_id_hashes)
 
     layer_name = module_info.get_id_str()
 
+    if cache_item:
+        return DependencyLayer(
+            cdev_name=layer_name, artifact_path=cache_item[0], artifact_hash=cache_item[1]
+        )
+
     archive_path, archive_hash = _make_layers_zips(archive_dir, layer_name, needed_info)
 
-    # convert to json string then back to python object because it has a Filepath type in it and that is always handled weird.
-    # LAYER_CACHE.add_item(_id_hashes, (archive_path, archive_hash))
+    LAYER_CACHE.add_item(_id_hashes, (archive_path, archive_hash))
 
-    rv = DependencyLayer(**{"name": layer_name, "artifact_path": archive_path})
-
-    return rv
+    return DependencyLayer(cdev_name=layer_name, artifact_path=archive_path, artifact_hash=archive_hash)
 
 
 def _make_composite_dependency_archive(
@@ -584,9 +589,9 @@ def _make_composite_dependency_archive(
     ids.sort()
 
     _id_hashes = cdev_hasher.hash_list(ids)
-    #cache_item = LAYER_CACHE.find_item(_id_hashes)
-    #if cache_item:
-    #    return None
+    cache_item = LAYER_CACHE.find_item(_id_hashes)
+    if cache_item:
+        return None
 
     layer_name = f"composite_{_id_hashes}"
 
@@ -595,9 +600,9 @@ def _make_composite_dependency_archive(
     )
 
     # convert to json string then back to python object because it has a Filepath type in it and that is always handled weird.
-    # LAYER_CACHE.add_item(_id_hashes, (archive_path, archive_hash))
+    LAYER_CACHE.add_item(_id_hashes, (archive_path, archive_hash))
 
-    rv = DependencyLayer(**{"name": layer_name, "artifact_path": archive_path})
+    rv = DependencyLayer(cdev_name=layer_name, artifact_path=archive_path)
 
     return rv
 
@@ -607,13 +612,13 @@ def _make_layers_zips(
     layer_name: str,
     needed_info: List[ExternalDependencyWriteInfo],
 ) -> Tuple[FilePath, str]:
-    """
-    Create the zip archive that will be deployed with the handler function. This function uses a cache to determine if there is already an archive available to
-    use. All modules provide are written to a single archive such that the module is in '/python/<module_name>'.
+    """Create the zip archive that will be deployed with the handler function.
+    
+    All modules provide are written to a single archive such that the module is in '/python/<module_name>'.
 
     Args:
         zip_archive_location_directory (DirectoryPath): The directory that the archive will be created in.
-        basename (str): base name for the archive
+        layer_name (str): base name for the archive
         needed_info (List[ExternalDependencyWriteInfo]): The information about what modules to add to the archive
 
     Returns:
@@ -704,6 +709,6 @@ def _make_layers_zips(
     full_archive_hash = cdev_hasher.hash_list(_file_hashes)
 
     return (
-        core_paths.get_relative_to_project_path(zip_archive_full_path),
+        zip_archive_full_path,
         full_archive_hash,
     )

@@ -36,6 +36,8 @@ INCOMPATIBLE_PROJECTS = set()
 _already_checked_cache = set()
 
 
+download_package_location = None
+
 def _is_platform_compatible(tags: List[str]) -> bool:
     # https://packaging.python.org/specifications/platform-compatibility-tags/
     # PEP 600
@@ -160,7 +162,7 @@ for project_obj in pkg_resources.working_set:
 
 
 def get_top_level_module_info(
-    modules: List[str], start_location: FilePath
+    modules: List[str], start_location: FilePath, download_package_location: str,
 ) -> Dict[str, ModulePackagingInfo]:
     """
     Create a sorted dictionary of all the module information needed for the used modules in a handler.
@@ -178,13 +180,13 @@ def get_top_level_module_info(
     _clear_already_checked_cache(start_location)
 
     for module_name in modules:
-        all_packages[module_name] = _get_module_info(module_name, start_location)
+        all_packages[module_name] = _get_module_info(module_name, start_location, download_package_location)
 
     return SortedDict(all_packages)
 
 
 def _get_module_info(
-    module_name: str, original_file_location: str
+    module_name: str, original_file_location: str, download_package_location_param: str,
 ) -> ModulePackagingInfo:
     """
     Create the information needed to package this dependency with a parsed function. We use the recursive method because
@@ -200,6 +202,8 @@ def _get_module_info(
         info (ModulePackagingInfo): information for the packages to package
 
     """
+    global download_package_location
+    download_package_location = download_package_location_param
 
     # Note the the cache is implemented at the recursive level so that recursive calls can benefit from the cache also
     info = _recursive_create_module_package_info(module_name, original_file_location)
@@ -231,6 +235,8 @@ def _recursive_create_module_package_info(
         module_info (ModulePackagingInfo): Information object for the given module
 
     """
+
+    global download_package_location
 
     if (module_name, original_file_location) in PACKAGE_CACHE:
         # Look in the cache if there is already information about this module to speed up the process
@@ -292,6 +298,7 @@ def _recursive_create_module_package_info(
                             tmp_distribution_obj,
                             lambda_python_environments.py38_arm64,
                             module_name,
+                            download_package_location
                         )
                         PACKAGE_CACHE[(module_name, original_file_location)] = rv
                         return rv

@@ -27,8 +27,9 @@ from core.constructs.cloud_output import evaluate_dynamic_output, cloud_output_d
 from core.constructs.settings import Settings_Info, Settings, initialize_settings
 
 
-from ..utils.command_finder import find_specified_command, find_unspecified_command
-from ..utils import module_loader, topological_helper
+from core.utils.command_finder import find_specified_command, find_unspecified_command
+from core.utils import module_loader, topological_helper
+from core.utils.logger import log
 
 from core.constructs.types import F
 
@@ -451,20 +452,34 @@ class Workspace:
         def deploy_change(change: NodeView) -> None:
             output_task = tasks.get(change)
             output_task.start_task()
-
+            log.debug("Change ->>> %s", change)
+            log.debug("Here%s", "tt")
+            print("EPOfpowkefpowkfpowkefpok")
+            print(type(change))
             if isinstance(change, Resource_Difference):
                 # Step 1 is to register a transaction with the backend
-                transaction_token, namespace_token = self.get_backend().create_resource_change_transaction(self.get_resource_state_uuid(), change.component_name, change)
-
+                log.debug("Here99")
+                print("right here99")
+                try:
+                    transaction_token, namespace_token = self.get_backend().create_resource_change_transaction(self.get_resource_state_uuid(), change.component_name, change)
+                except Exception as e:
+                    print(e)
+                    print(f"Error Creating Transaction: {change}")
+                    raise e
+                
+                log.debug("Here")
+                print("right here")
                 ruuid = change.new_resource.ruuid if change.new_resource else change.previous_resource.ruuid
-
+                log.debug("Here1")
+                print("right here2")
                 # The Previous output is used by the mappers to make changes to the underlying resources.
                 previous_output = (
                     self.get_backend().get_cloud_output_by_name(self.get_resource_state_uuid(), change.component_name, ruuid, change.previous_resource.name)
                     if not change.action_type == Resource_Change_Type.CREATE else
                     {}
                 )
-
+                log.debug("Here2")
+                print("right here3")
                 try:
                     # Substitute the model with a model that has the cloud outputs evaluated.
                     new_evaluated_resource, evaluated_keys = self.evaluate_and_replace_cloud_output(change.component_name, change.new_resource)
@@ -487,6 +502,7 @@ class Workspace:
                     raise e
 
                 try:
+                    log.debug("evaluated information %s", _evaluated_change)
                     output_task.update(advance=5, comment="Deploying on Cloud :cloud:")
                     mapper = self.get_mapper_namespace().get(ruuid)
                     cloud_output = mapper.deploy_resource(transaction_token, namespace_token, _evaluated_change, previous_output, output_task)

@@ -118,6 +118,10 @@ def evaluate_dynamic_output(original_value: Any, cloud_output_dynamic: cloud_out
         elif func_name == "**xor":
             new_rv = intermediate_value ^ xargs[0]
 
+        elif func_name == "join":
+            new_rv = getattr(intermediate_value, func_name)(xargs)
+
+
         else:
             object_methods = set([method_name for method_name in dir(str) if callable(getattr(str, method_name))])
     
@@ -921,11 +925,15 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
         self._operations.append(
             (
                 'join',
-                (iterable), 
-                {},
+                iterable, 
+                {
+                    
+                },
             )
         )
+        print(self._operations)
         return self
+
 
     def ljust(self, width: SupportsIndex, __fillchar: str = "") -> 'Cloud_Output_Str':
         """Return S left-justified in a Unicode string of length __width. 

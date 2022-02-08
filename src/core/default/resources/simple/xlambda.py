@@ -2,9 +2,9 @@ import importlib
 import inspect
 import os
 from pydantic import FilePath
-from typing import Callable, Dict, FrozenSet, List, Optional, Union
+from typing import Any, Callable, Dict, FrozenSet, List, Optional, Union
 
-from core.constructs.cloud_output import Cloud_Output_Dynamic
+from core.constructs.cloud_output import Cloud_Output_Dynamic, Cloud_Output_Str
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsGrantableMixin
 from core.constructs.models import frozendict, ImmutableModel
 from core.constructs.types import cdev_str_model, cdev_str
@@ -21,13 +21,9 @@ RUUID = "cdev::simple::function"
 ################
 ##### Dependencies 
 ################
-class deployed_layer_model(ResourceModel):
-    arn: str
-    version: str
-
-
 class DeployedLayer():
-    pass
+    def __init__(self, arn: str) -> None:
+        self.arn = arn
 
 
 class dependency_layer_model(ResourceModel):
@@ -36,16 +32,18 @@ class dependency_layer_model(ResourceModel):
 
 class DependencyLayer(Resource):
 
-    def __init__(self, cdev_name: str, artifact_path: FilePath = None) -> None:
-        super().__init__(cdev_name)
+    def __init__(self, cdev_name: str, artifact_path: FilePath, artifact_hash: str) -> None:
+        super().__init__(cdev_name, LAMBDA_LAYER_RUUID)
         self.artifact_path = artifact_path
+        self.artifact_hash = artifact_hash
+        self._hash = artifact_hash
         self.output = DependencyLayerOutput(cdev_name)
 
     def render(self) -> dependency_layer_model:
         return dependency_layer_model(
             ruuid=LAMBDA_LAYER_RUUID,
             name=self.name, 
-            hash='1',
+            hash=self.artifact_hash,
             artifact_path=self.artifact_path
         )
 
@@ -57,6 +55,21 @@ class DependencyLayer(Resource):
 class DependencyLayerOutput(ResourceOutputs):
     def __init__(self, name: str) -> None:
         super().__init__(name, LAMBDA_LAYER_RUUID)
+
+
+    @property
+    def layer_arn(self) -> Cloud_Output_Str:
+        """The id of the created layer"""
+        return Cloud_Output_Str(
+            name=self._name,
+            ruuid=LAMBDA_LAYER_RUUID,
+            key='arn',
+            type=self.OUTPUT_TYPE
+        )
+
+    @layer_arn.setter
+    def layer_arn(self, value: Any):
+        raise Exception
 
 
 class FunctionOutput(ResourceOutputs):
@@ -107,7 +120,7 @@ class simple_function_model(ResourceModel):
     configuration: simple_function_configuration_model
     events: FrozenSet[event_model]
     permissions: FrozenSet[Union[permission_model, permission_arn_model]]
-    external_dependencies: FrozenSet[Union[deployed_layer_model, dependency_layer_model]]
+    external_dependencies: FrozenSet[Any]
     src_code_hash: str
 
 
@@ -208,6 +221,8 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
     def render(self) -> simple_function_model:
 
         premissions = [x.render() for x in self.granted_permissions]
+
+        dependencies = [x.output.layer_arn.render() if isinstance(x, DependencyLayer) else x.arn for x in self.external_dependencies ]
         
         return simple_function_model(
             name=self.name,
@@ -217,7 +232,7 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
             filepath=self.filepath,
             events=frozenset([x.render() for x in self.events]),
             permissions=frozenset(premissions),
-            external_dependencies=self.external_dependencies,
+            external_dependencies=frozenset(dependencies),
             src_code_hash=self.src_code_hash
         )
 

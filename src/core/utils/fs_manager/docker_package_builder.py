@@ -16,7 +16,7 @@ from .utils import (
 )
 
 # TODO: Set these as settings
-DEPLOYMENT_PLATFORM = "arm64"
+DEPLOYMENT_PLATFORM = "x86_64"
 DEPLOYMENT_PYTHON_VERSION = "python3.7"
 
 
@@ -24,10 +24,7 @@ def docker_available() -> bool:
     return True
 
 
-# TODO Set as a settings
-CACHE_LOCATION = os.path.join(
-    os.getcwd(), ".cdev", "dockercache.json"
-)
+
 
 has_run_container = False
 build_container = None
@@ -38,9 +35,16 @@ class DockerDownloadCache:
     Naive cache implentation for know which files have been downloaded.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, cache_location: str) -> None:
+        print(cache_location)
+        self._cache_location = os.path.join(cache_location, "cache.json")
+        self._downloads_locations = os.path.join(cache_location, "downloads")
 
-        if not os.path.isfile(CACHE_LOCATION):
+        if not os.path.isdir(self._downloads_locations):
+            os.mkdir(self._downloads_locations)
+
+
+        if not os.path.isfile(self._cache_location):
             self._cache = {
                 lambda_python_environments.py36: {},
                 lambda_python_environments.py37: {},
@@ -53,7 +57,7 @@ class DockerDownloadCache:
             }
 
         else:
-            with open(CACHE_LOCATION) as fh:
+            with open(self._cache_location) as fh:
                 self._cache = json.load(fh)
 
         self._cache_dirs = {
@@ -82,33 +86,25 @@ class DockerDownloadCache:
     ):
         self._cache[environment][id] = item
 
-        with open(CACHE_LOCATION, "w") as fh:
+        with open(self._cache_location, "w") as fh:
             json.dump(self._cache, fh, indent=4)
 
     def get_packaging_dir(self, environment: lambda_python_environments):
-        raise Exception
-        BASE_PACKAGING_DIR = os.path.abspath(
-            os.path.join(
-                CDEV_SETTINGS.get("CDEV_INTERMEDIATE_FOLDER_LOCATION"), ".packages"
-            )
-        )
-
-        if not os.path.isdir(BASE_PACKAGING_DIR):
-            os.mkdir(BASE_PACKAGING_DIR)
-
-        FULL_DIR = os.path.join(BASE_PACKAGING_DIR, self._cache_dirs.get(environment))
+        FULL_DIR = os.path.join(self._downloads_locations, self._cache_dirs.get(environment))
 
         if not os.path.isdir(FULL_DIR):
             os.mkdir(FULL_DIR)
 
         return FULL_DIR
 
-
-DOWNLOAD_CACHE = DockerDownloadCache()
+DOWNLOAD_CACHE:  DockerDownloadCache = None #DockerDownloadCache(os.path.join(os.getcwd(),"cache") )
 
 
 def download_package_and_create_moduleinfo(
-    project: Distribution, environment: lambda_python_environments, module_name: str
+    project: Distribution, 
+    environment: lambda_python_environments, 
+    module_name: str,
+    base_archive_directory: str
 ) -> ModulePackagingInfo:
     """
     Download a project in a platform compatible way to extract a particular top level module info from the project. Note that this function implements
@@ -119,10 +115,16 @@ def download_package_and_create_moduleinfo(
         project (Distribution): The distribution object that contains the metadata for the package
         environment (lambda_python_environments): Deployment environment the project needs to support
         module_name (str): The top level module from this project that we want
-
+        base_archive_directory (str): Path to Cache
     Returns:
         info (ModulePackagingInfo): Object for the information on packaging this module
     """
+    global DOWNLOAD_CACHE
+
+    if not os.path.isdir(os.path.join(base_archive_directory, "cache")):
+        os.mkdir(os.path.join(base_archive_directory, "cache"))
+
+    DOWNLOAD_CACHE = DockerDownloadCache(os.path.join(base_archive_directory, "cache"))
 
     package_information = _download_package(project, environment)
 

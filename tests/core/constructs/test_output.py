@@ -27,7 +27,7 @@ def simple_str_examples() -> List[Tuple[str, Cloud_Output_Str, str]]:
         ("frighten", _cloud_output_str_factory().isspace(), "frighten".isspace()),
         ("match", _cloud_output_str_factory().istitle(), "match".istitle()),
         ("murder", _cloud_output_str_factory().isupper(), "murder".isupper()),
-        ("impartial", _cloud_output_str_factory().join(['judge']), "impartial".join('judge')),
+        ("impartial", _cloud_output_str_factory().join(['judge', "another"]), "impartial".join(['judge', "another"])),
         ("knock", _cloud_output_str_factory().ljust(3), "knock".ljust(3)),
         ("    smash", _cloud_output_str_factory().lstrip(), "    smash".lstrip()),
         ("wretchED", _cloud_output_str_factory().lower(), "wretchED".lower()),

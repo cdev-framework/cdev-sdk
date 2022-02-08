@@ -12,6 +12,7 @@ from core.constructs.resource import (
 from core.constructs.workspace import Workspace
 
 from core.default.resources.simple.xlambda import (
+    DependencyLayer,
     SimpleFunction,
     simple_function_model,
     SimpleFunctionConfiguration
@@ -102,6 +103,7 @@ def _find_resources_information_from_file(
     functions_to_parse: List[str] = []
     function_name_to_info: Dict[str, simple_function_model] = {}
 
+
     for i in dir(mod):
         obj = getattr(mod, i)
 
@@ -119,15 +121,16 @@ def _find_resources_information_from_file(
             reference_rv.append(obj.render())
 
     if functions_to_parse:
-        parsed_function_info = _parse_serverless_functions(
+        parsed_function_info, parsed_dependency_info = _parse_serverless_functions(
             fp, 
             functions_to_parse,
             handler_name_to_info=function_name_to_info
         )
 
-
         resource_rv.extend(parsed_function_info)
+        resource_rv.extend(parsed_dependency_info)
         
+
     return resource_rv, reference_rv
 
 
@@ -138,7 +141,7 @@ def _parse_serverless_functions(
     handler_name_to_info: Dict[str, SimpleFunction],
     manual_includes: Dict = {},
     global_includes: List = [],
-) -> List[simple_function_model]:
+) -> Tuple[List[simple_function_model], List[DependencyLayer]]:
 
 
     parsed_file_info = serverless_parser.parse_functions_from_file(
@@ -158,9 +161,11 @@ def _parse_serverless_functions(
         os.mkdir(base_archive_path)
     
     rv = []
+    seen_layers = {}
+    download_cache = os.path.dirname(os.path.dirname(base_archive_path))
     for parsed_function in parsed_file_info.parsed_functions:
         needed_module_information = cdev_package_manager.get_top_level_module_info(
-            parsed_function.imported_packages, filepath
+            parsed_function.imported_packages, filepath, download_cache
         )
 
         (
@@ -175,6 +180,13 @@ def _parse_serverless_functions(
             base_archive_path,
             pkgs=needed_module_information,
         )
+        
+        
+        # Update the seen packages 
+        if dependencies_info:
+            seen_layers.update(
+              {x.hash:x.render() for x in dependencies_info}
+            )
 
         handler_path = base_handler_path + "." + parsed_function.name
 
@@ -200,7 +212,7 @@ def _parse_serverless_functions(
     
         rv.append(new_function.render())
 
-    return rv
+    return rv, [layer for _,layer in seen_layers.items()]
 
 
 def _clean_function_name(potential_name: str) -> str:
