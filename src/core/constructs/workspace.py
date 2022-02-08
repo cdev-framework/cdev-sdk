@@ -452,14 +452,10 @@ class Workspace:
         def deploy_change(change: NodeView) -> None:
             output_task = tasks.get(change)
             output_task.start_task()
-            log.debug("Change ->>> %s", change)
-            log.debug("Here%s", "tt")
-            print("EPOfpowkefpowkfpowkefpok")
-            print(type(change))
+
             if isinstance(change, Resource_Difference):
                 # Step 1 is to register a transaction with the backend
-                log.debug("Here99")
-                print("right here99")
+
                 try:
                     transaction_token, namespace_token = self.get_backend().create_resource_change_transaction(self.get_resource_state_uuid(), change.component_name, change)
                 except Exception as e:
@@ -467,19 +463,16 @@ class Workspace:
                     print(f"Error Creating Transaction: {change}")
                     raise e
                 
-                log.debug("Here")
-                print("right here")
+
                 ruuid = change.new_resource.ruuid if change.new_resource else change.previous_resource.ruuid
-                log.debug("Here1")
-                print("right here2")
+
                 # The Previous output is used by the mappers to make changes to the underlying resources.
                 previous_output = (
                     self.get_backend().get_cloud_output_by_name(self.get_resource_state_uuid(), change.component_name, ruuid, change.previous_resource.name)
                     if not change.action_type == Resource_Change_Type.CREATE else
                     {}
                 )
-                log.debug("Here2")
-                print("right here3")
+
                 try:
                     # Substitute the model with a model that has the cloud outputs evaluated.
                     new_evaluated_resource, evaluated_keys = self.evaluate_and_replace_cloud_output(change.component_name, change.new_resource)

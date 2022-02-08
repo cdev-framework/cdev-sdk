@@ -74,10 +74,6 @@ class weighted_dependency_graph:
             self.referenced_sub_modules,
         ) = self._create_pure_top_level_modules(top_level_modules)
 
-        print(
-            f"Giving Top modules {len(top_level_modules)}; true top modules {len(self.true_top_level_modules)}"
-        )
-
         for top_level_module in self.true_top_level_modules:
             new_top_level_node = self._recursive_add_to_graph(top_level_module)
 

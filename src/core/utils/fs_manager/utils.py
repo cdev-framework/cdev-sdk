@@ -182,18 +182,16 @@ def print_layer_package():
 
 
 class lambda_python_environments(str, Enum):
-    py36 = "py36"
     py37 = "py37"
     py38_x86_64 = "py38-x86_64"
     py38_arm64 = "py38-arm64"
-    py39_x86_64 = " py39-x86_64"
+    py39_x86_64 = "py39-x86_64"
     py39_arm64 = "py39-arm64"
     py3_x86_64 = "py3-x86_64"
     py3_arm64 = "py3-arm64"
 
 
 CONTAINER_NAMES = {
-    lambda_python_environments.py36: "public.ecr.aws/lambda/python:3.6",
     lambda_python_environments.py37: "public.ecr.aws/lambda/python:3.7",
     lambda_python_environments.py38_x86_64: "public.ecr.aws/lambda/python:3.8-x86_64",
     lambda_python_environments.py38_arm64: "public.ecr.aws/lambda/python:3.8-arm64",
@@ -404,11 +402,8 @@ def parse_requirement_line(line: str) -> str:
     # https://www.python.org/dev/peps/pep-0508/
     try:
         parsed_info = compiled(line).specification()
-        print(parsed_info)
+        
         if parsed_info[3]:
-            print(
-                f"Should include {line}; {parsed_info[3]}; {evaluate_expression(parsed_info[3])}"
-            )
             if not evaluate_expression(parsed_info[3]):
                 return None
 

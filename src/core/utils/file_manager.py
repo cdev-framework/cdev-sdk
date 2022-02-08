@@ -45,7 +45,7 @@ def safe_json_write(obj: Dict, fp: FilePath):
     Safely write files by first writing to a tmp file then copying to final location. This ensures that no file is
     partially written thus leaving a file in an unrecoverable state.
 
-    Arguments:
+    Args:
         obj (Dict): The dictionary that should be written
         fp (FilePath): The path the file should be written at
 

@@ -222,7 +222,7 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
 
         premissions = [x.render() for x in self.granted_permissions]
 
-        dependencies = [x.output.layer_arn.render() if isinstance(x, DependencyLayer) else x.arn for x in self.external_dependencies ]
+        dependencies = [x.output.cloud_id.render() if isinstance(x, DependencyLayer) else x.arn for x in self.external_dependencies ]
         
         return simple_function_model(
             name=self.name,

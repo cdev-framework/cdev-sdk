@@ -1,4 +1,6 @@
+from logging import raiseExceptions
 import os
+from pydantic import DirectoryPath
 from pydantic.types import FilePath
 from sortedcontainers.sortedlist import SortedKeyList
 from typing import Dict, List, Tuple
@@ -25,18 +27,32 @@ from serverless_parser import parser as serverless_parser
 
 
 from . import writer
-from . import package_mananger as cdev_package_manager
+from . import package_mananger 
 
+
+LAMBDA_LAYER_RUUID = "cdev::simple::lambda_layer"
 
 def parse_folder(
-    folder_path: str, 
-    prefix=None,
+    folder_path: DirectoryPath, 
 ) -> Tuple[List[ResourceModel], List[ResourceReferenceModel]]:
-    """
-    This function takes a folder and goes through it looking for cdev resources. Specifically, it loads all available python files
-    and uses the loaded module to determine the resources defined in the files. Most resources are simple, but there is extra work
-    needed to handle the serverless functions. Serverless functions are parsed to optimized the actual deployed artifact using the
-    cparser library.
+    """Search through the given folder looking for resource and references in Python files. 
+
+    Args:
+        folder_path (DirectoryPath): The directory to parse
+
+    Returns:
+        Tuple[
+            List[ResourceModel],
+            List[ResourceReferenceModel]
+        ]
+    
+    Specifically, it loads all available python files and uses the loaded module to determine 
+    the resources defined in the files. Any resource or reference defined in the global
+    context of the file will be detected.
+    
+    Most resources are passed back as is, but there are optimizations performed on the `simple functions`. 
+    Namely, Serverless functions are parsed to optimized the actual deployed artifact using the
+    cparser library and then have their dependencies managed also.
     """
     if not os.path.isdir(folder_path):
         raise Exception
@@ -53,33 +69,75 @@ def parse_folder(
     references_rv = SortedKeyList(key=lambda x: x.hash)
 
     for pf in python_files:
-        final_function_info = _find_resources_information_from_file(
+        found_resources, found_references = _find_resources_information_from_file(
             os.path.join(folder_path, pf)
         )
-        resources = final_function_info[0]
-        references = final_function_info[1]
-        if resources:
-            resources_rv.update(resources)
 
-        if references:
-            references_rv.update(references)
+        if found_resources:
+            resources_rv.update(found_resources)
 
+        if found_references:
+            references_rv.update(found_references)
 
-    return resources_rv, references_rv
+    cleaned_resources_rv = _deduplicate_layers_from_resource_list(resources_rv)
 
 
+    return cleaned_resources_rv, references_rv
 
-def _get_module_name_from_path(fp):
+
+def _deduplicate_layers_from_resource_list(resources: List[Resource]) -> List[Resource]:
+    """Remove duplicated layer resources
+
+    Args:
+        resources (List[Resource]): Sorted List of resources by x.hash
+
+    Returns:
+        resource (List[Resources]): List with duplicate layers removed
+
+    Since multiple functions can produce the same Layer resource by referencing the same 
+    3rd party resource, we need to deduplicate the layers from the list.
+    """
+
+    for i in range(len(resources)):
+        if i+1 >= len(resources):
+            break
+
+        if not (resources[i].ruuid == LAMBDA_LAYER_RUUID and resources[i+1].ruuid == LAMBDA_LAYER_RUUID):
+            continue
+
+        if resources[i].hash == resources[i+1].hash:
+            resources.pop(i)
+
+
+    return resources
+
+def _get_module_name_from_path(fp: FilePath):
+    """Convert a full file path of a python path into a importable module name
+
+    Args:
+        fp (FilePath): path to file
+
+    Returns:
+        str: The importable python module name 
+
+
+    All module names will end up being relative to the workspace path. Note that this means
+    the `Workspace` base path should be on the `Python Path`. This usually happens by default
+    because the `Workspace` starts from the cwd. 
+    """
     relative_to_project_path = paths.get_relative_to_workspace_path(fp)
 
     relative_to_project_path_parts = relative_to_project_path.split("/")
 
+    # If the last part of the file is __init__.pt then python will import it when the 
+    # rest of the path is given without the last part
     if relative_to_project_path_parts[-1] == "__init__.py":
         relative_to_project_path_parts.pop()
     else:
         # remove the .py part of the file name
         relative_to_project_path_parts[-1] = relative_to_project_path_parts[-1][:-3]
 
+    # join the parts back with '.' to create the valid python module name
     full_module_path_from_project = ".".join(relative_to_project_path_parts)
 
     return full_module_path_from_project
@@ -90,7 +148,10 @@ def _find_resources_information_from_file(
 ) -> Tuple[List[ResourceModel], List[ResourceReferenceModel]]:
     # Input: filepath
     if not os.path.isfile(fp):
-        return
+        raise Exception
+
+    if not fp[-3:] == '.py':
+        raise Exception
 
     mod_name = _get_module_name_from_path(fp)
 
@@ -142,29 +203,57 @@ def _parse_serverless_functions(
     manual_includes: Dict = {},
     global_includes: List = [],
 ) -> Tuple[List[simple_function_model], List[DependencyLayer]]:
+    """Parse a given set of function names from a given file
 
+    Args:
+        filepath (FilePath): The original file
+        functions_names_to_parse (List[str]): functions to parse
+        handler_name_to_info (Dict[str, SimpleFunction]): dict of additional information 
+        manual_includes (Dict, optional): Dict of information about extra lines to include. Defaults to {}.
+        global_includes (List, optional): List of global lines to include. Defaults to [].
 
+    Returns:
+        Tuple[List[simple_function_model], List[DependencyLayer]]: Functions and Dependencies parsed
+
+    Use the `serverless_parser` library to get information about each desired function and its dependencies.
+    Then use that information to create the needed archives for the functions and return the information as
+    Resources.
+    """
+
+    # Get all the info about a set of functions from the original file
     parsed_file_info = serverless_parser.parse_functions_from_file(
         filepath, include_functions=functions_names_to_parse, remove_top_annotation=True
     )
 
-    
-    
+    # Base path that the all the archives will go 
     base_archive_path = os.path.join(
         Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION,
         Workspace.instance().get_resource_state_uuid(),
     )
 
     if not os.path.isdir(base_archive_path):
-        # TODO improve this because it will fail if the intermediate folder doesn't 
-        # exist
         os.mkdir(base_archive_path)
+
+    if Workspace.instance().settings.USE_DOCKER:
+        # IF the user has denoted that they want to use Docker to build dependencies for 
+        # other architectures, then make sure a downloads cache is set up
+        download_cache = os.path.join(
+            Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION,
+            ".download_cache",
+        )
+
+        if not os.path.isdir(download_cache):
+            os.mkdir(download_cache)
+
+    else:
+        download_cache = None
     
     rv = []
     seen_layers = {}
-    download_cache = os.path.dirname(os.path.dirname(base_archive_path))
+
     for parsed_function in parsed_file_info.parsed_functions:
-        needed_module_information = cdev_package_manager.get_top_level_module_info(
+
+        needed_module_information = package_mananger.get_top_level_module_info(
             parsed_function.imported_packages, filepath, download_cache
         )
 
@@ -213,7 +302,3 @@ def _parse_serverless_functions(
         rv.append(new_function.render())
 
     return rv, [layer for _,layer in seen_layers.items()]
-
-
-def _clean_function_name(potential_name: str) -> str:
-    return potential_name.replace(" ", "_")

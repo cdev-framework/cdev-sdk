@@ -546,8 +546,8 @@ def _create_simple_layer(
     )
 
     return {
-        "cloud_id": dependency_rv.get("LayerArn"),
-        "arn": f"{dependency_rv.get('LayerArn')}:{dependency_rv.get('Version')}",
+        "cloud_id": f"{dependency_rv.get('LayerArn')}:{dependency_rv.get('Version')}",
+        "arn": dependency_rv.get("LayerArn"),
         "version": dependency_rv.get('Version')
     }
 
@@ -559,7 +559,7 @@ def _update_simple_layer(
         previous_output: Dict,
         output_task: OutputTask
     ):
-    return _create_simple_lambda(
+    return _create_simple_layer(
         transaction_token,
         namespace_token,
         new_resource,

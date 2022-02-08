@@ -13,21 +13,17 @@ from .utils import (
     ModulePackagingInfo,
     lambda_python_environments,
     parse_requirement_line,
+    CONTAINER_NAMES
 )
 
-# TODO: Set these as settings
-DEPLOYMENT_PLATFORM = "x86_64"
-DEPLOYMENT_PYTHON_VERSION = "python3.7"
 
 
 def docker_available() -> bool:
     return True
 
-
-
-
 has_run_container = False
 build_container = None
+
 
 
 class DockerDownloadCache:
@@ -36,7 +32,6 @@ class DockerDownloadCache:
     """
 
     def __init__(self, cache_location: str) -> None:
-        print(cache_location)
         self._cache_location = os.path.join(cache_location, "cache.json")
         self._downloads_locations = os.path.join(cache_location, "downloads")
 
@@ -46,7 +41,6 @@ class DockerDownloadCache:
 
         if not os.path.isfile(self._cache_location):
             self._cache = {
-                lambda_python_environments.py36: {},
                 lambda_python_environments.py37: {},
                 lambda_python_environments.py38_x86_64: {},
                 lambda_python_environments.py38_arm64: {},
@@ -61,7 +55,6 @@ class DockerDownloadCache:
                 self._cache = json.load(fh)
 
         self._cache_dirs = {
-            lambda_python_environments.py36: "py36",
             lambda_python_environments.py37: "py37",
             lambda_python_environments.py38_x86_64: "py38x8664",
             lambda_python_environments.py38_arm64: "py38arm64",
@@ -97,19 +90,19 @@ class DockerDownloadCache:
 
         return FULL_DIR
 
-DOWNLOAD_CACHE:  DockerDownloadCache = None #DockerDownloadCache(os.path.join(os.getcwd(),"cache") )
+DOWNLOAD_CACHE:  DockerDownloadCache = None 
 
 
 def download_package_and_create_moduleinfo(
     project: Distribution, 
     environment: lambda_python_environments, 
     module_name: str,
-    base_archive_directory: str
+    downloads_directory: str
 ) -> ModulePackagingInfo:
-    """
-    Download a project in a platform compatible way to extract a particular top level module info from the project. Note that this function implements
-    a cache so that it only downloads the project the first time it ever is called for the pair (project_name, environment). This means that most calls
-    to this function will not have to actually download the project.
+    """Download a project in a platform compatible way to extract a particular top level module info from the project. 
+    
+    Note that this function implements a cache so that it only downloads the project the first time it ever is called 
+    for the pair (project_name, environment). This means that most calls to this function will not have to actually download the project.
 
     Args:
         project (Distribution): The distribution object that contains the metadata for the package
@@ -121,10 +114,7 @@ def download_package_and_create_moduleinfo(
     """
     global DOWNLOAD_CACHE
 
-    if not os.path.isdir(os.path.join(base_archive_directory, "cache")):
-        os.mkdir(os.path.join(base_archive_directory, "cache"))
-
-    DOWNLOAD_CACHE = DockerDownloadCache(os.path.join(base_archive_directory, "cache"))
+    DOWNLOAD_CACHE = DockerDownloadCache(downloads_directory)
 
     package_information = _download_package(project, environment)
 
@@ -166,13 +156,20 @@ def _download_package(
     print(f"DOWNLOADING {project} FROM DOCKER ({project.project_name})")
     client = docker.from_env()
 
-    client.images.pull("public.ecr.aws/lambda/python:3.8-arm64")
+    print(f"PULLING DOCKER BUILD IMAGE")
+
+    if not environment in CONTAINER_NAMES:
+        raise Exception
+
+    image_name = CONTAINER_NAMES.get(environment)
+
+    client.images.pull(image_name)
 
     print(f"PULLED IMAGE")
 
     if not has_run_container:
         build_container = client.containers.run(
-            "public.ecr.aws/lambda/python:3.8-arm64",
+            image_name,
             entrypoint="/var/lang/bin/pip",
             command=f"install {project.project_name}=={project.version} --target /tmp",
             volumes=[f"{packaging_dir}:/tmp"],
@@ -191,7 +188,7 @@ def _download_package(
 
     for x in build_container.logs(stream=True):
         msg = x.decode("ascii")
-        # print(f"Building Package -> {msg}")
+        print(f"Building Package -> {msg}")
 
     info = _create_package_info(project.project_name, environment)
 
@@ -201,9 +198,10 @@ def _download_package(
 def _create_package_info(
     project_name: str, environment: lambda_python_environments
 ) -> List[ModulePackagingInfo]:
-    """
-    Creates a list of ModulePackagingInfo objects that represent the top level modules made available from this
-    package. It uses the information from the 'dist-info' that was downloaded for the projects by PIP This function
+    """Creates a list of ModulePackagingInfo objects that represent the top level modules made available from this
+    package. 
+    
+    It uses the information from the 'dist-info' that was downloaded for the projects by PIP. This function
     recursively calls itself to compute the information for dependant projects that were downloaded.
 
     Arg:

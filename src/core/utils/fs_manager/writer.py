@@ -113,12 +113,6 @@ def create_full_deployment_package(
         if layer_dependencies:
             # Make the layer archive in the same folder as the handler
 
-            (
-                single_dependency_layers,
-                composite_layer,
-            ) = _create_layers_from_referenced_modules(
-                layer_dependencies, available_layers
-            )
             LAYERS_DIR_NAME = "layers"
 
             archive_dir = os.path.join(
@@ -128,7 +122,13 @@ def create_full_deployment_package(
             if not os.path.isdir(archive_dir):
                 os.mkdir(archive_dir)
 
-
+            (
+                single_dependency_layers,
+                composite_layer,
+            ) = _create_layers_from_referenced_modules(
+                layer_dependencies, available_layers
+            )
+            
             dependencies_info: List[DependencyLayer] = []
         
 
@@ -166,8 +166,7 @@ def _create_package_dependencies_info(
 ) -> Tuple[List[ModulePackagingInfo], List[str]]:
     """
     Take a dictionary of the directly referenced packages (str [pkg_name] -> ModulePackagingInfo) that are used by a handler and return the
-    necessary information for creating the deployment packages. The optional parameter of how many layers are available is used to drive the optimization
-    steps for how to package the layer dependencies. Packages can be broken down into two categories: handler and layer.
+    necessary information for creating the deployment packages.
 
     Args:
         pkgs (Dict[str, ModulePackagingInfo]): Directly referenced packages used by the handler
@@ -175,8 +174,11 @@ def _create_package_dependencies_info(
     Returns:
         layer_dependencies (List[ModulePackagingInfo]): The packages to be added to the layers
         handler_dependencies (List[str]): List of files to include with the handler
+    
+    Packages can be broken down into two categories: handler and layer.
 
-    Handler packages are located within the 'cdev project', and therefore, should be packaged into the handler archive so that they
+    
+    Handler packages are located within the `Workspace`, and therefore, should be packaged into the handler archive so that they
     remain in the correct relative location to the handler function.
         src:\n
         |_ views\n
@@ -184,10 +186,10 @@ def _create_package_dependencies_info(
         |_ models\n
         |___ model.py\n
 
-    If a function in the handlers.py file references models.py as a relative package (from .. import models or from src import models)
-    it is important to keep the relative file structure the same
+    If a function in the handlers.py file references models.py as a relative package (from .. import models) it is important to keep 
+    the relative file structure the same.
 
-    Layer packages are packages that are found on the PYTHONPATH and most likely installed with a package manager like PIP. These
+    Layer packages are packages that are found on the PYTHONPATH and installed with a package manager like PIP. These
     should be packages as layers to keep the handler archive size small. Read the Cdev dependency deep dives for an in depth breakdown of
     how the layers are being packaged.
 
@@ -195,7 +197,6 @@ def _create_package_dependencies_info(
     needed dependencies.
     """
 
-    layer_dependencies = []
     handler_dependencies = set()
     directly_referenced_module_write_info: Set[ModulePackagingInfo] = set()
 
@@ -221,8 +222,8 @@ def _create_package_dependencies_info(
                     handler_dependencies.add(pkg.fp)
             else:
                 # Can not link to a locally managed module that is not within the cdev project structure.
-                print(f"Linking to local module outside of project directory {pkg.fp}")
-                # raise Exception
+                print(f"Linking to local module outside of Workspace {pkg.fp}")
+                raise Exception
 
             if pkg.flat:
                 # If the local module has dependencies, we need to recursively search them for import statements
@@ -258,14 +259,11 @@ def _create_layers_from_referenced_modules(
     # For a more detailed look at this optimization process read the dependency deep dive on the cdev website.
     graph = weighted_dependency_graph(directly_referenced_modules)
 
-    graph.print_graph()
 
     directly_referenced_modules_removed = set(directly_referenced_modules).difference(
         graph.true_top_level_modules
     )
-    print(
-        f"True top level modules {graph.true_top_level_modules }; removed  {directly_referenced_modules_removed}"
-    )
+
 
     # Optimization algorithm:
     # Since there is only one available layer, everything must go into the composite layer
@@ -287,14 +285,13 @@ def _create_layers_from_referenced_modules(
         # The available layers that can be used for single dependencies
         index_depth = min(max_index_level, available_layers)
 
-        print(f"Computing index of size {index_depth}")
+        
         index = compute_index(graph, index_depth)
         for pair, value in index.items():
             print(f"{pair} -> {math.floor(value/1024)} KB")
 
         index_heap = [(-value, key) for key, value in index.items()]
         heapq.heapify(index_heap)
-        print(index_heap)
 
         single_dependency_layer_ids = heapq.heappop(index_heap)[1]
 

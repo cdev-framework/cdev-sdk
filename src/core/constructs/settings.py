@@ -54,6 +54,8 @@ class Settings(BaseSettings):
 
     DEPLOYMENT_PLATFORM = "x86"
 
+    USE_DOCKER = False
+
 
     class Config:
         env_prefix = 'CDEV_'

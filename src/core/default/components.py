@@ -23,7 +23,7 @@ class Cdev_FileSystem_Component(Component):
         Render this component based on the information in the files at the provided folder path
         """
         resources_sorted, references_sorted = finder.parse_folder(
-            self.fp, self.get_name()
+            self.fp
         )
         total_component_hash = hasher.hash_list(
             [x.hash for x in resources_sorted] + [x.hash for x in references_sorted]
