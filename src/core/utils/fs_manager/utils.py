@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional, Set
+from typing import Dict, List, Optional, Set
 
 from pydantic.types import FilePath
 from pydantic import BaseModel, DirectoryPath
@@ -8,6 +8,7 @@ from pathlib import PosixPath, WindowsPath
 
 from core.utils import paths as core_paths, hasher as cdev_hasher
 from core.utils.logger import log
+from core.utils.platforms import lambda_python_environment
 
 import sys
 from parsley import makeGrammar
@@ -106,11 +107,18 @@ class PackageTypes(str, Enum):
     LOCALPACKAGE = "localpackage"
     AWSINCLUDED = "awsincluded"
 
+class Architecture(str, Enum):
+    X86 = "x86_64"
+    ARM64 = "aarch64"
+    ANY = "any"
+
+
 
 class ModulePackagingInfo(BaseModel):
     module_name: str
     type: PackageTypes
     version_id: Optional[str]
+    arch: Optional[Architecture] = Architecture.ANY
     fp: Optional[str]
     tree: Optional[List["ModulePackagingInfo"]]
     flat: Optional[List["ModulePackagingInfo"]]
@@ -131,7 +139,7 @@ class ModulePackagingInfo(BaseModel):
                 return f"{self.module_name}-{self.fp}"
 
         elif self.type == PackageTypes.PIP:
-            return f"{self.module_name}-{self.version_id}"
+            return f"{self.module_name}-{self.version_id}-{self.arch}"
 
         else:
             return self.module_name
@@ -181,24 +189,27 @@ def print_layer_package():
     pass
 
 
-class lambda_python_environments(str, Enum):
-    py37 = "py37"
-    py38_x86_64 = "py38-x86_64"
-    py38_arm64 = "py38-arm64"
-    py39_x86_64 = "py39-x86_64"
-    py39_arm64 = "py39-arm64"
-    py3_x86_64 = "py3-x86_64"
-    py3_arm64 = "py3-arm64"
+
+
+environment_to_architecture_suffix: Dict[lambda_python_environment, Architecture] = {
+    lambda_python_environment.py37: Architecture.X86,
+    lambda_python_environment.py38_x86_64: Architecture.X86,
+    lambda_python_environment.py38_arm64: Architecture.ARM64,
+    lambda_python_environment.py39_x86_64: Architecture.X86,
+    lambda_python_environment.py39_arm64: Architecture.ARM64,
+    lambda_python_environment.py3_x86_64: Architecture.X86,
+    lambda_python_environment.py3_arm64: Architecture.ARM64,
+}
 
 
 CONTAINER_NAMES = {
-    lambda_python_environments.py37: "public.ecr.aws/lambda/python:3.7",
-    lambda_python_environments.py38_x86_64: "public.ecr.aws/lambda/python:3.8-x86_64",
-    lambda_python_environments.py38_arm64: "public.ecr.aws/lambda/python:3.8-arm64",
-    lambda_python_environments.py39_x86_64: "public.ecr.aws/lambda/python:3.9-x86_64",
-    lambda_python_environments.py39_arm64: "public.ecr.aws/lambda/python:3.9-arm64",
-    lambda_python_environments.py3_x86_64: "public.ecr.aws/lambda/python:3-x86_64",
-    lambda_python_environments.py3_arm64: "public.ecr.aws/lambda/python:3-arm64",
+    lambda_python_environment.py37: "public.ecr.aws/lambda/python:3.7",
+    lambda_python_environment.py38_x86_64: "public.ecr.aws/lambda/python:3.8-x86_64",
+    lambda_python_environment.py38_arm64: "public.ecr.aws/lambda/python:3.8-arm64",
+    lambda_python_environment.py39_x86_64: "public.ecr.aws/lambda/python:3.9-x86_64",
+    lambda_python_environment.py39_arm64: "public.ecr.aws/lambda/python:3.9-arm64",
+    lambda_python_environment.py3_x86_64: "public.ecr.aws/lambda/python:3-x86_64",
+    lambda_python_environment.py3_arm64: "public.ecr.aws/lambda/python:3-arm64",
 }
 
 

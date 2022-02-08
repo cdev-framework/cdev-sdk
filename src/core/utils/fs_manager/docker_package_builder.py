@@ -11,9 +11,10 @@ from typing import List
 from .utils import (
     PackageTypes,
     ModulePackagingInfo,
-    lambda_python_environments,
+    lambda_python_environment,
     parse_requirement_line,
-    CONTAINER_NAMES
+    CONTAINER_NAMES,
+    environment_to_architecture_suffix
 )
 
 
@@ -41,13 +42,13 @@ class DockerDownloadCache:
 
         if not os.path.isfile(self._cache_location):
             self._cache = {
-                lambda_python_environments.py37: {},
-                lambda_python_environments.py38_x86_64: {},
-                lambda_python_environments.py38_arm64: {},
-                lambda_python_environments.py39_x86_64: {},
-                lambda_python_environments.py39_arm64: {},
-                lambda_python_environments.py3_x86_64: {},
-                lambda_python_environments.py3_arm64: {},
+                lambda_python_environment.py37: {},
+                lambda_python_environment.py38_x86_64: {},
+                lambda_python_environment.py38_arm64: {},
+                lambda_python_environment.py39_x86_64: {},
+                lambda_python_environment.py39_arm64: {},
+                lambda_python_environment.py3_x86_64: {},
+                lambda_python_environment.py3_arm64: {},
             }
 
         else:
@@ -55,16 +56,16 @@ class DockerDownloadCache:
                 self._cache = json.load(fh)
 
         self._cache_dirs = {
-            lambda_python_environments.py37: "py37",
-            lambda_python_environments.py38_x86_64: "py38x8664",
-            lambda_python_environments.py38_arm64: "py38arm64",
-            lambda_python_environments.py39_x86_64: "py39x8664",
-            lambda_python_environments.py39_arm64: "py39arm64",
-            lambda_python_environments.py3_x86_64: "py3x8664",
-            lambda_python_environments.py3_arm64: "py3arm64",
+            lambda_python_environment.py37: "py37",
+            lambda_python_environment.py38_x86_64: "py38x8664",
+            lambda_python_environment.py38_arm64: "py38arm64",
+            lambda_python_environment.py39_x86_64: "py39x8664",
+            lambda_python_environment.py39_arm64: "py39arm64",
+            lambda_python_environment.py3_x86_64: "py3x8664",
+            lambda_python_environment.py3_arm64: "py3arm64",
         }
 
-    def find_item(self, environment: lambda_python_environments, id: str):
+    def find_item(self, environment: lambda_python_environment, id: str):
         raw_data = self._cache.get(environment).get(id)
         if raw_data:
             return [ModulePackagingInfo(**x) for x in raw_data]
@@ -73,7 +74,7 @@ class DockerDownloadCache:
 
     def add_item(
         self,
-        environment: lambda_python_environments,
+        environment: lambda_python_environment,
         id: str,
         item: ModulePackagingInfo,
     ):
@@ -82,7 +83,7 @@ class DockerDownloadCache:
         with open(self._cache_location, "w") as fh:
             json.dump(self._cache, fh, indent=4)
 
-    def get_packaging_dir(self, environment: lambda_python_environments):
+    def get_packaging_dir(self, environment: lambda_python_environment):
         FULL_DIR = os.path.join(self._downloads_locations, self._cache_dirs.get(environment))
 
         if not os.path.isdir(FULL_DIR):
@@ -95,7 +96,7 @@ DOWNLOAD_CACHE:  DockerDownloadCache = None
 
 def download_package_and_create_moduleinfo(
     project: Distribution, 
-    environment: lambda_python_environments, 
+    environment: lambda_python_environment, 
     module_name: str,
     downloads_directory: str
 ) -> ModulePackagingInfo:
@@ -129,7 +130,7 @@ def download_package_and_create_moduleinfo(
 
 
 def _download_package(
-    project: Distribution, environment: lambda_python_environments
+    project: Distribution, environment: lambda_python_environment
 ) -> List[ModulePackagingInfo]:
     """
     Perform the actual downloading of the package and then parse out the needed information about the top level modules made available
@@ -196,7 +197,7 @@ def _download_package(
 
 
 def _create_package_info(
-    project_name: str, environment: lambda_python_environments
+    project_name: str, environment: lambda_python_environment
 ) -> List[ModulePackagingInfo]:
     """Creates a list of ModulePackagingInfo objects that represent the top level modules made available from this
     package. 
@@ -327,7 +328,7 @@ def _create_package_info(
             tmp_fp = potential_file
 
         else:
-            # TODO just continue cause things like numpy have __dummy__ in their top level pkg names but dont provide it
+            # just continue cause things like numpy have __dummy__ in their top level pkg names but dont provide it
             continue
 
         info = ModulePackagingInfo(
@@ -335,6 +336,7 @@ def _create_package_info(
                 "module_name": top_level_module_name,
                 "type": PackageTypes.PIP,
                 "version_id": current_package_version,
+                "arch": environment_to_architecture_suffix.get(environment),
                 "fp": tmp_fp,
                 "flat": tmp_flat_requirements,
                 "tree": tmp_tree_requirements,

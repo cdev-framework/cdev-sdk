@@ -14,14 +14,16 @@ from typing import List, Set, Dict, Tuple, Union, Optional
 from serverless_parser import parser as cdev_parser
 
 from . import docker_package_builder
-from .utils import PackageTypes, ModulePackagingInfo, lambda_python_environments
+from .utils import PackageTypes, ModulePackagingInfo, environment_to_architecture_suffix, Architecture
+
+from core.utils.platforms import lambda_python_environment, get_current_closest_platform
 
 # Keep cache of already seen package names
 PACKAGE_CACHE = {}
 
 # There isn't a great runtime way of identifying python standard libraries (non C builtin libraries packaged with python).
 # So I scraped the information from the python documentation website using the ./scripts/list-python-builtins
-STANDARD_LIBRARY_FILES = ["3_7", "3_8"]
+STANDARD_LIBRARY_FILES = ["3_7", "3_8", "3_9"]
 
 # Build a dict of pkg name to pip package obj so you don't have to loop over all the packages when doing a look up
 # We need to include both a the project name and 'toplevel' name. This is because a project can have a python unsafe name
@@ -33,9 +35,6 @@ MOD_NAME_TO_PRJ_OBJ: Dict[str, pkg_resources.Distribution] = {}
 PRJ_NAME_TO_TOP_LEVEL_MODULES: Dict[str, List[str]] = {}
 
 
-CURRENT_PLATFORM = platform.machine() if platform.machine() in ['x86_64', 'aarch64'] else None
-CURRENT_PYTHON_VERSION = f'{sys.version_info[0]}_{sys.version_info[1]}'
-
 INCOMPATIBLE_PROJECTS = set()
 
 _already_checked_cache = set()
@@ -43,7 +42,22 @@ _already_checked_cache = set()
 
 download_package_location = None
 
-target_platform = CURRENT_PLATFORM
+
+target_platform = get_current_closest_platform()
+CURRENT_PLATFORM = get_current_closest_platform()
+
+print(CURRENT_PLATFORM)
+
+environment_to_python_std = {
+    lambda_python_environment.py37: "3_7",
+    lambda_python_environment.py38_x86_64: "3_8",
+    lambda_python_environment.py38_arm64: "3_8",
+    lambda_python_environment.py39_x86_64: "3_9",
+    lambda_python_environment.py39_arm64: "3_9",
+    lambda_python_environment.py3_x86_64: "3_9",
+    lambda_python_environment.py3_arm64: "3_9",
+}
+
 
 def _is_platform_compatible(tags: List[str]) -> bool:
     # https://packaging.python.org/specifications/platform-compatibility-tags/
@@ -165,6 +179,7 @@ for project_obj in pkg_resources.working_set:
             INCOMPATIBLE_PROJECTS.add(project_obj.project_name)
 
 
+
 def _clear_already_checked_cache(starting_location: str):
     # Add the starting file of the recursive calls
     global _already_checked_cache
@@ -193,7 +208,8 @@ def get_top_level_module_info(
     download_package_location = download_package_location_param
 
     global target_platform
-    target_platform = "aarch64"
+    target_platform = lambda_python_environment.py39_arm64  
+    #target_platform = "aarch64"
 
     all_packages = {}
 
@@ -265,8 +281,8 @@ def _recursive_create_module_package_info(
         raise Exception
 
     else:
-        standard_lib_info = _load_standard_library_information(CURRENT_PYTHON_VERSION)
-        aws_packages = _load_aws_packages(CURRENT_PYTHON_VERSION)
+        standard_lib_info = _load_standard_library_information(environment_to_python_std.get(target_platform))
+        aws_packages = _load_aws_packages(environment_to_python_std.get(target_platform))
         pip_packages = _load_mod_to_prj()
 
         if module_name in standard_lib_info:
@@ -297,23 +313,26 @@ def _recursive_create_module_package_info(
 
             project_name = tmp_distribution_obj.project_name
 
-        
+            module_arch = Architecture.ANY
+
             if project_name in INCOMPATIBLE_PROJECTS:
                 # Some of the projects that can be installed are platform dependant and the users environment might not match the aws lambda
                 # environment. So, we need to use docker to pull the compatible version of the library then use that in the final archive
                 
                 if CURRENT_PLATFORM and (CURRENT_PLATFORM == target_platform):
                     # IF the current platform exists and is the same as the target platform no need to download a new version
-                    pass
+                    module_arch = environment_to_architecture_suffix.get(CURRENT_PLATFORM)
 
                 elif download_package_location:
+                    print("HERsssss")
                     # Else there needs to be a provided download location
                     if docker_package_builder.docker_available():
+                        
                         # Not that the download package function uses a cache so it will only actually pull the first time the user wants to
                         # package this function.
                         rv = docker_package_builder.download_package_and_create_moduleinfo(
                             tmp_distribution_obj,
-                            lambda_python_environments.py38_arm64,
+                            target_platform,
                             module_name,
                             download_package_location
                         )
@@ -348,10 +367,12 @@ def _recursive_create_module_package_info(
                 tmp_dependencies_tree,
             ) = _recursive_check_for_dependencies_project(tmp_distribution_obj)
 
+            print(module_arch)
             rv = ModulePackagingInfo(
                 **{
                     "module_name": module_name,
                     "type": PackageTypes.PIP,
+                    "arch": module_arch,
                     "version_id": tmp_distribution_obj.version,
                     "fp": tmp_fp,
                     "flat": tmp_dependencies_flat,
@@ -592,6 +613,7 @@ def _get_local_package_dependencies(
 
 
 def _load_standard_library_information(version="3_6"):
+    print(version)
     FILE_LOC = os.path.join(
         os.path.dirname(__file__), "standard_library_names", f"python_{version}"
     )
