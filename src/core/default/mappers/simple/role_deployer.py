@@ -54,11 +54,11 @@ def delete_role_and_permissions(
     """
     Delete all permissions and the associated role
     """
-    for permission_model, permission_arn in permission_arns:
-        _detach_policy(role_name, permission_arn)
-
-        #if isinstance(permission_model, simple_lambda.permission_model):
-        #    delete_policy(permission_arn)
+    #for permission_model, permission_arn in permission_arns:
+    #    _detach_policy(role_name, permission_arn)
+#
+    #    #if isinstance(permission_model, simple_lambda.permission_model):
+    #    #    delete_policy(permission_arn)
 
     aws_client.run_client_function("iam", "delete_role", {"RoleName": role_name})
 

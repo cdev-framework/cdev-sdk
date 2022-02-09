@@ -253,8 +253,10 @@ def _parse_serverless_functions(
 
     for parsed_function in parsed_file_info.parsed_functions:
 
+        previous_info = handler_name_to_info.get(parsed_function.name)
+
         needed_module_information = package_mananger.get_top_level_module_info(
-            parsed_function.imported_packages, filepath, download_cache
+            parsed_function.imported_packages, filepath, previous_info.platform, download_cache
         )
 
         (
@@ -279,8 +281,6 @@ def _parse_serverless_functions(
 
         handler_path = base_handler_path + "." + parsed_function.name
 
-        previous_info = handler_name_to_info.get(parsed_function.name)
-
         new_configuration = SimpleFunctionConfiguration(
             handler=handler_path,
             description=previous_info.configuration.description,
@@ -295,7 +295,8 @@ def _parse_serverless_functions(
             function_permissions=previous_info.granted_permissions,
             external_dependencies=dependencies_info if dependencies_info else [],
             src_code_hash=handler_archive_hash,
-            nonce=previous_info.nonce
+            nonce=previous_info.nonce,
+            platform=previous_info.platform
         )
 
     

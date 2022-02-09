@@ -45,10 +45,7 @@ def find_parents(resource: ResourceModel) -> Tuple[List, List]:
     parent_resources = [(x.ruuid,x.name) for x in cloud_outputs if x.type == OutputType.RESOURCE ]
     parent_references = [(x.ruuid,x.name) for x in cloud_outputs if x.type == OutputType.REFERENCE]
     
-    print("--------------------")
-    print(resource_as_obj)
-    print(parent_resources)
-    print("--------------------")
+
     return parent_resources, parent_references
 
 
@@ -197,14 +194,6 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
             pass
             
 
-    #print(change_dag.edges)
-
-    for edge in change_dag.edges:
-        print("---------------------------")
-        print(f"{edge[0]}")
-        print(f">>>>>>>>>>>>>>>>>>>")
-        print(f"{edge[1]}")
-        print("----------------------------")
     return change_dag
 
 

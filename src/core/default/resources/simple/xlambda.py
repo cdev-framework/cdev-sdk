@@ -10,6 +10,7 @@ from core.constructs.models import frozendict, ImmutableModel
 from core.constructs.types import cdev_str_model, cdev_str
 
 from core.utils import hasher
+from core.utils.platforms import lambda_python_environment, get_current_closest_platform
 
 from core.default.resources.simple.iam import Permission, PermissionArn, permission_arn_model, permission_model
 from core.default.resources.simple.events import Event, event_model
@@ -122,6 +123,7 @@ class simple_function_model(ResourceModel):
     permissions: FrozenSet[Union[permission_model, permission_arn_model]]
     external_dependencies: FrozenSet[Any]
     src_code_hash: str
+    platform: lambda_python_environment
 
 
     class Config:
@@ -139,6 +141,7 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
         filepath: str,
         configuration: SimpleFunctionConfiguration,
         events: List[Event] = [],
+        platform: lambda_python_environment = None,
         function_permissions: List[Union[Permission, PermissionArn]] = [],
         external_dependencies: List[Union[DeployedLayer, DependencyLayer]]=[],
         src_code_hash: str = None,
@@ -165,6 +168,8 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
         self._granted_permissions: List[Union[Permission, PermissionArn]] = function_permissions
 
         self.src_code_hash = src_code_hash if src_code_hash else hasher.hash_file(filepath)
+
+        self._platform = platform if platform else get_current_closest_platform()
         
 
     @property
@@ -195,6 +200,15 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
         self._configuration = value
 
     @property
+    def platform(self):
+        return self._platform
+
+    @platform.setter
+    @update_hash
+    def platform(self, value: lambda_python_environment):
+        self._platform = value
+
+    @property
     def external_dependencies(self):
         return self._external_dependencies
 
@@ -214,7 +228,8 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
                 self._config_hash,
                 self._events_hash,
                 self._permissions_hash,
-                self._nonce
+                self._nonce,
+                self._platform
             ]
         )
 
@@ -222,7 +237,7 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
 
         premissions = [x.render() for x in self.granted_permissions]
 
-        dependencies = [x.output.cloud_id.render() if isinstance(x, DependencyLayer) else x.arn for x in self.external_dependencies ]
+        dependencies = [x.output.cloud_id.render() if isinstance(x, DependencyLayer) else x.arn for x in self.external_dependencies]
         
         return simple_function_model(
             name=self.name,
@@ -233,7 +248,8 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
             events=frozenset([x.render() for x in self.events]),
             permissions=frozenset(premissions),
             external_dependencies=frozenset(dependencies),
-            src_code_hash=self.src_code_hash
+            src_code_hash=self.src_code_hash,
+            platform=self.platform
         )
 
 
@@ -242,13 +258,13 @@ def simple_function_annotation(
     events: List[Event] = [],
     environment={},
     permissions: List[Union[Permission, PermissionArn]] = [],
+    override_platform: lambda_python_environment = None,
     includes: List[str] = [],
     nonce: str=""
 ) -> Callable[[Callable], SimpleFunction]:
     """This annotation is used to designate that a function should be deployed as a Serverless function. 
     
-    Functions that are designated using this annotation should have a signature that takes two inputs (event,context) 
-    to conform to the aws lambda handler signature.
+    
 
     Functions that are annotated with this symbol will be put through the cdev function parser to optimize the final deployed artifact
     to only contain global statements needed for this function. For more information on this process read <link>.
@@ -283,6 +299,7 @@ def simple_function_annotation(
             filepath=full_filepath,
             events=events,
             configuration=final_config,
+            platform=override_platform,
             function_permissions=permissions,
             nonce=nonce
         )

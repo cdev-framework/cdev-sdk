@@ -190,7 +190,7 @@ def _clear_already_checked_cache(starting_location: str):
 
 
 def get_top_level_module_info(
-    modules: List[str], start_location: FilePath, download_package_location_param: str,
+    modules: List[str], start_location: FilePath, target_platform_param: lambda_python_environment, download_package_location_param: str,
 ) -> Dict[str, ModulePackagingInfo]:
     """Given a set of modules, find the information needed to package those module
 
@@ -208,8 +208,7 @@ def get_top_level_module_info(
     download_package_location = download_package_location_param
 
     global target_platform
-    target_platform = lambda_python_environment.py39_arm64  
-    #target_platform = "aarch64"
+    target_platform = target_platform_param
 
     all_packages = {}
 

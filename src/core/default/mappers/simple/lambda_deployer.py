@@ -1,6 +1,6 @@
 import os
 from time import sleep
-from typing import Any, Dict, Union, List
+from typing import Any, Dict, Union, List, Tuple
 from uuid import uuid4
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
@@ -12,6 +12,7 @@ from core.default.resources.simple.iam import permission_arn_model, permission_m
 
 from core.utils import paths as core_paths, hasher
 from core.utils.logger import log
+from core.utils.platforms import lambda_python_environment
 
 
 
@@ -33,6 +34,15 @@ from .event_deployer import (
 )
 
 
+python_environment_to_aws_params: Dict[lambda_python_environment, Tuple] = {
+    lambda_python_environment.py37: ('python3.7', 'x86_64'),
+    lambda_python_environment.py38_x86_64: ('python3.8', 'x86_64'),
+    lambda_python_environment.py38_arm64: ('python3.8', 'arm64'),
+    lambda_python_environment.py39_x86_64: ('python3.9', 'x86_64'),
+    lambda_python_environment.py39_arm64: ('python3.9', 'arm64'),
+    lambda_python_environment.py3_x86_64: ('python3.9', 'x86_64'),
+    lambda_python_environment.py3_arm64: ('python3.9', ' arm64'),
+}
 
 
 AssumeRolePolicyDocumentJSON = """{
@@ -116,10 +126,12 @@ def _create_simple_lambda(
         comment=f"Create Lambda function"
     )
 
+    runtime, arch = python_environment_to_aws_params.get(resource.platform)
     
     lambda_function_args = {
         "FunctionName": function_name,
-        "Runtime": "python3.7",
+        "Runtime": runtime,
+        "Architectures": [arch],
         "Role": role_arn,
         "Handler": resource.configuration.handler,
         "Code": {"S3Bucket": BUCKET, "S3Key": keyname},
@@ -206,11 +218,11 @@ def _remove_simple_lambda(
         "lambda", "delete_function", {"FunctionName": cloud_id}
     )
 
-    #role_name = previous_output.get("role_name")
+    #role_name = previous_output.get("role_id")
     #permissions =  previous_output.get("permissions")
 #
     #delete_role_and_permissions(role_name, permissions)
-
+#
     output_task.update(
         comment=f"Deleting permissions for the resource ({cloud_id})"
     )
