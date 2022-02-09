@@ -1,7 +1,7 @@
 import math
 import os
 from time import sleep
-from typing import Any, Dict, Union, List, Tuple
+from typing import Any, Dict, FrozenSet, Union, List, Tuple
 from uuid import uuid4
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
@@ -150,7 +150,7 @@ def _create_simple_lambda(
     lambda_function_rv = aws_client.run_client_function(
         "lambda", "create_function", lambda_function_args
     )
-
+    final_info["layers"] = resource.external_dependencies
     final_info["cloud_id"] = lambda_function_rv.get("FunctionArn")
 
     # Step 5
@@ -253,6 +253,7 @@ def _update_simple_lambda(
     cloud_id = previous_output['cloud_id']
 
     did_update_permission = False
+    did_update_src_code = False
 
     mutable_previous_output = dict(previous_output)
     
@@ -326,11 +327,20 @@ def _update_simple_lambda(
         )
 
         mutable_previous_output["artifact_key"] = keyname
+        did_update_src_code = True
+
 
     if (
         not previous_resource.external_dependencies
         == new_resource.external_dependencies
     ):
+        if did_update_src_code:
+            output_task.update(
+                comment=f"[blink]Waiting for src code update to complete. ~5s[/blink]"
+            )
+            sleep(5)
+
+
         output_task.update(
             comment=f"Update Dependencies"
         )
@@ -338,13 +348,13 @@ def _update_simple_lambda(
         remove_dependencies = previous_resource.external_dependencies.difference(new_resource.external_dependencies)
         create_dependencies = new_resource.external_dependencies.difference(previous_resource.external_dependencies)
         
-        previous_dependency_output: List =  mutable_previous_output.get("layers")
+        previous_dependency_output: List =  list(mutable_previous_output.get("layers"))
 
         for dependency in create_dependencies:
             previous_dependency_output.append(dependency)
 
         for dependency in remove_dependencies:
-            previous_dependency_output.pop(dependency)
+            previous_dependency_output.remove(dependency)
 
         aws_client.run_client_function(
             "lambda",

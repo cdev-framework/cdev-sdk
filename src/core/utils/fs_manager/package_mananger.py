@@ -152,7 +152,37 @@ for project_obj in pkg_resources.working_set:
         if not _is_platform_compatible(tags):
             PLATFORM_DEPENDENT_PROJECTS.add(project_obj.project_name)
 
+######################
+##### Helper Functions
+######################
 
+def _load_aws_packages(version="3_6"):
+    """Returns the given built in third party packages for a given platform
+
+    Args:
+        version (str, optional): [description]. Defaults to "3_6".
+
+    Returns:
+        set[str]: modules
+    """
+    return set(["boto3", "botocore"])
+
+
+def _load_mod_to_prj():
+    return MOD_NAME_TO_PRJ_OBJ
+
+
+def _load_standard_library_information(version="3_6"):
+    FILE_LOC = os.path.join(
+        os.path.dirname(__file__), "standard_library_names", f"python_{version}"
+    )
+
+    if not os.path.isfile(FILE_LOC):
+        # TODO throw error
+        raise FileNotFoundError
+
+    with open(FILE_LOC) as fh:
+        return set(fh.read().splitlines())
 
 def _clear_already_checked_cache(starting_location: str):
     # Add the starting file of the recursive calls
@@ -162,6 +192,9 @@ def _clear_already_checked_cache(starting_location: str):
 
     _already_checked_cache.add(starting_location)
 
+##########################
+##### Main Entry Point
+##########################
 
 def get_top_level_module_info(
     modules: List[str], start_location: FilePath, target_platform_param: lambda_python_environment, download_package_location_param: DirectoryPath = None,
@@ -184,7 +217,7 @@ def get_top_level_module_info(
 
 
     """
-    log.debug('Getting Module Packaging Info for modules %s for target platform %s', modules, target_platform)
+    
     # Set the global value for the recursive function to use
     global download_package_location
     download_package_location = download_package_location_param
@@ -192,9 +225,9 @@ def get_top_level_module_info(
     global target_platform
     target_platform = target_platform_param
 
-    all_packages = {}
-
+    log.debug('Getting Module Packaging Info for modules %s for target platform %s', modules, target_platform)
     
+    all_packages = {}
 
     # we want to keep a cache of files we have already checked to speed up the process
     # clear this cache between iterations to make sure no files have changed
@@ -222,9 +255,11 @@ def _get_module_info(
     We use the recursive method because we must compute the package information for the dependencies of this dependency. 
    
     """
-    log.debug('Getting Module Packaging Info for module %s', module_name)
+    log.debug('Top Getting Module Packaging Info for module %s', module_name)
     # Note the package cache is implemented at the recursive level so that recursive calls can benefit from the cache also
     info = _recursive_create_module_package_info(module_name, original_file_location)
+
+    log.debug('Top Recieve Module Packaging Info %s for module %s', info, module_name)
 
     return info
 
@@ -374,6 +409,8 @@ def _recursive_create_module_package_info(
             )
 
         else:
+            # Since the module is not in the PIP, platform builtins, or std lib
+            # It should be treated as a local package
             mod = sys.modules.get(module_name)
             if mod:
                 if not mod.__file__:
@@ -390,12 +427,15 @@ def _recursive_create_module_package_info(
                         tmp_fp = os.path.dirname(mod.__file__)
                     else:
                         tmp_fp = mod.__file__
-                    # TODO: Need to make sure that this actually works
-                    raise Exception
+                    # TODO: Maybe support this in the future
+                    log.debug("Local absolute reference for module %s", module_name)
+                    raise Exception("Referencing local package using absolute import statement. Change it to a relative import to work with Cdev.")
             elif module_name[0] == ".":
                 # IF the module name started with a '.' then it is a relative import
                 
                 tmp_type = PackageTypes.LOCALPACKAGE
+                original_path = Path(original_file_location)
+
                 tmp_version = None
 
                 tmp_module_name = module_name
@@ -410,8 +450,8 @@ def _recursive_create_module_package_info(
                         levels = levels + 1
                     else:
                         break
-
-                original_path = Path(original_file_location)
+                
+                log.debug("%s if %s levels up from handler", module_name, levels)
 
                 # go up the amount of levels need to get to the top of the search path
                 relative_base_dir = original_path.parents[levels - 1]
@@ -437,10 +477,11 @@ def _recursive_create_module_package_info(
                 else:
                     raise Exception
 
+                log.debug("Final relative file location (%s) from workspace to %s", tmp_fp, module_name)
                 
 
             else:
-                raise Exception
+                raise Exception(f"Unmanageable module name for local module {module_name}")
 
             # Since this is a local package, it does not contain any extra metadata. This means the only way to find the dependencies is to
             # parse each python file in the needed module and look at its imports :/
@@ -448,6 +489,8 @@ def _recursive_create_module_package_info(
                 dependencies_flat,
                 dependencies_tree,
             ) = _recursive_check_for_dependencies_package(tmp_fp)
+            log.debug("Flat dependencies for %s -> %s", module_name, dependencies_flat)
+            log.debug("Tree dependencies for %s -> %s", module_name, dependencies_tree)
 
             rv = ModulePackagingInfo(
                 **{
@@ -461,6 +504,7 @@ def _recursive_create_module_package_info(
             )
 
         PACKAGE_CACHE[(module_name, original_file_location)] = rv
+        log.debug("Add to cache (%s,%s) => %s", module_name, original_file_location, rv)
         return rv
 
 
@@ -515,13 +559,14 @@ def _recursive_check_for_dependencies_project(
 def _recursive_check_for_dependencies_package(
     fp: Union[FilePath, DirectoryPath]
 ) -> Tuple[List[ModulePackagingInfo], List[ModulePackagingInfo]]:
-    """
-    Create the ModulePackagingInfo objects for all dependencies of this local module. By calling the '_recursive_create_module_package_info' to create the
-    ModulePackagingInfo objects, it creates a recursive stack that eventually leads to tmp_flat being a list of ALL needed dependencies and the tmp_tree
-    to be the first level in the dependency tree for this project.
+    """Create the ModulePackagingInfo objects for all dependencies of a local module. 
+    
+    By calling the '_recursive_create_module_package_info' to create the ModulePackagingInfo objects,
+    it creates a recursive stack that eventually leads to tmp_flat being a list of ALL needed dependencies 
+    and the tmp_tree to be the first level in the dependency tree for this project.
 
     Args:
-        project_distribution_obj (pkg_resources.Distribution): object from pkg_resources that contains metadata on this package
+        fp (Union[FilePath, DirectoryPath]): object from pkg_resources that contains metadata on this package
 
     Returns:
         flat (List[ModulePackagingInfo]): List of ALL needed dependencies
@@ -550,7 +595,7 @@ def _get_local_package_dependencies(
     fp: Union[FilePath, DirectoryPath]
 ) -> List[Tuple[str, Optional[str]]]:
     """
-    Get the local dependencies for a given local module by searching through the file/s that make up the module and looking
+    Get the local dependencies for a given local module by searching through the file(s) that make up the module and looking
     for import statements.
 
     Args:
@@ -558,9 +603,11 @@ def _get_local_package_dependencies(
 
     Returns:
         dependencies (List[Tuple[str,str]]): List of dependant module names and an optional filepath if the module is a relative module
+
+
+    Uses the Serverless Parser library to find all the imports in a given file.
     """
     global _current_working_dir
-
 
     if not _current_working_dir:
         # This setting should be set
@@ -598,30 +645,16 @@ def _get_local_package_dependencies(
                 module_names = module_names.union(
                     cdev_parser.parse_file_for_dependencies(os.path.join(dir, file))
                 )
+                log.debug("Found dependent modules %s for %s", module_names, os.path.join(dir, file))
 
     else:
         _already_checked_cache.add(fp)
         module_names = cdev_parser.parse_file_for_dependencies(fp)
+        
+    log.debug("Found dependent modules %s for %s", module_names, fp)
 
     return list(module_names)
 
 
-def _load_standard_library_information(version="3_6"):
-    FILE_LOC = os.path.join(
-        os.path.dirname(__file__), "standard_library_names", f"python_{version}"
-    )
-
-    if not os.path.isfile(FILE_LOC):
-        # TODO throw error
-        raise FileNotFoundError
-
-    with open(FILE_LOC) as fh:
-        return set(fh.read().splitlines())
 
 
-def _load_aws_packages(version="3_6"):
-    return set(["boto3", "botocore"])
-
-
-def _load_mod_to_prj():
-    return MOD_NAME_TO_PRJ_OBJ
