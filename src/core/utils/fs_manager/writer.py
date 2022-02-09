@@ -10,6 +10,7 @@ from core.constructs.workspace import Workspace
 
 
 from core.utils import paths as core_paths, hasher as cdev_hasher
+from core.utils.logger import log
 from core.default.resources.simple.xlambda import  DependencyLayer
 
 
@@ -73,7 +74,7 @@ def create_full_deployment_package(
     Returns:
         handler_archive_location (FilePath): The location of the created archive for the handler
         handler_archive_hash (str): Identifying hash of the handler archive
-        base_handler_path (str): The path to the file as a python package path
+        base_handler_path (str): The path to the file as a python package path. This will be the handler entry point when deployed.
         external_dependencies (LambdaLayerArtifact): List of layers that are needed for this function
     """
     global LAYER_CACHE
@@ -83,9 +84,12 @@ def create_full_deployment_package(
     # Clean the name of the function and create the final path of the parsed function
     cleaned_name = function_name.replace(" ", "_")   
     parsed_path = fs_utils.get_parsed_path(original_path, cleaned_name, base_archive_directory)
+    log.debug("Parsed Path (%s) for %s/%s", parsed_path, original_path, cleaned_name)
 
     # Write the actual parsed function into an intermediate folder
     _make_intermediate_handler_file(original_path, needed_lines, parsed_path)
+
+    # Keeps track of all files that need to be include in the handler archive
     handler_files = [parsed_path]
 
     # The handler can be in a subdirectory and since we preserve the relative project structure, we need to bring any __init__.py files
@@ -94,18 +98,21 @@ def create_full_deployment_package(
 
     handler_files.extend(extra_handler_path_files)
 
-    # Start from the base intermediate folder location then replace '/' with '.' and final remove the '.py' from the end
+    # Start from the base archive folder location then replace '/' with '.' and final remove the '.py' from the end
     base_handler_path = os.path.relpath(
         parsed_path,
         start=base_archive_directory
     ).replace("/", ".")[:-3]
 
+    # Zip archive will be at the same directory as the handler and replaced '.py' with '.zip
     parsed_filename = os.path.split(parsed_path)[1]
     zip_archive_location = os.path.join(
         os.path.dirname(parsed_path), parsed_filename[:-3] + ".zip"
     )
 
     if pkgs:
+        # Based on the directly references modules in the handler
+        # Figure out the optimal modules to package to need the needs. 
         layer_dependencies, handler_dependencies = _create_package_dependencies_info(
             pkgs
         )

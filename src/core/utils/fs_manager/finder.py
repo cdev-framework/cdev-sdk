@@ -57,6 +57,8 @@ def parse_folder(
     if not os.path.isdir(folder_path):
         raise Exception
 
+    log.debug("Finding resources in folder %s", folder_path)
+
     python_files = [
         f
         for f in os.listdir(folder_path)
@@ -65,8 +67,8 @@ def parse_folder(
 
     # [{<resource>}]
     resources_rv = SortedKeyList(key=lambda x: x.hash)
-
     references_rv = SortedKeyList(key=lambda x: x.hash)
+
 
     for pf in python_files:
         found_resources, found_references = _find_resources_information_from_file(
@@ -79,8 +81,8 @@ def parse_folder(
         if found_references:
             references_rv.update(found_references)
 
+    # Any duplicate layers can be removed 
     cleaned_resources_rv = _deduplicate_layers_from_resource_list(resources_rv)
-
 
     return cleaned_resources_rv, references_rv
 
@@ -146,6 +148,17 @@ def _get_module_name_from_path(fp: FilePath):
 def _find_resources_information_from_file(
     fp: FilePath,
 ) -> Tuple[List[ResourceModel], List[ResourceReferenceModel]]:
+    """Load a file and find top level objects that are Resources or References
+
+    Args:
+        fp (FilePath): path to python file
+
+    Raises:
+        Exception: [description]
+
+    Returns:
+        Tuple[List[ResourceModel], List[ResourceReferenceModel]]: Resources and References
+    """
     # Input: filepath
     if not os.path.isfile(fp):
         raise Exception
@@ -172,6 +185,8 @@ def _find_resources_information_from_file(
             # Find all the Resources in the module and render them
 
             if isinstance(obj, SimpleFunction):
+                # Functions are a special case as they will go through the parser and the output
+                # of that will be the returned resource
                 functions_to_parse.append(obj.configuration.handler)
                 function_name_to_info[obj.configuration.handler] = obj
                 
@@ -182,6 +197,7 @@ def _find_resources_information_from_file(
             reference_rv.append(obj.render())
 
     if functions_to_parse:
+        log.debug("Parsing functions (%s) from %s", functions_to_parse, fp)
         parsed_function_info, parsed_dependency_info = _parse_serverless_functions(
             fp, 
             functions_to_parse,
@@ -259,6 +275,8 @@ def _parse_serverless_functions(
             parsed_function.imported_packages, filepath, previous_info.platform, download_cache
         )
 
+        log.debug("Needed modules (%s) for %s", needed_module_information, parsed_function.name)
+
         (
             handler_archive_path,
             handler_archive_hash,
@@ -275,6 +293,7 @@ def _parse_serverless_functions(
         
         # Update the seen packages 
         if dependencies_info:
+            # Helps return only one copy of each layer for the file
             seen_layers.update(
               {x.hash:x.render() for x in dependencies_info}
             )
