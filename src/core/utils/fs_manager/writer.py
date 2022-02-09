@@ -79,6 +79,7 @@ def create_full_deployment_package(
     global LAYER_CACHE
 
     LAYER_CACHE = LayerWriterCache(os.path.join(base_archive_directory, "cache"))
+    print(f"BASE ARCHIVE DIR {base_archive_directory}")
 
     # Clean the name of the function and create the final path of the parsed function
     cleaned_name = function_name.replace(" ", "_")   
@@ -206,7 +207,8 @@ def _create_package_dependencies_info(
             directly_referenced_module_write_info.add(pkg)
 
         elif pkg.type == PackageTypes.LOCALPACKAGE:
-            if core_paths.is_in_workspace(pkg.fp):
+            full_path  = core_paths.get_full_path_from_workspace_base(pkg.fp)
+            if core_paths.is_in_workspace(full_path):
                 if os.path.isdir(pkg.fp):
                     # If the fp is a dir that means we need to include the entire directory
                     for dir, _, files in os.walk(pkg.fp):
@@ -441,9 +443,11 @@ def _copy_local_dependencies(dependencies: List[FilePath], base_final_dir: Direc
         copied_file_locations (List[str]): list of locations of the copied files
     """
     rv = []
+    print(f"final dir {base_final_dir}")
     for dependency in dependencies:
-        intermediate_location = core_paths.get_full_path_from_intermediate_base(
-            core_paths.get_relative_to_project_path(dependency)
+        intermediate_location = os.path.join(
+            base_final_dir,
+            core_paths.get_relative_to_workspace_path(dependency)
         )
 
         relative_to_intermediate = core_paths.get_relative_to_intermediate_path(
@@ -467,6 +471,8 @@ def _copy_local_dependencies(dependencies: List[FilePath], base_final_dir: Direc
                     rv.append(os.path.join(dir_name, file))
 
         elif os.path.isfile(dependency):
+            print(dependency)
+            print(intermediate_location)
             shutil.copyfile(dependency, intermediate_location)
             rv.append(intermediate_location)
         else:

@@ -46,7 +46,9 @@ download_package_location = None
 target_platform = get_current_closest_platform()
 CURRENT_PLATFORM = get_current_closest_platform()
 
-print(CURRENT_PLATFORM)
+#_current_working_dir = CDEV_SETTINGS.get("CURRENT_PARSING_DIR")
+# TODO: Make this a setting
+_current_working_dir = os.getcwd()
 
 environment_to_python_std = {
     lambda_python_environment.py37: "3_7",
@@ -400,7 +402,7 @@ def _recursive_create_module_package_info(
                     raise Exception
             elif module_name[0] == ".":
                 # IF the module name started with a '.' then it is a relative import
-
+                print(f"HERE {module_name}")
                 tmp_type = PackageTypes.LOCALPACKAGE
                 tmp_version = None
 
@@ -437,10 +439,13 @@ def _recursive_create_module_package_info(
 
                 if os.path.isfile(tmp_potential_file):
                     tmp_fp = tmp_potential_file
+                    print(f"ppppp {tmp_fp}")
                 elif os.path.isdir(tmp_potential_dir):
                     tmp_fp = tmp_potential_dir
                 else:
                     raise Exception
+
+                
 
             else:
                 raise Exception
@@ -462,6 +467,7 @@ def _recursive_create_module_package_info(
                     "tree": dependencies_tree,
                 }
             )
+            print(f"iiii {rv.fp}")
 
         PACKAGE_CACHE[(module_name, original_file_location)] = rv
         return rv
@@ -562,10 +568,8 @@ def _get_local_package_dependencies(
     Returns:
         dependencies (List[Tuple[str,str]]): List of dependant module names and an optional filepath if the module is a relative module
     """
+    global _current_working_dir
 
-    #_current_working_dir = CDEV_SETTINGS.get("CURRENT_PARSING_DIR")
-    # TODO: Make this a setting
-    _current_working_dir = None
 
     if not _current_working_dir:
         # This setting should be set
@@ -612,7 +616,6 @@ def _get_local_package_dependencies(
 
 
 def _load_standard_library_information(version="3_6"):
-    print(version)
     FILE_LOC = os.path.join(
         os.path.dirname(__file__), "standard_library_names", f"python_{version}"
     )
