@@ -1,3 +1,4 @@
+import math
 import os
 from time import sleep
 from typing import Any, Dict, Union, List, Tuple
@@ -451,12 +452,15 @@ def _upload_s3_code_artifact(
     return keyname
 
 def _upload_s3_dependency(
-    dependency: simple_xlambda.dependency_layer_model
+    dependency: simple_xlambda.dependency_layer_model,
+    output_task: OutputTask
 ) -> str:
     # Takes in a resource and create an s3 artifact that can be use as src code for lambda deployment
     keyname = f"{dependency.name}-{dependency.hash}.zip"
 
     zip_location = core_paths.get_full_path_from_intermediate_base(dependency.artifact_path)
+
+    total_bytes =  os.path.getsize(zip_location)
 
     if not os.path.isfile(zip_location):
         # TODO better exception
@@ -469,14 +473,23 @@ def _upload_s3_dependency(
         use_threads=True,
     )
 
+    
+
+    def update_progress_bar(x):
+        advance_amount = (x/total_bytes) * 4
+        output_task.update(advance=advance_amount, comment='[blink]Uploading Package[/blink]')
+
+
     object_args = {
         "Bucket": BUCKET,
         "Key": keyname,
         "Filename": zip_location,
-        "Callback": lambda x: print(x),
+        "Callback": update_progress_bar,
         "Config": config,
     }
     aws_client.run_client_function("s3", "upload_file", object_args)
+
+    output_task.update( comment='Uploaded Package')
 
     return keyname
 
@@ -539,7 +552,7 @@ def _create_simple_layer(
         comment=f"Creating dependencies for lambda function {resource.name}"
     )
 
-    key_name = _upload_s3_dependency(resource)
+    key_name = _upload_s3_dependency(resource, output_task)
 
     # key name will always include .zip so remove that part and change '-' into '_'
     layer_name = key_name.replace("-", "_")[:-4].replace(".","")
@@ -550,9 +563,9 @@ def _create_simple_layer(
             "Content": {"S3Bucket": BUCKET, "S3Key": key_name},
             "LayerName": f"{layer_name}_{namespace_token}",
             "CompatibleRuntimes": [
-                "python3.6",
                 "python3.7",
                 "python3.8",
+                "python3.9"
             ],
         },
     )
