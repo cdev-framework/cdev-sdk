@@ -101,6 +101,7 @@ def _create_simple_lambda(
     )
 
     final_info["role_id"] = role_arn
+    final_info["role_name"] = role_name
     final_info["permissions"] = permission_info
 
     # Step 2
@@ -219,11 +220,12 @@ def _remove_simple_lambda(
         "lambda", "delete_function", {"FunctionName": cloud_id}
     )
 
-    #role_name = previous_output.get("role_id")
-    #permissions =  previous_output.get("permissions")
-#
-    #delete_role_and_permissions(role_name, permissions)
-#
+    role_arn = previous_output.get("role_id")
+    role_name = previous_output.get("role_name")
+    permissions =  previous_output.get("permissions")
+
+    delete_role_and_permissions(role_name, permissions)
+
     output_task.update(
         comment=f"Deleting permissions for the resource ({cloud_id})"
     )

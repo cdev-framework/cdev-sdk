@@ -11,7 +11,7 @@ def create_role_with_permissions(
     role_name: str,
     permissions: FrozenSet[Union[permission_model, permission_arn_model]],
     assume_role_policy: str
-) -> Tuple[str, List[Tuple[Union[permission_model, permission_arn_model], str]]]:
+) -> Tuple[str, List[Dict]]:
     """
     This function creates a new IAM role and policies such that the function will have correct access to resources.
 
@@ -21,17 +21,16 @@ def create_role_with_permissions(
     
     Returns:
         str: The arn of the role created
-        Dict[Union[permission_model, permission_arn_model], str]]: Permission to the arn of the created permission
+        List[Tuple[str,bool]]: List of Tuple of permission arn and bool to denote if the permission should be destroyed on delete
     
     """
 
     role_arn = _create_role(role_name, assume_role_policy)
-    permission_info: List[Tuple[Union[permission_model, permission_arn_model], str]] = []
+    permission_info: List[Tuple[str, bool]] = []
 
 
     for permission in permissions:
-        rv = add_policy(role_name, permission)
-        permission_info.append((permission, rv))
+        permission_info.append(add_policy(role_name, permission))
 
 
     basic_execution_permission_arn = permission_arn_model(
@@ -39,30 +38,26 @@ def create_role_with_permissions(
     )
 
     permission_info.append(
-        (
-            basic_execution_permission_arn, 
-            add_policy(role_name, basic_execution_permission_arn)
-        )
+        add_policy(role_name, basic_execution_permission_arn)
     )
 
     return (role_arn, permission_info)
 
 
 def delete_role_and_permissions(
-    role_name: str, permission_arns: List[Tuple[Union[permission_model, permission_arn_model], str]]
-) -> bool:
+    role_name: str, permission_arns: List[Dict]
+):
     """
     Delete all permissions and the associated role
     """
-    #for permission_model, permission_arn in permission_arns:
-    #    _detach_policy(role_name, permission_arn)
-#
-    #    #if isinstance(permission_model, simple_lambda.permission_model):
-    #    #    delete_policy(permission_arn)
+    for info in permission_arns:
+        _detach_policy(role_name, info.get('arn'))
+
+        if info.get('was_created'):
+            delete_policy(info.get('arn'))
 
     aws_client.run_client_function("iam", "delete_role", {"RoleName": role_name})
 
-    return True
 
 
 
@@ -78,21 +73,25 @@ def delete_policy(permission_arn: str):
 def add_policy(
     role_name: str,
     permission: Union[permission_model, permission_arn_model]
-):
+) -> Dict:
     """
     Creates a policy if needed and then adds the policy to the given role
     """
     if isinstance(permission, permission_arn_model):
         # Already deployed policy so just append arn
         returned_permission_arn = permission.arn
+        was_created = False
         
     else:
         returned_permission_arn = _create_policy(permission)
+        was_created = True
         
     _attach_policy_to_arn(role_name, returned_permission_arn)
 
-    return returned_permission_arn
-
+    return {
+        "arn": returned_permission_arn,
+        "was_created": was_created
+    }
 
 def _create_policy(permission: permission_model) -> str:
     """
