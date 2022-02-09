@@ -1,4 +1,3 @@
-from shutil import ExecError
 import docker
 import json
 import os
@@ -6,6 +5,7 @@ from pkg_resources import Distribution
 import re
 from typing import List
 
+from core.constructs.workspace import Workspace
 
 
 from .utils import (
@@ -17,6 +17,7 @@ from .utils import (
     environment_to_architecture_suffix
 )
 
+from core.utils.logger import log
 
 
 def docker_available() -> bool:
@@ -24,7 +25,6 @@ def docker_available() -> bool:
 
 has_run_container = False
 build_container = None
-
 
 
 class DockerDownloadCache:
@@ -117,6 +117,7 @@ def download_package_and_create_moduleinfo(
 
     DOWNLOAD_CACHE = DockerDownloadCache(downloads_directory)
 
+    
     package_information = _download_package(project, environment)
 
     potential_modules = [x for x in package_information if x.module_name == module_name]
@@ -150,47 +151,58 @@ def _download_package(
 
     cache_item = DOWNLOAD_CACHE.find_item(environment, project.project_name)
     if cache_item:
+        log.debug("Hit Cache for Download Pkg (%s, %s)", environment, project.project_name)
         return cache_item
 
     packaging_dir = DOWNLOAD_CACHE.get_packaging_dir(environment)
 
-    print(f"DOWNLOADING {project} FROM DOCKER ({project.project_name})")
+    
     client = docker.from_env()
 
-    print(f"PULLING DOCKER BUILD IMAGE")
-
     if not environment in CONTAINER_NAMES:
-        raise Exception
+        raise Exception(f"No available Images for building projects on environment {environment}")
 
     image_name = CONTAINER_NAMES.get(environment)
 
-    client.images.pull(image_name)
+    print(f"PULLING DOCKER IMAGE {image_name}")
 
+    try:
+        client.images.pull(image_name)
+    except Exception as e:
+        print(e)
+        raise Exception(f"Could Not Pull Docker Images {image_name}")
+        
     print(f"PULLED IMAGE")
 
-    if not has_run_container:
-        build_container = client.containers.run(
-            image_name,
-            entrypoint="/var/lang/bin/pip",
-            command=f"install {project.project_name}=={project.version} --target /tmp",
-            volumes=[f"{packaging_dir}:/tmp"],
-            detach=True,
-        )
+    try:
+        if not has_run_container:
+            build_container = client.containers.run(
+                image_name,
+                entrypoint="/var/lang/bin/pip",
+                command=f"install {project.project_name}=={project.version} --target /tmp",
+                volumes=[f"{packaging_dir}:/tmp"],
+                detach=True,
+            )
 
-        has_run_container = True
+            has_run_container = True
 
-    else:
-        build_container.restart()
+        else:
+            build_container.restart()
 
-        build_container.exec_run(
-            cmd=f"/var/lang/bin/pip install {project.project_name}=={project.version} --target /tmp",
-            detach=True,
-        )
+            build_container.exec_run(
+                cmd=f"/var/lang/bin/pip install {project.project_name}=={project.version} --target /tmp",
+                detach=True,
+            )
 
-    for x in build_container.logs(stream=True):
-        msg = x.decode("ascii")
-        print(f"Building Package -> {msg}")
+        for x in build_container.logs(stream=True):
+            msg = x.decode("ascii")
+            print(f"Container Output -> {msg}")
 
+    except Exception as e:
+        print(e)
+        raise Exception(f"Could Install {project.project_name} ({project.version}) using Image {image_name}")
+
+    # Create the actual packaging information and store it in cache via this function
     info = _create_package_info(project.project_name, environment)
 
     return info
@@ -211,7 +223,6 @@ def _create_package_info(
 
     Returns:
         info (List[ModulePackagingInfo]): ModulePackagingInfo objects for each of the top level modules in this project
-
     """
 
     # We check and add to the cache at this layer because we recursively call this function to compute the
@@ -219,6 +230,7 @@ def _create_package_info(
     # this info
     cache_item = DOWNLOAD_CACHE.find_item(environment, project_name)
     if cache_item:
+        log.debug("Hit Cache for Download Pkg (%s, %s)", environment, project_name)
         return cache_item
 
     packaging_dir = DOWNLOAD_CACHE.get_packaging_dir(environment)
@@ -234,7 +246,6 @@ def _create_package_info(
         for dir_name in dir_names:
             m = re.match(regex_dist_info, dir_name)
             if not m:
-                # print(f"No regex match {dir_name} -> {regex_dist_info}")
                 continue
 
             # [<project_name>-<version>, dist-info]
@@ -252,17 +263,16 @@ def _create_package_info(
                 dist_info_dir = os.path.join(
                     packaging_dir, f"{name}-{version}.dist-info"
                 )
+                log.debug("Found dist info for (%s, %s) at %s", environment, project_name, dist_info_dir)
                 break
 
         break
 
     if not dist_info_dir:
-        print(f"Could not find dist info for {project_name} -> {dist_info_dir}")
-        raise Exception
+        raise Exception(f"Could not find dist info for {project_name} -> {dist_info_dir}")
 
     if not os.path.isdir(os.path.join(packaging_dir, dist_info_dir)):
-        print(f"COULD NOT FIND {os.path.join(packaging_dir, dist_info_dir)}")
-        raise Exception
+        raise Exception(f"COULD NOT FIND {os.path.join(packaging_dir, dist_info_dir)}")
 
     # If no top level file is found then assume the only top level module is the same as the project name
     if not os.path.isfile(os.path.join(packaging_dir, dist_info_dir, "top_level.txt")):
@@ -272,15 +282,15 @@ def _create_package_info(
         with open(os.path.join(packaging_dir, dist_info_dir, "top_level.txt")) as fh:
             top_level_module_names = [x.strip() for x in fh.readlines()]
 
+        log.debug("top level modules for (%s, %s) are %s", environment, project_name, top_level_module_names)
+
     tmp_flat_requirements: List[ModulePackagingInfo] = []
     tmp_tree_requirements: List[ModulePackagingInfo] = []
     rv = []
 
     if not os.path.isfile(os.path.join(packaging_dir, dist_info_dir, "METADATA")):
         # If not metadata file is found then assume no dependencies
-        print(
-            f"COULD NOT FIND {os.path.join(packaging_dir, dist_info_dir, 'METADATA')}"
-        )
+        log.debug("COULD NOT FIND %s", os.path.join(packaging_dir, dist_info_dir, 'METADATA'))
 
     else:
         required_packages = set()
@@ -294,28 +304,39 @@ def _create_package_info(
                     break
 
                 if line.split(":")[0] == "Version":
+                    # https://www.python.org/dev/peps/pep-0345/#version
+                    # ex:
+                    # version: 1.0.2
                     current_package_version = line.split(":")[1].strip()
 
                 if line.split(":")[0] == "Requires-Dist":
+                    # https://www.python.org/dev/peps/pep-0345/#requires-dist-multiple-use
                     # ex:
                     # Requires-Dist: pytz (>=2017.3)
                     stripped_information = line.split(":")[1].strip()
+
+
                     requirement_project_name = parse_requirement_line(
                         stripped_information
                     )
+
                     if requirement_project_name:
+                        log.debug("Pkg %s requires pkg %s", project_name, requirement_project_name)
                         required_packages.add(requirement_project_name)
 
         for required_package in required_packages:
-
+            # Recursively find the requirements to each needed project 
             dependent_pkg_infos = _create_package_info(required_package, environment)
             for dependent_pkg_info in dependent_pkg_infos:
+                # For the flat data structure add both the dependency and the dependencies dependencies 
                 tmp_flat_requirements.extend(dependent_pkg_info.flat)
                 tmp_flat_requirements.append(dependent_pkg_info)
 
                 tmp_tree_requirements.append(dependent_pkg_info)
 
     for top_level_module_name in top_level_module_names:
+        # Create module packaging info objects for each of the top level modules of the pkg
+
         # The package could be either a folder (normal case) or a single python file (ex: 'six' package)
         # If it can not be found as either than there is an issue
         potential_dir = os.path.join(packaging_dir, top_level_module_name)
@@ -345,7 +366,7 @@ def _create_package_info(
 
         rv.append(info)
 
-    # Add the information to the cache
+    # Add the information to the cache for this function
     DOWNLOAD_CACHE.add_item(environment, project_name, [x.dict() for x in rv])
 
     return rv
