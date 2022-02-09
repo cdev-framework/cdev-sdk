@@ -39,9 +39,7 @@ INCOMPATIBLE_PROJECTS = set()
 
 _already_checked_cache = set()
 
-
 download_package_location = None
-
 
 target_platform = get_current_closest_platform()
 CURRENT_PLATFORM = get_current_closest_platform()
@@ -325,7 +323,6 @@ def _recursive_create_module_package_info(
                     module_arch = environment_to_architecture_suffix.get(CURRENT_PLATFORM)
 
                 elif download_package_location:
-                    print("HERsssss")
                     # Else there needs to be a provided download location
                     if docker_package_builder.docker_available():
                         
@@ -368,7 +365,7 @@ def _recursive_create_module_package_info(
                 tmp_dependencies_tree,
             ) = _recursive_check_for_dependencies_project(tmp_distribution_obj)
 
-            print(module_arch)
+            
             rv = ModulePackagingInfo(
                 **{
                     "module_name": module_name,
@@ -402,7 +399,7 @@ def _recursive_create_module_package_info(
                     raise Exception
             elif module_name[0] == ".":
                 # IF the module name started with a '.' then it is a relative import
-                print(f"HERE {module_name}")
+                
                 tmp_type = PackageTypes.LOCALPACKAGE
                 tmp_version = None
 
@@ -439,7 +436,7 @@ def _recursive_create_module_package_info(
 
                 if os.path.isfile(tmp_potential_file):
                     tmp_fp = tmp_potential_file
-                    print(f"ppppp {tmp_fp}")
+                    
                 elif os.path.isdir(tmp_potential_dir):
                     tmp_fp = tmp_potential_dir
                 else:
@@ -467,7 +464,6 @@ def _recursive_create_module_package_info(
                     "tree": dependencies_tree,
                 }
             )
-            print(f"iiii {rv.fp}")
 
         PACKAGE_CACHE[(module_name, original_file_location)] = rv
         return rv

@@ -79,7 +79,6 @@ def create_full_deployment_package(
     global LAYER_CACHE
 
     LAYER_CACHE = LayerWriterCache(os.path.join(base_archive_directory, "cache"))
-    print(f"BASE ARCHIVE DIR {base_archive_directory}")
 
     # Clean the name of the function and create the final path of the parsed function
     cleaned_name = function_name.replace(" ", "_")   
@@ -443,7 +442,8 @@ def _copy_local_dependencies(dependencies: List[FilePath], base_final_dir: Direc
         copied_file_locations (List[str]): list of locations of the copied files
     """
     rv = []
-    print(f"final dir {base_final_dir}")
+
+
     for dependency in dependencies:
         intermediate_location = os.path.join(
             base_final_dir,
@@ -471,8 +471,6 @@ def _copy_local_dependencies(dependencies: List[FilePath], base_final_dir: Direc
                     rv.append(os.path.join(dir_name, file))
 
         elif os.path.isfile(dependency):
-            print(dependency)
-            print(intermediate_location)
             shutil.copyfile(dependency, intermediate_location)
             rv.append(intermediate_location)
         else:
