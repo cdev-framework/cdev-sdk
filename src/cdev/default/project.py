@@ -1,6 +1,6 @@
 import json
 from pydantic.types import FilePath
-from typing import Dict, List, Callable, Any, TypeVar
+from typing import Dict, List, Callable, Any, TypeVar, Tuple
 
 
 from cdev.constructs.project import Project, Project_State, project_info, wrap_phase
@@ -14,6 +14,8 @@ from core.constructs.workspace import Workspace_State
 
 from core.constructs.workspace import Workspace_Info
 from core.constructs.settings import Settings_Info
+from core.constructs.cloud_output import Cloud_Output
+
 from core.utils import file_manager
 
 from ..constructs.environment import environment_info, Environment
@@ -200,6 +202,29 @@ class local_project(Project):
             raise Exception(f"No environment with name {name}")
 
         return lookup_dict.get(name)
+
+    #######################
+    ##### Display Output
+    #######################
+    def display_output(self, tag: str, output: Cloud_Output):
+        """Display the output from a Resource or Reference after a process has completed
+
+        Args:
+            tag: A key value to display with the output
+            output: The Cloud Output to render
+        """
+        self.get_current_environment().get_workspace().display_output(tag, output)
+
+
+    def render_outputs(self) -> List[Tuple[str, Any]]:
+        """Render the output associated with the Workspace
+
+        Returns:
+            List[Tuple[str, Any]]: The List of outputs with their associated tag
+        
+        """
+        return self.get_current_environment().get_workspace().render_outputs()
+
 
     #################
     ##### Mappers

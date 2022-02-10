@@ -1,7 +1,7 @@
 from enum import Enum
 import json
 import os
-from typing import Any, Dict, List, Optional, TypeVar, Callable
+from typing import Any, Dict, List, Optional, TypeVar, Tuple, Callable
 
 from pydantic import BaseModel
 from pydantic.types import DirectoryPath
@@ -10,6 +10,7 @@ from core.constructs.backend import Backend_Configuration
 from core.constructs.mapper import CloudMapper
 from core.constructs.components import Component
 from core.constructs.types import F
+from core.constructs.cloud_output import Cloud_Output
 
 from .environment import environment_info, Environment
 
@@ -235,6 +236,30 @@ class Project:
 
         Raises:
             EnvironmentDoesNotExist
+        """
+        raise NotImplementedError
+
+
+    #######################
+    ##### Display Output
+    #######################
+
+    def display_output(self, tag: str, output: Cloud_Output):
+        """Display the output from a Resource or Reference after a process has completed
+
+        Args:
+            tag: A key value to display with the output
+            output: The Cloud Output to render
+        """
+        raise NotImplementedError
+
+
+    def render_outputs(self) -> List[Tuple[str, Any]]:
+        """Render the output associated with the Workspace
+
+        Returns:
+            List[Tuple[str, Any]]: The List of outputs with their associated tag
+        
         """
         raise NotImplementedError
 

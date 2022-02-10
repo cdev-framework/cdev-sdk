@@ -17,7 +17,8 @@ This is a running list of tasks that need to be done on the project before the a
 - Complete the reference system
 - Add all commands to CLI
 - Make custom types for relative paths to improve DX of working with paths.
-
+- Readd `workspace` output 
+- Work on documenting each available resource both in the Codebase and on the website
 
 ### Small
 - Add Event support for Lambda events from all support resources
@@ -31,3 +32,7 @@ This is a running list of tasks that need to be done on the project before the a
 - If the lambda function annotation is split into two lines the parser incorrectly adds the second line cause the function to most likely be in an unusable state.
 - Check on the `run` command
 
+#### Today
+- Add all commands to CLI
+- Add Event support for Lambda events from all support resources
+- Work on documenting each available resource both in the Codebase and on the website

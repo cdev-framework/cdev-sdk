@@ -23,7 +23,7 @@ from core.constructs.backend import Backend
 from core.constructs.mapper import CloudMapper
 from core.constructs.components import Component, Component_Change_Type, Component_Difference, ComponentModel
 from core.constructs.commands import BaseCommand, BaseCommandContainer
-from core.constructs.cloud_output import evaluate_dynamic_output, cloud_output_dynamic_model
+from core.constructs.cloud_output import Cloud_Output, evaluate_dynamic_output, cloud_output_dynamic_model
 from core.constructs.settings import Settings_Info, Settings, initialize_settings
 
 
@@ -261,8 +261,7 @@ class Workspace:
         raise NotImplementedError
 
     def get_commands(self) -> List[str]:
-        """
-        Get the Command Locations for this Workspace.
+        """Get the Command Locations for this Workspace.
 
         Note that this function should only be called during the `Workspace Initialized` part of the Cdev lifecycle.
 
@@ -271,9 +270,33 @@ class Workspace:
         """
         raise NotImplementedError
 
-    #################
+    #######################
+    ##### Display Output
+    #######################
+
+    def display_output(self, tag: str, output: Cloud_Output):
+        """Display the output from a Resource or Reference after a process has completed
+
+        Args:
+            tag: A key value to display with the output
+            output: The Cloud Output to render
+        """
+        raise NotImplementedError
+
+
+    def render_outputs(self) -> List[Tuple[str, Any]]:
+        """Render the output associated with the Workspace
+
+        Returns:
+            List[Tuple[str, Any]]: The List of outputs with their associated tag
+        
+        """
+        raise NotImplementedError
+
+
+    #######################
     ##### Components
-    #################
+    #######################
     def add_component(self, component: Component):
         """
         Add a Component to the Workspace. Components are used to determine the desired state of the Workspace. They should represent

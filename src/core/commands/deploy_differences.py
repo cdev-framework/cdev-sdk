@@ -35,3 +35,9 @@ def execute_deployment(workspace: Workspace, output: OutputManager):
     workspace.set_state(Workspace_State.EXECUTING_BACKEND)
 
     workspace.deploy_differences(differences_structured)
+
+
+    
+
+    for tag, cloud_output in workspace.render_outputs():
+        output._console.print(f"[blue]{tag}[/blue] -> {cloud_output}")
