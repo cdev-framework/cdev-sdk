@@ -1,0 +1,3 @@
+jinja2
+aurora_data_api
+pandas

@@ -31,11 +31,13 @@ BASE_PROJECT_LOCATION = os.getcwd()
 
 AVAILABLE_TEMPLATES = [
     'quick-start',
-    'resources-test'
+    'resources-test',
+    'packages'
 ]
 
 def create_project_cli(args):
-    config = args[0]
+    print(args)
+    config = args
     set_global_logger_from_cli(config.loglevel)
 
     if args.template:

@@ -20,8 +20,6 @@ This is a running list of tasks that need to be done on the project before the a
 
 
 ### Small
-- Fix storing and deleting roles associated with lambdas
-- Add demo project that demonstrates how to use 3rd party integrations
 - Add Event support for Lambda events from all support resources
 - Add implementations of the sync functionality for different resources
 - Add support for Global Secondary Indexes for dynamodb
