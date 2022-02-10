@@ -20,7 +20,7 @@ from ..utils import file_manager, module_loader
 
 
 DEFAULT_COMMAND_LOCATIONS = [
-    'core.resources.simple'
+    'core.default.commands'
 ]
 
 ROOT_FOLDER_NAME = ".cdev"

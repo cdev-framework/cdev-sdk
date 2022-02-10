@@ -60,7 +60,7 @@ class show_logs(BaseCommand):
             return
 
         cloud_watch_client = client("logs")
-
+        print(cloud_watch_group_name)
         log_streams_rv = cloud_watch_client.describe_log_streams(
             logGroupName=cloud_watch_group_name,
             orderBy="LastEventTime",

@@ -10,9 +10,7 @@ import sys
 from typing import List, Tuple, Union
 
 from core.constructs.commands import BaseCommand, BaseCommandContainer
-
-
-
+from core.utils.module_loader import import_module
 
 
 COMMANDS_DIR = "commands"
@@ -31,52 +29,50 @@ class TooManyCommandClasses(Exception):
 
 
 def find_specified_command(
-    command_list: List[str], all_search_locations_list: List[str]
+    command_list: List[str], 
+    all_search_locations_list: List[str]
 ) -> Tuple[Union[BaseCommand, BaseCommandContainer], str, str, bool]:
+    
+    command_list_copy = command_list.copy()
+
     for search_location in all_search_locations_list:
-        # All start locations should have a '<commands_dir>' folder that is a valid python module
-        actual_search_start = f"{search_location}.{COMMANDS_DIR}"
+        # Search locations are denoted as python module paths, so convert the module to a path to search from
+        mod = import_module(search_location)
+        search_location_path = os.path.dirname(mod.__file__)
+        f"{search_location}.{'.'.join(command_list_copy)}"
 
-        # This a specified command, so it must be in the described searched path
-        search_location_list = search_location.split(".")
-
-        if not command_list[0] == search_location_list[-1]:
-            # top level names do not match so don't even try recursively looking
-            print(
-                f"Top level name do not match -> {command_list}; {search_location_list}"
-            )
-            continue
-
-        # Try to find the location recursively
-        did_find, location, is_command = _recursive_find_specified_command(
-            command_list[1:], actual_search_start
+        did_find, is_command = _recursive_find_specified_command(
+            command_list, search_location_path
         )
+
+        if not did_find:
+            raise NoCommandFound
+
+        full_command_module_name = f"{search_location}.{'.'.join(command_list_copy)}"
 
         if is_command:
             try:
                 initialized_object = initialize_command_module(
-                    f"{location}.{command_list[-1]}"
+                    full_command_module_name
                 )
             except Exception as e:
                 print(e)
-                print("ERROR1")
-                return
+                raise Exception(f"ERROR Initializing Command Module at {full_command_module_name}")
 
         else:
             try:
-                print(f"calling with {location}; {command_list}")
                 initialized_object = initialize_command_container_module(
-                    f"{location}.{command_list[-1]}"
+                    full_command_module_name
                 )
             except Exception as e:
                 print(e)
-                print("ERROR2")
-                return
+                raise Exception(f"ERROR Initializing Command Container Module at {search_location}.{command_list}")
 
-        if did_find:
-            return initialized_object, location, command_list[-1], is_command
-        else:
-            raise NoCommandFound
+        
+        final_path_name =  f"{search_location}.{'.'.join(command_list_copy[:-1])}"
+        command_name = command_list_copy[-1]
+        return initialized_object, final_path_name, command_name, is_command
+        
 
 
 def find_unspecified_command(
@@ -156,11 +152,8 @@ def find_unspecified_command(
 
 
 def initialize_command_module(mod_path: str) -> BaseCommand:
-    # sometime the module is already loaded so just reload it to capture any changes
-    if sys.modules.get(mod_path):
-        importlib.reload(sys.modules.get(mod_path))
-
-    mod = importlib.import_module(mod_path)
+    
+    mod = import_module(mod_path, denote_output=True)
 
     # Check for the class that derives from BaseCommand... if there is more then one class then throw error (note this is a current implementation detail)
     # because it is easier if their is only one command per file so that we can use the file name as the command name
@@ -174,7 +167,6 @@ def initialize_command_module(mod_path: str) -> BaseCommand:
             and not (potential_obj == BaseCommand)
         ):
             if _has_found_a_valid_command:
-                
                 raise TooManyCommandClasses
 
             _has_found_a_valid_command = True
@@ -225,10 +217,8 @@ def _recursive_find_specified_command(
     SKIPS = set(["__init__.py", "__pycache__"])
     try:
 
-        mod = importlib.import_module(search_path)
-
-        current_location_attempt = os.path.dirname(mod.__file__)
-
+        current_location_attempt = os.path.join(search_path, command_list.pop(0))
+        
         for potential_location in os.listdir(current_location_attempt):
             is_dir = os.path.isdir(
                 os.path.join(current_location_attempt, potential_location)
@@ -246,13 +236,13 @@ def _recursive_find_specified_command(
                                 current_location_attempt, command_list[0], "__init__.py"
                             )
                         ):
-                            return (True, search_path, False)
+                            return (True, False)
                         else:
                             continue
                     else:
                         if potential_location[:-3] == command_list[0]:
                             # print(f"Found Command at -> {os.path.join(current_location_attempt, potential_location)}")
-                            return (True, search_path, True)
+                            return (True, True)
                         else:
                             continue
 
@@ -269,7 +259,7 @@ def _recursive_find_specified_command(
                         else:
                             continue
 
-        return (False, "", False)
+        return (False, False)
 
     except Exception as e:
         print(f"Could not do {search_path}")

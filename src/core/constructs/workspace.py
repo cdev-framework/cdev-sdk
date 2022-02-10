@@ -702,6 +702,7 @@ class Workspace:
                 command_list, all_search_locations_list
             )
 
+
         if is_command:
             if not isinstance(obj, BaseCommand):
                 raise Exception
