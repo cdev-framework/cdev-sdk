@@ -30,9 +30,8 @@ This is a running list of tasks that need to be done on the project before the a
 
 ### Bugs
 - If the lambda function annotation is split into two lines the parser incorrectly adds the second line cause the function to most likely be in an unusable state.
-- Check on the `run` command
 
 #### Today
-- Add all commands to CLI
-- Add Event support for Lambda events from all support resources
+- Add Event support for Lambda events from all supported resources
 - Work on documenting each available resource both in the Codebase and on the website
+- Add all commands to CLI

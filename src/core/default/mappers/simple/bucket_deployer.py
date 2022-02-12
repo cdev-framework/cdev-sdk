@@ -86,10 +86,14 @@ def add_eventsource(
     handler_arn: str,
     events: List[str],
 ) -> str:
-    # Per https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.put_bucket_notification_configuration
-    # The only available function for adding event handlers to a bucket is 'put_bucket_notification_configuration", but this function takes
-    # in a whole configuration and completely overwrites to the new one. Therefor, we need to get the current configuration and then add this
-    # new event handler and write it back to preserve previous eventsources.
+    """Add a new Event Source to a bucket
+
+
+    Per https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.put_bucket_notification_configuration
+    The only available function for adding event handlers to a bucket is 'put_bucket_notification_configuration", but this function takes
+    in a whole configuration and completely overwrites to the new one. Therefor, we need to get the current configuration and then add this
+    new event handler and write it back to preserve previous eventsources.
+    """
 
     current_events = _get_current_bucket_event_configuration(bucket_name)
 
@@ -135,7 +139,7 @@ def add_eventsource(
     else:
         raise Exception
 
-    _write_bucket_event_configuration(bucket_name, current_events)
+    _deploy_bucket_event_configuration(bucket_name, current_events)
 
     return event_id
 
@@ -173,7 +177,7 @@ def remove_eventsource(bucket_name: str, bucket_event_id: str) -> bool:
 
     current_events.get(remove_key).remove(remove_val)
 
-    _write_bucket_event_configuration(bucket_name, current_events)
+    _deploy_bucket_event_configuration(bucket_name, current_events)
 
     return True
 
@@ -192,7 +196,7 @@ def _get_current_bucket_event_configuration(bucket_name: str) -> Dict:
     return rv
 
 
-def _write_bucket_event_configuration(bucket_name: str, new_config: Dict) -> bool:
+def _deploy_bucket_event_configuration(bucket_name: str, new_config: Dict):
     final_config = {k: v for k, v in new_config.items() if v}
 
     raw_aws_client.run_client_function(
@@ -200,8 +204,6 @@ def _write_bucket_event_configuration(bucket_name: str, new_config: Dict) -> boo
         "put_bucket_notification_configuration",
         {"Bucket": bucket_name, "NotificationConfiguration": final_config},
     )
-
-    return True
 
 
 

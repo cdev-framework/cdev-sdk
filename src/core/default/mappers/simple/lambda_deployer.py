@@ -283,7 +283,7 @@ def _update_simple_lambda(
         output_task.update(
             comment=f"Updating Policies"
         )
-        permission_output: Dict[Union[permission_model, permission_arn_model], str] = previous_output.get("permissions")
+        permission_output: frozenset = previous_output.get("permissions")
         role_name_output = previous_output.get("role_name")
 
         
@@ -294,7 +294,9 @@ def _update_simple_lambda(
         for permission in create_permissions:
             
             rv = add_policy(role_name_output, permission)
-            permission_output[permission] = rv
+            tmp = list(permission_output)
+            tmp.append(rv)
+            permission_output = frozenset(tmp)
 
         for permission in remove_permissions:
 
@@ -302,7 +304,9 @@ def _update_simple_lambda(
                 role_name_output,
                 permission_output.get(permission),
             )
-            permission_output.pop(permission)
+            tmp = list(permission_output)
+            tmp.pop(rv)
+            permission_output = frozenset(tmp)
 
 
         mutable_previous_output['permissions'] = permission_output

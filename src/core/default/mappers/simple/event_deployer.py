@@ -1,9 +1,14 @@
+from time import sleep
 from typing import Dict, List
+from uuid import uuid4
 
 from core.default.resources.simple import xlambda as simple_lambda
 from core.default.resources.simple import api as simple_api
+from core.default.resources.simple import object_store as simple_bucket
 
 from .. import aws_client
+
+from . import bucket_deployer
 
 
 ##############################################
@@ -202,18 +207,16 @@ def _handle_deleting_stream_event(event: simple_lambda.Event, resource_hash) -> 
 ##### BUCKET EVENT TRIGGER
 ##############################################
 
+"""
 
-def _handle_adding_bucket_event(event: simple_lambda.Event, cloud_function_id) -> Dict:
-    log.debug(f"Attempting to create {event} for function {cloud_function_id}")
-    bucket_resource = cdev_cloud_mapper.get_output_by_name(
-        "cdev::simple::bucket", event.original_resource_name
-    )
-    log.debug(f"Found Bucket info for {event} -> {bucket_resource}")
-    bucket_arn = bucket_resource.get("arn")
-    bucket_name = bucket_resource.get("bucket_name")
+def _handle_adding_bucket_event(bucket_event: simple_bucket.bucket_event_model , cloud_function_id: str) -> Dict:
+
+    bucket_arn = bucket_event.bucket_arn
+    bucket_name = bucket_event.bucket_name
+    events = [bucket_event.bucket_event_type.value]
 
     # Add permission to lambda to allow s3 to invoke this function
-    stmt_id = f"stmt-{event.original_resource_name}-{bucket_name}"
+    stmt_id = f"stmt-{str(uuid4())}"
     permission_model_args = {
         "FunctionName": cloud_function_id,
         "Action": "lambda:InvokeFunction",
@@ -222,60 +225,47 @@ def _handle_adding_bucket_event(event: simple_lambda.Event, cloud_function_id) -
         "SourceArn": bucket_arn,
     }
 
-    raw_aws_client.run_client_function(
+    aws_client.run_client_function(
         "lambda", "add_permission", permission_model_args
     )
 
     # Add trigger to the bucket... use helper function in the bucket deployer because bucket can send events to sqs and sns also
+    print(f"event to add {events}")
+    sleep(5)
     bucket_event_id = bucket_deployer.add_eventsource(
         bucket_name,
         bucket_deployer.event_hander_types.LAMBDA,
         cloud_function_id,
-        event.config.get("EventTypes"),
+        events
     )
 
     return {
-        "UUID": bucket_event_id,
-        "event_type": "bucket::event",
-        "Stmt_id": stmt_id,
+        "bucket_event_id": bucket_event_id,
+        "permission_stmt_id": stmt_id,
         "bucket_name": bucket_name,
     }
 
 
-def _handle_deleting_bucket_event(event: simple_lambda.Event, resource_hash) -> bool:
-    log.debug(f"Attempting to delete {event} from function {resource_hash}")
+def _handle_deleting_bucket_event(event: dict, function_cloud_id: str):
+    
+    bucket_event_id = event.get("bucket_event_id")
+    bucket_name =event.get("bucket_name")
+    stmt_id = event.get("permission_stmt_id")
 
-    # Go ahead and make sure we have info for this event in the function's output and cloud integration id of this event
-    function_event_info = cdev_cloud_mapper.get_output_value_by_hash(
-        resource_hash, "events"
-    )
-    log.debug(f"Function event info {function_event_info}")
-
-    if not event.get_hash() in function_event_info:
-        log.error(
-            f"Could not find info for {event} ({event.get_hash()}) in function ({resource_hash}) output"
-        )
-        return False
-
-    bucket_event_id = function_event_info.get(event.get_hash()).get("UUID")
-    bucket_name = function_event_info.get(event.get_hash()).get("bucket_name")
-    stmt_id = function_event_info.get(event.get_hash()).get("Stmt_id")
-    cloud_id = cdev_cloud_mapper.get_output_value_by_hash(resource_hash, "cloud_id")
 
     # Delete the permission on the lambda function
-    raw_aws_client.run_client_function(
+    aws_client.run_client_function(
         "lambda",
         "remove_permission",
-        {"FunctionName": cloud_id, "StatementId": stmt_id},
+        {
+            "FunctionName": function_cloud_id, 
+            "StatementId": stmt_id
+        },
     )
 
     bucket_deployer.remove_eventsource(bucket_name, bucket_event_id)
 
-    log.debug(f"Removed Event {event} from {resource_hash}")
-
-    return True
-
-
+"""
 ##############################################
 ##### QUEUE EVENT TRIGGER
 ##############################################
@@ -398,12 +388,14 @@ def _handle_deleting_topic_subscription(
 
 EVENT_TO_HANDLERS = {
     simple_lambda.RUUID: {
-        simple_api.RUUID:
-            {   
-                "CREATE": _handle_adding_api_event,
-                "REMOVE": _handle_deleting_api_event,
-            },
-
+        simple_api.RUUID:{   
+            "CREATE": _handle_adding_api_event,
+            "REMOVE": _handle_deleting_api_event,
+        },
+        simple_bucket.RUUID:{
+            "CREATE": _handle_adding_bucket_event,
+            "REMOVE": _handle_deleting_bucket_event,
+        }
     },
     
 }

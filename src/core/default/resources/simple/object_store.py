@@ -1,8 +1,9 @@
 from enum import Enum
-from typing import Any
+from typing import Any, List
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsAvailableMixin
 from core.constructs.cloud_output import Cloud_Output_Str, OutputType
+from core.constructs.types import cdev_str_model
 from core.utils import hasher
 
 from core.default.resources.simple.iam import Permission
@@ -27,23 +28,44 @@ class bucket_event_model(event_model):
         event_type: EventTypes
         bucket_event_type: Bucket_Event_Types
     """
+    bucket_arn: cdev_str_model
+    bucket_name: cdev_str_model
     bucket_event_type: Bucket_Event_Type
 
 
 class BucketEvent(Event):
-    RUUID = "cdev::simple::bucket"
 
     def __init__(self, bucket_name: str, bucket_event_type: Bucket_Event_Type) -> None:
-        self.bucket_name = bucket_name
+        self.bucket_cdev_name = bucket_name
         self.bucket_event_type = bucket_event_type
+        self.bucket_arn =  Cloud_Output_Str(
+                name=bucket_name, 
+                ruuid=RUUID, 
+                key='cloud_id',
+                type=OutputType.RESOURCE 
+            )
+        self.bucket_name =  Cloud_Output_Str(
+                name=bucket_name, 
+                ruuid=RUUID, 
+                key='bucket_name',
+                type=OutputType.RESOURCE 
+            )
 
-
-    def render(self) -> event_model:
+    def render(self) -> bucket_event_model:
         return bucket_event_model(
-            original_resource_name=self.bucket_name,
-            original_resource_type=self.RUUID,
-            bucket_event_type=self.bucket_event_type 
+            originating_resource_name=self.bucket_cdev_name,
+            originating_resource_type=RUUID,
+            hash=hasher.hash_list([self.bucket_event_type, self.bucket_cdev_name]),
+            bucket_event_type=self.bucket_event_type,
+            bucket_arn=self.bucket_arn.render(),
+            bucket_name=self.bucket_name.render()
         )
+
+    def hash(self) -> str:
+        return hasher.hash_list([
+            self.bucket_cdev_name,
+            self.bucket_event_type
+        ])
 
 
 class BucketPermissions:

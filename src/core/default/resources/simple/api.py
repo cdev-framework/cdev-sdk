@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import Any, List, FrozenSet
 from core.constructs.models import ImmutableModel
 from core.constructs.cloud_output import Cloud_Output_Mapping, Cloud_Output_Sequence, Cloud_Output_Str, OutputType
@@ -208,15 +207,15 @@ class Api(Resource):
             RouteEvent: The event is created. 
         """
     
-        event = Route(
+        route = Route(
             self.name,
             path, 
             verb
         )
 
-        self._routes.append(event)
+        self._routes.append(route)
 
-        return event
+        return route
 
     def compute_hash(self):
         self._hash = hasher.hash_list(
