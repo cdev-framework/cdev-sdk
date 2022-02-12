@@ -23,6 +23,7 @@ class event_model(ImmutableModel):
     granting_permission: Optional[Union[permission_model, permission_arn_model]]
 
 
+
 class Event():
     
     def hash(self) -> str:

@@ -10,6 +10,7 @@ from pydantic import FilePath
 import os
 import shutil
 from typing import Dict, List, Tuple
+from core.constructs.cloud_output import cloud_output_dynamic_model
 
 from core.constructs.resource_state import Resource_State
 from core.utils.exceptions import Cdev_Error  
@@ -37,6 +38,10 @@ class CustomEncoder(json.JSONEncoder):
         if isinstance(obj, frozendict):
             return dict(obj)
 
+        if isinstance(obj, tuple):
+            print(f"Trying to serialize tuple {obj}")
+            return list(obj)
+
         return json.JSONEncoder.default(self, obj)
 
 
@@ -61,6 +66,7 @@ def safe_json_write(obj: Dict, fp: FilePath):
             json.dump(obj, fh, indent=4, cls=CustomEncoder)
 
     except Exception as e:
+        print(e)
         raise Cdev_Error(f"Could not write data as a json into tmp file; {obj}", e)
 
     try:

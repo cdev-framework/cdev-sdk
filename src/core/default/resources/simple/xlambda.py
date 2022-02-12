@@ -4,7 +4,7 @@ import os
 from pydantic import FilePath
 from typing import Any, Callable, Dict, FrozenSet, List, Optional, Union
 
-from core.constructs.cloud_output import Cloud_Output_Dynamic, Cloud_Output_Str
+from core.constructs.cloud_output import Cloud_Output, Cloud_Output_Dynamic, Cloud_Output_Str
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsGrantableMixin
 from core.constructs.models import frozendict, ImmutableModel
 from core.constructs.types import cdev_str_model, cdev_str
@@ -104,9 +104,19 @@ class SimpleFunctionConfiguration():
             handler=self.handler.render() if isinstance(self.handler, Cloud_Output_Dynamic) else self.handler,
             description=self.description.render() if isinstance(self.description, Cloud_Output_Dynamic) else self.description,
             environment_variables = frozendict(
-                {k:v.render() if isinstance(v, Cloud_Output_Dynamic) else v for k,v in self.environment_variables}
+                {k:frozendict(v.render().dict()) if isinstance(v, Cloud_Output) else v for k,v in self.environment_variables.items()}
             ) if self.environment_variables else frozendict({})
         )
+
+    def hash(self) -> str:
+        env_hashable = {k:(v if not isinstance(v, Cloud_Output) else v.hash()) for k,v in self.environment_variables.items()} 
+
+
+        return hasher.hash_list([
+            self.handler,
+            self.description,
+            hasher.hash_list(sorted(env_hashable.items()))
+        ])
 
 
 
@@ -218,8 +228,8 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
         self._external_dependencies = value
 
     def compute_hash(self):
-        self._permissions_hash = hasher.hash_list([x.hash() for x in self.granted_permissions])
-        self._config_hash = "1"
+        self._permissions_hash = hasher.hash_list([x.hash() for x in self._granted_permissions])
+        self._config_hash = self._configuration.hash()
         self._events_hash = hasher.hash_list([x.hash() for x in self.events])
 
         self._hash = hasher.hash_list(

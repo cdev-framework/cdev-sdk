@@ -18,6 +18,3 @@ myProject.add_component(
 )
 
 
-
-
-

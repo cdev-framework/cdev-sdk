@@ -219,8 +219,7 @@ class LocalBackend(Backend):
 
         try:
             return file_manager.load_resource_state(file_location)
-            with open(file_location, "r") as fh:
-                return Resource_State(**json.load(fh))
+
 
         except Exception as e:
             raise InvalidResourceStateData(

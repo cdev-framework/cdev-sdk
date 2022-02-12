@@ -258,6 +258,7 @@ class Table(PermissionsAvailableMixin, Resource):
         self._stream = None
 
         self.available_permissions = TablePermissions(cdev_name)
+        self.output = TableOutput(cdev_name)
 
     @property
     def attributes(self):
