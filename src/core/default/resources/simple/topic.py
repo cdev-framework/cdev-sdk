@@ -3,11 +3,57 @@ from typing import Any
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsAvailableMixin
 from core.constructs.cloud_output import Cloud_Output_Str, OutputType
-from core.utils import hasher
+from core.constructs.types import cdev_str_model
 
+from core.default.resources.simple.events import Event, event_model
 from core.default.resources.simple.iam import Permission
 
+from core.utils import hasher
+
 RUUID = "cdev::simple::topic"
+
+
+######################
+##### Events
+######################
+class topic_event_model(event_model):
+    """
+    something
+
+    Arguments:
+        batch_size: int
+        batch_window: int
+    """
+    topic_arn: cdev_str_model   
+
+
+class TopicEvent(Event):
+    
+    def __init__(self, topic_name: str) -> None:
+
+        self.cdev_topic_name = topic_name
+
+        self.topic_arn = Cloud_Output_Str(
+                name=topic_name, 
+                ruuid=RUUID, 
+                key='arn',
+                type=OutputType.RESOURCE 
+            )
+
+
+    def render(self) -> topic_event_model:
+        return topic_event_model(
+            originating_resource_name=self.cdev_topic_name,
+            originating_resource_type=RUUID,
+            hash=self.hash(),
+            topic_arn=self.topic_arn.render(),
+        )
+
+
+    def hash(self) -> str:
+        return hasher.hash_list([
+            self.cdev_topic_name,
+        ])
 
 
 #####################
@@ -83,8 +129,9 @@ class Topic(PermissionsAvailableMixin, Resource):
 
         self._is_fifo = is_fifo
         self.output = TopicOutput(cdev_name)
-        self.permissions = TopicPermissions(cdev_name)
-    
+        self.available_permissions: TopicPermissions = TopicPermissions(cdev_name)
+        self._event = None
+
     @property
     def is_fifo(self):
         return self._is_fifo
@@ -93,6 +140,27 @@ class Topic(PermissionsAvailableMixin, Resource):
     @update_hash
     def is_fifo(self, value: bool):
         self._is_fifo = value
+
+    def create_event_trigger(
+        self
+    ) -> TopicEvent:
+        if self._event:
+            raise Exception("Already created an event on this topic. Use `get_event()` to get the current event.")
+    
+
+        event = TopicEvent(
+            topic_name=self.name,
+        )
+
+        self._event = event
+
+        return event
+
+    def get_event(self) -> TopicEvent:
+        if not self._event:
+            raise Exception("Topic Event has not been created. Create a Topic Event for this topic using the `create_event_trigger` function before calling this function.")
+
+        return self._event
 
     def compute_hash(self):
         self._hash = hasher.hash_list([self.is_fifo, self.nonce])

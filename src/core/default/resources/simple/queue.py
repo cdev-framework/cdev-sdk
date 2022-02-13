@@ -187,7 +187,7 @@ class Queue(PermissionsAvailableMixin, Resource):
 
         return event
 
-    def get_stream(self) -> QueueEvent:
+    def get_event(self) -> QueueEvent:
         if not self._event:
             raise Exception("Queue Event has not been created. Create a stream for this table using the `create_stream` function before calling this function.")
 

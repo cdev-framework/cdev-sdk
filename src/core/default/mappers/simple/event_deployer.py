@@ -7,10 +7,12 @@ from core.default.resources.simple import api as simple_api
 from core.default.resources.simple import object_store as simple_bucket
 from core.default.resources.simple import table as simple_table
 from core.default.resources.simple import queue as simple_queue
+from core.default.resources.simple import topic as simple_topic
 
 from .. import aws_client
 
 from . import bucket_deployer
+from . import topic_deployer
 
 
 ##############################################
@@ -299,74 +301,58 @@ def _handle_deleting_queue_event(event: dict, function_cloud_id: str):
     )
 
 
-"""
+
 ##############################################
 ##### TOPIC EVENT TRIGGER
 ##############################################
 
 
-def _handle_adding_topic_subscription(
-    event: simple_lambda.Event, cloud_function_id
-) -> Dict:
-    log.debug(f"Attempting to create {event} for function {cloud_function_id}")
-    topic_resource = cdev_cloud_mapper.get_output_by_name(
-        "cdev::simple::topic", event.original_resource_name
-    )
-    log.debug(f"Found Table info for {event} -> {topic_resource}")
+def _handle_adding_topic_subscription(event: simple_topic.topic_event_model, cloud_function_id) -> Dict:
+    topic_arn = event.topic_arn
 
     # Add permission to lambda to allow apigateway to invoke this function
-    stmt_id = f"stmt-{event.original_resource_name}-{event.get_hash()}"
+    stmt_id = f"stmt-{str(uuid4())}"
     permission_model_args = {
         "FunctionName": cloud_function_id,
         "Action": "lambda:InvokeFunction",
         "Principal": "sns.amazonaws.com",
         "StatementId": stmt_id,
-        "SourceArn": topic_resource.get("arn"),
+        "SourceArn": topic_arn,
     }
 
-    raw_aws_client.run_client_function(
+    aws_client.run_client_function(
         "lambda", "add_permission", permission_model_args
     )
 
     subscribe_arn = topic_deployer.add_subscriber(
-        topic_resource.get("arn"), "lambda", cloud_function_id
+        topic_arn, "lambda", cloud_function_id
     )
 
-    return {"UUID": subscribe_arn, "event_type": "topic::trigger", "Stmt_id": stmt_id}
+    return {
+        "topic_event_id": subscribe_arn, 
+        "permission_stmt_id": stmt_id
+    }
 
 
-def _handle_deleting_topic_subscription(
-    event: simple_lambda.Event, resource_hash
-) -> bool:
-    log.debug(f"Attempting to delete {event} from function {resource_hash}")
-    # Go ahead and make sure we have info for this event in the function's output and cloud integration id of this event
-    function_event_info = cdev_cloud_mapper.get_output_value_by_hash(
-        resource_hash, "events"
-    )
-    log.debug(f"Function event info {function_event_info}")
-    log.debug(event)
-    if not event.get_hash() in function_event_info:
-        log.error(
-            f"Could not find info for {event} ({event.get_hash()}) in function ({resource_hash}) output"
-        )
-        return False
-
-    subscription_arn = function_event_info.get(event.get_hash()).get("UUID")
-    stmt_id = function_event_info.get(event.get_hash()).get("Stmt_id")
-    cloud_id = cdev_cloud_mapper.get_output_value_by_hash(resource_hash, "cloud_id")
+def _handle_deleting_topic_subscription(event: dict, function_cloud_id: str):
+    subscription_arn = event.get("topic_event_id")
+    permission_stmt_id = event.get("permission_stmt_id")
 
     # Delete the permission on the lambda function
-    raw_aws_client.run_client_function(
+    aws_client.run_client_function(
         "lambda",
         "remove_permission",
-        {"FunctionName": cloud_id, "StatementId": stmt_id},
+        {
+            "FunctionName": function_cloud_id, 
+            "StatementId": permission_stmt_id
+        },
     )
 
     # Remove subscription
     topic_deployer.remove_subscriber(subscription_arn)
 
     return True
-"""
+
 
 EVENT_TO_HANDLERS = {
     simple_lambda.RUUID: {
@@ -385,6 +371,10 @@ EVENT_TO_HANDLERS = {
         simple_queue.RUUID:{
             "CREATE": _handle_adding_queue_event,
             "REMOVE": _handle_deleting_queue_event,
+        },
+        simple_topic.RUUID:{
+            "CREATE": _handle_adding_topic_subscription,
+            "REMOVE": _handle_deleting_topic_subscription,
         }
     },
     

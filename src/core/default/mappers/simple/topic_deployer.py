@@ -33,6 +33,7 @@ def _create_simple_topic(
     output_info = {
         "topic_name": topic_name,
         "cdev_name": resource.name,
+        "arn": rv.get("TopicArn"),
         "cloud_id": rv.get("TopicArn"),
     }
 
@@ -61,25 +62,25 @@ def _remove_simple_topic(
     aws_client.run_client_function("sns", "delete_topic", {"TopicArn": topic_arn})
 
 
-#def add_subscriber(topic_arn: str, protocol: str, endpoint: str) -> str:
-#    rv = raw_aws_client.run_client_function(
-#        "sns",
-#        "subscribe",
-#        {
-#            "TopicArn": topic_arn,
-#            "Protocol": protocol,
-#            "Endpoint": endpoint,
-#            "ReturnSubscriptionArn": True,
-#        },
-#    )
-#
-#    return rv.get("SubscriptionArn")
-#
-#
-#def remove_subscriber(subscription_arn: str):
-#    rv = raw_aws_client.run_client_function(
-#        "sns", "unsubscribe", {"SubscriptionArn": subscription_arn}
-#    )
+def add_subscriber(topic_arn: str, protocol: str, endpoint: str) -> str:
+    rv = aws_client.run_client_function(
+        "sns",
+        "subscribe",
+        {
+            "TopicArn": topic_arn,
+            "Protocol": protocol,
+            "Endpoint": endpoint,
+            "ReturnSubscriptionArn": True,
+        },
+    )
+
+    return rv.get("SubscriptionArn")
+
+
+def remove_subscriber(subscription_arn: str):
+    rv = aws_client.run_client_function(
+        "sns", "unsubscribe", {"SubscriptionArn": subscription_arn}
+    )
 
 
 def handle_simple_topic_deployment(
