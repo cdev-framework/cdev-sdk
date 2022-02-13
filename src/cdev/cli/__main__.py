@@ -74,7 +74,10 @@ CDEV_COMMANDS = [
     {
         "name": "output",
         "help": "See the generated cloud output",
-        "default": wrap_load_and_initialize_project(cloud_output.cloud_output_command_cli)
+        "default": wrap_load_and_initialize_project(cloud_output.cloud_output_command_cli),
+        "args": [
+            {"dest": "cloud_output_id", "type": str, "help": "Id of the cloud output to display. ex: <component>.<ruuid>.<cdev_name>.<output_key>"}
+        ]
     }, 
     {
         "name": "environment",

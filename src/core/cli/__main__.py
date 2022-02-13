@@ -9,6 +9,7 @@ from ..commands import (
     run,
     execute_frontend,
     create_resource_state,
+    cloud_output
 )
 from ..constructs.workspace import Workspace
 
@@ -51,6 +52,11 @@ CDEV_COMMANDS = [
         ),
         "args": [],
     },
+    {
+        "name": "output",
+        "help": "See the generated cloud output",
+        "default": wrap_initialize_workspace(cloud_output.cloud_output_command_cli)
+    }, 
     {
         "name": "run",
         "help": "This command is used to run user defined and resource functions.",

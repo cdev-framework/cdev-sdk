@@ -1,3 +1,7 @@
+"""Set of primitives for working with Cloud Object Stores like S3
+
+"""
+
 from enum import Enum
 from typing import Any, List
 
@@ -137,6 +141,11 @@ class BucketOutput(ResourceOutputs):
 
 
 class SimpleBucket(PermissionsAvailableMixin, Resource):
+    """A Simple Bucket is a basic object store for applications to build on.
+
+
+    
+    """
     
     @update_hash
     def __init__(self, cdev_name: str, nonce: str="") -> None:

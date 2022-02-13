@@ -20,8 +20,6 @@ This is a running list of tasks that need to be done on the project before the a
 - Work on documenting each available resource both in the Codebase and on the website
 
 ### Small
-- Add Event support for Lambda events from all support resources
-- Add implementations of the sync functionality for different resources
 - Add support for Global Secondary Indexes for dynamodb
 - Add more options for the stream functionality for the data sync tool
 - Fix `cdev output` command because it can render some values as emoji that are not emojis (ex. arn of secret has :secret: in it)
@@ -31,6 +29,6 @@ This is a running list of tasks that need to be done on the project before the a
 - If the lambda function annotation is split into two lines the parser incorrectly adds the second line cause the function to most likely be in an unusable state.
 
 #### Today
-- Add Event support for Lambda events from all supported resources
 - Work on documenting each available resource both in the Codebase and on the website
+- Add implementations of the sync functionality for different resources
 - Add all commands to CLI

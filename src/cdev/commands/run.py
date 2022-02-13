@@ -6,6 +6,9 @@ from core.commands.run import run_command as core_run_command
 
 
 def run_command_cli(args):
+    config = args[0]
+    set_global_logger_from_cli(config.loglevel)
+
     run_command(args[0])
 
 

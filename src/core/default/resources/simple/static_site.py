@@ -1,5 +1,7 @@
-from enum import Enum
-from typing import Any, Optional
+"""Set of primitives for making a site to serve Static Web Content
+
+"""
+from typing import Any
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
 from core.constructs.cloud_output import  Cloud_Output_Str
@@ -50,11 +52,17 @@ class simple_static_site_model(ResourceModel):
     index_document: str
     """The suffix for documents when request are made for a folder. ex: site.com/dir1/ will look for /dir1/<index_document>"""
     error_document: str
+    """The absolute path of document within the site that will be used as a general error page."""
     sync_folder: bool
-    content_folder: Optional[str]
+    """Whether to consider changes in the state of the content folder to trigger a sync of the content folder."""
+    content_folder: str
+    """The relative path within the Workspace of the folder containting the static content for the site."""
 
 
 class StaticSite(Resource):
+    """A Static Site that can be used to serve static web content. 
+    
+    """
     
     @update_hash
     def __init__(
@@ -66,15 +74,14 @@ class StaticSite(Resource):
         content_folder: str = None,
         nonce: str = ""
     ) -> None:
-        """
-        Create a static hosted site.
+        """Create a static hosted site.
 
-        Args:
+        Arguments:
             cdev_name (str): [description]
-            index_document (str): [description]
-            error_document (str): [description]
-            sync_folder (bool): [description]
-            content_folder (str): [description]
+            index_document (str): The suffix for documents when request are made for a folder.
+            error_document (str): The absolute path of document within the site that will be used as a general error page.
+            sync_folder (bool): Whether to consider changes in the state of the content folder to trigger a sync of the content folder.
+            content_folder (str): The relative path within the `Workspace` of the folder containting the static content for the site.
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
         """
         super().__init__(cdev_name, RUUID, nonce)
@@ -88,6 +95,7 @@ class StaticSite(Resource):
 
     @property
     def index_document(self):
+        """The suffix for documents when request are made for a folder."""
         return self._index_document
 
     @index_document.setter
@@ -97,6 +105,7 @@ class StaticSite(Resource):
 
     @property
     def error_document(self):
+        """The absolute path of document within the site that will be used as a general error page."""
         return self._error_document
 
     @error_document.setter
@@ -106,6 +115,7 @@ class StaticSite(Resource):
 
     @property
     def content_folder(self):
+        """The relative path within the `Workspace` of the folder containting the static content for the site."""
         return self._content_folder
 
     @content_folder.setter
@@ -115,6 +125,7 @@ class StaticSite(Resource):
 
     @property
     def sync_folder(self):
+        """Whether to consider changes in the state of the content folder to trigger a sync of the content folder."""
         return self._sync_folder
 
     @sync_folder.setter
@@ -137,11 +148,8 @@ class StaticSite(Resource):
 
     def render(self) -> simple_static_site_model:
         if self.sync_folder and not self.content_folder:
-            print(
-                f"If sync_folder is set to 'True' then you must provide a path to the folder."
-            )
 
-            raise Exception
+            raise Exception(f"If sync_folder is set to 'True' then you must provide a path to the folder.")
 
         return simple_static_site_model(
             ruuid=self.ruuid,
