@@ -1,5 +1,4 @@
 from argparse import ArgumentParser
-import json
 from typing import Dict, List
 
 import boto3
@@ -54,7 +53,7 @@ class clear_table(BaseCommand):
                 counter += page["Count"]
                 # Delete items in batches
                 for itemKeys in page["Items"]:
-                    self.stdout.write(f"Removing item {itemKeys}")
+                    self.stderr.write(f"Removing item {itemKeys}")
                     batch.delete_item(Key=itemKeys)
                 # Fetch the next page
                 if "LastEvaluatedKey" in page:
@@ -66,4 +65,4 @@ class clear_table(BaseCommand):
                 else:
                     break
 
-        self.stdout.write(f"Deleted {counter}")
+        self.stderr.write(f"Deleted {counter}")

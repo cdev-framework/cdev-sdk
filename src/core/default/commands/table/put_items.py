@@ -36,7 +36,7 @@ class put_object(BaseCommand):
 
         cloud_output = utils.get_cloud_output_from_cdev_name(component_name, table_resource_name)
         resource: simple_table_model = utils.get_resource_from_cdev_name(component_name, table_resource_name)
-        print(resource)
+
         table_cloud_name = cloud_output.get('table_name')
 
         data_string = kwargs.get("data")
@@ -80,8 +80,7 @@ class put_object(BaseCommand):
             x.get("attribute_name"): x.get("attribute_type") for x in resource.attributes
         }
 
-        print(attributes_dict)
-        print(data)
+
         for datum in data.get('items'):
             is_data_valid, msg = utils.validate_data(datum, attributes_dict, resource.keys)
 
