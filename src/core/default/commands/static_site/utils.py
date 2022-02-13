@@ -1,7 +1,7 @@
 from core.constructs.resource import ResourceModel
 from core.constructs.workspace import Workspace
 
-RUUID = "cdev::simple::staticsite"
+RUUID = "cdev::simple::table"
 
 def get_cloud_output_from_cdev_name(component_name: str, cdev_name: str) -> str:
     try:

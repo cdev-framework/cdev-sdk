@@ -1,27 +1,73 @@
-'''from typing import Dict, List
+from typing import Dict, List
+
+from core.constructs.resource import ResourceModel
+from core.constructs.workspace import Workspace
+
+RUUID = "cdev::simple::table"
+
+def get_cloud_output_from_cdev_name(component_name: str, cdev_name: str) -> str:
+    try:
+        ws = Workspace.instance()
+
+
+        cloud_output = ws.get_backend().get_cloud_output_by_name(
+            ws.get_resource_state_uuid(),
+            component_name,
+            RUUID, 
+            cdev_name
+        )
+
+        return cloud_output
+    except Exception as e:
+        print(f"Could not find resource {component_name}:{RUUID}:{cdev_name}")
+        print(e)
+        return None
+
+
+
+def get_resource_from_cdev_name(component_name: str, cdev_name: str) -> ResourceModel:
+    try:
+        ws = Workspace.instance()
+
+
+        resource = ws.get_backend().get_resource_by_name(
+            ws.get_resource_state_uuid(),
+            component_name,
+            RUUID, 
+            cdev_name
+        )
+
+        return resource
+    except Exception as e:
+        print(f"Could not find resource {component_name}:{RUUID}:{cdev_name}")
+        print(e)
+        return None
+
+
+
 
 _attribute_types_to_python_type = {"S": [str], "N": [int, float], "B": [bytes]}
 
 
-def _validate_data(data: Dict, attributes: Dict, keys: List[Dict]) -> bool:
+def validate_data(data: Dict, attributes: Dict, keys: List[Dict]) -> bool:
     for key in keys:
-        if not key.get("AttributeName") in data:
-            return (False, f"Table key {key.get('AttributeName')} not in data")
+        if not key.get("attribute_name") in data:
+            return (False, f"Table key {key.get('attribute_name')} not in data")
 
         valid_types = _attribute_types_to_python_type.get(
-            attributes.get(key.get("AttributeName"))
+            attributes.get(key.get("attribute_name"))
         )
 
         is_val_valid_type = False
         for attribute_type in valid_types:
-            if isinstance(data.get(key.get("AttributeName")), attribute_type):
+            if isinstance(data.get(key.get("attribute_name")), attribute_type):
                 is_val_valid_type = True
                 break
 
         if not is_val_valid_type:
             return (
                 False,
-                f"Table key {key.get('AttributeName')} ({valid_types}) not correct type in data ({type(data.get(key.get('AttributeName')))})",
+                f"Table key {key.get('attribute_name')} ({valid_types}) not correct type in data ({type(data.get(key.get('attribute_name')))})",
             )
 
     return (True, "")
@@ -57,4 +103,3 @@ def recursive_translate_data(value) -> Dict:
         raise Exception
 
     return transformed_val
-'''

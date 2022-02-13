@@ -1,4 +1,6 @@
 
+"""Command for syncing a set of resources to a static site
+"""
 from argparse import ArgumentParser
 import boto3
 import os

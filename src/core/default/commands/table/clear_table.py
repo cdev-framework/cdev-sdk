@@ -1,14 +1,16 @@
-'''from argparse import ArgumentParser
+from argparse import ArgumentParser
 import json
 from typing import Dict, List
 
 import boto3
 
 
-from cdev.management.base import BaseCommand
-from cdev.backend.utils import get_resource
-from cdev.backend.cloud_mapper_manager import get_output_value_by_hash
-from cdev.mapper.backend.aws import aws_client as raw_aws_client
+from core.constructs.commands import BaseCommand, OutputWrapper
+from core.default.resources.simple.table import Table
+from core.utils.paths import get_full_path_from_workspace_base
+
+
+from . import utils
 
 RUUID = "cdev::simple::table"
 
@@ -16,7 +18,7 @@ RUUID = "cdev::simple::table"
 class clear_table(BaseCommand):
     def add_arguments(self, parser: ArgumentParser):
         parser.add_argument(
-            "resource-name", type=str, help="The resource you want to sync data to"
+            "resource_name", type=str, help="The resource you want to sync data to"
         )
 
     def command(self, *args, **kwargs):
@@ -25,17 +27,15 @@ class clear_table(BaseCommand):
         """
         # https://stackoverflow.com/questions/55169952/delete-all-items-dynamodb-using-python
 
-        resource_name = kwargs.get("resource-name")
+        full_resource_name = kwargs.get("resource_name")
+        component_name = full_resource_name.split('.')[0]
+        table_resource_name = full_resource_name.split('.')[1]
+
+        cloud_output = utils.get_cloud_output_from_cdev_name(component_name, table_resource_name)
+        table_cloud_name = cloud_output.get('table_name')
+
         dynamo = boto3.resource("dynamodb")
-
-        try:
-            resource = get_resource(resource_name, RUUID)
-            dynamodb_table_name = get_output_value_by_hash(resource.hash, "table_name")
-        except Exception as e:
-            self.stderr.write(f"Could not find simple table {resource_name}")
-            return
-
-        table = dynamo.Table(dynamodb_table_name)
+        table = dynamo.Table(table_cloud_name)
 
         # get the table keys
         tableKeyNames = [key.get("AttributeName") for key in table.key_schema]
@@ -67,4 +67,3 @@ class clear_table(BaseCommand):
                     break
 
         self.stdout.write(f"Deleted {counter}")
-'''
