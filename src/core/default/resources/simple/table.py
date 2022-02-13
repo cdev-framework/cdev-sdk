@@ -3,11 +3,13 @@ from typing import Any, FrozenSet, List
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsAvailableMixin
 from core.constructs.cloud_output import  Cloud_Output_Str, OutputType
-from core.utils import hasher
+from core.constructs.types import cdev_str_model
 from core.constructs.models import ImmutableModel
 
 from core.default.resources.simple.events import Event, event_model
 from core.default.resources.simple.iam import Permission
+
+from core.utils import hasher
 
 RUUID = "cdev::simple::table"
 
@@ -42,27 +44,43 @@ class stream_event_model(event_model):
         view_type: stream_type
         batch_size: int
     """
+    table_name: cdev_str_model    
     view_type: stream_type
     batch_size: int
 
 
 class StreamEvent(Event):
-    RUUID = "cdev::simple::table"
 
     def __init__(self, table_name: str, view_type: stream_type, batch_size: int) -> None:
-        self.table_name=table_name
+        
+        self.cdev_table_name = table_name
+        
+        self.table_name= Cloud_Output_Str(
+                name=table_name, 
+                ruuid=RUUID, 
+                key='table_name',
+                type=OutputType.RESOURCE 
+            )
+            
         self.view_type=view_type
         self.batch_size=batch_size
+
+
+    def hash(self) -> str:
+        return hasher.hash_list([
+            self.cdev_table_name,
+            self.view_type,
+            self.batch_size
+        ])
         
-
-
     def render(self) -> stream_event_model:
         return stream_event_model(
-            original_resource_name=self.table_name,
-            original_resource_type=self.RUUID,
+            originating_resource_name=self.cdev_table_name,
+            originating_resource_type=RUUID,
+            hash=self.hash(),
             batch_size=self.batch_size,
             view_type=self.view_type.value,
-            granting_permission=TablePermissions(self.table_name).READ_STREAM.render()
+            table_name=self.table_name.render()
         )
 
 
@@ -130,7 +148,7 @@ class TablePermissions:
                 "dynamodb:ListShards",
                 "dynamodb:ListStreams",
             ],
-            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
+            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE).join(["", "/stream/*"]),
             effect="Allow",
         )
 
@@ -257,7 +275,7 @@ class Table(PermissionsAvailableMixin, Resource):
         self._keys = keys
         self._stream = None
 
-        self.available_permissions = TablePermissions(cdev_name)
+        self.available_permissions: TablePermissions = TablePermissions(cdev_name)
         self.output = TableOutput(cdev_name)
 
     @property

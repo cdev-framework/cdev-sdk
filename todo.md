@@ -17,7 +17,6 @@ This is a running list of tasks that need to be done on the project before the a
 - Complete the reference system
 - Add all commands to CLI
 - Make custom types for relative paths to improve DX of working with paths.
-- Readd `workspace` output 
 - Work on documenting each available resource both in the Codebase and on the website
 
 ### Small

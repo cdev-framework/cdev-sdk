@@ -5,6 +5,7 @@ from uuid import uuid4
 from core.default.resources.simple import xlambda as simple_lambda
 from core.default.resources.simple import api as simple_api
 from core.default.resources.simple import object_store as simple_bucket
+from core.default.resources.simple import table as simple_table
 
 from .. import aws_client
 
@@ -109,33 +110,33 @@ def _handle_deleting_api_event(event: dict, function_cloud_id: str) -> bool:
         },
     )
 
-
-"""
 ##############################################
 ##### DYNAMODB TABLE STREAM EVENT
 ##############################################
 
 
-def _handle_adding_stream_event(event: simple_lambda.Event, cloud_function_id) -> Dict:
-    log.debug(f"Attempting to create {event} for function {cloud_function_id}")
-    table_resource = cdev_cloud_mapper.get_output_by_name(
-        "cdev::simple::table", event.original_resource_name
-    )
-    log.debug(f"Found Table info for {event} -> {table_resource}")
+def _handle_adding_stream_event(event: simple_table.stream_event_model, cloud_function_id) -> Dict:
+    table_name = event.table_name
+    view_type = event.view_type
+    batch_size = event.batch_size
 
-    rv = raw_aws_client.run_client_function(
-        "dynamodb", "describe_table", {"TableName": table_resource.get("table_name")}
+    rv = aws_client.run_client_function(
+        "dynamodb", 
+        "describe_table", 
+        {
+            "TableName": table_name
+        }
     )
 
     if not rv.get("Table").get("StreamSpecification"):
-        rv = raw_aws_client.run_client_function(
+        rv = aws_client.run_client_function(
             "dynamodb",
             "update_table",
             {
-                "TableName": table_resource.get("table_name"),
+                "TableName": table_name,
                 "StreamSpecification": {
                     "StreamEnabled": True,
-                    "StreamViewType": event.config.get("ViewType"),
+                    "StreamViewType": view_type,
                 },
             },
         )
@@ -143,14 +144,14 @@ def _handle_adding_stream_event(event: simple_lambda.Event, cloud_function_id) -
 
     else:
         if not rv.get("Table").get("StreamSpecification").get("StreamEnabled"):
-            rv = raw_aws_client.run_client_function(
+            rv = aws_client.run_client_function(
                 "dynamodb",
                 "update_table",
                 {
-                    "TableName": table_resource.get("table_name"),
+                    "TableName": table_name,
                     "StreamSpecification": {
                         "StreamEnabled": True,
-                        "StreamViewType": event.config.get("ViewType"),
+                        "StreamViewType": view_type,
                     },
                 },
             )
@@ -160,54 +161,42 @@ def _handle_adding_stream_event(event: simple_lambda.Event, cloud_function_id) -
             table_data = rv.get("Table")
 
     stream_arn = table_data.get("LatestStreamArn")
-    log.debug(f"Created Stream with arn: {stream_arn}")
 
-    rv = raw_aws_client.run_client_function(
+    sleep(5)
+    rv = aws_client.run_client_function(
         "lambda",
         "create_event_source_mapping",
         {
             "EventSourceArn": stream_arn,
             "FunctionName": cloud_function_id,
             "Enabled": True,
-            "BatchSize": event.config.get("BatchSize"),
+            "BatchSize": batch_size,
             "StartingPosition": "LATEST",
         },
     )
 
     uuid = rv.get("UUID")
 
-    return {"stream_arn": stream_arn, "event_type": "table::stream", "UUID": uuid}
+    return {
+        "stream_arn": stream_arn,  
+        "stream_event_id": uuid
+    }
 
 
-def _handle_deleting_stream_event(event: simple_lambda.Event, resource_hash) -> bool:
-    log.debug(f"Attempting to delete {event} from function {resource_hash}")
-    # Go ahead and make sure we have info for this event in the function's output and cloud integration id of this event
-    function_event_info = cdev_cloud_mapper.get_output_value_by_hash(
-        resource_hash, "events"
-    )
-    log.debug(f"Function event info {function_event_info}")
-    log.debug(event)
-    if not event.get_hash() in function_event_info:
-        log.error(
-            f"Could not find info for {event} ({event.get_hash()}) in function ({resource_hash}) output"
-        )
-        return False
+def _handle_deleting_stream_event(event: dict, function_cloud_id: str):
+    uuid = event.get("stream_event_id")
 
-    uuid = function_event_info.get(event.get_hash()).get("UUID")
-
-    raw_aws_client.run_client_function(
+    aws_client.run_client_function(
         "lambda", "delete_event_source_mapping", {"UUID": uuid}
     )
-    log.debug(f"Removed Event {uuid} from {resource_hash}")
 
-    return True
 
 
 ##############################################
 ##### BUCKET EVENT TRIGGER
 ##############################################
 
-"""
+
 
 def _handle_adding_bucket_event(bucket_event: simple_bucket.bucket_event_model , cloud_function_id: str) -> Dict:
 
@@ -231,7 +220,11 @@ def _handle_adding_bucket_event(bucket_event: simple_bucket.bucket_event_model ,
 
     # Add trigger to the bucket... use helper function in the bucket deployer because bucket can send events to sqs and sns also
     print(f"event to add {events}")
+
+    # Wait a few seconds for the newly added permissions to take hold
+    # if this happens too fast, it will say the lambda does not have correct permissions to be triggered. 
     sleep(5)
+    
     bucket_event_id = bucket_deployer.add_eventsource(
         bucket_name,
         bucket_deployer.event_hander_types.LAMBDA,
@@ -395,6 +388,10 @@ EVENT_TO_HANDLERS = {
         simple_bucket.RUUID:{
             "CREATE": _handle_adding_bucket_event,
             "REMOVE": _handle_deleting_bucket_event,
+        },
+        simple_table.RUUID:{
+            "CREATE": _handle_adding_stream_event,
+            "REMOVE": _handle_deleting_stream_event,
         }
     },
     

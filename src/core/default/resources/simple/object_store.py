@@ -9,6 +9,7 @@ from core.utils import hasher
 from core.default.resources.simple.iam import Permission
 
 from core.default.resources.simple.events import Event, event_model
+
 RUUID = "cdev::simple::bucket"
 
 class Bucket_Event_Type(str, Enum):
@@ -55,7 +56,7 @@ class BucketEvent(Event):
         return bucket_event_model(
             originating_resource_name=self.bucket_cdev_name,
             originating_resource_type=RUUID,
-            hash=hasher.hash_list([self.bucket_event_type, self.bucket_cdev_name]),
+            hash=self.hash(),
             bucket_event_type=self.bucket_event_type,
             bucket_arn=self.bucket_arn.render(),
             bucket_name=self.bucket_name.render()
