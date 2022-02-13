@@ -4,10 +4,12 @@ from typing import Any
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsAvailableMixin
 from core.constructs.cloud_output import  Cloud_Output_Str, OutputType
-from core.utils import hasher
+from core.constructs.types import cdev_str_model
 
 from core.default.resources.simple.events import Event, event_model
 from core.default.resources.simple.iam import Permission
+
+from core.utils import hasher
 
 RUUID = "cdev::simple::queue"
 
@@ -20,35 +22,47 @@ class queue_event_model(event_model):
     something
 
     Arguments:
-        original_resource_name: str
-        original_resource_type: str
         batch_size: int
         batch_window: int
     """
+    queue_arn: cdev_str_model   
     batch_size: int
-    batch_window: int
 
 
 class QueueEvent(Event):
     
-    def __init__(self, queue_name: str, batch_size: int, batch_window: int) -> None:
+    def __init__(self, queue_name: str, batch_size: int) -> None:
 
         if batch_size > 10000 or batch_size < 0:
             raise Exception
 
-        self.queue_name=queue_name
-        self.batch_size=batch_size
-        self.batch_window=batch_window
+        self.cdev_queue_name = queue_name
+
+        self.queue_arn = Cloud_Output_Str(
+                name=queue_name, 
+                ruuid=RUUID, 
+                key='arn',
+                type=OutputType.RESOURCE 
+            )
+
+        self.batch_size = batch_size
 
 
     def render(self) -> queue_event_model:
         return queue_event_model(
-            original_resource_name=self.queue_name,
-            original_resource_type=RUUID,
-            batch_size=self.batch_size,
-            batch_window=self.batch_window,
+            originating_resource_name=self.cdev_queue_name,
+            originating_resource_type=RUUID,
+            hash=self.hash(),
+            queue_arn=self.queue_arn.render(),
+            batch_size=self.batch_size
         )
 
+
+    def hash(self) -> str:
+        return hasher.hash_list([
+            self.cdev_queue_name,
+            self.batch_size
+        ])
 
 ######################
 ###### Permission
@@ -142,7 +156,8 @@ class Queue(PermissionsAvailableMixin, Resource):
 
         self.is_fifo = is_fifo
         self.output = QueueOutput(name)
-        self.available_permissions = QueuePermissions(cdev_name)
+        self._event = None
+        self.available_permissions: QueuePermissions = QueuePermissions(cdev_name)
 
     @property
     def is_fifo(self):
@@ -154,8 +169,10 @@ class Queue(PermissionsAvailableMixin, Resource):
         self._is_fifo = value
 
     def create_event_trigger(
-        self, batch_size: int = 10, batch_window: int = 5
+        self, batch_size: int = 10
     ) -> QueueEvent:
+        if self._event:
+            raise Exception("Already created stream on this table. Use `get_stream()` to get the current stream.")
     
         # https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#events-sqs-eventsource
         if self.is_fifo and batch_size > 10:
@@ -164,10 +181,18 @@ class Queue(PermissionsAvailableMixin, Resource):
         event = QueueEvent(
             queue_name=self.name,
             batch_size=batch_size,
-            batch_window=batch_window
         )
 
+        self._event = event
+
         return event
+
+    def get_stream(self) -> QueueEvent:
+        if not self._event:
+            raise Exception("Queue Event has not been created. Create a stream for this table using the `create_stream` function before calling this function.")
+
+        return self._event
+
         
     def compute_hash(self):
         self._hash = hasher.hash_list([self.is_fifo, self.nonce])

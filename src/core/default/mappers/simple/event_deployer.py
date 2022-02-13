@@ -6,6 +6,7 @@ from core.default.resources.simple import xlambda as simple_lambda
 from core.default.resources.simple import api as simple_api
 from core.default.resources.simple import object_store as simple_bucket
 from core.default.resources.simple import table as simple_table
+from core.default.resources.simple import queue as simple_queue
 
 from .. import aws_client
 
@@ -258,59 +259,47 @@ def _handle_deleting_bucket_event(event: dict, function_cloud_id: str):
 
     bucket_deployer.remove_eventsource(bucket_name, bucket_event_id)
 
-"""
+
 ##############################################
 ##### QUEUE EVENT TRIGGER
 ##############################################
 
 
-def _handle_adding_queue_event(event: simple_lambda.Event, cloud_function_id) -> Dict:
-    log.debug(f"Attempting to create {event} for function {cloud_function_id}")
-    queue_resource = cdev_cloud_mapper.get_output_by_name(
-        "cdev::simple::queue", event.original_resource_name
-    )
-    log.debug(f"Found Table info for {event} -> {queue_resource}")
+def _handle_adding_queue_event(event: simple_queue.queue_event_model, cloud_function_id) -> Dict:
+    queue_arn = event.queue_arn
+    batch_size = event.batch_size
 
-    rv = raw_aws_client.run_client_function(
+    rv = aws_client.run_client_function(
         "lambda",
         "create_event_source_mapping",
         {
-            "EventSourceArn": queue_resource.get("arn"),
+            "EventSourceArn": queue_arn,
             "FunctionName": cloud_function_id,
             "Enabled": True,
-            "BatchSize": event.config.get("batch_size"),
+            "BatchSize": batch_size,
         },
     )
 
     uuid = rv.get("UUID")
 
-    return {"event_type": "queue::trigger", "UUID": uuid}
+    return {
+        "queue_event_id": uuid
+    }
 
 
-def _handle_deleting_queue_event(event: simple_lambda.Event, resource_hash) -> bool:
-    log.debug(f"Attempting to delete {event} from function {resource_hash}")
-    # Go ahead and make sure we have info for this event in the function's output and cloud integration id of this event
-    function_event_info = cdev_cloud_mapper.get_output_value_by_hash(
-        resource_hash, "events"
+def _handle_deleting_queue_event(event: dict, function_cloud_id: str):
+    queue_event_id = event.get('queue_event_id')
+
+    aws_client.run_client_function(
+        "lambda", 
+        "delete_event_source_mapping",
+        {
+            "UUID": queue_event_id
+        }
     )
-    log.debug(f"Function event info {function_event_info}")
-    log.debug(event)
-    if not event.get_hash() in function_event_info:
-        log.error(
-            f"Could not find info for {event} ({event.get_hash()}) in function ({resource_hash}) output"
-        )
-        return False
-
-    uuid = function_event_info.get(event.get_hash()).get("UUID")
-
-    raw_aws_client.run_client_function(
-        "lambda", "delete_event_source_mapping", {"UUID": uuid}
-    )
-    log.debug(f"Removed Event {uuid} from {resource_hash}")
-
-    return True
 
 
+"""
 ##############################################
 ##### TOPIC EVENT TRIGGER
 ##############################################
@@ -392,6 +381,10 @@ EVENT_TO_HANDLERS = {
         simple_table.RUUID:{
             "CREATE": _handle_adding_stream_event,
             "REMOVE": _handle_deleting_stream_event,
+        },
+        simple_queue.RUUID:{
+            "CREATE": _handle_adding_queue_event,
+            "REMOVE": _handle_deleting_queue_event,
         }
     },
     
