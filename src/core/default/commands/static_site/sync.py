@@ -4,8 +4,9 @@ import boto3
 import os
 import mimetypes
 
-
 from core.constructs.commands import BaseCommand, OutputWrapper
+from core.default.resources.simple.static_site import StaticSite, simple_static_site_model
+from core.utils.paths import get_full_path_from_workspace_base
 
 from . import utils
 
@@ -27,20 +28,20 @@ class sync_files(BaseCommand):
         )
 
     def command(self, *args, **kwargs):
-        full_resource_name: str = kwargs.get("function_name")
+        full_resource_name: str = kwargs.get("resource_name")
         component_name = full_resource_name.split('.')[0]
         static_site_name = full_resource_name.split('.')[1]
         override_directory = kwargs.get("dir")
         clear_bucket = kwargs.get("clear")
 
-        resource = utils.get_resource_from_cdev_name(component_name, static_site_name)
+        resource: simple_static_site_model = utils.get_resource_from_cdev_name(component_name, static_site_name)
         cloud_output = utils.get_cloud_output_from_cdev_name(component_name, static_site_name)
 
         if not override_directory:
-            final_dir = resource.get("content_folder")
+            final_dir = get_full_path_from_workspace_base(resource.content_folder)
 
         else:
-            final_dir = override_directory
+            final_dir = get_full_path_from_workspace_base(override_directory)
 
         bucket_name = cloud_output.get("bucket_name")
         
@@ -60,7 +61,7 @@ class sync_files(BaseCommand):
                 mimetype, _ = mimetypes.guess_type(full_path)
                 if mimetype is None:
                     raise Exception("Failed to guess mimetype")
-
+                print(f"Uploading file -> {full_path}")
                 bucket.upload_file(
                     full_path, key_name, ExtraArgs={"ContentType": mimetype}
                 )

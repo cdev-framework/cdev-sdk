@@ -1,3 +1,4 @@
+import site
 import boto3
 import json
 from typing import Any, Dict, List
@@ -68,6 +69,7 @@ def _create_simple_static_site(
 
     output_info = {
         "site_name": site_name,
+        "bucket_name": site_name,
         "cloud_id": f"arn:aws:s3:::{site_name}",
         "site_url": f"http://{site_name}.s3-website-us-east-1.amazonaws.com",
         "arn": f"arn:aws:s3:::{site_name}",

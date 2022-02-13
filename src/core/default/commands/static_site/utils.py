@@ -1,3 +1,4 @@
+from core.constructs.resource import ResourceModel
 from core.constructs.workspace import Workspace
 
 RUUID = "cdev::simple::staticsite"
@@ -22,7 +23,7 @@ def get_cloud_output_from_cdev_name(component_name: str, cdev_name: str) -> str:
 
 
 
-def get_resource_from_cdev_name(component_name: str, cdev_name: str) -> str:
+def get_resource_from_cdev_name(component_name: str, cdev_name: str) -> ResourceModel:
     try:
         ws = Workspace.instance()
 
