@@ -12,8 +12,6 @@ subparsers = parser.add_subparsers(title="sub_command", description="valid subco
 def wrap_load_project(command: Callable) -> Callable[[Any], Any]:
     def wrapped_caller(*args, **kwargs):
         try:
-            print(args)
-
             initializer.load_project(args)
         except Exception as e:
             print(f"Could not load the project to call {command}")
@@ -82,7 +80,7 @@ CDEV_COMMANDS = [
     {
         "name": "environment",
         "help": "Change and create environments for deployment",
-        "default": wrap_load_project(environment.environment_cli),
+        "default": wrap_load_and_initialize_project(environment.environment_cli),
         "subcommands": [
             {
                 "command": "ls",

@@ -157,15 +157,18 @@ class local_project(Project):
 
         self._write_state()
 
-    @wrap_phase(Project_State.UNINITIALIZED)
+    @wrap_phase(Project_State.INITIALIZED)
     def get_all_environment_names(self) -> List[str]:
         self._load_state()
 
         return [x.name for x in self._central_state.environments]
 
-    @wrap_phase(Project_State.UNINITIALIZED)
+    @wrap_phase(Project_State.INITIALIZED)
     def set_current_environment(self, environment_name: str):
         self._load_state()
+
+        if not environment_name in self.get_all_environment_names():
+            raise Exception
 
         self._central_state.current_environment = environment_name
 
