@@ -110,6 +110,8 @@ def create_full_deployment_package(
         os.path.dirname(parsed_path), parsed_filename[:-3] + ".zip"
     )
 
+    dependencies_info: List[DependencyLayer] = []
+
     if pkgs:
         # Based on the directly references modules in the handler
         # Figure out the optimal modules to package to need the needs. 
@@ -135,9 +137,7 @@ def create_full_deployment_package(
             ) = _create_layers_from_referenced_modules(
                 layer_dependencies, available_layers
             )
-            
-            dependencies_info: List[DependencyLayer] = []
-        
+                    
 
             if single_dependency_layers:
                 for single_layer in single_dependency_layers:
@@ -159,8 +159,7 @@ def create_full_deployment_package(
                 base_archive_directory
             )
             handler_files.extend(local_dependencies_intermediate_locations)
-    else:
-        dependencies_info = None
+
 
     # Create the actual handler archive by zipping the needed files
     archive_hash = _make_intermediate_handler_zip(zip_archive_location, handler_files, base_archive_directory)
