@@ -1,3 +1,7 @@
+"""Set of constructs for making Serverless based Relational DBs
+
+"""
+
 from enum import Enum
 from typing import Any
 

@@ -1,4 +1,6 @@
-from enum import Enum
+"""Set of constructs for making message queues
+
+"""
 from os import name
 from typing import Any
 

@@ -1,4 +1,9 @@
+"""Set of constructs for creating HTTP APIs
+
+"""
+from enum import Enum
 from typing import Any, List, FrozenSet
+
 from core.constructs.models import ImmutableModel
 from core.constructs.cloud_output import Cloud_Output_Mapping, Cloud_Output_Sequence, Cloud_Output_Str, OutputType
 
@@ -11,20 +16,39 @@ from core.default.resources.simple import events
 
 RUUID = "cdev::simple::api"
 
-"""
-
-"""
-
 
 ########################
 ##### Route
 ########################
+class route_verb(str,Enum):
+    """Route Verbs
+    
+    """
+    GET = "GET"
+    PUT = "PUT"
+    POST = "POST"
+    DELETE = "DELETE"
+    ANY = "ANY"
+
+
 class route_model(ImmutableModel):
+    """Model to represent a route of an API"""
     path: str
     verb: str
 
+    def __init__(__pydantic_self__, **data: Any) -> None:
+        """"""
+        super().__init__(**data)
+
 class Route():
-    def __init__(self, api_name: str, path: str, verb: str) -> None:
+    def __init__(self, api_name: str, path: str, verb: route_verb) -> None:
+        """Construct for representing a route that is apart of an HTTP API 
+
+        Args:
+            api_name (str): Cdev name of the API this route is apart of
+            path (str): Path of the route
+            verb (`route_verb`): Verb that this route handles
+        """
         self.api_name = api_name
         self.path = path
         self.verb = verb
@@ -38,8 +62,12 @@ class Route():
             verb=self.verb,
         )
 
-
     def event(self) -> 'RouteEvent':
+        """Generate an Event Construct that other resources can bind to. 
+
+        Returns:
+            `RouteEvent`
+        """
         return RouteEvent(
             resource_name=self.api_name,
             path=self.path,
@@ -47,15 +75,29 @@ class Route():
         )
 
 class route_event_model(events.event_model):
+    """Model to represent an event for a given route"""
     path: str
-    verb: str
+    verb: route_verb
     api_id: cdev_str_model
     route_id: cdev_str_model
+
+    def __init__(__pydantic_self__, **data: Any) -> None:
+        """"""
+        super().__init__(**data)
 
 
 class RouteEvent():
 
-    def __init__(self, resource_name: str, path: str, verb: str) -> None:
+    def __init__(self, resource_name: str, path: str, verb: route_verb) -> None:
+        """Construct for representing a route that is apart of an HTTP API.
+
+        Args:
+            resource_name (str): Cdev Name of the API this event is generated from
+            path (str): Path of the route
+            verb (`route_verb`): Verb of the route
+
+        This construct should be generated with the `Route.event` method.
+        """
         self.resource_name = resource_name
         self.path = path
         self.verb = verb
@@ -91,7 +133,7 @@ class RouteEvent():
 ##### Output
 ########################
 class ApiOutput(ResourceOutputs):
-    """Container object for the returned values from the cloud after the resource has been deployed."""
+    """Container object for the returned values from the cloud after an API has been deployed."""
     def __init__(self, name: str) -> None:
         super().__init__(name, RUUID)
     
@@ -100,7 +142,7 @@ class ApiOutput(ResourceOutputs):
         """The base url for the created API
 
         Returns:
-            Cloud_Output_Str: base url
+            `core.constructs.cloud_output.Cloud_Output_Str`
         """
         return Cloud_Output_Str(
             name=self._name,
@@ -121,12 +163,14 @@ class ApiOutput(ResourceOutputs):
         Values are stored as a mapping of the (path,verb) to cloud route_id.  
         
         ex:
+        ```
             {
                 '/hello_world [GET]': <route_id>
             }
+        ```
 
         Returns:
-            Cloud_Output_Mapping[Cloud_Output_Str]: Routes
+            `core.constructs.cloud_output.Cloud_Output_Mapping`
         """
         return Cloud_Output_Mapping[Cloud_Output_Str](
             name=self._name,
@@ -144,43 +188,62 @@ class ApiOutput(ResourceOutputs):
 ########################
 ##### Api
 ########################
-
-
 class simple_api_model(ResourceModel):
+    """Model for representing a desired HTTP API"""
+    
     routes: FrozenSet[route_model]
     allow_cors: bool
 
+    def __init__(self, **data: Any) -> None:
+        """"""
+        super().__init__(**data)
+
 
 class Api(Resource):
-    """Simple HTTP Api that can be produce events.
-
-    Args:
-        Resource ([type]): [description]
-    """
 
     @update_hash
     def __init__(
         self, cdev_name: str, allow_cors: bool = True, nonce: str = "",
     ):
-        """Create a simple http Api.
+        """Create a HTTP API.
 
-        Args
+        Args:
             cdev_name (str): Name for the resource.
-            allow_cors (bool, Default: True): Allow Cross Origin Resource Sharing (CORS) on the api.
+            allow_cors (bool): Allow Cross Origin Resource Sharing (CORS) on the api.
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
 
-        Note:
-            To create routes for the api use the `route` method
+        With an HTTP API, you can create different routes that represent different requests to your backend service. Use the 
+        `route` method to create these routes then attach them to other resource to handle the requests.
+
+        <a href='https://code.tutsplus.com/tutorials/a-beginners-guide-to-http-and-rest--net-16340'>More information on HTTP routes</a>
+
+        <a href="/docs/examples/api"> Examples on how to use in Cdev Framework</a>
+
+        <a href="https://docs.aws.amazon.com/apigatewayv2/latest/api-reference/api-reference.html"> Documentation on Deployed Resource in the Cloud</a>
+
+        <a href="https://aws.amazon.com/api-gateway/pricing/"> Details on pricing</a>
         """
 
         super().__init__(cdev_name, RUUID, nonce)
         
         self._allow_cors = allow_cors
         self._routes: List[Route] = []
-        self.output = ApiOutput(cdev_name)
+
+        self._output = ApiOutput(cdev_name)
+
 
     @property
-    def allow_cors(self):
+    def output(self) -> ApiOutput:
+        """Output generated by the Cloud when this resource is deployed.
+        """
+        return self._output
+
+    @property
+    def allow_cors(self) -> bool:
+        """Allow the API to be accessed from sites other than the generated url.
+
+        [Notes on CORS]
+        """
         return self._allow_cors
 
     @allow_cors.setter
@@ -189,22 +252,21 @@ class Api(Resource):
         self._allow_cors = value
 
     @update_hash
-    def route(self, path: str, verb: str) -> Route:
+    def route(self, path: str, verb: route_verb) -> Route:
         """Create a route for the API.
 
-        Generate a `RouteEvent` that can be used as a trigger for other resources. In particular, you can attach a serverless
-        function to the route to handle the event.
-
-        ```
-        route = myApi.route('/hello_world')
-        ```
-
         Args:
-            path (str): The http path of the route created. Path must start with '/'.
-            verb (str): Options: GET, PUT, POST, DELETE, ANY 
+            path (str): The http path of the route created.
+            verb (`route_verb`): verb for the path
 
         Returns:
-            RouteEvent: The event is created. 
+            `Route` 
+
+        Generate a `Route` that can be used as a trigger for other resources.
+
+        ```
+        route = myApi.route('/hello_world', 'GET')
+        ```
         """
     
         route = Route(

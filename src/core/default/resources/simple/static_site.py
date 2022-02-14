@@ -1,4 +1,4 @@
-"""Set of primitives for making a site to serve Static Web Content
+"""Set of constructs for for making a website to serve Static Web Content
 
 """
 from typing import Any

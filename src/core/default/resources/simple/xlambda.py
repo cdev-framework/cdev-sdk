@@ -1,3 +1,7 @@
+"""Set of constructs for making Serverless Functions
+
+"""
+
 import importlib
 import inspect
 import os
@@ -135,12 +139,6 @@ class simple_function_model(ResourceModel):
     src_code_hash: str
     platform: lambda_python_environment
 
-
-    class Config:
-        use_enum_values = True
-        # Beta Feature but should be fine since this is simple data 
-        frozen = True
-        extra = "ignore"
 
 
 class SimpleFunction(PermissionsGrantableMixin, Resource):

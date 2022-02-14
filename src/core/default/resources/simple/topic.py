@@ -1,4 +1,6 @@
-from enum import Enum
+"""Set of constructs for making fan our message topics
+
+"""
 from typing import Any
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsAvailableMixin

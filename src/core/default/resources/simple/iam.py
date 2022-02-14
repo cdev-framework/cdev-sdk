@@ -1,3 +1,7 @@
+"""Set of constructs for adding permissions and authorization 
+
+"""
+
 from typing import Dict, FrozenSet, List, Optional, Union
 
 from core.constructs.models import ImmutableModel

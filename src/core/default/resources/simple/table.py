@@ -1,3 +1,5 @@
+"""Set of constructs for making No SQL DB Tables
+"""
 from enum import Enum
 from typing import Any, FrozenSet, List
 

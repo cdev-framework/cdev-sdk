@@ -1,6 +1,7 @@
 """Structures for representing cloud resources and references within the framework
 
 """
+from functools import wraps
 from typing import Dict, TypeVar, Union, List, Optional, Set, Callable, Any
 
 from enum import Enum
@@ -101,6 +102,7 @@ def update_hash(func: F) -> F:
     Returns:
         F: Wrapped function to compute new hash after changes have been made
     """
+    @wraps(func)
     def wrapped_func(resource: "Resource", *func_posargs, **func_kwargs):
         rv = func(resource, *func_posargs, **func_kwargs)
         resource.compute_hash()

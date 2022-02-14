@@ -1,4 +1,4 @@
-"""Set of primitives for working with Cloud Object Stores like S3
+"""Set of constructs for creating Cloud Object Stores like S3
 
 """
 
