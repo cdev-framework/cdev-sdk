@@ -18,5 +18,5 @@ def run_command(args):
     myProject = Project.instance()
     
     ws = myProject.get_current_environment().get_workspace()
-    print("HERE")
+    
     core_run_command(ws, output_manager, args)

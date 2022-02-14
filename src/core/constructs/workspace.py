@@ -27,7 +27,7 @@ from core.constructs.cloud_output import Cloud_Output, evaluate_dynamic_output, 
 from core.constructs.settings import Settings_Info, Settings, initialize_settings
 
 
-from core.utils.command_finder import find_specified_command, find_unspecified_command
+from core.utils.command_finder import find_specified_command
 from core.utils import module_loader, topological_helper
 from core.utils.logger import log
 
@@ -715,16 +715,10 @@ class Workspace:
         # Create list of all directories to start searching in
         all_search_locations_list = self.get_commands()
 
-        if len(command_list) == 1:
-            obj, program_name, command_name, is_command = find_unspecified_command(
-                command_list[0], all_search_locations_list
-            )
 
-        else:
-            obj, program_name, command_name, is_command = find_specified_command(
-                command_list, all_search_locations_list
-            )
-
+        obj, program_name, command_name, is_command = find_specified_command(
+            command_list, all_search_locations_list
+        )
 
         if is_command:
             if not isinstance(obj, BaseCommand):
