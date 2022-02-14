@@ -35,5 +35,4 @@ def run_command(workspace: Workspace, output: OutputManager, cli_args):
         workspace.execute_command(sub_command, command_args)
     except Exception as e:
         print(e)
-        print(f"wpefkwpo")
         return

@@ -15,6 +15,11 @@ RUUID = "cdev::simple::table"
 
 
 class clear_table(BaseCommand):
+
+    help = """
+Clear the current data from a given Table. This should only be used on development tables.   
+"""
+
     def add_arguments(self, parser: ArgumentParser):
         parser.add_argument(
             "resource_name", type=str, help="The resource you want to sync data to"
