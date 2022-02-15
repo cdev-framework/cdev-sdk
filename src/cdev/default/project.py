@@ -3,7 +3,7 @@ from pydantic.types import FilePath
 from typing import Dict, List, Callable, Any, TypeVar, Tuple
 
 
-from cdev.constructs.project import Project, Project_State, project_info, wrap_phase
+from cdev.constructs.project import Project, Project_State, project_info, wrap_phases
 from cdev.default.environment import local_environment
 from core.constructs.backend import Backend, load_backend
 
@@ -114,7 +114,7 @@ class local_project(Project):
     # Note that the class methods should not include doc strings so that they inherit the doc string of the 
     # parent class. 
 
-    @wrap_phase(Project_State.INITIALIZED)
+    @wrap_phases([Project_State.INITIALIZED, Project_State.UNINITIALIZED])
     def create_environment(self, environment_name: str, settings_files: Dict[str,str] = None):
         self._load_state()
         resource_state_id = self._backend.create_resource_state(environment_name)
@@ -147,7 +147,7 @@ class local_project(Project):
 
         self._write_state()
 
-    @wrap_phase(Project_State.INITIALIZED)
+    @wrap_phases([Project_State.INITIALIZED, Project_State.UNINITIALIZED])
     def destroy_environment(self, environment_name: str) -> None:
         self._load_state()
 
@@ -157,13 +157,13 @@ class local_project(Project):
 
         self._write_state()
 
-    @wrap_phase(Project_State.INITIALIZED)
+    @wrap_phases([Project_State.INITIALIZED, Project_State.UNINITIALIZED])
     def get_all_environment_names(self) -> List[str]:
         self._load_state()
 
         return [x.name for x in self._central_state.environments]
 
-    @wrap_phase(Project_State.INITIALIZED)
+    @wrap_phases([Project_State.INITIALIZED, Project_State.UNINITIALIZED])
     def set_current_environment(self, environment_name: str):
         self._load_state()
 
@@ -232,22 +232,22 @@ class local_project(Project):
     #################
     ##### Mappers
     #################
-    @wrap_phase(Workspace_State.INITIALIZING)
+    @wrap_phases([Workspace_State.INITIALIZING])
     def add_mapper(self, mapper: CloudMapper) -> None:
         ws = self.get_current_environment().get_workspace()
         ws.add_mapper(mapper)
 
-    @wrap_phase(Workspace_State.INITIALIZING)
+    @wrap_phases([Workspace_State.INITIALIZING])
     def add_mappers(self, mappers: List[CloudMapper]) -> None:
         ws = self.get_current_environment().get_workspace()
         ws.add_mappers(mappers)
 
-    @wrap_phase(Workspace_State.INITIALIZED)
+    @wrap_phases([Workspace_State.INITIALIZED])
     def get_mappers(self) -> List[CloudMapper]:
         ws = self.get_current_environment().get_workspace()
         return ws.get_mappers()
 
-    @wrap_phase(Workspace_State.INITIALIZED)
+    @wrap_phases([Workspace_State.INITIALIZED])
     def get_mapper_namespace(self) -> Dict:
         ws = self.get_current_environment().get_workspace()
         return ws.get_mapper_namespace()
@@ -255,17 +255,17 @@ class local_project(Project):
     #################
     ##### Commands
     #################
-    @wrap_phase(Workspace_State.INITIALIZING)
+    @wrap_phases([Workspace_State.INITIALIZING])
     def add_command(self, command_location: str):
         ws = self.get_current_environment().get_workspace()
         ws.add_command(command_location)
 
-    @wrap_phase(Workspace_State.INITIALIZING)
+    @wrap_phases([Workspace_State.INITIALIZING])
     def add_commands(self, command_locations: List[str]):
         ws = self.get_current_environment().get_workspace()
         ws.add_commands(command_locations)
 
-    @wrap_phase(Workspace_State.INITIALIZED)
+    @wrap_phases([Workspace_State.INITIALIZED])
     def get_commands(self) -> List[str]:
         ws = self.get_current_environment().get_workspace()
         return ws.get_commands()
@@ -273,17 +273,17 @@ class local_project(Project):
     #################
     ##### Components
     #################
-    @wrap_phase(Workspace_State.INITIALIZING)
+    @wrap_phases([Workspace_State.INITIALIZING])
     def add_component(self, component: Component):
         ws = self.get_current_environment().get_workspace()
         ws.add_component(component)
 
-    @wrap_phase(Workspace_State.INITIALIZING)
+    @wrap_phases([Workspace_State.INITIALIZING])
     def add_components(self, components: List[Component]):
         ws = self.get_current_environment().get_workspace()
         ws.add_components(components)
 
-    @wrap_phase(Workspace_State.INITIALIZED)
+    @wrap_phases([Workspace_State.INITIALIZED])
     def get_components(self) -> List[Component]:
         ws = self.get_current_environment().get_workspace()
         return ws.get_components()

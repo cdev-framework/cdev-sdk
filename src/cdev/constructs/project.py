@@ -58,7 +58,7 @@ class Project_State(str, Enum):
 
 
 
-def wrap_phase(phase: Project_State) -> Callable[[F], F]:
+def wrap_phases(phases: List[Project_State]) -> Callable[[F], F]:
     """
     Annotation that denotes when a function can be executed within the life cycle of a workspace. Throws excpetion if the workspace is not in the correct
     phase.
@@ -68,9 +68,9 @@ def wrap_phase(phase: Project_State) -> Callable[[F], F]:
         def wrapper_func(project: "Project", *func_posargs, **func_kwargs):
 
             current_state = project.get_state()
-            if not current_state == phase:
+            if not current_state in phases:
                 raise Exception(
-                    f"Trying to call {func} while in project state {current_state} but need to be in {phase}"
+                    f"Trying to call {func} while in project state {current_state} but need to be in {phases}"
                 )
 
             else:
