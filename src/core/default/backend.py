@@ -939,8 +939,9 @@ def _compute_component_hash(component: ComponentModel) -> str:
         hash (str): identity hash for the component
     """
     if component.resources:
+        
         resources = [x for x in component.resources]
-        resources.sort(key=lambda x: x.name)
+        resources.sort(key=lambda x: x.hash)
 
         resource_hashes = [x.hash for x in resources]
     else:
