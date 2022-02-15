@@ -60,6 +60,7 @@ class Settings(BaseSettings):
     class Config:
         env_prefix = 'CDEV_'
         validate_assignment = True
+        extra = 'allow'
 
 
 
