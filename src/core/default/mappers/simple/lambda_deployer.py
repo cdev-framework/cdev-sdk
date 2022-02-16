@@ -317,6 +317,7 @@ def _update_simple_lambda(
 
 
     if not previous_resource.src_code_hash == new_resource.src_code_hash:
+        sleep(3)
         output_task.update(
             comment=f"Update Source Code"
         )
