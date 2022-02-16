@@ -7,7 +7,7 @@ import os
 import mimetypes
 
 from core.constructs.commands import BaseCommand, OutputWrapper
-from core.default.resources.simple.object_store import SimpleBucket, simple_bucket_model
+from core.default.resources.simple.object_store import Bucket, bucket_model
 from core.utils.paths import get_full_path_from_workspace_base
 
 from . import utils

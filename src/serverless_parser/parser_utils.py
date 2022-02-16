@@ -10,7 +10,7 @@ import tokenize
 from .parser_objects import *
 from .parser_exceptions import InvalidParamError, CouldNotParseFileError, CdevFileNotFoundError, InvalidDataError
 
-EXCLUDED_SYMBOLS = set(["os", "print", "sss"])
+EXCLUDED_SYMBOLS = set([ "print", "sss"])
 
 
 def _get_global_variables_in_symboltable(table):

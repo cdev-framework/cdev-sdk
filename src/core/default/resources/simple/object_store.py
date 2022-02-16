@@ -18,20 +18,22 @@ RUUID = "cdev::simple::bucket"
 
 class Bucket_Event_Type(str, Enum):
     Object_Created = "s3:ObjectCreated:*"
+    """Receive Events when Objects are created in the `Bucket`"""
     Object_Removed = "s3:ObjectRemoved:*"
+    """Receive Events when Objects are removed from the `Bucket`"""
     Object_Restore = "s3:ObjectRestore:*"
+    """Receive Events when Objects are restored to the `Bucket`"""
     Object_Replicaton = "s3:ObjectReplication:*"
+    """Receive Events when Objects are replicated to the `Bucket`"""
 
 
 class bucket_event_model(event_model):
-    """
-    something
+    """Model representing an Event from a Bucket
 
-    Arguments:
-        original_resource_name: str
-        original_resource_type: str
-        event_type: EventTypes
-        bucket_event_type: Bucket_Event_Types
+    Args:
+        bucket_arn (cdev_str_model)
+        bucket_name (cdev_str_model)
+        bucket_event_type (Bucket_Event_Type)   
     """
     bucket_arn: cdev_str_model
     bucket_name: cdev_str_model
@@ -39,8 +41,15 @@ class bucket_event_model(event_model):
 
 
 class BucketEvent(Event):
+    """Construct representing an Event from a Bucket
+    """
 
     def __init__(self, bucket_name: str, bucket_event_type: Bucket_Event_Type) -> None:
+        """
+        Args:
+            bucket_name (str): Cdev name of the bucket
+            bucket_event_type (Bucket_Event_Type): Type fo events to create
+        """
         self.bucket_cdev_name = bucket_name
         self.bucket_event_type = bucket_event_type
         self.bucket_arn =  Cloud_Output_Str(
@@ -86,6 +95,7 @@ class BucketPermissions:
             cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
+        """Permissions to read objects from the `Bucket`"""
 
         self.WRITE_BUCKET = Permission(
             actions=[
@@ -96,6 +106,7 @@ class BucketPermissions:
             cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
+        """Permissions to write objects to the `Bucket`"""
 
         self.READ_AND_WRITE_BUCKET = Permission(
             actions=[
@@ -105,6 +116,7 @@ class BucketPermissions:
             cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
+        """Permissions to read and write objects to and from the `Bucket`"""
 
         self.READ_EVENTS = Permission(
             actions=[
@@ -114,13 +126,16 @@ class BucketPermissions:
             cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
+        """Permissions to receive events from the `Bucket`"""
 
 
-class simple_bucket_model(ResourceModel):
+class bucket_model(ResourceModel):
+    """Model representing a Bucket"""
     pass
 
 
 class BucketOutput(ResourceOutputs):
+    """Container object for the returned values from the cloud after a Bucket has been deployed."""
     def __init__(self, name: str) -> None:
         super().__init__(name, RUUID)
 
@@ -140,17 +155,14 @@ class BucketOutput(ResourceOutputs):
         raise Exception
 
 
-class SimpleBucket(PermissionsAvailableMixin, Resource):
+class Bucket(PermissionsAvailableMixin, Resource):
     """A Simple Bucket is a basic object store for applications to build on.
 
-
-    
     """
     
     @update_hash
     def __init__(self, cdev_name: str, nonce: str="") -> None:
-        """Create a simple S3 bucket that can be used as an object store.
-
+        """
         Args:
             cdev_name (str): Name of the resource
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
@@ -164,6 +176,7 @@ class SimpleBucket(PermissionsAvailableMixin, Resource):
     def create_event_trigger(
         self, event_type: Bucket_Event_Type
     ) -> BucketEvent:
+        """Create Construct of event that other resources can respond to"""
 
         event = BucketEvent(
             bucket_name=self.name,
@@ -175,8 +188,8 @@ class SimpleBucket(PermissionsAvailableMixin, Resource):
     def compute_hash(self):
         self._hash = hasher.hash_list([self.nonce])
         
-    def render(self) -> simple_bucket_model:
-        return simple_bucket_model(
+    def render(self) -> bucket_model:
+        return bucket_model(
             ruuid=self.ruuid,
             name=self.name,
             hash=self.hash,

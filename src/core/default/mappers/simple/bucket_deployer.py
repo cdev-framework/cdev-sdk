@@ -23,7 +23,7 @@ class event_hander_types(Enum):
 def _create_simple_bucket(
     transaction_token: str, 
     namespace_token: str, 
-    resource:  simple_object_store.simple_bucket_model,
+    resource:  simple_object_store.bucket_model,
     output_task: OutputTask
 ) -> Dict:
 
@@ -53,8 +53,8 @@ def _create_simple_bucket(
 def _update_simple_bucket(
     transaction_token: str, 
     namespace_token: str,
-    previous_resource: simple_object_store.simple_bucket_model,
-    new_resource: simple_object_store.simple_bucket_model,
+    previous_resource: simple_object_store.bucket_model,
+    new_resource: simple_object_store.bucket_model,
     previous_output: Dict,
     output_task: OutputTask
 ) -> Dict:
@@ -227,7 +227,7 @@ def handle_simple_bucket_deployment(
         return _update_simple_bucket(
             transaction_token,
             namespace_token,
-            simple_object_store.simple_bucket_model(**resource_diff.previous_resource.dict()),
+            simple_object_store.bucket_model(**resource_diff.previous_resource.dict()),
             resource_diff.new_resource,
             previous_output,
             output_task

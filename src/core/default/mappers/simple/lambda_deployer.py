@@ -248,6 +248,8 @@ def _update_simple_lambda(
     # Update source code or dependencies
     # Update configuration
     # Update events
+
+    print(f"GETTING HERE")
     output_task.update(
         comment=f"Updating lambda function {new_resource.name}"
     )
@@ -268,6 +270,7 @@ def _update_simple_lambda(
             output_task.update(
                 comment=f"Updating Environment Variables"
             )
+            
             aws_client.run_client_function(
                 "lambda",
                 "update_function_configuration",
@@ -286,14 +289,13 @@ def _update_simple_lambda(
         permission_output: frozenset = previous_output.get("permissions")
         role_name_output = previous_output.get("role_name")
 
-        
         remove_permissions = previous_resource.permissions.difference(new_resource.permissions)
         create_permissions = new_resource.permissions.difference(previous_resource.permissions)
 
 
         for permission in create_permissions:
             
-            rv = add_policy(role_name_output, permission)
+            rv = frozendict(add_policy(role_name_output, permission))
             tmp = list(permission_output)
             tmp.append(rv)
             permission_output = frozenset(tmp)
@@ -301,17 +303,17 @@ def _update_simple_lambda(
         for permission in remove_permissions:
 
             delete_policy(
-                role_name_output,
-                permission_output.get(permission),
+                permission.cloud_id,
             )
             tmp = list(permission_output)
-            tmp.pop(rv)
+            tmp.remove(permission)
             permission_output = frozenset(tmp)
 
 
         mutable_previous_output['permissions'] = permission_output
         
         did_update_permission = True
+        print(f"FINIHED PERMISSIONS")
 
 
     if not previous_resource.src_code_hash == new_resource.src_code_hash:
