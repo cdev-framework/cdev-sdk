@@ -20,8 +20,7 @@ RUUID = "cdev::simple::queue"
 ##### Events
 ######################
 class queue_event_model(event_model):
-    """
-    something
+    """Model representing a message queue event
 
     Arguments:
         batch_size: int
@@ -32,7 +31,7 @@ class queue_event_model(event_model):
 
 
 class QueueEvent(Event):
-    
+    """Construct representing the Events from the Queue"""
     def __init__(self, queue_name: str, batch_size: int) -> None:
 
         if batch_size > 10000 or batch_size < 0:
@@ -81,6 +80,7 @@ class QueuePermissions:
             cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
+        """Permission to poll for messages from the Queue"""
 
         self.WRITE_QUEUE = Permission(
             actions=[
@@ -90,6 +90,7 @@ class QueuePermissions:
             cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
+        """Permission to write messages to the Queue"""
 
         self.READ_AND_WRITE_QUEUE = Permission(
             actions=[
@@ -101,6 +102,7 @@ class QueuePermissions:
             cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
+        """Permission to read and write messages to and from the Queue"""
 
         self.READ_EVENTS = Permission(
             actions=[
@@ -111,7 +113,7 @@ class QueuePermissions:
             cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
-
+        """Permission to receive events to and from the Queue"""
 
 ######################
 ##### Output
@@ -138,20 +140,21 @@ class QueueOutput(ResourceOutputs):
 ######################
 ##### Queue
 ######################
-class simple_queue_model(ResourceModel):
+class queue_model(ResourceModel):
     is_fifo: bool
+    """Should the Queue guarantee ordering of messages"""
 
 
 class Queue(PermissionsAvailableMixin, Resource):
+    """A Message Queue"""
 
     @update_hash
     def __init__(self, cdev_name: str, is_fifo: bool = False, nonce: str = "") -> None:
         """
-        A simple sqs queue.
 
         args:
             cdev_name (str): Name of the resource.
-            is_fifo (bool, default=False): if this should be a First-in First-out queue (link to difference).
+            is_fifo (bool, default=False): If True, the Queue will guarantee ordering of messages.
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
         """
         super().__init__(cdev_name, RUUID, nonce)
@@ -163,6 +166,7 @@ class Queue(PermissionsAvailableMixin, Resource):
 
     @property
     def is_fifo(self):
+        """Should the Queue guarantee ordering of messages"""
         return self._is_fifo
 
     @is_fifo.setter
@@ -173,6 +177,18 @@ class Queue(PermissionsAvailableMixin, Resource):
     def create_event_trigger(
         self, batch_size: int = 10
     ) -> QueueEvent:
+        """Create an Event for the Queue that other resources can listen to
+
+        Args:
+            batch_size (int, optional): Size of message batch. Defaults to 10.
+
+        Raises:
+            Exception: _description_
+            Exception: _description_
+
+        Returns:
+            QueueEvent
+        """
         if self._event:
             raise Exception("Already created stream on this table. Use `get_stream()` to get the current stream.")
     
@@ -190,6 +206,14 @@ class Queue(PermissionsAvailableMixin, Resource):
         return event
 
     def get_event(self) -> QueueEvent:
+        """Get the Event for this Queue
+
+        Raises:
+            Exception: _description_
+
+        Returns:
+            QueueEvent
+        """
         if not self._event:
             raise Exception("Queue Event has not been created. Create a stream for this table using the `create_stream` function before calling this function.")
 
@@ -199,8 +223,8 @@ class Queue(PermissionsAvailableMixin, Resource):
     def compute_hash(self):
         self._hash = hasher.hash_list([self.is_fifo, self.nonce])
         
-    def render(self) -> simple_queue_model:
-        return simple_queue_model(
+    def render(self) -> queue_model:
+        return queue_model(
             name=self.name,
             ruuid=self.ruuid,
             hash=self.hash,

@@ -11,7 +11,7 @@ from .. import aws_client
 def _create_simple_queue(
     transaction_token: str, 
     namespace_token: str, 
-    resource:  queue.simple_queue_model,
+    resource:  queue.queue_model,
     output_task: OutputTask
 ) -> Dict:
 
@@ -63,8 +63,8 @@ def _create_simple_queue(
 def _update_simple_queue(
     transaction_token: str, 
     namespace_token: str,
-    previous_resource: queue.simple_queue_model,
-    new_resource: queue.simple_queue_model,
+    previous_resource: queue.queue_model,
+    new_resource: queue.queue_model,
     previous_output: Dict,
     output_task: OutputTask
 ) -> Dict:
@@ -106,7 +106,7 @@ def handle_simple_queue_deployment(
         return _update_simple_queue(
             transaction_token,
             namespace_token,
-            queue.simple_queue_model(**resource_diff.previous_resource.dict()),
+            queue.queue_model(**resource_diff.previous_resource.dict()),
             resource_diff.new_resource,
             previous_output,
             output_task
