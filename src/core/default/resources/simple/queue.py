@@ -141,6 +141,8 @@ class QueueOutput(ResourceOutputs):
 ##### Queue
 ######################
 class queue_model(ResourceModel):
+    """Model representing a Message Queue"""
+    
     is_fifo: bool
     """Should the Queue guarantee ordering of messages"""
 
@@ -151,7 +153,6 @@ class Queue(PermissionsAvailableMixin, Resource):
     @update_hash
     def __init__(self, cdev_name: str, is_fifo: bool = False, nonce: str = "") -> None:
         """
-
         args:
             cdev_name (str): Name of the resource.
             is_fifo (bool, default=False): If True, the Queue will guarantee ordering of messages.

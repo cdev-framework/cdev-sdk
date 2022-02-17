@@ -19,17 +19,12 @@ RUUID = "cdev::simple::topic"
 ##### Events
 ######################
 class topic_event_model(event_model):
-    """
-    something
-
-    Arguments:
-        batch_size: int
-        batch_window: int
-    """
+    """Model representing a Topic event"""
     topic_arn: cdev_str_model   
 
 
 class TopicEvent(Event):
+    """Construct representing the Events from the Topic"""
     
     def __init__(self, topic_name: str) -> None:
 
@@ -71,6 +66,7 @@ class TopicPermissions:
             cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
+        """Permission to subscribe to the Topic"""
 
         self.PUBLISH = Permission(
             actions=[
@@ -80,18 +76,19 @@ class TopicPermissions:
             cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
-
+        """Permission to publish to the Topic"""
 
 ##############
 ##### Output
 ##############
 class TopicOutput(ResourceOutputs):
+    """Container object for the returned values from the cloud after a Topic has been deployed."""
     def __init__(self, name: str) -> None:
         super().__init__(name, RUUID)
 
     @property
     def topic_name(self) -> Cloud_Output_Str:
-        """The name of the generated table"""
+        """The name of the generated topic"""
         return Cloud_Output_Str(
             name=self._name,
             ruuid=RUUID,
@@ -108,23 +105,22 @@ class TopicOutput(ResourceOutputs):
 ##### Topic
 ###############
 class simple_topic_model(ResourceModel):
-    is_fifo: bool
+    """Model representing a Pub/Sub Topic"""
 
+    is_fifo: bool
+    """Should the Topic guarantee ordering of messages"""
 
 class Topic(PermissionsAvailableMixin, Resource):
-    """Simple SNS topic.
-    
-    """
+    """Construct for creating a managed SNS Pub/Sub Topic"""
 
     @update_hash
     def __init__(
         self, cdev_name: str, is_fifo: bool = False, nonce: str = ''
     ) -> None:
-        """[summary]
-
+        """
         Args:
-            cdev_name (str): [description]
-            is_fifo (bool, optional): [description]. Defaults to False.
+            cdev_name (str): Name of the resource.
+            is_fifo (bool, default=False): If True, the Queue will guarantee ordering of messages.
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
         """
         super().__init__(cdev_name, RUUID, nonce)
@@ -136,6 +132,7 @@ class Topic(PermissionsAvailableMixin, Resource):
 
     @property
     def is_fifo(self):
+        """Should the Pub/Sub Topic guarantee ordering of messages"""
         return self._is_fifo
 
     @is_fifo.setter
@@ -146,6 +143,15 @@ class Topic(PermissionsAvailableMixin, Resource):
     def create_event_trigger(
         self
     ) -> TopicEvent:
+        """Create an Event for the Topic that other resources can listen to
+
+        Raises:
+            Exception: _description_
+            Exception: _description_
+
+        Returns:
+            QueueEvent
+        """
         if self._event:
             raise Exception("Already created an event on this topic. Use `get_event()` to get the current event.")
     
@@ -159,6 +165,14 @@ class Topic(PermissionsAvailableMixin, Resource):
         return event
 
     def get_event(self) -> TopicEvent:
+        """Get the Event for this Queue
+
+        Raises:
+            Exception: _description_
+
+        Returns:
+            QueueEvent
+        """
         if not self._event:
             raise Exception("Topic Event has not been created. Create a Topic Event for this topic using the `create_event_trigger` function before calling this function.")
 
