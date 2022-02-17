@@ -27,6 +27,7 @@ from .role_deployer import (
     delete_role_and_permissions,
     add_policy,
     delete_policy,
+    detach_policy,
 )
 
 
@@ -286,7 +287,7 @@ def _update_simple_lambda(
         output_task.update(
             comment=f"Updating Policies"
         )
-        permission_output: frozenset = previous_output.get("permissions")
+        permission_output: frozenset[Dict] = previous_output.get("permissions")
         role_name_output = previous_output.get("role_name")
 
         remove_permissions = previous_resource.permissions.difference(new_resource.permissions)
@@ -302,18 +303,23 @@ def _update_simple_lambda(
 
         for permission in remove_permissions:
 
-            delete_policy(
-                permission.cloud_id,
-            )
-            tmp = list(permission_output)
-            tmp.remove(permission)
-            permission_output = frozenset(tmp)
+            previous_permission_output_list = [x for x in permission_output if x.get('hash') == permission.hash]
 
+            if len(previous_permission_output_list) > 1:
+                raise Exception
+
+            previous_permission_output = previous_permission_output_list[0]
+            
+            delete_policy(
+                role_name_output,
+                previous_permission_output
+            )
+
+            permission_output = frozenset([x for x in permission_output if not x.get('hash') == permission.hash])
 
         mutable_previous_output['permissions'] = permission_output
         
         did_update_permission = True
-        print(f"FINIHED PERMISSIONS")
 
 
     if not previous_resource.src_code_hash == new_resource.src_code_hash:

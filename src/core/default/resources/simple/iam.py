@@ -15,6 +15,7 @@ class permission_model(ImmutableModel):
     cloud_id: cdev_str_model
     effect: str
     resource_suffix: Optional[str]
+    hash: str
 
     class Config:
         use_enum_values = True
@@ -24,6 +25,7 @@ class permission_model(ImmutableModel):
 
 class permission_arn_model(ImmutableModel):
     arn: str
+    hash: str
     
     class Config:
         use_enum_values = True
@@ -60,7 +62,8 @@ class Permission():
         return permission_model(
             actions=frozenset(self.actions),
             cloud_id=self.cloud_id.render() if isinstance(self.cloud_id, Cloud_Output_Str) else self.cloud_id,
-            effect=self.effect
+            effect=self.effect,
+            hash=self.hash()
         )
 
     def hash(self) -> str:

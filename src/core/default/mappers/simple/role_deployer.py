@@ -34,7 +34,8 @@ def create_role_with_permissions(
 
 
     basic_execution_permission_arn = permission_arn_model(
-        arn="arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        arn="arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+        hash="arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
     )
 
     permission_info.append(
@@ -51,23 +52,23 @@ def delete_role_and_permissions(
     Delete all permissions and the associated role
     """
     for info in permission_arns:
-        _detach_policy(role_name, info.get('arn'))
-
-        if info.get('was_created'):
-            delete_policy(info.get('arn'))
+        delete_policy(role_name, info)
 
     aws_client.run_client_function("iam", "delete_role", {"RoleName": role_name})
 
 
 
 
-def delete_policy(permission_arn: str):
+def delete_policy(role_name: str, permission_info: Dict):
     """
     Delete a policy
     """
-    aws_client.run_client_function(
-        "iam", "delete_policy", {"PolicyArn": permission_arn}
-    )
+    detach_policy(role_name, permission_info.get('arn'))
+
+    if permission_info.get('was_created'):
+        aws_client.run_client_function(
+            "iam", "delete_policy", {"PolicyArn": permission_info.get('arn')}
+        )
 
 
 def add_policy(
@@ -83,17 +84,18 @@ def add_policy(
         was_created = False
         
     else:
-        returned_permission_arn = _create_policy(permission)
+        returned_permission_arn = create_policy(permission)
         was_created = True
         
     _attach_policy_to_arn(role_name, returned_permission_arn)
 
     return {
+        "hash": permission.hash,
         "arn": returned_permission_arn,
         "was_created": was_created
     }
 
-def _create_policy(permission: permission_model) -> str:
+def create_policy(permission: permission_model) -> str:
     """
     Creates the policy and returns the arn
     """
@@ -119,6 +121,17 @@ def _create_policy(permission: permission_model) -> str:
     )
 
     return rv.get("Policy").get("Arn")
+
+
+def detach_policy(role_name: str, permission_arn: str):
+    aws_client.run_client_function(
+        "iam",
+        "detach_role_policy",
+        {
+            "RoleName": role_name, 
+            "PolicyArn": permission_arn
+        },
+    )
 
 
 def _create_role(name: str, assume_role_policy: str) -> str:
@@ -150,12 +163,4 @@ def _attach_policy_to_arn(role_arn: str, policy_arn: str) -> bool:
 
 
 
-def _detach_policy(role_name: str, permission_arn: str):
-    aws_client.run_client_function(
-        "iam",
-        "detach_role_policy",
-        {
-            "RoleName": role_name, 
-            "PolicyArn": permission_arn
-        },
-    )
+
