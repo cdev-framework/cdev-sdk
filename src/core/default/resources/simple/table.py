@@ -19,32 +19,27 @@ RUUID = "cdev::simple::table"
 #################
 ##### Events
 #################
+#TODO: Add more documentation on the json schema of the events
 class stream_type(str, Enum):
-    """Type of streams for a table. 
-    
-    attributes:
-        KEYS_ONLY: Only the key attributes of the modified item.
-        NEW_IMAGE: The entire item, as it appears after it was modified.
-        OLD_IMAGE: The entire item, as it appeared before it was modified.
-        NEW_AND_OLD_IMAGES: Both the new and the old item images of the item.
-    """
+    """Type of streams for a table."""
 
     KEYS_ONLY = "KEYS_ONLY"
+    """Only the key attributes of the modified item."""
     NEW_IMAGE = "NEW_IMAGE"
+    """The entire item, as it appears after it was modified."""
     OLD_IMAGE = "OLD_IMAGE"
+    """The entire item, as it appeared before it was modified."""
     NEW_AND_OLD_IMAGES = "NEW_AND_OLD_IMAGES"
+    """Both the new and the old item images of the item."""
 
 
 class stream_event_model(event_model):
-    """
-    something
+    """Model to represent a stream event
 
-    Arguments:
-        original_resource_name: str
-        original_resource_type: str
-        event_type: EventTypes
-        view_type: stream_type
-        batch_size: int
+    Args:
+        table_name (str): Cdev name of the API this route is apart of
+        view_type (stream_type): Type of eventthe stream produces
+        batch_size (int): Size of event batches
     """
     table_name: cdev_str_model    
     view_type: stream_type
@@ -52,8 +47,15 @@ class stream_event_model(event_model):
 
 
 class StreamEvent(Event):
+    """Construct for representing the Stream of a `Table`"""
 
     def __init__(self, table_name: str, view_type: stream_type, batch_size: int) -> None:
+        """
+        Args:
+            table_name (str): Cdev name of the API this route is apart of
+            view_type (stream_type): Type of eventthe stream produces
+            batch_size (int): Size of event batches
+        """
         
         self.cdev_table_name = table_name
         
@@ -90,9 +92,9 @@ class StreamEvent(Event):
 ###### Permission
 ######################
 class TablePermissions:
-    RUUID = "cdev::simple::table"
+    """Permissions to provide to other resources to access a `Table`"""
 
-    def __init__(self, resource_name) -> None:
+    def __init__(self, resource_name: str) -> None:
 
         self.READ_TABLE = Permission(
             actions=[
@@ -105,6 +107,7 @@ class TablePermissions:
             cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
+        """Permissions to read data from the Table"""
 
         self.WRITE_TABLE = Permission(
             actions=[
@@ -123,6 +126,7 @@ class TablePermissions:
             cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
+        """Permissions to write data to the Table"""
 
         self.READ_AND_WRITE_TABLE = Permission(
             actions=[
@@ -141,6 +145,7 @@ class TablePermissions:
             cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
+        """Permissions to read and write data to and from the Table"""
 
         self.READ_STREAM = Permission(
             actions=[
@@ -153,11 +158,13 @@ class TablePermissions:
             cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE).join(["", "/stream/*"]),
             effect="Allow",
         )
+        """Permissions to receive and process events from the Table Stream"""
 
 ##############
 ##### Output
 ##############
 class TableOutput(ResourceOutputs):
+    """Container object for the returned values from the cloud after a `Table` has been deployed."""
     def __init__(self, name: str) -> None:
         super().__init__(name, RUUID)
 
@@ -185,16 +192,14 @@ class attribute_type(str, Enum):
     These values will be used by the table to do type checks on data for the defined attribute.
 
     visit https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.create_table for more details
-
-    Values:
-        S: String
-        N: Number
-        B: Binary
     """
 
     S = "S"
+    """String"""
     N = "N"
+    """Number"""
     B = "B"
+    """Binary"""
 
 
 class key_type(str, Enum):
@@ -202,23 +207,35 @@ class key_type(str, Enum):
     
     These value will be used by the primary key to determine how the data is stored in the table.
     visit https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.CoreComponents.html#HowItWorks.CoreComponents.PrimaryKey for more details.
-
-    Values:
-        HASH: Partion Key
-        RANGE: Sort key
     """
 
     HASH = "HASH"
+    """Partion Key"""
     RANGE = "RANGE"
+    """Sort key"""
 
 
 class attribute_definition_model(ImmutableModel):
+    """Model representing an attribute of a `Table`
+
+    Args:
+        attribute_name (str)
+        attribute_type (`attribute_type`)
+    """
     attribute_name: str 
     attribute_type: attribute_type
 
     
 class AttributeDefinition:
+    """Construct representing an attribute of a `Table`"""
+
     def __init__(self, name:str, type: attribute_type) -> None:
+        """Create an attribute that will be part of a `Table`
+        
+        Args:
+            name (str): Name of the attribute
+            type (attribute_type): Type of value the attribute stores
+        """
         self.name = name
         self.type = type
 
@@ -231,12 +248,32 @@ class AttributeDefinition:
 
 
 class key_definition_model(ImmutableModel):
+    """Model representing a primary key of a `Table`
+
+    Args:
+        attribute_name (str)
+        key_type (`key_type`)
+    """
     attribute_name: str 
     key_type: key_type
 
 
 class KeyDefinition:
+    """Construct representing a primary key of a `Table`"""
+
     def __init__(self, name:str, type: key_type) -> None:
+        """
+        Args:
+            name (str): Name of the attribute
+            type (key_type): Type of value the attribute stores
+
+        Note that the `name` property must match a `name` of a given `AttributeDefinition` on the created
+        table. 
+
+        The keys on a table will define the optimal way of retrieving data from the `Table`. 
+
+
+        """
         self.name = name
         self.type = type
 
@@ -249,11 +286,17 @@ class KeyDefinition:
 
 
 class simple_table_model(ResourceModel):
+    """Model representing a `Table`
+
+    Args:
+        ResourceModel ([type]): [description]
+    """
     attributes: FrozenSet[attribute_definition_model]
     keys: FrozenSet[key_definition_model]
 
 
 class Table(PermissionsAvailableMixin, Resource):
+    """Create a NoSql Table (DynamoDB)"""
 
     @update_hash
     def __init__(
@@ -263,13 +306,21 @@ class Table(PermissionsAvailableMixin, Resource):
         keys: List[KeyDefinition],
         nonce: str = "",
     ) -> None:
-        """[summary]
-
+        """
         Args:
-            cdev_name (str): [description]
-            attributes (List[AttributeDefinition]): [description]
-            keys (List[KeyDefinition]): [description]
+            cdev_name (str): Name for the resource.
+            attributes (List[AttributeDefinition]): List of Attributes on the Table
+            keys (List[KeyDefinition]): List of Key Definitions that make up the primary keys
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+
+
+        <a href='https://code.tutsplus.com/tutorials/a-beginners-guide-to-http-and-rest--net-16340'>More information on how to use a DynamoDB Table</a>
+
+        <a href="/docs/examples/table"> Examples on how to use in Cdev Framework</a>
+
+        <a href="https://docs.aws.amazon.com/dynamodb/index.html"> Documentation on Deployed Resource in the Cloud</a>
+
+        <a href="https://aws.amazon.com/dynamodb/pricing/"> Details on pricing</a>
         """
         super().__init__(cdev_name, RUUID, nonce)
 
@@ -277,11 +328,22 @@ class Table(PermissionsAvailableMixin, Resource):
         self._keys = keys
         self._stream = None
 
-        self.available_permissions: TablePermissions = TablePermissions(cdev_name)
-        self.output = TableOutput(cdev_name)
+        self._available_permissions: TablePermissions = TablePermissions(cdev_name)
+        self._output = TableOutput(cdev_name)
 
     @property
-    def attributes(self):
+    def output(self) -> TableOutput:
+        """Output generated by the Cloud when this resource is deployed."""
+        return self._output
+
+    @property
+    def available_permissions(self) -> TablePermissions:
+        """Permissions that can be granted to other resources to access this `Table`"""
+        return self._available_permissions
+
+    @property
+    def attributes(self) -> List[AttributeDefinition]:
+        """Current Attributes"""
         return self._attributes
 
     @attributes.setter
@@ -290,7 +352,8 @@ class Table(PermissionsAvailableMixin, Resource):
         self._attributes = value
 
     @property
-    def keys(self):
+    def keys(self) -> List[KeyDefinition]:
+        """Current Primary Key Definitions"""
         return self._keys
 
     @keys.setter
@@ -301,11 +364,20 @@ class Table(PermissionsAvailableMixin, Resource):
     def create_stream(
         self, view_type: stream_type, batch_size: int = 100
     ) -> StreamEvent:
+        """Create a `StreamEvent` for this table
+
+        Args:
+            view_type (stream_type): Type of events to process from the stream.
+            batch_size (int, optional): Number events to batch into an Event. Defaults to 100.
+
+        Raises:
+            Exception: If this Table already has a Stream, throw exception. Should use `get_stream()`
+
+        Returns:
+            StreamEvent: The created `Stream_Event`
+        """
         if self._stream:
-            print(
-                f"Already created stream on this table. Use `get_stream()` to get the current stream."
-            )
-            raise Exception
+            raise Exception(f"Already created stream on this table. Use `get_stream()` to get the current stream.")
 
         event = StreamEvent(
             table_name=self.name,
@@ -317,11 +389,16 @@ class Table(PermissionsAvailableMixin, Resource):
         return event
 
     def get_stream(self) -> StreamEvent:
+        """Get the `StreamEvent` for this `Table`
+
+        Raises:
+            Exception: If this Table has not created a stream, throw exception
+
+        Returns:
+            StreamEvent: The `StreamEvent` for this Table
+        """
         if not self._stream:
-            print(
-                "Stream has not been created. Create a stream for this table using the `create_stream` function."
-            )
-            raise Exception
+            raise Exception("Stream has not been created. Create a stream for this table using the `create_stream` function.")
 
         return self._stream
 

@@ -87,7 +87,7 @@ def _create_simple_relational_db(
         "cloud_id": rv.get("DBCluster").get("DBClusterArn"),
         "arn": rv.get("DBCluster").get("DBClusterArn"),
         "cdev_name": resource.name,
-        "cluster_id": cluster_name
+        "cluster_name": cluster_name
     }
 
     return output_info
@@ -181,8 +181,8 @@ def _remove_simple_relational_db(
     transaction_token: str, 
     previous_output: Dict,
     output_task: OutputTask
-) -> bool:
-    cluster_id = previous_output.get('cluster_id')
+):
+    cluster_id = previous_output.get('cluster_name')
 
 
     output_task.update(comment=f'[blink]Deleting DB. This could take a few minutes[/blink]')
@@ -204,8 +204,7 @@ def _remove_simple_relational_db(
     aws_client.run_client_function(
         "secretsmanager", "delete_secret", {"SecretId": secret_arn}
     )
-    
-    return {}
+
 
 
 def handle_simple_relational_db_deployment(

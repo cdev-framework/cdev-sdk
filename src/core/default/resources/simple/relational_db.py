@@ -61,6 +61,20 @@ class RelationalDBOutput(ResourceOutputs):
         raise Exception
 
     @property
+    def endpoint(self) -> Cloud_Output_Str:
+        """The name of the generated db cluster"""
+        return Cloud_Output_Str(
+            name=self._name,
+            ruuid=RUUID,
+            key='endpoint',
+            type=self.OUTPUT_TYPE
+        )
+
+    @endpoint.setter
+    def endpoint(self, value: Any):
+        raise Exception
+
+    @property
     def secret_arn(self) -> Cloud_Output_Str:
         """The arn of the secret value create that holds the password for the db"""
         return Cloud_Output_Str(

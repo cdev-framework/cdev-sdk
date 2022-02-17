@@ -40,4 +40,4 @@ def execute_deployment(workspace: Workspace, output: OutputManager):
     
 
     for tag, cloud_output in workspace.render_outputs():
-        output._console.print(f"[blue]{tag}[/blue] -> {cloud_output}")
+        print(f"{tag} -> {cloud_output}")
