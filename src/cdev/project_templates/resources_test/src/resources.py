@@ -20,9 +20,6 @@ bucket = Bucket('demobucket')
 myQueue = Queue('bigqueue')
 
 
-# Static Site
-mySite = StaticSite('site')
-
 # Table
 attributes = [AttributeDefinition('id', attribute_type.S)]
 keys = [KeyDefinition('id', key_type.HASH)]
