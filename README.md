@@ -67,14 +67,12 @@ $ curl <url>/hello_world
 
 You can also visit `<url>/hello_world` in your favorite web browser!
 
-### Not implemented 
-(just delete stuff in /src/resources.py then run 'cdev deploy')
-Delete the project
+Delete the Resources in the Environment
 ```
 $ cdev destroy
 ```
 
-For a more in depth project that goes into the capabilities of Cdev, check out our [documentation](https://staging.cdevframework.io/docs/).
+For a more in depth information about the capabilities of Cdev, check out our [documentation](https://staging.cdevframework.io/docs/).
 
 
 ## Supported Resources
