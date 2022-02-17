@@ -1,7 +1,7 @@
 # Generated as part of Resource Test project template
 from cdev.resources.simple.xlambda import simple_function_annotation
 from cdev.resources.simple.api import Api
-from cdev.resources.simple.object_store import SimpleBucket
+from cdev.resources.simple.object_store import Bucket
 from cdev.resources.simple.queue import Queue
 from cdev.resources.simple.relational_db import RelationalDB, db_engine
 from cdev.resources.simple.static_site import StaticSite
@@ -14,7 +14,7 @@ myApi = Api("demoapi")
 route1 = myApi.route('/hello', 'GET')
 
 # Bucket
-bucket = SimpleBucket('demobucket')
+bucket = Bucket('demobucket')
 
 # Queue
 myQueue = Queue('bigqueue')

@@ -27,16 +27,18 @@ RUUID = "cdev::simple::function"
 ##### Dependencies 
 ################
 class DeployedLayer():
+    """Construct that represents a Layer already deployed on the Cloud"""
     def __init__(self, arn: str) -> None:
         self.arn = arn
 
 
 class dependency_layer_model(ResourceModel):
+    """Model that represents a local folder that will be deployed on the cloud as a Layer"""
     artifact_path: str
 
 
 class DependencyLayer(Resource):
-
+    """Construct that represents a local folder that will be deployed on the cloud as a Layer"""
     def __init__(self, cdev_name: str, artifact_path: FilePath, artifact_hash: str) -> None:
         super().__init__(cdev_name, LAMBDA_LAYER_RUUID)
         self.artifact_path = artifact_path
@@ -58,6 +60,7 @@ class DependencyLayer(Resource):
 
 
 class DependencyLayerOutput(ResourceOutputs):
+    """Container object for the returned values from the cloud after a Layer has been deployed."""
     def __init__(self, name: str) -> None:
         super().__init__(name, LAMBDA_LAYER_RUUID)
 
@@ -78,6 +81,7 @@ class DependencyLayerOutput(ResourceOutputs):
 
 
 class FunctionOutput(ResourceOutputs):
+    """Container object for the returned values from the cloud after a Serverless Function has been deployed."""
     def __init__(self, name: str) -> None:
         super().__init__(name, RUUID)
 
@@ -86,6 +90,7 @@ class FunctionOutput(ResourceOutputs):
 ##### Function
 ################
 class simple_function_configuration_model(ImmutableModel):
+    """Model representing the configuration of a Serverless Function"""
     handler: str
     description: Optional[cdev_str_model]
     environment_variables: frozendict
@@ -97,7 +102,14 @@ class simple_function_configuration_model(ImmutableModel):
 
 
 class SimpleFunctionConfiguration():
+    """Container for the configuration settings of Serverless Function"""
     def __init__(self, handler: cdev_str, description: cdev_str = "", environment_variables: Dict[str, cdev_str] = {} ) -> None:
+        """
+        Args:
+            handler (cdev_str): The python module path of the handler function that is triggered by the Cloud Platform
+            description (cdev_str, optional): A description of the Function. Defaults to "".
+            environment_variables (Dict[str, cdev_str], optional): A dict of overriding variabled for the Environment. Defaults to {}.
+        """
         self.handler = handler
         self.description = description
         self.environment_variables = environment_variables
@@ -125,8 +137,7 @@ class SimpleFunctionConfiguration():
 
 
 class simple_function_model(ResourceModel):
-    """
-    Some Doc String
+    """Model representing a Serverless Function
 
     Args:
         Filepath ([type]): [description]
@@ -142,6 +153,7 @@ class simple_function_model(ResourceModel):
 
 
 class SimpleFunction(PermissionsGrantableMixin, Resource):
+    """Construct to represent a Serverless Function. It is recommend to generate this resource using the `simple_function_annotation`"""
     @update_hash
     def __init__(
         self,
@@ -155,17 +167,18 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
         src_code_hash: str = None,
         nonce: str = "",
     ) -> None:
-        """[summary]
+        """
 
         Args:
-            cdev_name (str): [description]
-            filepath (str): [description]
-            configuration (SimpleFunctionConfiguration): [description]. 
-            events (List[Event], optional): [description]. Defaults to [].
-            function_permissions (List[Union[Permission, PermissionArn]], optional): [description]. Defaults to [].
-            external_dependencies (List[Union[DeployedLayer, DependencyLayer]], optional): [description]. Defaults to [].
-            src_code_hash (str, optional): [description]. Defaults to None.
-            nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+            cdev_name (str): Cdev Name for the function
+            filepath (str): Path the final artifact to upload.
+            configuration (SimpleFunctionConfiguration):  Configuration options for the function.
+            events (List[Event], optional):  List of event triggers for the function.. Defaults to [].
+            platform (lambda_python_environment, optional): Option to override the deployment platform in the Cloud.. Defaults to None.
+            function_permissions (List[Union[Permission, PermissionArn]], optional): List of Permissions to grant to the Function.. Defaults to [].
+            external_dependencies (List[Union[DeployedLayer, DependencyLayer]], optional): Dependencies to link to in the Cloud. Defaults to [].
+            src_code_hash (str, optional): identifying hash of the source code. Defaults to None.
+            nonce (str, optional): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
         """
         super().__init__(cdev_name, RUUID, nonce)
 
@@ -270,13 +283,19 @@ def simple_function_annotation(
     includes: List[str] = [],
     nonce: str=""
 ) -> Callable[[Callable], SimpleFunction]:
-    """This annotation is used to designate that a function should be deployed as a Serverless function. 
-    
-    
+    """This annotation is used to designate that a function should be deployed as a Serverless function.
 
-    Functions that are annotated with this symbol will be put through the cdev function parser to optimize the final deployed artifact
-    to only contain global statements needed for this function. For more information on this process read <link>.
+    Args:
+        name (str): Cdev Name for the function
+        events (List[Event], optional): List of event triggers for the function. Defaults to [].
+        environment (dict, optional): Dictionary to apply to the Environment Variables of the deployed function. Defaults to {}.
+        permissions (List[Union[Permission, PermissionArn]], optional): List of Permissions to grant to the Function. Defaults to [].
+        override_platform (lambda_python_environment, optional): Option to override the deployment platform in the Cloud. Defaults to None.
+        includes (List[str], optional): Set of identifiers to extra global statements to include in parsed artifacts. Defaults to [].
+        nonce (str, optional): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
 
+    Returns:
+        Callable[[Callable], SimpleFunction]: wrapper that returns the `SimpleFunction`
     """
 
     def create_function(func: Callable) -> SimpleFunction:

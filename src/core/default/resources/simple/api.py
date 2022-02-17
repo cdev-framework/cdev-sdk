@@ -85,10 +85,10 @@ class route_event_model(events.event_model):
 
 
 class RouteEvent():
+    """Construct for representing a route that is apart of an HTTP API."""
 
     def __init__(self, resource_name: str, path: str, verb: route_verb) -> None:
-        """Construct for representing a route that is apart of an HTTP API.
-
+        """
         Args:
             resource_name (str): Cdev Name of the API this event is generated from
             path (str): Path of the route
