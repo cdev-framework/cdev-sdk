@@ -36,7 +36,6 @@ AVAILABLE_TEMPLATES = [
 ]
 
 def create_project_cli(args):
-    print(args)
     config = args
     set_global_logger_from_cli(config.loglevel)
 
