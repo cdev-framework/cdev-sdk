@@ -84,10 +84,10 @@ class OutputManager():
                 self._console.print(f"    [bold green]Create: [/bold green][bold blue]{component_diff.new_name} (component)[/bold blue]")
 
             elif component_diff.action_type == Component_Change_Type.DELETE:
-                self._console.print(f"    [bold red]Delete: [/bold red] [bold blue]{component_diff.new_name} (component)[/bold blue]")
+                self._console.print(f"    [bold red]Delete: [/bold red] [bold blue]{component_diff.previous_name} (component)[/bold blue]")
 
 
-            resource_changes = [x for x in resource_differences if x.component_name == component_diff.new_name]
+            resource_changes = [x for x in resource_differences if x.component_name == component_diff.new_name or x.component_name == component_diff.previous_name ]
 
             if resource_changes:
                 for resource_diff in resource_changes:
@@ -167,7 +167,7 @@ class OutputManager():
                 return f"[bold green]Create: [/bold green][bold blue]{node.new_name} (component)[/bold blue]"
 
             elif node.action_type == Component_Change_Type.DELETE:
-                return f"[bold red]Delete: [/bold red] [bold blue]{node.new_name} (component)[/bold blue]"
+                return f"[bold red]Delete: [/bold red] [bold blue]{node.previous_name} (component)[/bold blue]"
 
         else:
             raise Exception(f"Trying to deploy node {node} but it is not a correct type ")
