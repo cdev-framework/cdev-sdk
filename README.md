@@ -49,28 +49,32 @@ $ cdev deploy
 
 Invoke the deployed function directly from the cli
 ```
-$ cdev run simple.function.execute hello_world_comp.hello_world_function
+$ cdev run function.execute hello_world_comp.hello_world_function
 
 # might have to wait a sec for the logs to process in the cloud
-$ cdev run simple.function.logs hello_world_comp.hello_world_function
+$ cdev run function.logs hello_world_comp.hello_world_function
 ```
 
-# Not implemented
 Invoke the deployed function via the created HTTP Api
 ```
-$ cdev output demo.api
+$ cdev output hello_world_comp.api.demoapi.endpoint
 <url>
+```
 
+```
 $ curl <url>/hello_world
 ```
 
-# Not implemented
+You can also visit `<url>/hello_world` in your favorite web browser!
+
+### Not implemented 
+(just delete stuff in /src/resources.py then run 'cdev deploy')
 Delete the project
 ```
 $ cdev destroy
 ```
 
-For a more in depth project that goes into the capabilities of Cdev, check out our [tutorial project](https://cdevframework.io/docs/tutorials).
+For a more in depth project that goes into the capabilities of Cdev, check out our [documentation](https://staging.cdevframework.io/docs/).
 
 
 ## Supported Resources
@@ -87,15 +91,11 @@ For guides on how to deploy any of these resources, check out our [documentation
 
 ## Early Alpha Notes
 The project is still in a pre-alpha state, so not all the features of the alpha are implemented. The main branch will be the most stable branch and should not have any breaking changes as work on the alpha continues. The alpha will be ready for a public launch by March 1st. Things left to do in alpha:
-- Reimplement permissions for resources for the new architecture
-- Reimplement events for resources for the new architecture
-- Add better Settings management
-- Readd logs
-- More unit and integraiton tests
+- More unit and integration tests
 - General polish of output 
 - General work on documentation
 
-For testing parts of the early alpha, it helps to start from the `resources-test` project template as that will have a bunch of preconfigured resoures.
+For testing parts of the early alpha, it helps to start from the `resources-test` project template as that will have a bunch of preconfigured resources.
 ```
 $ cdev init demo --template resources-test
 ```
