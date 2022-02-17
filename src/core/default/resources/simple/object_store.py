@@ -156,9 +156,7 @@ class BucketOutput(ResourceOutputs):
 
 
 class Bucket(PermissionsAvailableMixin, Resource):
-    """A Simple Bucket is a basic object store for applications to build on.
-
-    """
+    """A Simple Bucket is a basic object store for applications to build on."""
     
     @update_hash
     def __init__(self, cdev_name: str, nonce: str="") -> None:

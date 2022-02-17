@@ -18,10 +18,10 @@ RUUID = "cdev::simple::relationaldb"
 #####################
 ###### Permission
 ######################
-class RelationalDBPermissions:    
+class RelationalDBPermissions:
+     
     def __init__(self, resource_name: str) -> None:
         
-
         self.DATABASE_ACCESS = Permission(
             actions=[
                 "rds-data:BatchExecuteStatement",
@@ -33,31 +33,34 @@ class RelationalDBPermissions:
             cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
             effect="Allow",
         )
+        """Access to the DB"""
 
         self.SECRET_ACCESS = PermissionArn(
             arn="arn:aws:iam::aws:policy/SecretsManagerReadWrite"
         )
+        """Access to the generated Secret that contains the connection information"""
 
 
 ##############
 ##### Output
 ##############
 class RelationalDBOutput(ResourceOutputs):
+    """Container object for the returned values from the cloud after a Relational DB has been deployed."""   
     def __init__(self, name: str) -> None:
         super().__init__(name, RUUID)
 
     @property
-    def cluster_name(self) -> Cloud_Output_Str:
+    def cluster_arn(self) -> Cloud_Output_Str:
         """The name of the generated db cluster"""
         return Cloud_Output_Str(
             name=self._name,
             ruuid=RUUID,
-            key='cluster_name',
+            key='cluster_arn',
             type=self.OUTPUT_TYPE
         )
 
-    @cluster_name.setter
-    def cluster_name(self, value: Any):
+    @cluster_arn.setter
+    def cluster_arn(self, value: Any):
         raise Exception
 
     @property
@@ -91,25 +94,28 @@ class db_engine(str, Enum):
 
 
 class simple_relational_db_model(ResourceModel):
+    """Model that represents a relation db"""
     Engine: db_engine
-    """Some Interruption"""
+    """DB engine"""
     MasterUsername: str
-    """Replacement"""
+    """Username used to connect to the DB"""
     MasterUserPassword: str
-    """No Interruption"""
+    """Username used to connect to the DB"""
     DatabaseName: str
-    """Replacement"""
+    """Name for the main db"""
     EnableHttpEndpoint: bool
-    """No Interruption"""
+    """Allow connection via a generated HTTP endpoint"""
     MaxCapacity: int
-    """No Interruption"""
-    MinCapacity: int
-    """No Interruption"""
+    """Maximum amount of capacity to scale to"""
+    MinCapacity: int    
+    """Amount of seconds to wait before scaling DB completely down."""
     SecondsToPause: int
-    """No Interruption"""
+    """Amount of seconds to wait before scaling DB completely down"""
+
 
 
 class RelationalDB(PermissionsAvailableMixin, Resource):
+    """Construct for creating a Serverless Relational DB"""
     
     @update_hash
     def __init__(
@@ -125,18 +131,17 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
         seconds_to_pause: int = 300,
         nonce: str = ""
     ) -> None:
-        """[summary]
-
+        """
         Args:
-            cdev_name (str): [description]
-            engine (db_engine): [description]
-            username (str): [description]
-            password (str): [description]
-            database_name (str, optional): [description]. Defaults to "".
-            enable_http_endpoint (bool, optional): [description]. Defaults to True.
-            max_capacity (int, optional): [description]. Defaults to 64.
-            min_capacity (int, optional): [description]. Defaults to 2.
-            seconds_to_pause (int, optional): [description]. Defaults to 300.
+            cdev_name (str): Name of the resource
+            engine (db_engine): DB engine
+            username (str): Username used to connect to the DB
+            password (str): Password used to connect to the DB
+            database_name (str, optional): Name for the main db. Defaults to "".
+            enable_http_endpoint (bool, optional): Allow connection via a generated HTTP endpoint. Defaults to True.
+            max_capacity (int, optional): Maximum amount of capacity to scale to. Defaults to 64.
+            min_capacity (int, optional): Minimum amount of capacity to scale to. Defaults to 2.
+            seconds_to_pause (int, optional): Amount of seconds to wait before scaling DB completely down. Defaults to 300.
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
         """
         super().__init__(cdev_name, RUUID, nonce)
@@ -150,11 +155,12 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
         self._min_capacity = min_capacity
         self._seconds_to_pause = seconds_to_pause
 
-        self.output = RelationalDBOutput(cdev_name)
-        self.available_permissions = RelationalDBPermissions(cdev_name)
+        self.output: RelationalDBOutput = RelationalDBOutput(cdev_name)
+        self.available_permissions: RelationalDBPermissions = RelationalDBPermissions(cdev_name)
 
     @property
     def seconds_to_pause(self):
+        """Amount of seconds to wait before scaling DB completely down"""
         return self._seconds_to_pause
 
     @seconds_to_pause.setter
@@ -164,6 +170,7 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
 
     @property
     def min_capacity(self):
+        """Amount of seconds to wait before scaling DB completely down."""
         return self._min_capacity
 
     @min_capacity.setter
@@ -173,6 +180,7 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
 
     @property
     def max_capacity(self):
+        """Maximum amount of capacity to scale to"""
         return self._max_capacity
 
     @max_capacity.setter
@@ -182,6 +190,7 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
 
     @property
     def enable_http_endpoint(self):
+        """Allow connection via a generated HTTP endpoint"""
         return self._enable_http_endpoint
 
     @enable_http_endpoint.setter
@@ -191,6 +200,7 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
 
     @property
     def database_name(self):
+        """Name for the main db"""
         return self._database_name
 
     @database_name.setter
@@ -200,6 +210,7 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
 
     @property
     def master_user_password(self):
+        """Password used to connect to the DB"""
         return self._master_user_password
 
     @master_user_password.setter
@@ -209,6 +220,7 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
 
     @property
     def master_username(self):
+        """Username used to connect to the DB"""
         return self._master_username
 
     @master_username.setter
@@ -218,6 +230,7 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
 
     @property
     def engine(self):
+        """DB engine"""
         return self._engine
 
     @engine.setter
