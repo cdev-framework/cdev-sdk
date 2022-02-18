@@ -82,19 +82,19 @@ def parse_folder(
             references_rv.update(found_references)
 
     # Any duplicate layers can be removed 
-    cleaned_resources_rv = _deduplicate_layers_from_resource_list(resources_rv)
+    cleaned_resources_rv = _deduplicate_resources_list(resources_rv)
 
     return cleaned_resources_rv, references_rv
 
 
-def _deduplicate_layers_from_resource_list(resources: List[Resource]) -> List[Resource]:
+def _deduplicate_resources_list(resources: List[Resource]) -> List[Resource]:
     """Remove duplicated layer resources
 
     Args:
         resources (List[Resource]): Sorted List of resources by x.hash
 
     Returns:
-        resource (List[Resources]): List with duplicate layers removed
+        resource (List[Resources]): List with duplicate resources removed
 
     Since multiple functions can produce the same Layer resource by referencing the same 
     3rd party resource, we need to deduplicate the layers from the list.
@@ -104,10 +104,7 @@ def _deduplicate_layers_from_resource_list(resources: List[Resource]) -> List[Re
         if i+1 >= len(resources):
             break
 
-        if not (resources[i].ruuid == LAMBDA_LAYER_RUUID and resources[i+1].ruuid == LAMBDA_LAYER_RUUID):
-            continue
-
-        if resources[i].hash == resources[i+1].hash:
+        if (resources[i].hash == resources[i+1].hash) and (resources[i].ruuid == resources[i+1].ruuid) and (resources[i].name == resources[i+1].name):
             resources.pop(i)
 
 
