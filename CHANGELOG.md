@@ -7,7 +7,8 @@ All releases will correspond to releases on [PyPI](https://pypi.org/project/cdev
 All release will have a corresponding git tag.
 
 ## [Unreleased]
-- Make Layer and Serverless Function artifacts use workspace relative paths 
+- Make Layer and Serverless Function artifacts use workspace relative paths.
+- Deduplicate resources generated from the `finder` package.
 
 ## [0.0.3] - 2022-02-18
 ### Added
