@@ -1,11 +1,27 @@
+import os
 import setuptools
+
+
+# Main directory of the project
+MAIN_DIR = os.path.dirname(os.getcwd())
+print(__file__)
+print(MAIN_DIR)
+# The text of the README file
+README = open(os.path.join(MAIN_DIR, "README.md")).read()
+
+
 setuptools.setup(
     name='cdev',
-    version='0.0',
+    version='0.0.3',
     scripts=['./cdev/scripts/cdev', './core/scripts/cdev_core' ],
+    description='CLI for cdev sdk',
+    long_description=README,
+    long_description_content_type="text/markdown",
     author='CDEV LLC',
-    description='CLI for cdev',
-    packages=['cdev', 'core'],
+    author_email="daniel@cdevframework.com",
+    license="Clear BSD",
+    packages=setuptools.find_packages(),
+    include_package_data=True,
     install_requires=[
         "boto3",
         "botocore",
@@ -13,14 +29,12 @@ setuptools.setup(
         "charset-normalizer",
         "colorama",
         "commonmark",
-        "dataclasses",
         "decorator",
         "docker",
         "gelidum",
         "idna",
         "jmespath",
         "networkx",
-        "numpy",
         "Parsley",
         "pydantic",
         "Pygments",
@@ -31,7 +45,6 @@ setuptools.setup(
         "s3transfer",
         "six",
         "sortedcontainers",
-        "typing-extensions",
         "urllib3",
         "watchdog",
         "websocket-client",

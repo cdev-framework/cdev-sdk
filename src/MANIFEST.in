@@ -1,0 +1,3 @@
+recursive-include cdev/project_templates/ *
+
+global-exclude */__pycache__/*
