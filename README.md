@@ -21,19 +21,13 @@ The Cdev framework is designed to create a development environment that allows t
 - Requires Python>=3.6 and pip
 - **Highly** encourage using a python virtual environment
 
-Clone the repository somewhere on your computer (pre alpha only step)
-```
-git clone git@github.com:cdev-framework/cdev-sdk.git
-```
-
 Starting from an empty directory. Set up your python virtual environment and install the Cdev cli. 
 ```
 $ python -m virtualenv .venv
 
 $ . ./.venv/bin/activate
 
-# Early alpha... this will be a published pip package later.
-$ pip install -e <path_to_repo>/src
+$ pip install cdev
 ```
 
 Create a new project, see the resources in the created project, and create the project
