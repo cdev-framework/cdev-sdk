@@ -294,6 +294,10 @@ def _parse_serverless_functions(
         # Update the seen packages 
         if dependencies_info:
             # Helps return only one copy of each layer for the file
+            # change the path of the artifact to a relative path to the workspace
+            for dependency in dependencies_info:
+                dependency.artifact_path = paths.get_relative_to_workspace_path(dependency.artifact_path)
+
             seen_layers.update(
               {x.hash:x.render() for x in dependencies_info}
             )
@@ -308,7 +312,7 @@ def _parse_serverless_functions(
 
         new_function = SimpleFunction(
             cdev_name=previous_info.name,
-            filepath=paths.get_full_path_from_workspace_base(handler_archive_path),
+            filepath=paths.get_relative_to_workspace_path(handler_archive_path),
             events=previous_info.events,
             configuration=new_configuration,
             function_permissions=previous_info.granted_permissions,

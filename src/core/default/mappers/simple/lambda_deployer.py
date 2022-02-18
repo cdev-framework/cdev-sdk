@@ -483,7 +483,7 @@ def _upload_s3_dependency(
     # Takes in a resource and create an s3 artifact that can be use as src code for lambda deployment
     keyname = f"{dependency.name}-{dependency.hash}.zip"
 
-    zip_location = core_paths.get_full_path_from_intermediate_base(dependency.artifact_path)
+    zip_location = core_paths.get_full_path_from_workspace_base(dependency.artifact_path)
 
     total_bytes =  os.path.getsize(zip_location)
 
