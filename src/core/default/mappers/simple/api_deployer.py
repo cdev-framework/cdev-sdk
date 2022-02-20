@@ -63,16 +63,29 @@ def _create_simple_api(
         output_task.print_error(e)
         raise e 
 
+    api_id = rv.get("ApiId")
 
     info = {
-        "cloud_id": rv.get("ApiId"),
+        "cloud_id": api_id,
         "endpoints": {},
     }
+
+    
+    if resource.authorizers:
+        _authorizer_outputs: Dict[str, simple_api.authorizer_model] = {}
+        
+        for authorizer in resource.authorizers:
+            authorizer_id = _create_authorizer(api_id, authorizer)
+            _authorizer_outputs[authorizer_id] = authorizer
+
+        info['authorizers'] = _authorizer_outputs
+        
+    
 
     _stage_args = {
         "ApiId": info.get("cloud_id"),
         "AutoDeploy": True,
-        "StageName": "prod",
+        "StageName": "live",
     }
     
     output_task.update(advance=1, comment='Creating Stage')
@@ -91,7 +104,21 @@ def _create_simple_api(
             output_task.update(advance=1, comment=f'Creating Route {route.path} [{route.verb}]')
             
             try:
-                route_cloud_id = _create_route(api_id, route)
+                search_name = None
+                if resource.default_authorizer_name:
+                    search_name = resource.default_authorizer_name
+
+                if route.override_authorizer_name:
+                    search_name = route.override_authorizer_name
+
+                
+                if search_name:
+                    authorizer_id = [id for id, x in _authorizer_outputs.items() if x.name == search_name][0]
+
+                else:
+                    authorizer_id = None
+
+                route_cloud_id = _create_route(api_id, route, authorizer_id)
             except Exception as e:
                 output_task.print_error(e)
                 raise e 
@@ -248,11 +275,38 @@ def _remove_simple_api(
         output_task.print_error(e)
         raise e 
 
-    
+
+def _create_authorizer(api_id: str, authorizer: simple_api.authorizer_model) -> str:
+    """Helper function for creating new authorizers
+
+    Args:
+        api_id (str): Api ID of the api in AWS.
+        authorizer (simple_api.authorizer_model):Information about the authorizer to create
+
+    Returns:
+        str: Authorizer Id of the created Authorizer
+    """
+    args = {
+        "ApiId": api_id,
+        "Name": authorizer.name,
+        "AuthorizerType": 'JWT',
+        "IdentitySource":[
+            '$request.header.Authorization',
+        ],
+        "JwtConfiguration": {
+            'Audience': [
+                authorizer.audience,
+            ],
+            "Issuer": authorizer.issuer_url
+        }
+    }
+
+    rv = aws_client.run_client_function('apigatewayv2', 'create_authorizer', args)
+
+    return rv.get("AuthorizerId")
 
 
-
-def _create_route(api_id: str, route: simple_api.route_model) -> str:
+def _create_route(api_id: str, route: simple_api.route_model, authorizer_id: str=None) -> str:
     """
     Helper Function for creating routes on an API. Note that any error raised by the aws client will not be caught by this function and should
     be handled by the caller of this function.
@@ -264,14 +318,26 @@ def _create_route(api_id: str, route: simple_api.route_model) -> str:
     Returns:
         str: Route ID of the create route.
     """
+
+    full_args = {}
+    _authorizer_args = {}
+
     _route_args = {
         "ApiId": api_id,
         "RouteKey": f"{route.verb} {route.path}",
     }
+
+    if authorizer_id:
+        _authorizer_args['AuthorizerId'] = authorizer_id
+        _authorizer_args['AuthorizationType'] = 'JWT'
+        
+        if route.additional_scopes:
+            _authorizer_args['AuthorizationScopes'] = route.additional_scopes
     
 
-    rv = aws_client.run_client_function('apigatewayv2', 'create_route', _route_args)
-    
+    full_args.update(_route_args)
+    full_args.update(_authorizer_args)
+    rv = aws_client.run_client_function('apigatewayv2', 'create_route', full_args)
 
     return rv.get("RouteId")
 

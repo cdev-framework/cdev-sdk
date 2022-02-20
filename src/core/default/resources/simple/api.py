@@ -2,7 +2,7 @@
 
 """
 from enum import Enum
-from typing import Any, List, FrozenSet
+from typing import Any, Dict, FrozenSet, List, Optional
 
 from core.constructs.models import ImmutableModel
 from core.constructs.cloud_output import Cloud_Output_Mapping, Cloud_Output_Sequence, Cloud_Output_Str, OutputType
@@ -15,6 +15,38 @@ from core.default.resources.simple import events
 
 
 RUUID = "cdev::simple::api"
+
+########################
+##### Authorizer
+########################
+
+class authorizer_model(ImmutableModel):
+    name: str
+    issuer_url: str
+    audience: str
+
+
+class Authorizer():
+    def __init__(self, name: str, issuer_url: str, audience: str) -> None:
+        self.name = name
+        self.issuer_url = issuer_url
+        self.audience = audience
+
+
+    def render(self) -> authorizer_model:
+        return authorizer_model(
+            name=self.name,
+            issuer_url=self.issuer_url,
+            audience=self.audience,
+        )
+
+    def hash(self) -> str:
+        return hasher.hash_list([
+            self.name,
+            self.issuer_url,
+            self.audience
+        ])
+
 
 
 ########################
@@ -33,13 +65,16 @@ class route_model(ImmutableModel):
     """Model to represent a route of an API"""
     path: str
     verb: str
+    additional_scopes: Optional[FrozenSet[str]]
+    override_authorizer_name: Optional[str]
 
     def __init__(__pydantic_self__, **data: Any) -> None:
         """"""
         super().__init__(**data)
 
+
 class Route():
-    def __init__(self, api_name: str, path: str, verb: route_verb) -> None:
+    def __init__(self, api_name: str, path: str, verb: route_verb, additional_scopes: List[str] = [], authorizer_name: str = None) -> None:
         """Construct for representing a route that is apart of an HTTP API 
 
         Args:
@@ -50,14 +85,23 @@ class Route():
         self.api_name = api_name
         self.path = path
         self.verb = verb
+        self.additional_scopes = additional_scopes
+        self.authorizer_name = authorizer_name
        
     def hash(self) -> str:
-        return hasher.hash_list([self.path, self.verb])
+        return hasher.hash_list([
+            self.path,
+            self.verb,
+            hasher.hash_list(self.additional_scopes),
+            self.authorizer_name
+        ])
 
     def render(self) -> route_model:
         return route_model(
             path=self.path,
             verb=self.verb,
+            additional_scopes=frozenset(self.additional_scopes),
+            override_authorizer_name=self.authorizer_name
         )
 
     def event(self) -> 'RouteEvent':
@@ -191,6 +235,8 @@ class simple_api_model(ResourceModel):
     
     routes: FrozenSet[route_model]
     allow_cors: bool
+    authorizers: Optional[FrozenSet[authorizer_model]]
+    default_authorizer_name: Optional[str]
 
     def __init__(self, **data: Any) -> None:
         """"""
@@ -201,13 +247,14 @@ class Api(Resource):
 
     @update_hash
     def __init__(
-        self, cdev_name: str, allow_cors: bool = True, nonce: str = "",
+        self, cdev_name: str, allow_cors: bool = True, authorizers: List[Authorizer] = [], nonce: str = "",
     ):
         """Create a HTTP API.
 
         Args:
             cdev_name (str): Name for the resource.
             allow_cors (bool): Allow Cross Origin Resource Sharing (CORS) on the api.
+            authorizers (List[Authorizer]): List of JWT Authorizers for the api. If more than one in list, first element is set as `default_authorizer`.
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
 
         With an HTTP API, you can create different routes that represent different requests to your backend service. Use the 
@@ -215,7 +262,7 @@ class Api(Resource):
 
         <a href='https://code.tutsplus.com/tutorials/a-beginners-guide-to-http-and-rest--net-16340'>More information on HTTP routes</a>
 
-        <a href="/docs/examples/api"> Examples on how to use in Cdev Framework</a>
+        <a href="/docs/examples/api"> Examples on how to use in Cdev Framework </a>
 
         <a href="https://docs.aws.amazon.com/apigatewayv2/latest/api-reference/api-reference.html"> Documentation on Deployed Resource in the Cloud</a>
 
@@ -226,6 +273,10 @@ class Api(Resource):
         
         self._allow_cors = allow_cors
         self._routes: List[Route] = []
+
+        self._authorizers: List[Authorizer] = authorizers
+
+        self._default_authorizer_name = authorizers[0].name if len(authorizers) > 0 else None
 
         self._output = ApiOutput(cdev_name)
 
@@ -249,12 +300,13 @@ class Api(Resource):
         self._allow_cors = value
 
     @update_hash
-    def route(self, path: str, verb: route_verb) -> Route:
+    def route(self, path: str, verb: route_verb, additional_scopes: List[str] = [], override_authorizer_name: str = None) -> Route:
         """Create a route for the API.
 
         Args:
-            path (str): The http path of the route created.
+            path (str): The http path of the route created
             verb (`route_verb`): verb for the path
+            override_authorizer_name (str): override the default authorizer for the api
 
         Returns:
             `Route` 
@@ -265,11 +317,15 @@ class Api(Resource):
         route = myApi.route('/hello_world', 'GET')
         ```
         """
+
+        authorizer_name = override_authorizer_name if override_authorizer_name else self._default_authorizer_name
     
         route = Route(
             self.name,
             path, 
-            verb
+            verb,
+            additional_scopes,
+            authorizer_name
         )
 
         self._routes.append(route)
@@ -281,17 +337,21 @@ class Api(Resource):
             [
                 hasher.hash_list([x.hash() for x in self._routes]),
                 self.allow_cors, 
-                self.nonce
+                self.nonce,
+                self._default_authorizer_name,
+                hasher.hash_list([x.hash() for x in self._authorizers])
             ]
         )
 
     def render(self) -> simple_api_model:
         routes =  frozenset(self._routes)
-        
+       
         return simple_api_model(
             ruuid=self.ruuid,
             name=self.name,
             hash=self.hash,
             routes=frozenset([x.render() for x in routes]),
             allow_cors=self.allow_cors,
+            authorizers=frozenset([x.render() for x in self._authorizers]),
+            default_authorizer_name=self._default_authorizer_name
         )
