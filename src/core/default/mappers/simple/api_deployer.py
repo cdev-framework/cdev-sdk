@@ -75,6 +75,7 @@ def _create_simple_api(
         _authorizer_outputs: Dict[str, simple_api.authorizer_model] = {}
         
         for authorizer in resource.authorizers:
+            output_task.update(advance=1, comment=f'Creating Authorizer {authorizer.name}')
             authorizer_id = _create_authorizer(api_id, authorizer)
             _authorizer_outputs[authorizer_id] = authorizer
 
@@ -198,52 +199,100 @@ def _update_simple_api(
             output_task.print_error(e)
             raise e 
 
-    
-    
-   
-    # Delete any route that is not in the new routes but in previous routes
-    routes_to_be_deleted: FrozenSet[simple_api.route_model] = previous_resource.routes.difference(new_resource.routes)
-    # Create any route that is in the new routes but not in previous routes
-    routes_to_be_created: FrozenSet[simple_api.route_model] = new_resource.routes.difference(previous_resource.routes)
 
-    new_output_info = {}
-    for route in routes_to_be_created:
+    if not previous_resource.routes == new_resource.routes:
+        new_output_info = {}
+        # Delete any route that is not in the new routes but in previous routes
+        routes_to_be_deleted: FrozenSet[simple_api.route_model] = previous_resource.routes.difference(new_resource.routes)
+        # Create any route that is in the new routes but not in previous routes
+        routes_to_be_created: FrozenSet[simple_api.route_model] = new_resource.routes.difference(previous_resource.routes)
 
-        output_task.update(advance=1, comment=f'Creating Route {route.path} [{route.verb}]')
-        try:
-            route_cloud_id = _create_route(previous_cloud_id, route)
-        except Exception as e:
-            output_task.print_error(e)
-            raise e 
+        
+        for route in routes_to_be_created:
 
-
-        dict_key = f'{route.path} {route.verb}'
-        new_output_info[dict_key] = route_cloud_id
+            output_task.update(advance=1, comment=f'Creating Route {route.path} [{route.verb}]')
+            try:
+                route_cloud_id = _create_route(previous_cloud_id, route)
+            except Exception as e:
+                output_task.print_error(e)
+                raise e 
 
 
-    
-    previous_route_info: Dict[str,str] = dict(mutable_previous_output.get('endpoints'))
+            dict_key = f'{route.path} {route.verb}'
+            new_output_info[dict_key] = route_cloud_id
 
 
-    for route in routes_to_be_deleted:
-        dict_key = (
-            f'{route.path} {route.verb}'
-        )
 
-        output_task.update(advance=1, comment=f'Deleting Route {route.path} [{route.verb}]')
-        try:
-            _delete_route(
-                previous_cloud_id, previous_route_info.get(dict_key)
+        previous_route_info: Dict[str,str] = dict(mutable_previous_output.get('endpoints'))
+
+
+        for route in routes_to_be_deleted:
+            dict_key = (
+                f'{route.path} {route.verb}'
             )
-        except Exception as e:
-            output_task.print_error(e)
-            raise e 
 
-        previous_route_info.pop(dict_key)
+            output_task.update(advance=1, comment=f'Deleting Route {route.path} [{route.verb}]')
+            try:
+                _delete_route(
+                    previous_cloud_id, previous_route_info.get(dict_key)
+                )
+            except Exception as e:
+                output_task.print_error(e)
+                raise e 
+
+            previous_route_info.pop(dict_key)
 
 
-    previous_route_info.update(new_output_info)
-    mutable_previous_output['endpoints'] = previous_route_info
+        previous_route_info.update(new_output_info)
+        mutable_previous_output['endpoints'] = previous_route_info
+
+
+    if not previous_resource.authorizers == new_resource.authorizers:
+        # Three options for types of changes to authorizers
+        # 1. Complete New 
+        # 2. Complete Remove
+        # 3. Update: This will show up as a delete and create when doing the set difference, so when going through the creates we 
+        #    should look through the past authorizers to find one with the same name. 
+        new_authorizer_info = {}
+        previous_authorizers_info = dict(mutable_previous_output.get('authorizers'))
+        updated = set()
+        authorizers_to_delete: FrozenSet[simple_api.authorizer_model] = previous_resource.authorizers.difference(new_resource.authorizers)
+        authorizers_to_create: FrozenSet[simple_api.authorizer_model] = new_resource.authorizers.difference(previous_resource.authorizers)
+
+        for authorizer in authorizers_to_create:
+            if any(x.name == authorizer.name for x in authorizers_to_delete):
+                #update not hard create
+                output_task.update(advance=1, comment=f'Updating Authorizer {authorizer.name}')
+                
+                authorizer_id = [id for id, v in previous_authorizers_info.items() if v.get("name") == authorizer.name][0]
+                _update_authorizer(previous_output.get('cloud_id'), authorizer_id, authorizer)
+
+                # Add this to updated authorizers so that it does not delete the authorizer in next steps
+                updated.add(authorizer.name)
+                # In the previous output, update the authorization info
+                new_authorizer_info[authorizer_id] = authorizer
+
+            else:
+                output_task.update(advance=1, comment=f'Creating Authorizer {authorizer.name}')
+                authorizer_id = _create_authorizer(previous_output.get('cloud_id'), authorizer)
+                new_authorizer_info[authorizer_id] = authorizer
+
+        
+
+        for authorizer in authorizers_to_delete:
+            if authorizer.name in updated:
+                continue
+
+            authorizer_id = [id for id, v in previous_authorizers_info.items() if v.get("name") == authorizer.name][0]
+            output_task.update(advance=1, comment=f'Deleteing Authorizer {authorizer.name}')
+            _delete_authorizer(previous_output.get('cloud_id'), authorizer_id)
+
+            previous_authorizers_info.pop(authorizer_id)
+
+
+        previous_authorizers_info.update(new_authorizer_info)
+        mutable_previous_output['authorizers'] = previous_authorizers_info
+
 
     return mutable_previous_output
 
@@ -304,6 +353,28 @@ def _create_authorizer(api_id: str, authorizer: simple_api.authorizer_model) -> 
     rv = aws_client.run_client_function('apigatewayv2', 'create_authorizer', args)
 
     return rv.get("AuthorizerId")
+
+
+def _update_authorizer(api_id: str, authorizer_id: str, authorizer: simple_api.authorizer_model):
+    args = {
+        "ApiId": api_id,
+        "AuthorizerId": authorizer_id,
+        "JwtConfiguration": {
+            'Audience': [
+                authorizer.audience,
+            ],
+            "Issuer": authorizer.issuer_url
+        }
+    }
+
+    aws_client.run_client_function('apigatewayv2', 'update_authorizer', args)
+
+def _delete_authorizer(api_id: str, authorizer_id: str):
+    args = {
+        "ApiId": api_id,
+        "AuthorizerId": authorizer_id
+    }
+    aws_client.run_client_function('apigatewayv2', 'delete_authorizer', args)
 
 
 def _create_route(api_id: str, route: simple_api.route_model, authorizer_id: str=None) -> str:
