@@ -109,7 +109,7 @@ def _create_simple_api(
             output_task.update(advance=1, comment=f'Creating Route {route.path} [{route.verb}]')
             
             try:
-                authorizer_id = _find_authorization_id(resource, route, info.get('authorizers') )
+                authorizer_id = _find_authorization_id(route, info.get('authorizers') )
 
                 route_cloud_id = _create_route(api_id, route, authorizer_id)
             except Exception as e:
@@ -241,15 +241,12 @@ def _update_simple_api(
                 # Find the previous id... we have to pass in the previous api since that was used in the previous computation regarding
                 # the default authorizer
                 try:
-                    previous_authorizer_id = _find_authorization_id(previous_resource, previous_route, mutable_previous_output.get('authorizers') )
+                    previous_authorizer_id = _find_authorization_id(previous_route, mutable_previous_output.get('authorizers') )
                 except NoAuthorizerIdFoundError as e:
                     # If a previous authorizer was to be found and it wasn't then there is something wrong since we should have all the info on previous
                     # authorizers
                     raise e
                 
-                print(f"previous authorizer")
-                print(previous_authorizer_id)
-
                 if previous_authorizer_id:
                     # remove the previous authorizer, but defer the updating to the new one until after authorizers have finished
                     print(f'soft update {route}')
@@ -344,7 +341,7 @@ def _update_simple_api(
         )
 
         # Find the authorizer id 
-        authorizer_id = _find_authorization_id(new_resource, route, mutable_previous_output.get('authorizers') )
+        authorizer_id = _find_authorization_id(route, mutable_previous_output.get('authorizers') )
 
         output_task.update(advance=1, comment=f'Creating Route {route.path} [{route.verb}]')
 
@@ -361,7 +358,7 @@ def _update_simple_api(
         )
 
         # Find the authorizer id 
-        authorizer_id = _find_authorization_id(new_resource, route, mutable_previous_output.get('authorizers') )
+        authorizer_id = _find_authorization_id(route, mutable_previous_output.get('authorizers'))
 
         output_task.update(advance=1, comment=f'Updating Route {route.path} [{route.verb}]')
 
@@ -455,7 +452,7 @@ def _delete_authorizer(api_id: str, authorizer_id: str):
 
 
 
-def _find_authorization_id(api_resource: simple_api.simple_api_model, route: simple_api.route_model, output_ids: Dict[str, Dict]) -> str:
+def _find_authorization_id(route: simple_api.route_model, output_ids: Dict[str, Dict]) -> str:
     """Function for finding a route's authorizer cloud id
 
     This function takes into account that a route will by default use the api's default authorizer unless the route has the `override_authorizer_name`
@@ -474,20 +471,17 @@ def _find_authorization_id(api_resource: simple_api.simple_api_model, route: sim
         str: _description_
     """
 
-    if not api_resource.default_authorizer_name and not route.override_authorizer_name:
+    if not route.authorizer_name:
         return None
 
     if not output_ids:
         return None
 
-    if route.override_authorizer_name:
-        found_id = [id for id, x in output_ids.items() if x.get("name") == route.override_authorizer_name]
-
-    else:
-        found_id = [id for id, x in output_ids.items() if x.get("name") == api_resource.default_authorizer_name]
+    
+    found_id = [id for id, x in output_ids.items() if x.get("name") == route.authorizer_name]
 
 
-    if len(found_id) == 0 and route.override_authorizer_name:
+    if len(found_id) == 0 and route.authorizer_name:
         # We have an authorizer but can not find the info for it
         raise NoAuthorizerIdFoundError
 

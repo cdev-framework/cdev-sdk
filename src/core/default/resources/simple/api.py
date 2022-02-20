@@ -66,7 +66,7 @@ class route_model(ImmutableModel):
     path: str
     verb: str
     additional_scopes: Optional[FrozenSet[str]]
-    override_authorizer_name: Optional[str]
+    authorizer_name: Optional[str]
 
     def __init__(__pydantic_self__, **data: Any) -> None:
         """"""
@@ -101,7 +101,7 @@ class Route():
             path=self.path,
             verb=self.verb,
             additional_scopes=frozenset(self.additional_scopes),
-            override_authorizer_name=self.authorizer_name
+            authorizer_name=self.authorizer_name
         )
 
     def event(self) -> 'RouteEvent':
@@ -236,7 +236,6 @@ class simple_api_model(ResourceModel):
     routes: FrozenSet[route_model]
     allow_cors: bool
     authorizers: Optional[FrozenSet[authorizer_model]]
-    default_authorizer_name: Optional[str]
 
     def __init__(self, **data: Any) -> None:
         """"""
@@ -247,7 +246,7 @@ class Api(Resource):
 
     @update_hash
     def __init__(
-        self, cdev_name: str, allow_cors: bool = True, authorizers: List[Authorizer] = [], nonce: str = "",
+        self, cdev_name: str, allow_cors: bool = True, authorizers: List[Authorizer] = [], default_authorizer: str= None, nonce: str = "",
     ):
         """Create a HTTP API.
 
@@ -276,7 +275,7 @@ class Api(Resource):
 
         self._authorizers: List[Authorizer] = authorizers
 
-        self._default_authorizer_name = authorizers[0].name if len(authorizers) > 0 else None
+        self._default_authorizer_name = default_authorizer
 
         self._output = ApiOutput(cdev_name)
 
@@ -352,6 +351,5 @@ class Api(Resource):
             hash=self.hash,
             routes=frozenset([x.render() for x in routes]),
             allow_cors=self.allow_cors,
-            authorizers=frozenset([x.render() for x in self._authorizers]),
-            default_authorizer_name=self._default_authorizer_name
+            authorizers=frozenset([x.render() for x in self._authorizers])
         )
