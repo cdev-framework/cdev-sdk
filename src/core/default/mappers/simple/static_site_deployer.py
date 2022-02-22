@@ -23,7 +23,10 @@ def _create_simple_static_site(
     
     full_namespace_suffix = hasher.hash_list([namespace_token, str(uuid4())])
 
-    site_name = f"cdev-staticsite-{full_namespace_suffix}" 
+    if not resource.domain_name:
+        site_name = f"cdev-staticsite-{full_namespace_suffix}" 
+    else:
+        site_name = resource.domain_name
 
     output_task.update(comment=f'Creating Bucket')
     aws_client.run_client_function(
@@ -66,14 +69,114 @@ def _create_simple_static_site(
         },
     )
 
+    ####################################
+    ##### Distribution on CloudFront
+    ####################################
+    
+    domain_name = f"{site_name}.s3-website-us-east-1.amazonaws.com"
+        
+    # https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-policies-list
+    # Disabled cache policy
+    cache_policy_id = '4135ea2d-6df8-44a3-9df3-4b5a84be39ad'
+
+    args = {
+        "CallerReference": str(uuid4()),
+        "DefaultRootObject": resource.index_document,    
+        "Enabled":True,
+        "Origins": {
+            "Quantity": 1, 
+            "Items": [
+                {
+                    "Id": domain_name,
+                    "DomainName": domain_name,
+                    "CustomOriginConfig": {
+                        'HTTPPort': 80,
+                        'HTTPSPort': 443,
+                        'OriginProtocolPolicy': 'http-only',
+                        'OriginSslProtocols': {'Quantity': 3, 'Items': ['TLSv1', 'TLSv1.1', 'TLSv1.2']},
+                        'OriginReadTimeout': 30,
+                        'OriginKeepaliveTimeout': 5
+                    },
+                }
+            ]
+        },
+        "DefaultCacheBehavior" : {
+            "TargetOriginId": domain_name,
+            "ViewerProtocolPolicy": 'redirect-to-https',
+            "TrustedSigners": dict(Quantity=0, Enabled=False),
+            "AllowedMethods": {
+                'Quantity': 2, 
+                'Items': ['HEAD', 'GET'], 
+                'CachedMethods': {
+                    'Quantity': 2, 
+                    'Items': ['HEAD', 'GET']
+                    }
+                },
+            "CachePolicyId": cache_policy_id 
+        },        
+        "CacheBehaviors": {'Quantity': 0},
+        "Comment":"cdev generated",
+        "ViewerCertificate": {
+            "CloudFrontDefaultCertificate": True,
+        }
+    }
+
+    if resource.domain_name:
+        aliases = {
+            'Aliases': {
+                "Quantity": 1,
+                "Items": [resource.domain_name]
+            }
+            
+        }
+
+        args.update(aliases)
+
+
+    if resource.ssl_certificate_arn:
+        ssl_args = {
+            'ViewerCertificate': {
+                'CloudFrontDefaultCertificate': False,
+                'SSLSupportMethod': 'sni-only',
+                'MinimumProtocolVersion': 'TLSv1.2_2021',
+                'ACMCertificateArn': resource.ssl_certificate_arn
+            }
+        }
+
+        args.update(ssl_args)
+
+
+    final_args = {
+        'DistributionConfig': args
+    }
+
+    output_task.update(comment=f'[blink]Creating on the Aws Cloudfront CDN. This will take a few minutes[/blink]')
+    print(final_args)
+    rv = aws_client.run_client_function('cloudfront', "create_distribution", final_args)
+
+    cloudfront_id = rv.get("Distribution").get("Id")
+    cloudfront_arn = rv.get("Distribution").get("ARN")
+    cloudfront_domain = rv.get("Distribution").get("DomainName")
+
+    print(f"distribution id -> {cloudfront_id}")
+    print(boto3.client("cloudfront").get_distribution(Id=cloudfront_id))
+
+    aws_client.monitor_status(
+        boto3.client("cloudfront").get_distribution,
+        {
+            "Id": cloudfront_id,
+        },
+        "InProgress",
+        lambda x: x.get("Distribution").get("Status"),
+    )
+
 
     output_info = {
-        "site_name": site_name,
+        "cloud_id": cloudfront_arn,
         "bucket_name": site_name,
-        "cloud_id": f"arn:aws:s3:::{site_name}",
-        "site_url": f"http://{site_name}.s3-website-us-east-1.amazonaws.com",
-        "arn": f"arn:aws:s3:::{site_name}",
-        "cdev_name": resource.name,
+        "cloudfront_id": cloudfront_id,
+        "cloudfront_arn": cloudfront_arn,
+        "site_url": cloudfront_domain
     }
 
    

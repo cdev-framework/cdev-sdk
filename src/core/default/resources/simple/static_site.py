@@ -1,7 +1,7 @@
 """Set of constructs for for making a website to serve Static Web Content
 
 """
-from typing import Any
+from typing import Any, Optional
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
 from core.constructs.cloud_output import  Cloud_Output_Str
@@ -31,6 +31,37 @@ class StaticSiteOutput(ResourceOutputs):
 
 
     @property
+    def cloudfront_id(self) -> Cloud_Output_Str:
+        """The id of the site on the Cloudfront CDN"""
+        return Cloud_Output_Str(
+            name=self._name,
+            ruuid=RUUID,
+            key='cloudfront_id',
+            type=self.OUTPUT_TYPE
+        )
+
+    @cloudfront_id.setter
+    def cloudfront_id(self, value: Any):
+        raise Exception
+
+
+    @property
+    def cloudfront_arn(self) -> Cloud_Output_Str:
+        """The arn of the site on the Cloudfront CDN"""
+        return Cloud_Output_Str(
+            name=self._name,
+            ruuid=RUUID,
+            key='cloudfront_arn',
+            type=self.OUTPUT_TYPE
+        )
+
+    @cloudfront_arn.setter
+    def cloudfront_arn(self, value: Any):
+        raise Exception
+
+
+
+    @property
     def site_url(self) -> Cloud_Output_Str:
         """The url of the created site"""
         return Cloud_Output_Str(
@@ -55,9 +86,12 @@ class simple_static_site_model(ResourceModel):
     """The absolute path of document within the site that will be used as a general error page."""
     sync_folder: bool
     """Whether to consider changes in the state of the content folder to trigger a sync of the content folder."""
-    content_folder: str
+    content_folder: Optional[str]
     """The relative path within the Workspace of the folder containting the static content for the site."""
-
+    domain_name: Optional[str]
+    """The domain name to associate with this site. This will set up the site to be aliased via DNS to the given domain name."""
+    ssl_certificate_arn: Optional[str]
+    """Arn of a SSL certificate to use with the site."""
 
 class StaticSite(Resource):
     """A Static Site that can be used to serve static web content. 
@@ -72,7 +106,10 @@ class StaticSite(Resource):
         error_document: str = "error.html",
         sync_folder: bool = False,
         content_folder: str = None,
+        domain_name: str = None,
+        ssl_certificate_arn: str = None,
         nonce: str = ""
+
     ) -> None:
         """Create a static hosted site.
 
@@ -82,6 +119,8 @@ class StaticSite(Resource):
             error_document (str): The absolute path of document within the site that will be used as a general error page.
             sync_folder (bool): Whether to consider changes in the state of the content folder to trigger a sync of the content folder.
             content_folder (str): The relative path within the `Workspace` of the folder containting the static content for the site.
+            domain_name (str): The domain name to associate with this site. This will set up the site to be aliased via DNS to the given domain name.
+            ssl_certificate_arn (str): Arn of a SSL certificate to use with the site. 
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
         """
         super().__init__(cdev_name, RUUID, nonce)
@@ -90,6 +129,8 @@ class StaticSite(Resource):
         self._error_document = error_document
         self._sync_folder = sync_folder
         self._content_folder = content_folder
+        self._domain_name = domain_name
+        self._ssl_certificate_arn = ssl_certificate_arn
 
         self.output = StaticSiteOutput(cdev_name)
 
@@ -133,6 +174,25 @@ class StaticSite(Resource):
     def sync_folder(self, value: bool):
         self._sync_folder = value
 
+    @property
+    def domain_name(self):
+        """The domain name to associate with this site. This will set up the site to be aliased via DNS to the given domain name."""
+        return self._domain_name
+
+    @domain_name.setter
+    @update_hash
+    def domain_name(self, value: str):
+        self._domain_name = value
+
+    @property
+    def ssl_certificate_arn(self):
+        """The domain name to associate with this site. This will set up the site to be aliased via DNS to the given domain name."""
+        return self._ssl_certificate_arn
+
+    @ssl_certificate_arn.setter
+    @update_hash
+    def ssl_certificate_arn(self, value: str):
+        self._ssl_certificate_arn = value
 
     def compute_hash(self):
         # TODO update component to look at the content if the sync folder command is given
@@ -142,6 +202,8 @@ class StaticSite(Resource):
                 self.error_document,
                 self.sync_folder,
                 self.content_folder,
+                self.domain_name,
+                self.ssl_certificate_arn,
                 self.nonce
             ]
         )
@@ -158,7 +220,9 @@ class StaticSite(Resource):
             index_document=self.index_document,
             error_document=self.error_document,
             sync_folder=self.sync_folder,
-            content_folder=self.content_folder,   
+            content_folder=self.content_folder,  
+            domain_name=self.domain_name,
+            ssl_certificate_arn=self.ssl_certificate_arn 
         )
 
 
