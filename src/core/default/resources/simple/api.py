@@ -21,6 +21,7 @@ RUUID = "cdev::simple::api"
 ########################
 
 class authorizer_model(ImmutableModel):
+    """Model representing JWT authorizer information"""
     name: str
     issuer_url: str
     audience: str
@@ -28,6 +29,21 @@ class authorizer_model(ImmutableModel):
 
 class Authorizer():
     def __init__(self, name: str, issuer_url: str, audience: str) -> None:
+        """JWT authorizer information.
+
+        Deployed Apis can validates the JWTs that clients submit with API requests to allow or deny 
+        requests based on token validation, and optionally, scopes in the token. You can provide authorization
+        from OpenID Connect (OIDC) and OAuth 2.0 frameworks. 
+
+        For examples on how to integrate with service like Auth0 visit our 
+        <a href="/docs/examples/user-authentication"> documentation </a>.
+
+
+        Args:
+            name (str): Name of the authorizer. Used as a unique identifier within the attached Api.
+            issuer_url (str): The base domain of the identity provider that issues JSON Web Tokens.
+            audience (str): The intended recipients of the JWT. A valid JWT must provide an aud that matches at this value.
+        """
         self.name = name
         self.issuer_url = issuer_url
         self.audience = audience
@@ -74,13 +90,15 @@ class route_model(ImmutableModel):
 
 
 class Route():
-    def __init__(self, api_name: str, path: str, verb: route_verb, additional_scopes: List[str] = [], authorizer_name: str = None) -> None:
+    def __init__(self, api_name: str, path: str, verb: route_verb, authorizer_name: str = None, additional_scopes: List[str] = []) -> None:
         """Construct for representing a route that is apart of an HTTP API 
 
         Args:
             api_name (str): Cdev name of the API this route is apart of
-            path (str): Path of the route
-            verb (`route_verb`): Verb that this route handles
+            path (str): Path of the route.
+            verb (route_verb): Verb that this route handles
+            authorizer_name (str): The `name` of the authorizer to use for this route.
+            additional_scopes (List[str]): Set of scopes that must be present in an authorization JWT.
         """
         self.api_name = api_name
         self.path = path
@@ -253,13 +271,17 @@ class Api(Resource):
         Args:
             cdev_name (str): Name for the resource.
             allow_cors (bool): Allow Cross Origin Resource Sharing (CORS) on the api.
-            authorizers (List[Authorizer]): List of JWT Authorizers for the api. If more than one in list, first element is set as `default_authorizer`.
+            authorizers (List[Authorizer]): List of JWT Authorizers for the api. 
+            default_authorizer (str): The name of an authorizer to add as the default to all routes. 
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
 
         With an HTTP API, you can create different routes that represent different requests to your backend service. Use the 
         `route` method to create these routes then attach them to other resource to handle the requests.
 
-        <a href='https://code.tutsplus.com/tutorials/a-beginners-guide-to-http-and-rest--net-16340'>More information on HTTP routes</a>
+        HTTP Api's can take an authorizer to support JWT authorization for the Api. You can provide a default authorizer to the Api to apply
+        to all created routes, or individually set the authorizer for each route.
+
+        <a href="https://code.tutsplus.com/tutorials/a-beginners-guide-to-http-and-rest--net-16340"> More information on HTTP routes</a>
 
         <a href="/docs/examples/api"> Examples on how to use in Cdev Framework </a>
 
@@ -305,8 +327,7 @@ class Api(Resource):
         Args:
             path (str): The http path of the route created
             verb (`route_verb`): verb for the path
-            override_authorizer_name (str): override the default authorizer for the api
-
+            override_authorizer_name (str): The authorizer for this route. Overriding the default authorizer for the Api. 
         Returns:
             `Route` 
 
@@ -323,8 +344,9 @@ class Api(Resource):
             self.name,
             path, 
             verb,
-            additional_scopes,
-            authorizer_name
+            authorizer_name,
+            additional_scopes
+            
         )
 
         self._routes.append(route)
