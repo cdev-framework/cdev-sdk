@@ -250,7 +250,7 @@ def _update_simple_lambda(
     # Update configuration
     # Update events
 
-    print(f"GETTING HERE")
+    
     output_task.update(
         comment=f"Updating lambda function {new_resource.name}"
     )

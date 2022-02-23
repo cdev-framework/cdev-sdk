@@ -32,7 +32,8 @@ BASE_PROJECT_LOCATION = os.getcwd()
 AVAILABLE_TEMPLATES = [
     'quick-start',
     'resources-test',
-    'packages'
+    'packages',
+    'slack-bot'
 ]
 
 def create_project_cli(args):
