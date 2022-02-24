@@ -1,4 +1,5 @@
-# Generated as part of Resource Test project template 
+# Generated as part of Quick Start project template
+import os
 
 from cdev.default.cloudmapper import DefaultMapper
 from cdev.default.components import Cdev_FileSystem_Component
@@ -14,7 +15,7 @@ myProject.add_mapper(
 
 
 myProject.add_component(
-    Cdev_FileSystem_Component("src", "hello_world_comp")
+    Cdev_FileSystem_Component(os.path.join("src", "packages"), "packages_test")
 )
 
 

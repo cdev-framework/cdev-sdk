@@ -122,7 +122,7 @@ class local_project(Project):
         workspace_config = {"backend_configuration": self._central_state.backend_info}
 
         workspace_config["resource_state_uuid"] = resource_state_id
-        workspace_config["initialization_module"] = "cdev_project"
+        workspace_config["initialization_module"] = "src.cdev_project"
 
             
         settings = Settings_Info(
