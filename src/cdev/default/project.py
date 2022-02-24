@@ -11,9 +11,8 @@ from core.constructs.mapper import CloudMapper
 from core.constructs.components import Component
 from core.constructs.workspace import Workspace_State
 
-
 from core.constructs.workspace import Workspace_Info
-from core.constructs.settings import Settings_Info
+from core.constructs.settings import Settings_Info, Settings
 from core.constructs.cloud_output import Cloud_Output
 
 from core.utils import file_manager
@@ -205,6 +204,18 @@ class local_project(Project):
             raise Exception(f"No environment with name {name}")
 
         return lookup_dict.get(name)
+
+    ############################
+    ##### Settings
+    ############################
+    @property
+    def settings(self) -> Settings:
+        return self.get_current_environment().get_workspace().settings
+
+    
+    @settings.setter
+    def settings(self, value: Settings):
+        self.get_current_environment().get_workspace().settings= value
 
     #######################
     ##### Display Output

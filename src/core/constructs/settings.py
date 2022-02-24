@@ -42,25 +42,25 @@ class Settings(BaseSettings):
     )
 
     # Bucket to use as a place to store resource artifacts in the cloud
-    S3_ARTIFACTS_BUCKET = "cdev-demo-project-artifacts"
+    S3_ARTIFACTS_BUCKET: str = "cdev-demo-project-artifacts"
 
     # AWS account information
-    AWS_REGION = "us-east-1"
+    AWS_REGION: str = "us-east-1"
     
     # Base entry point file for the workspace
-    ENTRY_POINT_FILE = os.path.join(
+    ENTRY_POINT_FILE: str = os.path.join(
         BASE_PATH, "cdev_project.py"
     )
 
-    DEPLOYMENT_PLATFORM = "x86"
+    DEPLOYMENT_PLATFORM: str = "x86"
 
-    USE_DOCKER = False
+    USE_DOCKER: bool = False
 
 
     class Config:
-        env_prefix = 'CDEV_'
+        env_prefix = 'cdev_'
         validate_assignment = True
-        extra = 'allow'
+        #extra = 'allow'
 
 
 
