@@ -11,7 +11,7 @@ from core.constructs.mapper import CloudMapper
 from core.constructs.components import Component
 from core.constructs.types import F
 from core.constructs.cloud_output import Cloud_Output
-from core.constructs.settings import Settings
+from core.constructs.settings import Settings, Settings_Info
 
 from .environment import environment_info, Environment
 
@@ -252,6 +252,14 @@ class Project:
     
     @settings.setter
     def settings(self, value: Settings):
+        raise NotImplementedError
+
+
+    def get_settings_info(self, environment_name: str = None) -> Settings_Info:
+        raise NotImplementedError
+
+    
+    def update_settings_info(self, new_value: Settings_Info, environment_name: str = None):
         raise NotImplementedError
 
 

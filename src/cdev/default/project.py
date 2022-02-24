@@ -217,6 +217,37 @@ class local_project(Project):
     def settings(self, value: Settings):
         self.get_current_environment().get_workspace().settings= value
 
+
+    def get_settings_info(self, environment_name: str =  None) -> Settings_Info:
+        if not environment_name:
+            environment_name = self.get_current_environment_name()
+
+
+        self._load_state()
+        
+        if not environment_name in [x.name for x in self._central_state.environments]:
+            raise Exception(f"No environment named {environment_name}")
+
+
+        return [x for x in self._central_state.environments if x.name == environment_name][0].workspace_info.settings_info
+    
+    def update_settings_info(self, new_value: Settings_Info, environment_name: str = None):
+        if not environment_name:
+            environment_name = self.get_current_environment_name()
+            
+        self._load_state()
+
+        # Remove the old environment
+        previous_environment_var = [x for x in self._central_state.environments if x.name == environment_name][0]
+        previous_environment_var.workspace_info.settings_info = new_value
+
+
+        self._central_state.environments = [x for x in self._central_state.environments if not x.name == environment_name]
+
+        self._central_state.environments.append(previous_environment_var)
+
+        self._write_state()
+
     #######################
     ##### Display Output
     #######################

@@ -126,6 +126,27 @@ CDEV_COMMANDS = [
                     }
                 ],
             },
+            {
+                "command": "settings_information",
+                "help": "Get or Set information about the settings of an environment",
+                "args": [
+                    {
+                        "dest": "--key",
+                        "type": str,
+                        "help": "The key to get or set.",
+                    },
+                    {
+                        "dest": "--new-value",
+                        "type": str,
+                        "help": "New value of the variable. Must be used with --key.",
+                    },
+                    {
+                        "dest": "--all",
+                        "action": "store_true",
+                        "help": "Set the value for all environments. Must be used with --new-value.",
+                    }
+                ],
+            },
         ],
     },
     {

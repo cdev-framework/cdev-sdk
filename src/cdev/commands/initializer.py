@@ -5,7 +5,6 @@ import shutil
 from typing import Dict, Tuple, List
 
 from rich.prompt import Prompt
-from cdev.constructs.environment import environment_info
 from cdev.default.project import local_project
 from cdev.cli.logger import set_global_logger_from_cli
 
@@ -123,8 +122,9 @@ def create_project(project_name: str, base_directory: DirectoryPath = None):
 
         environment_settings =  {
             "user_setting_module": [
-                os.path.relpath(os.path.join(base_settings_folder, f'base_settings.py'), start=base_dir),
-                os.path.relpath(os.path.join(base_settings_folder, f'{environment}_settings.py'), start=base_dir)
+                # set the settings modules as python modules
+                os.path.relpath(os.path.join(base_settings_folder, f'base_settings.py'), start=base_dir)[:-3].replace('/',"."),
+                os.path.relpath(os.path.join(base_settings_folder, f'{environment}_settings.py'), start=base_dir)[:-3].replace('/',".")
             ],
             "secret_dir":  os.path.relpath(os.path.join(base_settings_folder, f'{environment}_secrets'), start=base_dir),
         }

@@ -12,7 +12,6 @@ class local_environment(Environment):
     def __init__(self, info: environment_info) -> None:
         self.name = info.name
         self.workspace_info = info.workspace_info
-        self.settings = info.settings
         
 
     def get_workspace(self) -> Workspace:
