@@ -8,10 +8,13 @@ from slack_sdk import WebClient
 from cdev.resources.simple.api import Api, route_verb
 from cdev.resources.simple.xlambda import simple_function_annotation
 
-
 from cdev import Project as cdev_project
 
+from ..project_settings import SlackBotSettings
+
 myProject = cdev_project.instance()
+
+mySettings: SlackBotSettings =  myProject.settings
 
 DemoApi = Api("demoapi")
 
@@ -19,8 +22,8 @@ webhook_route = DemoApi.route("/webhook", route_verb.POST)
 
 
 env_vars = {
-    "SLACK_SECRET": "", 
-    "SLACK_BOT_OAUTH_TOKEN": "",
+    "SLACK_SECRET": mySettings.SLACK_SECRET, 
+    "SLACK_BOT_OAUTH_TOKEN": mySettings.SLACK_BOT_OAUTH_TOKEN,
 }
 
 
@@ -64,7 +67,6 @@ def webhook(event, context):
     return {
         "status_code": 200,
     }
-
 
 
 myProject.display_output("Base API URL", DemoApi.output.endpoint)
