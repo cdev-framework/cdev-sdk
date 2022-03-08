@@ -2,7 +2,7 @@ import ast
 import os
 from sys import modules, version_info
 
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Tuple, Union
 from pydantic.types import FilePath
 
 
@@ -10,6 +10,37 @@ from .parser_objects import *
 from .parser_exceptions import InvalidParamError, CouldNotParseFileError, CdevFileNotFoundError, InvalidDataError
 
 EXCLUDED_SYMBOLS = set(["print"])
+
+line_type = Union[ast.stmt, ast.expr]
+
+def parse_line_numbers(objs: List[line_type], final_line: int) -> List[Tuple[ line_type, Tuple[int,int] ] ]:
+    rv = []
+    previous_info = None
+    for node in objs:
+        #_tmp_global_information[node] = [node.lineno, node.end_lineno]
+        if previous_info:
+            previous_name, previous_start_line = previous_info
+            line_nos = (previous_start_line, node.lineno-1)
+            rv.append( (previous_name , line_nos) )
+
+        previous_info = (node, node.lineno)
+
+    # Set the last line of the last global statement to the last line of the file
+    previous_name, previous_start_line = previous_info
+    line_nos = (previous_start_line, final_line)
+    rv.append( (previous_name , line_nos) )
+
+    return rv
+
+
+def find_ending_line(file_info_obj: file_information, start_line: int, end_line: int, line_start_match: str, ):
+    for i in range(start_line+1, end_line):
+        tmp = file_info_obj.get_lines_of_source_code(i, i)
+        
+        if tmp.startswith(line_start_match):
+            return i
+
+    raise Exception("Should not end loop without returning")
 
 
 def _get_global_variables_in_symboltable(table):
@@ -116,13 +147,24 @@ def _generate_global_statement(file_info_obj: file_information, ast_node: ast.No
     # Need to adjust the starting line if using python3.8 or greater
     start_line = line_info[0]
 
-    if isinstance(ast_node, ast.FunctionDef):
-        if ast_node.decorator_list:
-            start_line = line_info[0] if  version_info < (3,8) else line_info[0]-1
+    if (isinstance(ast_node, ast.FunctionDef) and ast_node.decorator_list):
+        # Since python < 3.8 does not include the end_line info on an ast.node, we need to handle removing the top annotation differently 
+        if version_info < (3,8):
+            if not ast_node.name in remove_annotation_functions:
+                start_line = ast_node.decorator_list[0].lineno
 
-        if ast_node.name in remove_annotation_functions:
-            start_line = start_line + 1
-    
+            else:
+                # Since we have no way of know when the first decorator ends because there is not end_lineno property,
+                # we have to check each line below it to see if it is either the function declaration ('def ') or
+                # the next annotation definition ('@')
+                match_line = "def " if len(ast_node.decorator_list) == 1 else "@"
+
+                # search for the next definition based on the match_line and search at longest til you get to the first line of the body of the function
+                start_line = find_ending_line(file_info_obj, ast_node.decorator_list[0].lineno, ast_node.body[0].lineno, match_line)
+        else:
+            # for python>=3.8
+            start_line = ast_node.decorator_list[0].end_lineno + 1 if ast_node.name in remove_annotation_functions else ast_node.decorator_list[0].lineno
+
     # Look one line above the start for a manual include
     for k in file_info_obj.include_overrides_lineno:
         if file_info_obj.include_overrides_lineno.get(k) == start_line-1:
@@ -302,22 +344,7 @@ def get_file_information(file_path: str, include_functions: List[str] =[], funct
 
     # sys.version_info
     if version_info < (3,8):
-        previous_node = None
-        for node in file_ast.body:
-            #_tmp_global_information[node] = [node.lineno, node.end_lineno]
-            if previous_node:
-                prev_vals = _tmp_global_information.get(previous_node)
-                prev_vals.append(node.lineno-1)
-                _tmp_global_information[previous_node] = prev_vals
-
-            _tmp_global_information[node] = [node.lineno]
-
-            previous_node = node
-
-        # Set the last line of the last global statement to the last line of the file
-        prev_vals = _tmp_global_information.get(previous_node)
-        prev_vals.append(file_info_obj.get_file_length() + 1)
-        _tmp_global_information[previous_node] = prev_vals
+        _tmp_global_information = dict(parse_line_numbers(file_ast.body, file_info_obj.get_file_length() + 1 ))
     else:
         for node in file_ast.body:
             _tmp_global_information[node] = [node.lineno, node.end_lineno]
