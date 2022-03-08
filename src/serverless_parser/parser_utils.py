@@ -2,15 +2,14 @@ import ast
 import os
 from sys import modules, version_info
 
-from typing import List
-from pydantic.types import DirectoryPath, FilePath
+from typing import Dict, List, Set
+from pydantic.types import FilePath
 
-import tokenize 
 
 from .parser_objects import *
 from .parser_exceptions import InvalidParamError, CouldNotParseFileError, CdevFileNotFoundError, InvalidDataError
 
-EXCLUDED_SYMBOLS = set([ "print", "sss"])
+EXCLUDED_SYMBOLS = set(["print"])
 
 
 def _get_global_variables_in_symboltable(table):
@@ -106,25 +105,24 @@ def _get_global_class_definitions_in_symboltable(table):
     return rv_class_defs
 
 
-def _generate_global_statement(file_info_obj, node, line_info):
+def _generate_global_statement(file_info_obj: file_information, ast_node: ast.NodeVisitor, line_info: List[str], remove_annotation_functions: Set[str] = set()):
     # This function is used to determine the type of global statement the node is and create the corresponding global statement obj
-    ast_node = node
-    # Need to adjust the starting line if using python3.8 or greater
 
-    #start_line = line_info[0] if  version_info < (3,8) else line_info[0]-1
-    start_line = line_info[0]
-
-    if isinstance(ast_node, ast.FunctionDef):
-        if ast_node.decorator_list:
-            start_line = line_info[0] if  version_info < (3,8) else line_info[0]-1
-    
-
-    
     last_line = line_info[1]
 
     manual_include = False
     manual_include_sym = ""
 
+    # Need to adjust the starting line if using python3.8 or greater
+    start_line = line_info[0]
+
+    if isinstance(ast_node, ast.FunctionDef):
+        if ast_node.decorator_list:
+            start_line = line_info[0] if  version_info < (3,8) else line_info[0]-1
+
+        if ast_node.name in remove_annotation_functions:
+            start_line = start_line + 1
+    
     # Look one line above the start for a manual include
     for k in file_info_obj.include_overrides_lineno:
         if file_info_obj.include_overrides_lineno.get(k) == start_line-1:
@@ -138,12 +136,8 @@ def _generate_global_statement(file_info_obj, node, line_info):
     tmp_symbol_table = symtable.symtable(tmp_src_code,
                                          file_info_obj.file_location, 'exec')
 
-    symbol_table = tmp_symbol_table
 
-    # If the symbol table is a function then it will appear as a single symbol that is a namespace
-    # But when using an annotation it will have more than 1 symbol 
-    need_to_check_function = len(tmp_symbol_table.get_symbols()) == 1
-
+    need_to_check_function = False
     need_to_check_class_def = False
 
     for sym in tmp_symbol_table.get_symbols():
@@ -156,12 +150,24 @@ def _generate_global_statement(file_info_obj, node, line_info):
 
     if need_to_check_function:
         single_symbol = tmp_symbol_table.get_symbols()[0]
+        
         if single_symbol.is_namespace():
             if isinstance(single_symbol.get_namespaces()[0],
                           symtable.Function):
+                    
                 name = single_symbol.get_name()
+                
+                function_symbols = set([x.get_name() for x in single_symbol.get_namespaces()[0].get_symbols()])
+
+                if isinstance(ast_node, ast.FunctionDef):
+                    if ast_node.decorator_list:
+                        # If this is a function with annotations then we should include all the symbols from the top
+                        # level tmp symbol table so that the variables used in the annotations are captured.
+                        function_symbols.update(set([x.get_name() for x in tmp_symbol_table.get_symbols()]))
+
+
                 fs = FunctionStatement(ast_node, [start_line, last_line],
-                                       single_symbol.get_namespaces()[0], name)
+                                       list(function_symbols), name)
                 file_info_obj.add_global_function(name, fs)
 
                 if manual_include:
@@ -171,9 +177,9 @@ def _generate_global_statement(file_info_obj, node, line_info):
 
     if need_to_check_class_def:
 
-        class_def_table = symbol_table.get_children()[0]
+        class_def_table = tmp_symbol_table.get_children()[0]
 
-        class_def = ClassDefinitionStatement(ast_node, [start_line, last_line], class_def_table , class_def_table.get_name())
+        class_def = ClassDefinitionStatement(ast_node, [start_line, last_line], [x.get_name() for x in class_def_table.get_symbols()] , class_def_table.get_name())
         file_info_obj.add_class_definition(class_def_table.get_name(), class_def)
         return 
 
@@ -196,7 +202,7 @@ def _generate_global_statement(file_info_obj, node, line_info):
 
                     imp_statement = ImportStatement(ast_node,
                                                     [start_line, last_line],
-                                                    symbol_table, asname,
+                                                    [x.get_name() for x in tmp_symbol_table.get_symbols()], asname,
                                                     imprt.name)
 
                     #print(f"{ast.dump(n)} -> {asname}?{imprt.name}")
@@ -224,14 +230,14 @@ def _generate_global_statement(file_info_obj, node, line_info):
                     #print(f"{ast.dump(n)} -> {asname}?{asmodule}")
                     imp_statement = ImportStatement(ast_node,
                                                     [start_line, last_line],
-                                                    symbol_table, asname,
+                                                    [x.get_name() for x in tmp_symbol_table.get_symbols()], asname,
                                                     asmodule)
 
                     file_info_obj.add_global_import(imp_statement)
                 continue
 
     global_statement_obj = GlobalStatement(ast_node, [start_line, last_line],
-                                           symbol_table)
+                                           [x.get_name() for x in tmp_symbol_table.get_symbols()])
 
 
     
@@ -241,65 +247,12 @@ def _generate_global_statement(file_info_obj, node, line_info):
         file_info_obj.include_overrides_glob[manual_include_sym] = global_statement_obj
 
 
-def _validate_param_function_manual_includes(param):
-    # Validate that the function manual includes param is:
-    # - dict<str,[str]>
 
-    if not isinstance(param, dict):
-        raise InvalidParamError(
-            f"cdev_parser.get_file_information: function_manual_includes value not dict")
-
-    for key in param:
-        if not isinstance(param.get(key), list):
-            raise InvalidParamError(
-                f"cdev_parser.get_file_information: function_manual_includes param: key '{key}' has non-list value")    
-
-        for val in param.get(key):
-            if not isinstance(val, str):
-                raise InvalidParamError(
-                f"cdev_parser.get_file_information: function_manual_includes param: value '{val}' in '{key}' is a non string ({type(val)})")
-
-
-def _validate_param_global_manual_includes(param):
-    # Validate that the function manual includes param is:
-    # - list[str]
-
-    if not isinstance(param, list):
-        raise InvalidParamError(
-            f"cdev_parser.get_file_information: global_manual_includes value not list")
-
-    for val in param:
-        if not isinstance(val, str):
-            raise InvalidParamError(
-            f"cdev_parser.get_file_information: global_manual_includes param: value '{val}' in param is a non string ({type(val)})")
-
-
-def _validate_param_include_functions(param):
-    # Validate that the function manual includes param is:
-    # - list[str]
-
-    if not isinstance(param, list):
-        raise InvalidParamError(
-            f"cdev_parser.get_file_information: include_functions value not list")
-
-    for val in param:
-        if not isinstance(val, str):
-            raise InvalidParamError(
-            f"cdev_parser.get_file_information: include_functions param: value '{val}' in param is a non string ({type(val)})")
-
-
-def get_file_information(file_path, include_functions=[], function_manual_includes={}, global_manual_includes=[], remove_top_annotation=False):
+def get_file_information(file_path: str, include_functions: List[str] =[], function_manual_includes: Dict[str, str]={}, global_manual_includes: List[str]=[], remove_top_annotation: bool =False):
     if not os.path.isfile(file_path):
         raise CouldNotParseFileError(CdevFileNotFoundError(
             f"cdev_parser: could not find file at -> {file_path}"))
 
-    try:
-        _validate_param_include_functions(include_functions)
-        _validate_param_function_manual_includes(function_manual_includes)
-        _validate_param_global_manual_includes(global_manual_includes)
-    except InvalidParamError as e:
-        raise CouldNotParseFileError(e)
-        return
 
     file_info_obj = file_information(file_path)
 
@@ -338,7 +291,7 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
     # 
     # Python3.8 introduced node.end_lineno to ast nodes, which makes it easier to get the ending line info
     # 
-    # To support earlier versions of python (<3.7) we must use the starting line of
+    # To support earlier versions of python (<3.8) we must use the starting line of
     # the next statement as the last line of previous node. We are going to store this info in a tmp dict then
     # once we have all the information create the objects
 
@@ -370,31 +323,33 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
             _tmp_global_information[node] = [node.lineno, node.end_lineno]
 
 
+
+    remove_function_annotations = set(include_functions) if remove_top_annotation else set()
     # Now that the information has been collected for the global statements, we can create the actual objs and add
     # them to the file_info_obj
-    for k in _tmp_global_information:
-        _generate_global_statement(file_info_obj,
-                                   k, _tmp_global_information.get(k))
+    for node, line_info in _tmp_global_information.items():
+        _generate_global_statement(file_info_obj, node, line_info, remove_function_annotations)
 
 
     # Build a two-way binding of a symbol to statement and a statement to a symbol.
     # This information is needed to get all dependencies of symbols, which is needed
-    # to reconstruct just the nessecary lines
+    # to reconstruct just the necessary lines
     for i in file_info_obj.get_global_statements():
         syms = i.get_symbols()
+        
         for sym in syms:
-            if not sym.get_name() in file_info_obj.symbol_to_statement:
+            if not sym in file_info_obj.symbol_to_statement:
                 continue
 
             # Some symbols do no create a dependency so they should not be added
-            if sym.get_name() in EXCLUDED_SYMBOLS:
+            if sym in EXCLUDED_SYMBOLS:
                 continue
 
             # Add all the symbols in the statement to the list for this global statement. This means when this global object
             # is used we need to include all of these symbols
             if i in file_info_obj.statement_to_symbol:
                 tmp = file_info_obj.statement_to_symbol.get(i)
-                tmp.add(sym.get_name())
+                tmp.add(sym)
                 file_info_obj.statement_to_symbol[i] = tmp
 
             # Since this global statement is a top level function... the code that effects this symbol within it will only execute if the
@@ -402,9 +357,9 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
             if i.get_type() == GlobalStatementType.FUNCTION:
                 continue
 
-            tmp = file_info_obj.symbol_to_statement.get(sym.get_name())
+            tmp = file_info_obj.symbol_to_statement.get(sym)
             tmp.add(i)
-            file_info_obj.symbol_to_statement[sym.get_name()] = tmp
+            file_info_obj.symbol_to_statement[sym] = tmp
 
 
         # if this global object is a function then we need to add the global object to its own symbol name dependency list. That way
@@ -437,19 +392,13 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
         # Some functions will also need to include the manually added statements
         needed_global_objects = set([file_info_obj.global_functions.get(function_name)])
 
-        if remove_top_annotation:
-            # IF we need to remove the annotation marking this function as a handler then we 
-            # need to remove the first line for the function
-            for item in needed_global_objects:
-                item.decrement_line_number()
-
         # if the function has any manual statement includes
         # function_manual_includes is the dict from function name to the name of the manual include
         if function_name in function_manual_includes:
             for include in function_manual_includes.get(function_name):
                 if not include in file_info_obj.include_overrides_glob:
                     raise InvalidDataError(f"""function_manual_includes param data issue: Trying to manually include '{include}' for function '{function_name} but '{include}' is not present in file""")
-                    continue
+                    
 
                 needed_global_objects.add(file_info_obj.include_overrides_glob.get(include))
         
@@ -457,7 +406,6 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
         for include in global_manual_includes:
             if not include in file_info_obj.include_overrides_glob:
                 raise InvalidDataError(f"""function_manual_includes param data issue: Trying to manually include '{include}' as a global manual include but '{include}' is not present in file""")
-                continue
 
             needed_global_objects.add(file_info_obj.include_overrides_glob.get(include))
 
@@ -477,8 +425,7 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
             next_symbols = next_symbols.union(file_info_obj.statement_to_symbol.get(global_object))
 
             # Some symbols won't be included in the mapping because they are excluded, but they need to be kept track of to look at imports
-            all_used_symbols = set(
-                [g.get_name() for g in global_object.get_symbols()])
+            all_used_symbols = set(global_object.get_symbols())
 
         keep_looping = True
         remaining_symbols = set()
@@ -514,8 +461,7 @@ def get_file_information(file_path, include_functions=[], function_manual_includ
                     already_included_global_obj.add(glob_obj)
 
                     # include this statements
-                    all_used_symbols = all_used_symbols.union(
-                        set(g.get_name() for g in glob_obj.get_symbols()))
+                    all_used_symbols = all_used_symbols.union(set(glob_obj.get_symbols()) )
 
                     # Get the set of symbols that this statement depends on
                     set_symbols = file_info_obj.statement_to_symbol.get(
