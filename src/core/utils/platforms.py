@@ -28,22 +28,23 @@ def get_current_closest_platform() -> lambda_python_environment:
         if platform.machine() == 'x86_64':
             return lambda_python_environment.py38_x86_64
 
-        elif platform.machine() == 'aarch64':
+        elif platform.machine() == 'aarch64' or platform.machine() == 'arm64' or platform.machine().startswith('arm'):
             return lambda_python_environment.py38_arm64
 
         else:
             # TODO Raise warning instead that then notifies the user they need to set the default platform
-            raise Exception
+            print(f"Could not find directly compatible deployment platform for your platform ({platform.machine()}). Some third party dependencies might not work correctly.")
+            return None
 
 
     elif python_version == "3_9":
         if platform.machine() == 'x86_64':
             return lambda_python_environment.py39_x86_64
 
-        elif platform.machine() == 'aarch64':
+        elif platform.machine() == 'aarch64' or platform.machine() == 'arm64' or platform.machine().startswith('arm'):
             return lambda_python_environment.py39_arm64
 
         else:
             # TODO Raise warning instead that then notifies the user they need to set the default platform
-            raise Exception
-
+            print(f"Could not find directly compatible deployment platform for your platform ({platform.machine()}). Some third party dependencies might not work correctly.")
+            return None
