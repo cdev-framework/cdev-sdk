@@ -267,7 +267,6 @@ def _parse_serverless_functions(
     for parsed_function in parsed_file_info.parsed_functions:
 
         previous_info = handler_name_to_info.get(parsed_function.name)
-
         needed_module_information = package_mananger.get_top_level_module_info(
             parsed_function.imported_packages, filepath, previous_info.platform, download_cache
         )

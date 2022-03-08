@@ -50,7 +50,8 @@ class parsed_function():
 
     def add_import(self, global_import_obj):
         #self.add_line_numbers(global_import_obj.get_line_no())
-        self.imported_packages.add(global_import_obj.original_package)
+        
+        self.imported_packages.add(global_import_obj.original_package.split('.')[0])
 
 
 class GlobalStatementType(Enum):
