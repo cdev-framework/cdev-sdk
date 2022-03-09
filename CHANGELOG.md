@@ -6,9 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 All releases will correspond to releases on [PyPI](https://pypi.org/project/cdev/).
 All release will have a corresponding git tag.
 
-## [Unreleased]
-- Make Layer and Serverless Function artifacts use workspace relative paths.
-- Deduplicate resources generated from the `finder` package.
+## [0.0.4] - 2022-03-09
+### Changed
+- Make Layer and Serverless Function artifacts use workspace relative paths
+- Deduplicate resources generated from the `finder` package
+### Added
+- Support for parsing functions with annotations 
+- Support for adding JWT authorizers with the API Gateway
+- Support for changing a Project's base settings class
+- Slack Bot template project
 
 ## [0.0.3] - 2022-02-18
 ### Added
