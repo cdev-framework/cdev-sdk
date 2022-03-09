@@ -50,8 +50,11 @@ class parsed_function():
 
     def add_import(self, global_import_obj):
         #self.add_line_numbers(global_import_obj.get_line_no())
-        
-        self.imported_packages.add(global_import_obj.original_package.split('.')[0])
+        # original package will be how it is denoted in the import statement
+        # for absolute packages we only want the top level name (absolutes don't start with '.')
+        # for relative packages we want the entire name (relatives start with '.')
+        top_level_package_name = global_import_obj.original_package.split('.')[0] if not global_import_obj.original_package.startswith('.') else global_import_obj.original_package
+        self.imported_packages.add(top_level_package_name)
 
 
 class GlobalStatementType(Enum):
