@@ -34,7 +34,7 @@ Create a new project, see the resources in the created project, and create the p
 ```
 $ cdev
 
-$ cdev init <project name> --template quick-start
+$ cdev init demo-project --template quick-start
 
 $ cdev plan
 
@@ -44,8 +44,10 @@ $ cdev deploy
 Invoke the deployed function directly from the cli
 ```
 $ cdev run function.execute hello_world_comp.hello_world_function
+```
 
-# might have to wait a sec for the logs to process in the cloud
+You might have to wait a sec for the logs to process in the cloud
+```
 $ cdev run function.logs hello_world_comp.hello_world_function
 ```
 
