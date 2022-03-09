@@ -50,7 +50,11 @@ class parsed_function():
 
     def add_import(self, global_import_obj):
         #self.add_line_numbers(global_import_obj.get_line_no())
-        self.imported_packages.add(global_import_obj.original_package)
+        # original package will be how it is denoted in the import statement
+        # for absolute packages we only want the top level name (absolutes don't start with '.')
+        # for relative packages we want the entire name (relatives start with '.')
+        top_level_package_name = global_import_obj.original_package.split('.')[0] if not global_import_obj.original_package.startswith('.') else global_import_obj.original_package
+        self.imported_packages.add(top_level_package_name)
 
 
 class GlobalStatementType(Enum):
@@ -65,41 +69,18 @@ class GlobalStatement():
         This class represents the extra information for the global statements of a file. A global statement are the first children in the 
         ast for a file. 
     """
-
-    # Tuple that represents the line numbers the statement spans
-    line_no = []
-
-    # File information object for the source file
-    src_file_info = ""
-
-    # symbols
-    used_symbols = ""
-
-    # symbol table
-    symbol_table = ""
-
-    # ast node for this global statement
-    node = None
-
-    # hash
-    hashed = ""
-
-    # The type of statement
-    statement_type = GlobalStatementType.STANDARD
-
-    def __init__(self, node, line_no, symbol_table):
+    def __init__(self, node, line_no, symbols):
         self.line_no = line_no
 
-        self.set_symbol_table(symbol_table)
+        self.set_symbols(symbols)
 
         self.node = node
 
         self.hashed = _hash_line_numbers(self.line_no[0], self.line_no[1])
 
-        #for i in range(self.line_no[0], self.line_no[1] + 2):
-        #    self.hashed = self.hashed + i
-#
-        #self.hashed = self.hashed * self.line_no[0]
+        # The type of statement
+        self.statement_type = GlobalStatementType.STANDARD
+
 
     def __hash__(self):
         return self.hashed
@@ -110,14 +91,11 @@ class GlobalStatement():
     def __repr__(self):
         return f"<statement at {self.line_no[0]} thru {self.line_no[1]}>"
 
-    def set_symbol_table(self, symbol_table):
-        self.symbol_table = symbol_table
+    def set_symbols(self, symbols: List[str]):
+        self.symbols = symbols
 
-    def get_symbol_table(self):
-        return self.symbol_table
-
-    def get_symbols(self):
-        return self.symbol_table.get_symbols()
+    def get_symbols(self) -> List[str]:
+        return self.symbols
 
     def get_line_no(self):
         return self.line_no
@@ -236,7 +214,7 @@ class file_information():
         self.include_overrides_glob = {}
 
         # symbol table for the file
-        self.symbol_table = ""
+        self.symbol_table = None
 
         
         # abstract syntax tree for the file
@@ -289,7 +267,7 @@ class file_information():
         self.top_level_statements.append(global_statement)
         self.statement_to_symbol[global_statement] = set()
 
-    def get_global_statements(self):
+    def get_global_statements(self) -> List[GlobalStatement]:
         return self.top_level_statements
 
     def get_file_length(self):

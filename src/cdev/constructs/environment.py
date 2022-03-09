@@ -15,22 +15,19 @@ class environment_info(BaseModel):
     Arguments:
         name (str): Name of this environment
         workspace_info (Workspace_Info): The information needed to load the Workspace for this environment
-        settings (Dict): Any settings to override within the environment
     """
 
     name: str
     workspace_info: Workspace_Info
-    settings: Dict
 
     def __init__(
         __pydantic_self__,
         name: str,
-        workspace_info: Workspace_Info,
-        settings: Dict = {},
-    ) -> None:
+        workspace_info: Workspace_Info
+        ) -> None:
 
         super().__init__(
-            **{"name": name, "workspace_info": workspace_info, "settings": settings}
+            **{"name": name, "workspace_info": workspace_info}
         )
 
 

@@ -101,13 +101,14 @@ for project_obj in pkg_resources.working_set:
     )
     toplevel_file_location = os.path.join(dist_dir_location, "top_level.txt")
     wheel_info = os.path.join(dist_dir_location, "WHEEL")
-
+    
     if not os.path.isdir(dist_dir_location):
         continue
 
     if not os.path.isfile(toplevel_file_location):
         # If not top level file is present, then assume the only top level module available is the project name
-        MOD_NAME_TO_PRJ_OBJ[project_obj.project_name] = project_obj
+        
+        MOD_NAME_TO_PRJ_OBJ[project_obj.project_name.replace('-','_')] = project_obj
         PRJ_NAME_TO_TOP_LEVEL_MODULES[project_obj.project_name] = [
             project_obj.project_name
         ]

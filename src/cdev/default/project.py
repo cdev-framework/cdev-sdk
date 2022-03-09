@@ -11,9 +11,8 @@ from core.constructs.mapper import CloudMapper
 from core.constructs.components import Component
 from core.constructs.workspace import Workspace_State
 
-
 from core.constructs.workspace import Workspace_Info
-from core.constructs.settings import Settings_Info
+from core.constructs.settings import Settings_Info, Settings
 from core.constructs.cloud_output import Cloud_Output
 
 from core.utils import file_manager
@@ -122,7 +121,7 @@ class local_project(Project):
         workspace_config = {"backend_configuration": self._central_state.backend_info}
 
         workspace_config["resource_state_uuid"] = resource_state_id
-        workspace_config["initialization_module"] = "cdev_project"
+        workspace_config["initialization_module"] = "src.cdev_project"
 
             
         settings = Settings_Info(
@@ -205,6 +204,49 @@ class local_project(Project):
             raise Exception(f"No environment with name {name}")
 
         return lookup_dict.get(name)
+
+    ############################
+    ##### Settings
+    ############################
+    @property
+    def settings(self) -> Settings:
+        return self.get_current_environment().get_workspace().settings
+
+    
+    @settings.setter
+    def settings(self, value: Settings):
+        self.get_current_environment().get_workspace().settings= value
+
+
+    def get_settings_info(self, environment_name: str =  None) -> Settings_Info:
+        if not environment_name:
+            environment_name = self.get_current_environment_name()
+
+
+        self._load_state()
+        
+        if not environment_name in [x.name for x in self._central_state.environments]:
+            raise Exception(f"No environment named {environment_name}")
+
+
+        return [x for x in self._central_state.environments if x.name == environment_name][0].workspace_info.settings_info
+    
+    def update_settings_info(self, new_value: Settings_Info, environment_name: str = None):
+        if not environment_name:
+            environment_name = self.get_current_environment_name()
+            
+        self._load_state()
+
+        # Remove the old environment
+        previous_environment_var = [x for x in self._central_state.environments if x.name == environment_name][0]
+        previous_environment_var.workspace_info.settings_info = new_value
+
+
+        self._central_state.environments = [x for x in self._central_state.environments if not x.name == environment_name]
+
+        self._central_state.environments.append(previous_environment_var)
+
+        self._write_state()
 
     #######################
     ##### Display Output

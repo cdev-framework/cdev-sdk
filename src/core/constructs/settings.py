@@ -20,7 +20,6 @@ from core.utils.module_loader import import_class, import_module
 
 class Settings_Info(BaseModel):
     base_class: str
-    env_file: Optional[str]
     user_setting_module: Optional[List[str]]
     secret_dir: Optional[str]
     
@@ -42,25 +41,25 @@ class Settings(BaseSettings):
     )
 
     # Bucket to use as a place to store resource artifacts in the cloud
-    S3_ARTIFACTS_BUCKET = "cdev-demo-project-artifacts"
+    S3_ARTIFACTS_BUCKET: str = "cdev-demo-project-artifacts"
 
     # AWS account information
-    AWS_REGION = "us-east-1"
+    AWS_REGION: str = "us-east-1"
     
     # Base entry point file for the workspace
-    ENTRY_POINT_FILE = os.path.join(
+    ENTRY_POINT_FILE: str = os.path.join(
         BASE_PATH, "cdev_project.py"
     )
 
-    DEPLOYMENT_PLATFORM = "x86"
+    DEPLOYMENT_PLATFORM: str = "x86"
 
-    USE_DOCKER = False
+    USE_DOCKER: bool = False
 
 
     class Config:
-        env_prefix = 'CDEV_'
+        env_prefix = 'cdev_'
         validate_assignment = True
-        extra = 'allow'
+        #extra = 'allow'
 
 
 
@@ -74,9 +73,6 @@ def initialize_settings(info: Settings_Info) -> Settings:
 
     if info.secret_dir:
         kw_args['_secrets_dir'] = info.secret_dir
-        
-    if info.env_file:
-        kw_args['_env_file'] = info.env_file
 
 
     # All the settings are stored as relative paths so they need to convert to full paths
@@ -86,9 +82,9 @@ def initialize_settings(info: Settings_Info) -> Settings:
 
     if info.user_setting_module:
         for settings_module in info.user_setting_module:
-            module_name = settings_module[:-3].replace('/',".")
+            
 
-            module = import_module(module_name)
+            module = import_module(settings_module)
 
             for setting in dir(module):
                 if setting.isupper():

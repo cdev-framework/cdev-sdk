@@ -1,7 +1,6 @@
 """Set of constructs for making message queues
 
 """
-from os import name
 from typing import Any
 
 from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsAvailableMixin
@@ -161,8 +160,9 @@ class Queue(PermissionsAvailableMixin, Resource):
         super().__init__(cdev_name, RUUID, nonce)
 
         self.is_fifo = is_fifo
-        self.output = QueueOutput(name)
+        self.output = QueueOutput(cdev_name)
         self._event = None
+        print(f"passing -> {cdev_name}")
         self.available_permissions: QueuePermissions = QueuePermissions(cdev_name)
 
     @property

@@ -1,3 +1,4 @@
+from rich.prompt import Confirm
 from typing import List, Tuple
 
 from cdev.constructs.project import Project
@@ -23,6 +24,8 @@ def environment_cli(args):
         set_current_environment(parsed_args.get("env"))
     elif command == "create":
         create_environment(parsed_args.get("env"))
+    elif command == "settings_information":
+        settings_information(parsed_args.get('key'), parsed_args.get('new_value'), parsed_args.get('all'))
 
 
 def list_environments() -> Tuple[List[str], str]:
@@ -62,3 +65,57 @@ def create_environment(new_environment_name: str):
     myProject.create_environment(new_environment_name)
 
     print(f"Created Environment -> {new_environment_name}")
+
+
+def settings_information(key: str = None, new_value: str = None, all: bool = False):
+    myProject = Project.instance()
+    
+
+    if all and not new_value:
+        raise Exception('Must use --all with --new-value')
+
+
+    if not new_value:
+        settings_info = myProject.get_settings_info()
+        settings_dict = settings_info.dict()
+        print(f'Settings info for Environment {myProject.get_current_environment_name()}:')
+        if key:
+            #Print desired key
+            if key not in settings_dict:
+                raise Exception(f"Key {key} not in settings information {settings_info}")
+
+            print(f"    {key} -> {settings_dict.get(key)}")
+
+        else:
+            # Print all values
+            for key, value in settings_dict.items():
+                print(f"    {key} -> {value}")
+
+    
+    else:
+        if not key:
+            raise Exception('Must use --new-value with --key')
+
+        if not all:
+            settings_info = myProject.get_settings_info()
+
+            Confirm.ask(f"Are you sure you want to update {key} to {new_value} for the current environment ({myProject.get_current_environment_name()})?")
+
+            setattr(settings_info, key, new_value)
+
+            myProject.update_settings_info(settings_info)
+            print(f"Updated {key} -> {new_value}")
+
+
+        else:
+            Confirm.ask(f"Are you sure you want to update {key} to {new_value} for all environments?")
+            for environment_name in myProject.get_all_environment_names():
+                settings_info = myProject.get_settings_info(environment_name)
+
+                setattr(settings_info, key, new_value)
+
+                myProject.update_settings_info(settings_info, environment_name)
+                print(f"Updated ({environment_name}) {key} -> {new_value}")
+
+    
+

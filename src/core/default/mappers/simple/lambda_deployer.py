@@ -250,7 +250,7 @@ def _update_simple_lambda(
     # Update configuration
     # Update events
 
-    print(f"GETTING HERE")
+    
     output_task.update(
         comment=f"Updating lambda function {new_resource.name}"
     )
@@ -586,7 +586,7 @@ def _create_simple_layer(
         "publish_layer_version",
         {
             "Content": {"S3Bucket": BUCKET, "S3Key": key_name},
-            "LayerName": f"{layer_name}_{namespace_token}",
+            "LayerName": f"{layer_name}_{namespace_token[:10]}",
             "CompatibleRuntimes": [
                 "python3.7",
                 "python3.8",
