@@ -1,3 +1,4 @@
 recursive-include cdev/project_templates/ *
+recursive-include core/utils/fs_manager/standard_library_names/ *
 
 global-exclude */__pycache__/*
