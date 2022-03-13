@@ -86,7 +86,8 @@ class PermissionArn():
 
     def render(self) -> permission_arn_model:
         return permission_arn_model(
-            arn=self.arn
+            arn=self.arn,
+            hash=self.hash()
         )
 
     def hash(self) -> str:

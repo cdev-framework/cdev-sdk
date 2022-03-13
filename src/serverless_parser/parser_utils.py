@@ -537,30 +537,19 @@ def _get_individual_files_imported_symbols(file_location):
         
         if isinstance(node, ast.Import):
             for pkg_name in node.names:
-                if not pkg_name.asname:
-                    asname = pkg_name.name
-                else:
-                    asname = pkg_name.asname
+                
+                asname = pkg_name.name.split('.')[0] if not pkg_name.name.startswith('.') else pkg_name.name
+                    
                 rv.add((asname, None))
     
         elif isinstance(node, ast.ImportFrom):
             # if the import has levels > 0 and no module it is a local referenced package and will already be included
             # if not then it is a package on the PYTHONPATH and we need to add it as a dependency
             
-            
-            for pkg_name in node.names:
-                
-                if node.level > 0:
-                    if not node.module:
-                        asmodule = f"{'.' * node.level}{pkg_name.name}"
-                    else:
-                        asmodule = f"{'.' * node.level}{node.module}"
-
-                    rv.add((asmodule, file_location))
-
-                else:
-                    asmodule =  node.module
-                    rv.add((asmodule, None))
+            asname = node.module.split('.')[0] if not node.module.startswith('.') else node.module
+                    
+            rv.add((asname, None))
+    
 
     _individual_file_cache[file_location] = rv
                 

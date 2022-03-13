@@ -105,12 +105,13 @@ for project_obj in pkg_resources.working_set:
     if not os.path.isdir(dist_dir_location):
         continue
 
+
     if not os.path.isfile(toplevel_file_location):
         # If not top level file is present, then assume the only top level module available is the project name
         
         MOD_NAME_TO_PRJ_OBJ[project_obj.project_name.replace('-','_')] = project_obj
         PRJ_NAME_TO_TOP_LEVEL_MODULES[project_obj.project_name] = [
-            project_obj.project_name
+            project_obj.project_name.replace("-", "_")
         ]
         continue
 
@@ -297,6 +298,7 @@ def _recursive_create_module_package_info(
         and not module_name[0] == "."
     ):
         # The module name is not in the available system modules and also not a relative module
+        
         raise Exception(f"Bad module name {module_name}; Not a sys module, relatively referenced package, or pip installed package")
 
     else:
@@ -430,7 +432,8 @@ def _recursive_create_module_package_info(
                         tmp_fp = mod.__file__
                     # TODO: Maybe support this in the future
                     log.debug("Local absolute reference for module %s", module_name)
-                    raise Exception("Referencing local package using absolute import statement. Change it to a relative import to work with Cdev.")
+
+                    raise Exception(f"{module_name}: Referencing local package using absolute import statement. Change it to a relative import to work with Cdev.")
             elif module_name[0] == ".":
                 # IF the module name started with a '.' then it is a relative import
                 
@@ -544,7 +547,7 @@ def _recursive_check_for_dependencies_project(
             raise Exception
 
         top_level_modules = PRJ_NAME_TO_TOP_LEVEL_MODULES.get(project_name)
-
+        
         for req in top_level_modules:
 
             tmp_dep = _recursive_create_module_package_info(req, None)
