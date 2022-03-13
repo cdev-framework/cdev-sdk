@@ -85,7 +85,7 @@ def _create_simple_relational_db(
         "endpoint": rv.get("DBCluster").get("Endpoint"),
         "secret_arn": secret_rv.get("ARN"),
         "cloud_id": rv.get("DBCluster").get("DBClusterArn"),
-        "arn": rv.get("DBCluster").get("DBClusterArn"),
+        "cluster_arn": rv.get("DBCluster").get("DBClusterArn"),
         "cdev_name": resource.name,
         "cluster_name": cluster_name
     }
@@ -110,7 +110,7 @@ def _update_simple_relational_db(
         raise Exception
 
 
-    update_args = {"DBClusterIdentifier": previous_output.get('cluster_id')}
+    update_args = {"DBClusterIdentifier": previous_output.get('cluster_arn')}
 
     scaling_config = {}
 
