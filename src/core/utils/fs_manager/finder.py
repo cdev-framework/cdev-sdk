@@ -166,7 +166,7 @@ def _find_resources_information_from_file(
     mod_name = _get_module_name_from_path(fp)
 
     # When the python file is imported and executed all the Cdev resources are created
-    mod = module_loader.import_module(mod_name, denote_output=True)
+    mod = module_loader.import_module(mod_name)
 
     resource_rv = []
     reference_rv = []

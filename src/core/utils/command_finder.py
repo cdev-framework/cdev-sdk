@@ -77,8 +77,7 @@ def find_specified_command(
 
 def initialize_command_module(mod_path: str) -> BaseCommand:
     
-    mod = import_module(mod_path, denote_output=True)
-
+    mod = import_module(mod_path)
     # Check for the class that derives from BaseCommand... if there is more then one class then throw error (note this is a current implementation detail)
     # because it is easier if their is only one command per file so that we can use the file name as the command name
     _has_found_a_valid_command = False
