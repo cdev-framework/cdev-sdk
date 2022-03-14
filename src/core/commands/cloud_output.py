@@ -9,7 +9,7 @@ def cloud_output_command_cli(args):
     cloud_output_command(config)
 
 
-def cloud_output_command(workspace: Workspace, output: OutputManager, cloud_output_id: str):
+def cloud_output_command(workspace: Workspace, output: OutputManager, cloud_output_id: str, only_value: bool):
     log.debug("Executing Frontend")
 
    
@@ -42,4 +42,7 @@ def cloud_output_command(workspace: Workspace, output: OutputManager, cloud_outp
         raise Exception(f"Key {output_key} not in Cloud Output {cloud_output}")
 
 
-    output._console.print(f"[blue]{output_key}[/blue] -> {cloud_output.get(output_key)}")
+    if not only_value:
+        print(f"{output_key} -> {cloud_output.get(output_key)}")
+    else:
+        print(cloud_output.get(output_key))

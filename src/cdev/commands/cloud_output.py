@@ -9,11 +9,10 @@ from core.commands.cloud_output import cloud_output_command as core_cloud_output
 def cloud_output_command_cli(args):
     config = args[0]
     set_global_logger_from_cli(config.loglevel)
+    cloud_output_command(config.cloud_output_id, config.value)
 
-    cloud_output_command(config.cloud_output_id)
 
-
-def cloud_output_command(cloud_output_id: str):
+def cloud_output_command(cloud_output_id: str, only_value: bool):
 
     output_manager = CdevOutputManager()
 
@@ -22,6 +21,6 @@ def cloud_output_command(cloud_output_id: str):
     ws = myProject.get_current_environment().get_workspace()
 
 
-    core_cloud_output_command(ws, output_manager, cloud_output_id)
+    core_cloud_output_command(ws, output_manager, cloud_output_id, only_value)
     
 
