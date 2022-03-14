@@ -24,7 +24,7 @@ def get_db_info_from_cdev_name(component_name: str, cdev_database_name: str) -> 
             component_name,
             RUUID, 
             cdev_database_name, 
-            "arn"
+            "cluster_arn"
         )
 
         
