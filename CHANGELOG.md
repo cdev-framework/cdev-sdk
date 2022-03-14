@@ -15,6 +15,7 @@ All release will have a corresponding git tag.
 - Fix bug with third party project's that have no top_level.txt and have a '-' in the name
 - Fix bug with returned package names from relative imported files
 - Fix bug with naming of key for relationdb output cluster_arn value
+- Fix bug with db shell command looking up wrong key from output
 
 
 ## [0.0.5] - 2022-03-09
