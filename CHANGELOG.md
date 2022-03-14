@@ -7,7 +7,7 @@ All releases will correspond to releases on [PyPI](https://pypi.org/project/cdev
 All release will have a corresponding git tag.
 
 
-## [0.0.5] - 2022-03-14
+## [0.0.6] - 2022-03-14
 ## Added
 - Added 'relationaldb.shell' command to open interactive session with a db
 - Add flag to output command to only print the value
