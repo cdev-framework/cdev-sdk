@@ -9,6 +9,7 @@ All release will have a corresponding git tag.
 ## [Unreleased]
 ## Added
 - Added 'relationaldb.shell' command to open interactive session with a db
+- Add flag to output command to only print the value
 
 ## Changed
 - Fix bug with third party project's that have no top_level.txt and have a '-' in the name
