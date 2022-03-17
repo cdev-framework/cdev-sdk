@@ -45,11 +45,13 @@ class sync_files(BaseCommand):
         resource: simple_static_site_model = utils.get_resource_from_cdev_name(component_name, static_site_name)
         cloud_output = utils.get_cloud_output_from_cdev_name(component_name, static_site_name)
 
+        index_document = resource.index_document
+        error_document = resource.error_document
+
         if not override_directory:
             t = get_full_path_from_workspace_base(resource.content_folder)
-            print(t)
             final_dir = t
-            print("p")
+            
         else:
             final_dir = get_full_path_from_workspace_base(override_directory)
 
@@ -64,23 +66,27 @@ class sync_files(BaseCommand):
 
         for subdir, dirs, files in os.walk(final_dir):
             for file in files:
+                full_path = os.path.join(subdir, file)
+                potential_key_name = os.path.relpath(full_path, final_dir)
                 
+                if potential_key_name == index_document or potential_key_name == error_document:
+                    # We want to always preserve the index and error documents if they are available
+                    mimetype, _ = mimetypes.guess_type(full_path)
+                    key_name = potential_key_name
 
-                if (not preserve_html) and file.split(".")[1] == 'html':
-                    full_path = os.path.join(subdir, file)
-                    mimetype = "html"
+                elif (not preserve_html) and file.split(".")[1] == 'html':
+                    mimetype = "text/html"
                     # remove the .html file handle to make the url prettier 
-                    key_name = os.path.relpath(full_path, final_dir)[:-5]
+                    key_name = potential_key_name[:-5]
 
                 else:
-                    full_path = os.path.join(subdir, file)
                     mimetype, _ = mimetypes.guess_type(full_path)
-                    key_name = os.path.relpath(full_path, final_dir)
+                    key_name = potential_key_name
 
                 
                 if mimetype is None:
                     raise Exception("Failed to guess mimetype")
-                print(f"Uploading file -> {full_path} as {key_name}")
+                print(f"{full_path} -> {key_name} ({mimetype})")
                 bucket.upload_file(
                     full_path, key_name, ExtraArgs={"ContentType": mimetype}
                 )
