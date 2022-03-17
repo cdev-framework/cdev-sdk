@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 All releases will correspond to releases on [PyPI](https://pypi.org/project/cdev/).
 All release will have a corresponding git tag.
 
+## [Unreleased]
+## Added
+- Added `sync` command for static sites
+
 
 ## [0.0.6] - 2022-03-14
 ## Added
