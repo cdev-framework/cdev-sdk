@@ -10,6 +10,8 @@ All release will have a corresponding git tag.
 ## Added
 - Added `sync` command for static sites
 
+## Changed
+- Fix bug with syncing index and error documents for static sites
 
 ## [0.0.6] - 2022-03-14
 ## Added
