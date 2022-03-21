@@ -99,16 +99,16 @@ def _deduplicate_resources_list(resources: List[Resource]) -> List[Resource]:
     Since multiple functions can produce the same Layer resource by referencing the same 
     3rd party resource, we need to deduplicate the layers from the list.
     """
-
+    remove_indexes = set()
     for i in range(len(resources)):
+        
         if i+1 >= len(resources):
             break
 
         if (resources[i].hash == resources[i+1].hash) and (resources[i].ruuid == resources[i+1].ruuid) and (resources[i].name == resources[i+1].name):
-            resources.pop(i)
-
-
-    return resources
+            remove_indexes.add(i)
+            
+    return [x for i,x in enumerate(resources) if not i in remove_indexes]
 
 def _get_module_name_from_path(fp: FilePath):
     """Convert a full file path of a python path into a importable module name
