@@ -44,12 +44,13 @@ class stream_event_model(event_model):
     table_name: cdev_str_model    
     view_type: stream_type
     batch_size: int
+    batch_failure: bool 
 
 
 class StreamEvent(Event):
     """Construct for representing the Stream of a `Table`"""
 
-    def __init__(self, table_name: str, view_type: stream_type, batch_size: int) -> None:
+    def __init__(self, table_name: str, view_type: stream_type, batch_size: int, batch_failure: bool= True) -> None:
         """
         Args:
             table_name (str): Cdev name of the API this route is apart of
@@ -68,13 +69,15 @@ class StreamEvent(Event):
             
         self.view_type=view_type
         self.batch_size=batch_size
+        self.batch_failure = batch_failure
 
 
     def hash(self) -> str:
         return hasher.hash_list([
             self.cdev_table_name,
             self.view_type,
-            self.batch_size
+            self.batch_size,
+            self.batch_failure
         ])
         
     def render(self) -> stream_event_model:
@@ -84,7 +87,8 @@ class StreamEvent(Event):
             hash=self.hash(),
             batch_size=self.batch_size,
             view_type=self.view_type.value,
-            table_name=self.table_name.render()
+            table_name=self.table_name.render(),
+            batch_failure=self.batch_failure
         )
 
 
@@ -362,13 +366,14 @@ class Table(PermissionsAvailableMixin, Resource):
         self._keys = value
 
     def create_stream(
-        self, view_type: stream_type, batch_size: int = 100
+        self, view_type: stream_type, batch_size: int = 100, batch_failure: bool = True
     ) -> StreamEvent:
         """Create a `StreamEvent` for this table
 
         Args:
             view_type (stream_type): Type of events to process from the stream.
             batch_size (int, optional): Number events to batch into an Event. Defaults to 100.
+            batch_failure (bool, optional): If your function fails to process any message from the batch, the entire batch returns to your stream.
 
         Raises:
             Exception: If this Table already has a Stream, throw exception. Should use `get_stream()`
@@ -382,7 +387,8 @@ class Table(PermissionsAvailableMixin, Resource):
         event = StreamEvent(
             table_name=self.name,
             view_type=view_type,
-            batch_size=batch_size
+            batch_size=batch_size,
+            batch_failure=batch_failure
         )
 
         self._stream = event

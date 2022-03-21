@@ -27,11 +27,12 @@ class queue_event_model(event_model):
     """
     queue_arn: cdev_str_model   
     batch_size: int
+    batch_failure: bool 
 
 
 class QueueEvent(Event):
     """Construct representing the Events from the Queue"""
-    def __init__(self, queue_name: str, batch_size: int) -> None:
+    def __init__(self, queue_name: str, batch_size: int, batch_failure: bool = True) -> None:
 
         if batch_size > 10000 or batch_size < 0:
             raise Exception
@@ -46,6 +47,7 @@ class QueueEvent(Event):
             )
 
         self.batch_size = batch_size
+        self.batch_failure = batch_failure
 
 
     def render(self) -> queue_event_model:
@@ -54,14 +56,16 @@ class QueueEvent(Event):
             originating_resource_type=RUUID,
             hash=self.hash(),
             queue_arn=self.queue_arn.render(),
-            batch_size=self.batch_size
+            batch_size=self.batch_size,
+            batch_failure=self.batch_failure 
         )
 
 
     def hash(self) -> str:
         return hasher.hash_list([
             self.cdev_queue_name,
-            self.batch_size
+            self.batch_size,
+            self.batch_failure 
         ])
 
 ######################
@@ -162,7 +166,7 @@ class Queue(PermissionsAvailableMixin, Resource):
         self.is_fifo = is_fifo
         self.output = QueueOutput(cdev_name)
         self._event = None
-        print(f"passing -> {cdev_name}")
+        
         self.available_permissions: QueuePermissions = QueuePermissions(cdev_name)
 
     @property
@@ -176,13 +180,13 @@ class Queue(PermissionsAvailableMixin, Resource):
         self._is_fifo = value
 
     def create_event_trigger(
-        self, batch_size: int = 10
+        self, batch_size: int = 10, batch_failure: bool = True
     ) -> QueueEvent:
         """Create an Event for the Queue that other resources can listen to
 
         Args:
             batch_size (int, optional): Size of message batch. Defaults to 10.
-
+            batch_failure (bool, optional): If your function fails to process any message from the batch, the entire batch returns to your queue.
         Raises:
             Exception: _description_
             Exception: _description_
@@ -200,6 +204,7 @@ class Queue(PermissionsAvailableMixin, Resource):
         event = QueueEvent(
             queue_name=self.name,
             batch_size=batch_size,
+            batch_failure=batch_failure
         )
 
         self._event = event

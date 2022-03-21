@@ -166,6 +166,8 @@ def _handle_adding_stream_event(event: simple_table.stream_event_model, cloud_fu
     stream_arn = table_data.get("LatestStreamArn")
 
     sleep(5)
+    function_response_types = [] if event.batch_failure else ['ReportBatchItemFailures'] 
+
     rv = aws_client.run_client_function(
         "lambda",
         "create_event_source_mapping",
@@ -175,6 +177,7 @@ def _handle_adding_stream_event(event: simple_table.stream_event_model, cloud_fu
             "Enabled": True,
             "BatchSize": batch_size,
             "StartingPosition": "LATEST",
+            "FunctionResponseTypes": function_response_types
         },
     )
 
@@ -271,6 +274,8 @@ def _handle_adding_queue_event(event: simple_queue.queue_event_model, cloud_func
     queue_arn = event.queue_arn
     batch_size = event.batch_size
 
+    function_response_types = [] if event.batch_failure else ['ReportBatchItemFailures'] 
+
     rv = aws_client.run_client_function(
         "lambda",
         "create_event_source_mapping",
@@ -279,6 +284,7 @@ def _handle_adding_queue_event(event: simple_queue.queue_event_model, cloud_func
             "FunctionName": cloud_function_id,
             "Enabled": True,
             "BatchSize": batch_size,
+            "FunctionResponseTypes": function_response_types
         },
     )
 

@@ -21,6 +21,13 @@ def _create_simple_dynamodb_table(
 
     output_task.update(comment='[blink]Creating Table. This will take a few seconds.[/blink]')
 
+    key_schema = [{
+                "AttributeName": x.attribute_name,
+                "KeyType": x.key_type.value
+            } for x in resource.keys]
+
+    key_schema.sort(key=lambda x: x.get('KeyType'))
+    
     rv = aws_client.run_client_function(
         "dynamodb",
         "create_table",
@@ -30,10 +37,7 @@ def _create_simple_dynamodb_table(
                 "AttributeName": x.attribute_name,
                 "AttributeType": x.attribute_type.value
             } for x in resource.attributes],
-            "KeySchema": [{
-                "AttributeName": x.attribute_name,
-                "KeyType": x.key_type.value
-            } for x in resource.keys],
+            "KeySchema": key_schema,
             "BillingMode": "PAY_PER_REQUEST",
         },
         wait={"name": "table_exists", "args": {"TableName": table_name}},
