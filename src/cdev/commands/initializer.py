@@ -32,7 +32,8 @@ AVAILABLE_TEMPLATES = [
     'quick-start',
     'resources-test',
     'packages',
-    'slack-bot'
+    'slack-bot',
+    'user-auth'
 ]
 
 def create_project_cli(args):
