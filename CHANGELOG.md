@@ -8,7 +8,8 @@ All release will have a corresponding git tag.
 
 ## [Unreleased]
 ## Added
-- Added `sync` command for static sites
+- Add `sync` command for static sites
+- Add template project for power tools library
 
 ## Changed
 - Fix bug with syncing index and error documents for static sites
