@@ -201,13 +201,8 @@ def _generate_global_statement(file_info_obj: file_information, ast_node: ast.No
                 
                 function_symbols = set([x.get_name() for x in single_symbol.get_namespaces()[0].get_symbols()])
 
-                if isinstance(ast_node, ast.FunctionDef):
-                    if ast_node.decorator_list:
-                        # If this is a function with annotations then we should include all the symbols from the top
-                        # level tmp symbol table so that the variables used in the annotations are captured.
-                        function_symbols.update(set([x.get_name() for x in tmp_symbol_table.get_symbols()]))
-
-
+                function_symbols.update(set([x.get_name() for x in tmp_symbol_table.get_symbols()]))
+               
                 fs = FunctionStatement(ast_node, [start_line, last_line],
                                        list(function_symbols), name)
                 file_info_obj.add_global_function(name, fs)
