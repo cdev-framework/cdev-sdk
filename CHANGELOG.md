@@ -14,6 +14,7 @@ All release will have a corresponding git tag.
 ## Changed
 - Fix bug with syncing index and error documents for static sites
 - Fix bug with deduplicating more than two of the same resource.
+- Fix bug with not parsing type annotations in function definitions
 
 ## [0.0.6] - 2022-03-14
 ## Added
