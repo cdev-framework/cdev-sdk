@@ -37,6 +37,15 @@ def _handle_adding_api_event(event: simple_api.route_event_model, cloud_function
         "IntegrationMethod": event.verb,
         "ApiId": api_id,
     }
+
+    if event.response_type:
+        args.update({
+            "ResponseParameters": {
+                "200": {
+                    "overwrite:header.Content-Type": event.response_type
+                }
+            }
+        })
     
     integration_rv = aws_client.run_client_function(
         "apigatewayv2", "create_integration", args
@@ -78,7 +87,6 @@ def _handle_adding_api_event(event: simple_api.route_event_model, cloud_function
 
 
 def _handle_deleting_api_event(event: dict, function_cloud_id: str) -> bool:
-   
     cloud_id = function_cloud_id
     integration_id = event.get("integration_id")
     stmt_id = event.get("permission_stmt_id")

@@ -103,15 +103,15 @@ class Route():
         self.api_name = api_name
         self.path = path
         self.verb = verb
-        self.additional_scopes = additional_scopes
         self.authorizer_name = authorizer_name
+        self.additional_scopes = additional_scopes
        
     def hash(self) -> str:
         return hasher.hash_list([
             self.path,
             self.verb,
             hasher.hash_list(self.additional_scopes),
-            self.authorizer_name
+            self.authorizer_name,
         ])
 
     def render(self) -> route_model:
@@ -119,10 +119,10 @@ class Route():
             path=self.path,
             verb=self.verb,
             additional_scopes=frozenset(self.additional_scopes),
-            authorizer_name=self.authorizer_name
+            authorizer_name=self.authorizer_name,
         )
 
-    def event(self) -> 'RouteEvent':
+    def event(self, response_type: Optional[str]="") -> 'RouteEvent':
         """Generate an Event Construct that other resources can bind to. 
 
         Returns:
@@ -131,7 +131,8 @@ class Route():
         return RouteEvent(
             resource_name=self.api_name,
             path=self.path,
-            verb=self.verb
+            verb=self.verb,
+            response_type=response_type
         )
 
 class route_event_model(events.event_model):
@@ -140,6 +141,7 @@ class route_event_model(events.event_model):
     verb: route_verb
     api_id: cdev_str_model
     route_id: cdev_str_model
+    response_type: Optional[str]
 
     def __init__(__pydantic_self__, **data: Any) -> None:
         """"""
@@ -149,7 +151,7 @@ class route_event_model(events.event_model):
 class RouteEvent():
     """Construct for representing a route that is apart of an HTTP API."""
 
-    def __init__(self, resource_name: str, path: str, verb: route_verb) -> None:
+    def __init__(self, resource_name: str, path: str, verb: route_verb, response_type: Optional[str]="") -> None:
         """
         Args:
             resource_name (str): Cdev Name of the API this event is generated from
@@ -175,8 +177,10 @@ class RouteEvent():
                 _member_class=Cloud_Output_Str
             )[f'{self.path} {self.verb}']
 
+        self.response_type = response_type
+
     def hash(self) -> str:
-        return hasher.hash_list([self.resource_name, self.path, self.verb])
+        return hasher.hash_list([self.resource_name, self.path, self.verb, self.response_type])
 
     def render(self) -> route_event_model:
         return route_event_model(
@@ -186,7 +190,8 @@ class RouteEvent():
             path=self.path,
             verb=self.verb,
             api_id=self.api_id.render(),
-            route_id=self.route_id.render()
+            route_id=self.route_id.render(),
+            response_type=self.response_type
         )
 
 ########################
