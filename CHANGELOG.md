@@ -10,6 +10,7 @@ All release will have a corresponding git tag.
 ## Added
 - Add `sync` command for static sites
 - Add template project for power tools library
+- Add support for api routes to return different types than 'application/json'
 
 ## Changed
 - Fix bug with syncing index and error documents for static sites
