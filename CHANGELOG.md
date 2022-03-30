@@ -7,6 +7,9 @@ All releases will correspond to releases on [PyPI](https://pypi.org/project/cdev
 All release will have a corresponding git tag.
 
 ## [Unreleased]
+
+
+## [0.0.7] - 2022-03-29
 ## Added
 - Add `sync` command for static sites
 - Add template project for power tools library

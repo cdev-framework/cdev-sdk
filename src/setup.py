@@ -12,7 +12,7 @@ README = open(os.path.join(MAIN_DIR, "README.md")).read()
 
 setuptools.setup(
     name='cdev',
-    version='0.0.6',
+    version='0.0.7',
     scripts=['./cdev/scripts/cdev', './core/scripts/cdev_core' ],
     description='CLI for cdev sdk',
     long_description=README,
