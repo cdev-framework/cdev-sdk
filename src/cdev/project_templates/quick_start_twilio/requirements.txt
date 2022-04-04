@@ -1,0 +1,4 @@
+aws-lambda-powertools
+notion_client
+twilio
+urllib3

@@ -30,6 +30,7 @@ BASE_PROJECT_LOCATION = os.getcwd()
 
 AVAILABLE_TEMPLATES = [
     'quick-start',
+    'quick-start-twilio',
     'resources-test',
     'packages',
     'slack-bot',
@@ -91,8 +92,6 @@ def create_project(project_name: str, base_directory: DirectoryPath = None):
     _create_folder_structure(base_directory, DEFAULT_ENVIRONMENTS)
 
     base_settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
-    
-
 
     backend_directory = os.path.join(base_directory, CDEV_FOLDER, STATE_FOLDER)
     backend_configuration = Local_Backend_Configuration(
