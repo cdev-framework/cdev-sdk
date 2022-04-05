@@ -7,6 +7,8 @@ All releases will correspond to releases on [PyPI](https://pypi.org/project/cdev
 All release will have a corresponding git tag.
 
 ## [Unreleased]
+
+## [0.0.8] - 2022-04-05
 ### Added
 - Add Twilio quick start template
 
