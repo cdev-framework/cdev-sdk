@@ -23,6 +23,14 @@ from core.default.resources.simple.events import Event, event_model
 LAMBDA_LAYER_RUUID = "cdev::simple::lambda_layer"
 RUUID = "cdev::simple::function"
 
+###################
+##### Exceptions
+###################
+class CallableError(Exception):
+    pass
+
+
+
 ################
 ##### Dependencies 
 ################
@@ -165,7 +173,9 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
         function_permissions: List[Union[Permission, PermissionArn]] = [],
         external_dependencies: List[Union[DeployedLayer, DependencyLayer]]=[],
         src_code_hash: str = None,
+        preserve_function: Callable = None,
         nonce: str = "",
+
     ) -> None:
         """
 
@@ -178,6 +188,7 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
             function_permissions (List[Union[Permission, PermissionArn]], optional): List of Permissions to grant to the Function.. Defaults to [].
             external_dependencies (List[Union[DeployedLayer, DependencyLayer]], optional): Dependencies to link to in the Cloud. Defaults to [].
             src_code_hash (str, optional): identifying hash of the source code. Defaults to None.
+            preserve_function (Callable, optional): the original function that is being deployed. This allows the returned object ro remain Callable. Default to None.
             nonce (str, optional): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
         """
         super().__init__(cdev_name, RUUID, nonce)
@@ -191,6 +202,10 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
         self.src_code_hash = src_code_hash if src_code_hash else hasher.hash_file(filepath)
 
         self._platform = platform if platform else get_current_closest_platform()
+
+        self._preserved_function = preserve_function
+        self.__annotations__ = preserve_function.__annotations__
+        self.__doc__ = preserve_function.__doc__
         
 
     @property
@@ -274,6 +289,12 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
         )
 
 
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        if not self._preserved_function:
+            raise CallableError
+
+        return self._preserved_function(*args, **kwds)
+
 def simple_function_annotation(
     name: str,
     events: List[Event] = [],
@@ -297,7 +318,7 @@ def simple_function_annotation(
     Returns:
         Callable[[Callable], SimpleFunction]: wrapper that returns the `SimpleFunction`
     """
-
+    
     def create_function(func: Callable) -> SimpleFunction:
 
         if inspect.isfunction(func):
@@ -328,6 +349,7 @@ def simple_function_annotation(
             configuration=final_config,
             platform=override_platform,
             function_permissions=permissions,
+            preserve_function=func,
             nonce=nonce
         )
 

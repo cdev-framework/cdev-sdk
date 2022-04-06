@@ -315,6 +315,7 @@ def _parse_serverless_functions(
             external_dependencies=dependencies_info if dependencies_info else [],
             src_code_hash=handler_archive_hash,
             nonce=previous_info.nonce,
+            preserve_function=previous_info._preserved_function,
             platform=previous_info.platform
         )
 
