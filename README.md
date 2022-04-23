@@ -84,7 +84,7 @@ For a more in depth information about the capabilities of Cdev, check out our [d
 For guides on how to deploy any of these resources, check out our [documentation](https://cdevframework.io/docs/)
 
 ## Early Alpha Notes
-The project is still in a pre-alpha state, so not all the features of the alpha are implemented. The main branch will be the most stable branch and should not have any breaking changes as work on the alpha continues. The alpha will be ready for a public launch by March 1st. Things left to do in alpha:
+The project is still in a pre-alpha state, so not all the features of the alpha are implemented. The main branch will be the most stable branch and should not have any breaking changes as work on the alpha continues. Things left to do in alpha:
 - More unit and integration tests
 - General polish of output 
 - General work on documentation
