@@ -1,4 +1,4 @@
-"""Utilities for creating a deploying a set of changes 
+"""Utilities for creating a deploying a set of changes
 
 """
 
@@ -15,7 +15,6 @@ def execute_deployment_cli(args):
     WORKSPACE = Workspace.instance()
 
     execute_deployment(WORKSPACE, OutputManager())
-
 
 
 def execute_deployment(workspace: Workspace, output: OutputManager):
@@ -35,9 +34,6 @@ def execute_deployment(workspace: Workspace, output: OutputManager):
     workspace.set_state(Workspace_State.EXECUTING_BACKEND)
 
     workspace.deploy_differences(differences_structured)
-
-
-    
 
     for tag, cloud_output in workspace.render_outputs():
         print(f"{tag} -> {cloud_output}")

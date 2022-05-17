@@ -3,7 +3,13 @@
 """
 from typing import Any
 
-from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsAvailableMixin
+from core.constructs.resource import (
+    Resource,
+    ResourceModel,
+    update_hash,
+    ResourceOutputs,
+    PermissionsAvailableMixin,
+)
 from core.constructs.cloud_output import Cloud_Output_Str, OutputType
 from core.constructs.types import cdev_str_model
 
@@ -20,23 +26,20 @@ RUUID = "cdev::simple::topic"
 ######################
 class topic_event_model(event_model):
     """Model representing a Topic event"""
-    topic_arn: cdev_str_model   
+
+    topic_arn: cdev_str_model
 
 
 class TopicEvent(Event):
     """Construct representing the Events from the Topic"""
-    
+
     def __init__(self, topic_name: str) -> None:
 
         self.cdev_topic_name = topic_name
 
         self.topic_arn = Cloud_Output_Str(
-                name=topic_name, 
-                ruuid=RUUID, 
-                key='arn',
-                type=OutputType.RESOURCE 
-            )
-
+            name=topic_name, ruuid=RUUID, key="arn", type=OutputType.RESOURCE
+        )
 
     def render(self) -> topic_event_model:
         return topic_event_model(
@@ -46,11 +49,12 @@ class TopicEvent(Event):
             topic_arn=self.topic_arn.render(),
         )
 
-
     def hash(self) -> str:
-        return hasher.hash_list([
-            self.cdev_topic_name,
-        ])
+        return hasher.hash_list(
+            [
+                self.cdev_topic_name,
+            ]
+        )
 
 
 #####################
@@ -63,26 +67,29 @@ class TopicPermissions:
                 "sns:GetTopicAttributes",
                 "sns:Subscribe",
             ],
-            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
+            cloud_id=Cloud_Output_Str(
+                resource_name, RUUID, "cloud_id", OutputType.RESOURCE
+            ),
             effect="Allow",
         )
         """Permission to subscribe to the Topic"""
 
         self.PUBLISH = Permission(
-            actions=[
-                "sns:GetTopicAttributes",
-                "sns:Publish"
-            ],
-            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
+            actions=["sns:GetTopicAttributes", "sns:Publish"],
+            cloud_id=Cloud_Output_Str(
+                resource_name, RUUID, "cloud_id", OutputType.RESOURCE
+            ),
             effect="Allow",
         )
         """Permission to publish to the Topic"""
+
 
 ##############
 ##### Output
 ##############
 class TopicOutput(ResourceOutputs):
     """Container object for the returned values from the cloud after a Topic has been deployed."""
+
     def __init__(self, name: str) -> None:
         super().__init__(name, RUUID)
 
@@ -90,10 +97,7 @@ class TopicOutput(ResourceOutputs):
     def topic_name(self) -> Cloud_Output_Str:
         """The name of the generated topic"""
         return Cloud_Output_Str(
-            name=self._name,
-            ruuid=RUUID,
-            key='topic_name',
-            type=self.OUTPUT_TYPE
+            name=self._name, ruuid=RUUID, key="topic_name", type=self.OUTPUT_TYPE
         )
 
     @topic_name.setter
@@ -110,13 +114,12 @@ class simple_topic_model(ResourceModel):
     is_fifo: bool
     """Should the Topic guarantee ordering of messages"""
 
+
 class Topic(PermissionsAvailableMixin, Resource):
     """Construct for creating a managed SNS Pub/Sub Topic"""
 
     @update_hash
-    def __init__(
-        self, cdev_name: str, is_fifo: bool = False, nonce: str = ''
-    ) -> None:
+    def __init__(self, cdev_name: str, is_fifo: bool = False, nonce: str = "") -> None:
         """
         Args:
             cdev_name (str): Name of the resource.
@@ -140,9 +143,7 @@ class Topic(PermissionsAvailableMixin, Resource):
     def is_fifo(self, value: bool):
         self._is_fifo = value
 
-    def create_event_trigger(
-        self
-    ) -> TopicEvent:
+    def create_event_trigger(self) -> TopicEvent:
         """Create an Event for the Topic that other resources can listen to
 
         Raises:
@@ -153,8 +154,9 @@ class Topic(PermissionsAvailableMixin, Resource):
             QueueEvent
         """
         if self._event:
-            raise Exception("Already created an event on this topic. Use `get_event()` to get the current event.")
-    
+            raise Exception(
+                "Already created an event on this topic. Use `get_event()` to get the current event."
+            )
 
         event = TopicEvent(
             topic_name=self.name,
@@ -174,7 +176,9 @@ class Topic(PermissionsAvailableMixin, Resource):
             QueueEvent
         """
         if not self._event:
-            raise Exception("Topic Event has not been created. Create a Topic Event for this topic using the `create_event_trigger` function before calling this function.")
+            raise Exception(
+                "Topic Event has not been created. Create a Topic Event for this topic using the `create_event_trigger` function before calling this function."
+            )
 
         return self._event
 
@@ -188,4 +192,3 @@ class Topic(PermissionsAvailableMixin, Resource):
             hash=self.hash,
             is_fifo=self.is_fifo,
         )
-

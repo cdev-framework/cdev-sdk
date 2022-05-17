@@ -43,12 +43,11 @@ class InvalidResourceStateData(LocalBackendError):
     pass
 
 
-
 class SetEncoder(json.JSONEncoder):
     def default(self, obj):
-       if isinstance(obj, set):
-          return list(obj)
-       return json.JSONEncoder.default(self, obj)
+        if isinstance(obj, set):
+            return list(obj)
+        return json.JSONEncoder.default(self, obj)
 
 
 class Local_Backend_Configuration(Backend_Configuration):
@@ -109,9 +108,7 @@ class LocalBackend(Backend):
             central_state_file (FilePath): Path to the central state file. Defaults to cdev setting if not provided.
         """
 
-        
         DEFAULT_CENTRAL_STATE_FILE = os.path.join(base_folder, "local_state.json")
-
 
         self.base_folder = base_folder
         self.central_state_file = (
@@ -130,11 +127,12 @@ class LocalBackend(Backend):
                 self._central_state = LocalCentralFile(**json.load(fh))
 
     def _write_central_file(self):
-        file_manager.safe_json_write(self._central_state.dict(), self.central_state_file)
+        file_manager.safe_json_write(
+            self._central_state.dict(), self.central_state_file
+        )
 
     def _write_resource_state_file(self, resource_state: Resource_State, fp: FilePath):
         file_manager.safe_json_write(resource_state.dict(), fp)
-    
 
     # Api for working with Resource States
     def create_resource_state(
@@ -220,7 +218,6 @@ class LocalBackend(Backend):
         try:
             return file_manager.load_resource_state(file_location)
 
-
         except Exception as e:
             raise InvalidResourceStateData(
                 f"Ivalid data for Resource State from file {file_location} for resource state {resource_state_uuid}; {e}"
@@ -228,12 +225,11 @@ class LocalBackend(Backend):
 
     def get_top_level_resource_states(self) -> List[Resource_State]:
         rv = []
-        
+
         for resource_id in self._central_state.top_level_states:
             # Let any exception from loading a state pass up to caller
             rv.append(self.get_resource_state(resource_id))
 
-        
         return rv
 
     # Components
@@ -286,26 +282,35 @@ class LocalBackend(Backend):
             x for x in resource_state.components if not x.name == component_name
         ]
 
-        
         resource_state.component_name_to_uuid.pop(component_name)
 
         self._write_resource_state_file(resource_state, resource_state_file_location)
 
-
-    def _update_component_name(self, resource_state_uuid: str, previous_component_name: str, new_component_name: str):
+    def _update_component_name(
+        self,
+        resource_state_uuid: str,
+        previous_component_name: str,
+        new_component_name: str,
+    ):
         resource_state = self.get_resource_state(resource_state_uuid)
         resource_state_file_location = self._get_resource_state_file_location(
             resource_state_uuid
         )
 
-        if not previous_component_name in set(x.name for x in resource_state.components) or not previous_component_name in resource_state.component_name_to_uuid:
+        if (
+            not previous_component_name
+            in set(x.name for x in resource_state.components)
+            or not previous_component_name in resource_state.component_name_to_uuid
+        ):
             # Component of that name does not exists
             raise ComponentDoesNotExist(
                 f"Could not find component {previous_component_name} in Resource State {resource_state_uuid}"
             )
 
-
-        if new_component_name in set(x.name for x in resource_state.components) or new_component_name in resource_state.component_name_to_uuid:
+        if (
+            new_component_name in set(x.name for x in resource_state.components)
+            or new_component_name in resource_state.component_name_to_uuid
+        ):
             # Cant not have two components of the same name in the same resource state
             raise ComponentAlreadyExists(
                 f"Component already exists with name {new_component_name} in Resource State {resource_state_uuid}"
@@ -318,14 +323,16 @@ class LocalBackend(Backend):
 
         # remove the component from the list of components
         resource_state.components = [
-            x for x in resource_state.components if not x.name == previous_component_name
+            x
+            for x in resource_state.components
+            if not x.name == previous_component_name
         ]
 
         # Since ComponentModels are frozen, we can just change the name
         # So we make a dict of the current ComponentModel then change the name and use the dict as input
         # for a new ComponentModel Obj. Then add the new Obj to the resource state
         component_as_dict = rename_component.dict()
-        component_as_dict['name'] = new_component_name
+        component_as_dict["name"] = new_component_name
         new_component = ComponentModel(**component_as_dict)
 
         resource_state.components.append(new_component)
@@ -334,10 +341,7 @@ class LocalBackend(Backend):
         resource_state.component_name_to_uuid.pop(previous_component_name)
         resource_state.component_name_to_uuid[new_component_name] = new_component
 
-
         self._write_resource_state_file(resource_state, resource_state_file_location)
-
-        
 
     def get_component(
         self, resource_state_uuid: str, component_name: str
@@ -353,7 +357,6 @@ class LocalBackend(Backend):
 
         return next(x for x in resource_state.components if x.name == component_name)
 
-
     def get_component_uuid(self, resource_state_uuid: str, component_name: str) -> str:
         resource_state = self.get_resource_state(resource_state_uuid)
 
@@ -366,27 +369,33 @@ class LocalBackend(Backend):
 
         return cdev_hasher.hash_list([resource_state_uuid, component_uuid])
 
-
     def update_component(
         self, resource_state_uuid: str, component_difference: Component_Difference
     ):
         if component_difference.action_type == Component_Change_Type.CREATE:
-            self._create_component(resource_state_uuid , component_difference.new_name)
+            self._create_component(resource_state_uuid, component_difference.new_name)
             return
 
         elif component_difference.action_type == Component_Change_Type.DELETE:
-            self._delete_component(resource_state_uuid, component_difference.previous_name)
+            self._delete_component(
+                resource_state_uuid, component_difference.previous_name
+            )
             return
 
         elif component_difference.action_type == Component_Change_Type.UPDATE_IDENTITY:
             return
 
-        elif  component_difference.action_type == Component_Change_Type.UPDATE_NAME:
-            self._update_component_name(resource_state_uuid, component_difference.previous_name, component_difference.new_name)
+        elif component_difference.action_type == Component_Change_Type.UPDATE_NAME:
+            self._update_component_name(
+                resource_state_uuid,
+                component_difference.previous_name,
+                component_difference.new_name,
+            )
 
         else:
-            raise Exception(f"Component Action type not supported {component_difference.action_type}")
-
+            raise Exception(
+                f"Component Action type not supported {component_difference.action_type}"
+            )
 
     def create_resource_change_transaction(
         self, resource_state_uuid: str, component_name: str, diff: Resource_Difference
@@ -398,16 +407,25 @@ class LocalBackend(Backend):
 
         transaction_token = str(uuid.uuid4())
 
-        ruuid = diff.new_resource.ruuid if diff.new_resource else diff.previous_resource.ruuid
+        ruuid = (
+            diff.new_resource.ruuid
+            if diff.new_resource
+            else diff.previous_resource.ruuid
+        )
 
-        namespace_token = cdev_hasher.hash_list([resource_state_uuid, self.get_component_uuid(resource_state_uuid, component_name), ruuid])
+        namespace_token = cdev_hasher.hash_list(
+            [
+                resource_state_uuid,
+                self.get_component_uuid(resource_state_uuid, component_name),
+                ruuid,
+            ]
+        )
 
         resource_state.resource_changes[transaction_token] = (component_name, diff)
 
         self._write_resource_state_file(resource_state, resource_state_file_location)
 
         return transaction_token, namespace_token
-
 
     def complete_resource_change(
         self,
@@ -416,7 +434,7 @@ class LocalBackend(Backend):
         diff: Resource_Difference,
         transaction_token: str,
         cloud_output: Dict = None,
-        resolved_cloud_information: Dict={}
+        resolved_cloud_information: Dict = {},
     ):
 
         resource_state = self.get_resource_state(resource_state_uuid)
@@ -424,18 +442,18 @@ class LocalBackend(Backend):
             resource_state_uuid
         )
 
-        
         if not transaction_token in resource_state.resource_changes:
-            
+
             raise ResourceChangeTransactionDoesNotExist(
                 f"Transaction {transaction_token} does not exist in Resource State {resource_state_uuid}"
             )
 
         component = self.get_component(resource_state_uuid, component_name)
-        
-        new_component = self._update_component(component, diff, cloud_output, resolved_cloud_information)
-        
-        
+
+        new_component = self._update_component(
+            component, diff, cloud_output, resolved_cloud_information
+        )
+
         resource_state.components = [
             x for x in resource_state.components if not x.name == component.name
         ] + [new_component]
@@ -443,7 +461,6 @@ class LocalBackend(Backend):
         resource_state.resource_changes.pop(transaction_token)
 
         self._write_resource_state_file(resource_state, resource_state_file_location)
-        
 
     def fail_resource_change(
         self,
@@ -558,7 +575,9 @@ class LocalBackend(Backend):
             resource_state_uuid
         )
 
-        component = self.get_component(resource_state_uuid, diff.originating_component_name)
+        component = self.get_component(
+            resource_state_uuid, diff.originating_component_name
+        )
 
         _reference_resource_state = resource_state
         if diff.resource_reference.is_in_parent_resource_state:
@@ -593,7 +612,7 @@ class LocalBackend(Backend):
             )
 
         if diff.action_type == Resource_Reference_Change_Type.CREATE:
-            
+
             reference_id = (
                 f"{diff.resource_reference.ruuid}{diff.resource_reference.name}"
             )
@@ -614,7 +633,7 @@ class LocalBackend(Backend):
             component.references.append(diff.resource_reference)
 
         elif diff.action_type == Resource_Reference_Change_Type.DELETE:
-            
+
             reference_id = (
                 f"{diff.resource_reference.ruuid}{diff.resource_reference.name}"
             )
@@ -784,7 +803,6 @@ class LocalBackend(Backend):
 
         return cloud_output.get(key)
 
-
     def get_cloud_output_by_name(
         self,
         resource_state_uuid: str,
@@ -823,7 +841,7 @@ class LocalBackend(Backend):
             previous_components: List[ComponentModel] = [
                 self.get_component(resource_state_uuid, x) for x in old_components
             ]
-           
+
         except Exception as e:
             raise e
 
@@ -834,7 +852,7 @@ class LocalBackend(Backend):
         component: ComponentModel,
         diff: Resource_Difference,
         new_cloud_output: Dict = {},
-        resolved_cloud_information: Dict={}
+        resolved_cloud_information: Dict = {},
     ) -> ComponentModel:
         """
         Apply a resource difference over a component model and return the updated component model
@@ -850,36 +868,45 @@ class LocalBackend(Backend):
 
         """
         if diff.action_type == Resource_Change_Type.DELETE:
-            
+
             component.resources = [
                 x
                 for x in component.resources
-                if not (x.ruuid == diff.previous_resource.ruuid and x.name == diff.previous_resource.name)
-            ] 
-            
+                if not (
+                    x.ruuid == diff.previous_resource.ruuid
+                    and x.name == diff.previous_resource.name
+                )
+            ]
+
             # remove the previous resource's cloud output
             previous_resource_cloud_output_id = self._get_cloud_output_id(
                 diff.previous_resource
             )
-            
+
             if previous_resource_cloud_output_id in component.cloud_output:
                 component.cloud_output.pop(previous_resource_cloud_output_id)
 
-
-            if previous_resource_cloud_output_id  in component.previous_resolved_cloud_values:
-                component.previous_resolved_cloud_values.pop(previous_resource_cloud_output_id)
-            
+            if (
+                previous_resource_cloud_output_id
+                in component.previous_resolved_cloud_values
+            ):
+                component.previous_resolved_cloud_values.pop(
+                    previous_resource_cloud_output_id
+                )
 
         elif (
             diff.action_type == Resource_Change_Type.UPDATE_IDENTITY
             or diff.action_type == Resource_Change_Type.UPDATE_NAME
         ):
-                   
+
             component.resources = [
                 x
                 for x in component.resources
-                if not (x.ruuid == diff.previous_resource.ruuid and x.name == diff.previous_resource.name)
-            ]  +  [diff.new_resource]
+                if not (
+                    x.ruuid == diff.previous_resource.ruuid
+                    and x.name == diff.previous_resource.name
+                )
+            ] + [diff.new_resource]
 
             # remove the previous resource's cloud output
             previous_resource_cloud_output_id = self._get_cloud_output_id(
@@ -889,22 +916,30 @@ class LocalBackend(Backend):
             if previous_resource_cloud_output_id in component.cloud_output:
                 component.cloud_output.pop(previous_resource_cloud_output_id)
 
-            if previous_resource_cloud_output_id  in component.previous_resolved_cloud_values:
-                component.previous_resolved_cloud_values.pop(previous_resource_cloud_output_id)
-            
+            if (
+                previous_resource_cloud_output_id
+                in component.previous_resolved_cloud_values
+            ):
+                component.previous_resolved_cloud_values.pop(
+                    previous_resource_cloud_output_id
+                )
+
             cloud_output_id = self._get_cloud_output_id(diff.new_resource)
             component.cloud_output[cloud_output_id] = new_cloud_output
 
-            component.previous_resolved_cloud_values[cloud_output_id] = resolved_cloud_information
-        
+            component.previous_resolved_cloud_values[
+                cloud_output_id
+            ] = resolved_cloud_information
 
         elif diff.action_type == Resource_Change_Type.CREATE:
-            component.resources.append(diff.new_resource)            
+            component.resources.append(diff.new_resource)
 
             cloud_output_id = self._get_cloud_output_id(diff.new_resource)
 
             component.cloud_output[cloud_output_id] = new_cloud_output
-            component.previous_resolved_cloud_values[cloud_output_id] = resolved_cloud_information
+            component.previous_resolved_cloud_values[
+                cloud_output_id
+            ] = resolved_cloud_information
 
         # recompute hash
         component.hash = _compute_component_hash(component)
@@ -939,7 +974,7 @@ def _compute_component_hash(component: ComponentModel) -> str:
         hash (str): identity hash for the component
     """
     if component.resources:
-        
+
         resources = [x for x in component.resources]
         resources.sort(key=lambda x: x.hash)
 
@@ -979,7 +1014,6 @@ def _create_resource_diffs(
     else:
         old_hash_to_resource = {}
         old_name_to_resource = {}
-
 
     rv = []
     for resource in new_resources:
@@ -1032,7 +1066,7 @@ def _create_resource_diffs(
             not resource.hash in old_hash_to_resource
             and not resource.name in old_name_to_resource
         ):
-            
+
             rv.append(
                 Resource_Difference(
                     **{
@@ -1046,7 +1080,7 @@ def _create_resource_diffs(
 
     if old_resource:
         for resource in old_resource:
-           
+
             rv.append(
                 Resource_Difference(
                     **{
@@ -1064,7 +1098,7 @@ def _create_resource_diffs(
 def _create_reference_diffs(
     new_references: List[ResourceReferenceModel],
     old_references: List[ResourceReferenceModel],
-    originating_component_name: str, 
+    originating_component_name: str,
 ) -> List[Resource_Reference_Difference]:
 
     if old_references:
@@ -1085,15 +1119,19 @@ def _create_reference_diffs(
         else:
             rv.append(
                 Resource_Reference_Difference(
-                    Resource_Reference_Change_Type.CREATE, originating_component_name, reference
+                    Resource_Reference_Change_Type.CREATE,
+                    originating_component_name,
+                    reference,
                 )
             )
 
     for old_reference in old_references:
-        
+
         rv.append(
             Resource_Reference_Difference(
-                Resource_Reference_Change_Type.DELETE, originating_component_name, old_reference
+                Resource_Reference_Change_Type.DELETE,
+                originating_component_name,
+                old_reference,
             )
         )
 
@@ -1105,7 +1143,7 @@ def _create_differences(
 ) -> Tuple[
     List[Component_Difference],
     List[Resource_Difference],
-    List[Resource_Reference_Difference]
+    List[Resource_Reference_Difference],
 ]:
 
     component_diffs = []
@@ -1131,7 +1169,7 @@ def _create_differences(
                 and not component.name in previous_name_to_component
             ):
                 # Create component and all resources and all references
-            
+
                 component_diffs.append(
                     Component_Difference(
                         Component_Change_Type.CREATE, new_name=component.name
@@ -1143,7 +1181,9 @@ def _create_differences(
                 )
                 resource_diffs.extend(tmp_resource_diff)
 
-                tmp_reference_diff = _create_reference_diffs(component.references, [], component.name)
+                tmp_reference_diff = _create_reference_diffs(
+                    component.references, [], component.name
+                )
                 reference_diffs.extend(tmp_reference_diff)
 
             elif (
@@ -1251,7 +1291,9 @@ def _create_differences(
         )
         resource_diffs.extend(tmp_resource_diff)
 
-        tmp_reference_diff = _create_reference_diffs([], removed_component.references, removed_component.name)
+        tmp_reference_diff = _create_reference_diffs(
+            [], removed_component.references, removed_component.name
+        )
         reference_diffs.extend(tmp_reference_diff)
 
     return component_diffs, resource_diffs, reference_diffs

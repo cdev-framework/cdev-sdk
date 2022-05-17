@@ -5,9 +5,19 @@ from enum import Enum
 from typing import Any, Dict, FrozenSet, List, Optional
 
 from core.constructs.models import ImmutableModel
-from core.constructs.cloud_output import Cloud_Output_Mapping, Cloud_Output_Sequence, Cloud_Output_Str, OutputType
+from core.constructs.cloud_output import (
+    Cloud_Output_Mapping,
+    Cloud_Output_Sequence,
+    Cloud_Output_Str,
+    OutputType,
+)
 
-from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
+from core.constructs.resource import (
+    Resource,
+    ResourceModel,
+    update_hash,
+    ResourceOutputs,
+)
 from core.constructs.types import cdev_str_model
 from core.utils import hasher
 
@@ -20,22 +30,24 @@ RUUID = "cdev::simple::api"
 ##### Authorizer
 ########################
 
+
 class authorizer_model(ImmutableModel):
     """Model representing JWT authorizer information"""
+
     name: str
     issuer_url: str
     audience: str
 
 
-class Authorizer():
+class Authorizer:
     def __init__(self, name: str, issuer_url: str, audience: str) -> None:
         """JWT authorizer information.
 
-        Deployed Apis can validates the JWTs that clients submit with API requests to allow or deny 
+        Deployed Apis can validates the JWTs that clients submit with API requests to allow or deny
         requests based on token validation, and optionally, scopes in the token. You can provide authorization
-        from OpenID Connect (OIDC) and OAuth 2.0 frameworks. 
+        from OpenID Connect (OIDC) and OAuth 2.0 frameworks.
 
-        For examples on how to integrate with service like Auth0 visit our 
+        For examples on how to integrate with service like Auth0 visit our
         <a href="/docs/examples/user-authentication"> documentation </a>.
 
 
@@ -48,7 +60,6 @@ class Authorizer():
         self.issuer_url = issuer_url
         self.audience = audience
 
-
     def render(self) -> authorizer_model:
         return authorizer_model(
             name=self.name,
@@ -57,19 +68,15 @@ class Authorizer():
         )
 
     def hash(self) -> str:
-        return hasher.hash_list([
-            self.name,
-            self.issuer_url,
-            self.audience
-        ])
-
+        return hasher.hash_list([self.name, self.issuer_url, self.audience])
 
 
 ########################
 ##### Route
 ########################
-class route_verb(str,Enum):
+class route_verb(str, Enum):
     """Route Verbs"""
+
     GET = "GET"
     PUT = "PUT"
     POST = "POST"
@@ -79,6 +86,7 @@ class route_verb(str,Enum):
 
 class route_model(ImmutableModel):
     """Model to represent a route of an API"""
+
     path: str
     verb: str
     additional_scopes: Optional[FrozenSet[str]]
@@ -89,9 +97,16 @@ class route_model(ImmutableModel):
         super().__init__(**data)
 
 
-class Route():
-    def __init__(self, api_name: str, path: str, verb: route_verb, authorizer_name: str = None, additional_scopes: List[str] = []) -> None:
-        """Construct for representing a route that is apart of an HTTP API 
+class Route:
+    def __init__(
+        self,
+        api_name: str,
+        path: str,
+        verb: route_verb,
+        authorizer_name: str = None,
+        additional_scopes: List[str] = [],
+    ) -> None:
+        """Construct for representing a route that is apart of an HTTP API
 
         Args:
             api_name (str): Cdev name of the API this route is apart of
@@ -105,14 +120,16 @@ class Route():
         self.verb = verb
         self.authorizer_name = authorizer_name
         self.additional_scopes = additional_scopes
-       
+
     def hash(self) -> str:
-        return hasher.hash_list([
-            self.path,
-            self.verb,
-            hasher.hash_list(self.additional_scopes),
-            self.authorizer_name,
-        ])
+        return hasher.hash_list(
+            [
+                self.path,
+                self.verb,
+                hasher.hash_list(self.additional_scopes),
+                self.authorizer_name,
+            ]
+        )
 
     def render(self) -> route_model:
         return route_model(
@@ -122,8 +139,8 @@ class Route():
             authorizer_name=self.authorizer_name,
         )
 
-    def event(self, response_type: Optional[str]="") -> 'RouteEvent':
-        """Generate an Event Construct that other resources can bind to. 
+    def event(self, response_type: Optional[str] = "") -> "RouteEvent":
+        """Generate an Event Construct that other resources can bind to.
 
         Returns:
             `RouteEvent`
@@ -132,11 +149,13 @@ class Route():
             resource_name=self.api_name,
             path=self.path,
             verb=self.verb,
-            response_type=response_type
+            response_type=response_type,
         )
+
 
 class route_event_model(events.event_model):
     """Model to represent an event for a given route"""
+
     path: str
     verb: route_verb
     api_id: cdev_str_model
@@ -148,10 +167,16 @@ class route_event_model(events.event_model):
         super().__init__(**data)
 
 
-class RouteEvent():
+class RouteEvent:
     """Construct for representing a route that is apart of an HTTP API."""
 
-    def __init__(self, resource_name: str, path: str, verb: route_verb, response_type: Optional[str]="") -> None:
+    def __init__(
+        self,
+        resource_name: str,
+        path: str,
+        verb: route_verb,
+        response_type: Optional[str] = "",
+    ) -> None:
         """
         Args:
             resource_name (str): Cdev Name of the API this event is generated from
@@ -164,23 +189,22 @@ class RouteEvent():
         self.path = path
         self.verb = verb
         self.api_id = Cloud_Output_Str(
-                name=resource_name, 
-                ruuid=RUUID, 
-                key='cloud_id',
-                type=OutputType.RESOURCE 
-            )
+            name=resource_name, ruuid=RUUID, key="cloud_id", type=OutputType.RESOURCE
+        )
         self.route_id = Cloud_Output_Mapping[Cloud_Output_Str](
-                name=resource_name, 
-                ruuid=RUUID, 
-                key='endpoints',
-                type=OutputType.RESOURCE,
-                _member_class=Cloud_Output_Str
-            )[f'{self.path} {self.verb}']
+            name=resource_name,
+            ruuid=RUUID,
+            key="endpoints",
+            type=OutputType.RESOURCE,
+            _member_class=Cloud_Output_Str,
+        )[f"{self.path} {self.verb}"]
 
         self.response_type = response_type
 
     def hash(self) -> str:
-        return hasher.hash_list([self.resource_name, self.path, self.verb, self.response_type])
+        return hasher.hash_list(
+            [self.resource_name, self.path, self.verb, self.response_type]
+        )
 
     def render(self) -> route_event_model:
         return route_event_model(
@@ -191,17 +215,19 @@ class RouteEvent():
             verb=self.verb,
             api_id=self.api_id.render(),
             route_id=self.route_id.render(),
-            response_type=self.response_type
+            response_type=self.response_type,
         )
+
 
 ########################
 ##### Output
 ########################
 class ApiOutput(ResourceOutputs):
     """Container object for the returned values from the cloud after an API has been deployed."""
+
     def __init__(self, name: str) -> None:
         super().__init__(name, RUUID)
-    
+
     @property
     def endpoint(self) -> Cloud_Output_Str:
         """The base url for the created API
@@ -210,23 +236,19 @@ class ApiOutput(ResourceOutputs):
             `core.constructs.cloud_output.Cloud_Output_Str`
         """
         return Cloud_Output_Str(
-            name=self._name,
-            ruuid=RUUID,
-            key='endpoint',
-            type=self.OUTPUT_TYPE
+            name=self._name, ruuid=RUUID, key="endpoint", type=self.OUTPUT_TYPE
         )
 
     @endpoint.setter
     def endpoint(self, value: Any):
         raise Exception
 
-
     @property
     def endpoints(self) -> Cloud_Output_Mapping[Cloud_Output_Str]:
         """The created routes for the API.
 
-        Values are stored as a mapping of the (path,verb) to cloud route_id.  
-        
+        Values are stored as a mapping of the (path,verb) to cloud route_id.
+
         ex:
         ```
             {
@@ -240,9 +262,9 @@ class ApiOutput(ResourceOutputs):
         return Cloud_Output_Mapping[Cloud_Output_Str](
             name=self._name,
             ruuid=RUUID,
-            key='endpoints',
+            key="endpoints",
             type=self.OUTPUT_TYPE,
-            _member_class=Cloud_Output_Str
+            _member_class=Cloud_Output_Str,
         )
 
     @endpoints.setter
@@ -255,7 +277,7 @@ class ApiOutput(ResourceOutputs):
 ########################
 class simple_api_model(ResourceModel):
     """Model for representing a desired HTTP API"""
-    
+
     routes: FrozenSet[route_model]
     allow_cors: bool
     authorizers: Optional[FrozenSet[authorizer_model]]
@@ -266,21 +288,25 @@ class simple_api_model(ResourceModel):
 
 
 class Api(Resource):
-
     @update_hash
     def __init__(
-        self, cdev_name: str, allow_cors: bool = True, authorizers: List[Authorizer] = [], default_authorizer: str= None, nonce: str = "",
+        self,
+        cdev_name: str,
+        allow_cors: bool = True,
+        authorizers: List[Authorizer] = [],
+        default_authorizer: str = None,
+        nonce: str = "",
     ):
         """Create a HTTP API.
 
         Args:
             cdev_name (str): Name for the resource.
             allow_cors (bool): Allow Cross Origin Resource Sharing (CORS) on the api.
-            authorizers (List[Authorizer]): List of JWT Authorizers for the api. 
-            default_authorizer (str): The name of an authorizer to add as the default to all routes. 
+            authorizers (List[Authorizer]): List of JWT Authorizers for the api.
+            default_authorizer (str): The name of an authorizer to add as the default to all routes.
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
 
-        With an HTTP API, you can create different routes that represent different requests to your backend service. Use the 
+        With an HTTP API, you can create different routes that represent different requests to your backend service. Use the
         `route` method to create these routes then attach them to other resource to handle the requests.
 
         HTTP Api's can take an authorizer to support JWT authorization for the Api. You can provide a default authorizer to the Api to apply
@@ -296,7 +322,7 @@ class Api(Resource):
         """
 
         super().__init__(cdev_name, RUUID, nonce)
-        
+
         self._allow_cors = allow_cors
         self._routes: List[Route] = []
 
@@ -305,7 +331,6 @@ class Api(Resource):
         self._default_authorizer_name = default_authorizer
 
         self._output = ApiOutput(cdev_name)
-
 
     @property
     def output(self) -> ApiOutput:
@@ -326,15 +351,21 @@ class Api(Resource):
         self._allow_cors = value
 
     @update_hash
-    def route(self, path: str, verb: route_verb, additional_scopes: List[str] = [], override_authorizer_name: str = None) -> Route:
+    def route(
+        self,
+        path: str,
+        verb: route_verb,
+        additional_scopes: List[str] = [],
+        override_authorizer_name: str = None,
+    ) -> Route:
         """Create a route for the API.
 
         Args:
             path (str): The http path of the route created
             verb (`route_verb`): verb for the path
-            override_authorizer_name (str): The authorizer for this route. Overriding the default authorizer for the Api. 
+            override_authorizer_name (str): The authorizer for this route. Overriding the default authorizer for the Api.
         Returns:
-            `Route` 
+            `Route`
 
         Generate a `Route` that can be used as a trigger for other resources.
 
@@ -343,16 +374,13 @@ class Api(Resource):
         ```
         """
 
-        authorizer_name = override_authorizer_name if override_authorizer_name else self._default_authorizer_name
-    
-        route = Route(
-            self.name,
-            path, 
-            verb,
-            authorizer_name,
-            additional_scopes
-            
+        authorizer_name = (
+            override_authorizer_name
+            if override_authorizer_name
+            else self._default_authorizer_name
         )
+
+        route = Route(self.name, path, verb, authorizer_name, additional_scopes)
 
         self._routes.append(route)
 
@@ -362,21 +390,21 @@ class Api(Resource):
         self._hash = hasher.hash_list(
             [
                 hasher.hash_list([x.hash() for x in self._routes]),
-                self.allow_cors, 
+                self.allow_cors,
                 self.nonce,
                 self._default_authorizer_name,
-                hasher.hash_list([x.hash() for x in self._authorizers])
+                hasher.hash_list([x.hash() for x in self._authorizers]),
             ]
         )
 
     def render(self) -> simple_api_model:
-        routes =  frozenset(self._routes)
-       
+        routes = frozenset(self._routes)
+
         return simple_api_model(
             ruuid=self.ruuid,
             name=self.name,
             hash=self.hash,
             routes=frozenset([x.render() for x in routes]),
             allow_cors=self.allow_cors,
-            authorizers=frozenset([x.render() for x in self._authorizers])
+            authorizers=frozenset([x.render() for x in self._authorizers]),
         )

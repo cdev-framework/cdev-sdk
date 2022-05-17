@@ -17,7 +17,7 @@ from core.default.resources.simple.xlambda import (
     DependencyLayer,
     SimpleFunction,
     simple_function_model,
-    SimpleFunctionConfiguration
+    SimpleFunctionConfiguration,
 )
 
 from core.utils import hasher, module_loader, paths
@@ -27,15 +27,16 @@ from serverless_parser import parser as serverless_parser
 
 
 from . import writer
-from . import package_mananger 
+from . import package_mananger
 
 
 LAMBDA_LAYER_RUUID = "cdev::simple::lambda_layer"
 
+
 def parse_folder(
-    folder_path: DirectoryPath, 
+    folder_path: DirectoryPath,
 ) -> Tuple[List[ResourceModel], List[ResourceReferenceModel]]:
-    """Search through the given folder looking for resource and references in Python files. 
+    """Search through the given folder looking for resource and references in Python files.
 
     Args:
         folder_path (DirectoryPath): The directory to parse
@@ -45,12 +46,12 @@ def parse_folder(
             List[ResourceModel],
             List[ResourceReferenceModel]
         ]
-    
-    Specifically, it loads all available python files and uses the loaded module to determine 
+
+    Specifically, it loads all available python files and uses the loaded module to determine
     the resources defined in the files. Any resource or reference defined in the global
     context of the file will be detected.
-    
-    Most resources are passed back as is, but there are optimizations performed on the `simple functions`. 
+
+    Most resources are passed back as is, but there are optimizations performed on the `simple functions`.
     Namely, Serverless functions are parsed to optimized the actual deployed artifact using the
     cparser library and then have their dependencies managed also.
     """
@@ -69,7 +70,6 @@ def parse_folder(
     resources_rv = SortedKeyList(key=lambda x: x.hash)
     references_rv = SortedKeyList(key=lambda x: x.hash)
 
-
     for pf in python_files:
         found_resources, found_references = _find_resources_information_from_file(
             os.path.join(folder_path, pf)
@@ -81,7 +81,7 @@ def parse_folder(
         if found_references:
             references_rv.update(found_references)
 
-    # Any duplicate layers can be removed 
+    # Any duplicate layers can be removed
     cleaned_resources_rv = _deduplicate_resources_list(resources_rv)
 
     return cleaned_resources_rv, references_rv
@@ -96,19 +96,24 @@ def _deduplicate_resources_list(resources: List[Resource]) -> List[Resource]:
     Returns:
         resource (List[Resources]): List with duplicate resources removed
 
-    Since multiple functions can produce the same Layer resource by referencing the same 
+    Since multiple functions can produce the same Layer resource by referencing the same
     3rd party resource, we need to deduplicate the layers from the list.
     """
     remove_indexes = set()
     for i in range(len(resources)):
-        
-        if i+1 >= len(resources):
+
+        if i + 1 >= len(resources):
             break
 
-        if (resources[i].hash == resources[i+1].hash) and (resources[i].ruuid == resources[i+1].ruuid) and (resources[i].name == resources[i+1].name):
+        if (
+            (resources[i].hash == resources[i + 1].hash)
+            and (resources[i].ruuid == resources[i + 1].ruuid)
+            and (resources[i].name == resources[i + 1].name)
+        ):
             remove_indexes.add(i)
-            
-    return [x for i,x in enumerate(resources) if not i in remove_indexes]
+
+    return [x for i, x in enumerate(resources) if not i in remove_indexes]
+
 
 def _get_module_name_from_path(fp: FilePath):
     """Convert a full file path of a python path into a importable module name
@@ -117,18 +122,18 @@ def _get_module_name_from_path(fp: FilePath):
         fp (FilePath): path to file
 
     Returns:
-        str: The importable python module name 
+        str: The importable python module name
 
 
     All module names will end up being relative to the workspace path. Note that this means
     the `Workspace` base path should be on the `Python Path`. This usually happens by default
-    because the `Workspace` starts from the cwd. 
+    because the `Workspace` starts from the cwd.
     """
     relative_to_project_path = paths.get_relative_to_workspace_path(fp)
 
     relative_to_project_path_parts = relative_to_project_path.split("/")
 
-    # If the last part of the file is __init__.pt then python will import it when the 
+    # If the last part of the file is __init__.pt then python will import it when the
     # rest of the path is given without the last part
     if relative_to_project_path_parts[-1] == "__init__.py":
         relative_to_project_path_parts.pop()
@@ -160,7 +165,7 @@ def _find_resources_information_from_file(
     if not os.path.isfile(fp):
         raise Exception
 
-    if not fp[-3:] == '.py':
+    if not fp[-3:] == ".py":
         raise Exception
 
     mod_name = _get_module_name_from_path(fp)
@@ -174,7 +179,6 @@ def _find_resources_information_from_file(
     functions_to_parse: List[str] = []
     function_name_to_info: Dict[str, simple_function_model] = {}
 
-
     for i in dir(mod):
         obj = getattr(mod, i)
 
@@ -186,7 +190,7 @@ def _find_resources_information_from_file(
                 # of that will be the returned resource
                 functions_to_parse.append(obj.configuration.handler)
                 function_name_to_info[obj.configuration.handler] = obj
-                
+
             else:
                 resource_rv.append(obj.render())
 
@@ -196,17 +200,13 @@ def _find_resources_information_from_file(
     if functions_to_parse:
         log.debug("Parsing functions (%s) from %s", functions_to_parse, fp)
         parsed_function_info, parsed_dependency_info = _parse_serverless_functions(
-            fp, 
-            functions_to_parse,
-            handler_name_to_info=function_name_to_info
+            fp, functions_to_parse, handler_name_to_info=function_name_to_info
         )
 
         resource_rv.extend(parsed_function_info)
         resource_rv.extend(parsed_dependency_info)
-        
 
     return resource_rv, reference_rv
-
 
 
 def _parse_serverless_functions(
@@ -221,7 +221,7 @@ def _parse_serverless_functions(
     Args:
         filepath (FilePath): The original file
         functions_names_to_parse (List[str]): functions to parse
-        handler_name_to_info (Dict[str, SimpleFunction]): dict of additional information 
+        handler_name_to_info (Dict[str, SimpleFunction]): dict of additional information
         manual_includes (Dict, optional): Dict of information about extra lines to include. Defaults to {}.
         global_includes (List, optional): List of global lines to include. Defaults to [].
 
@@ -238,7 +238,7 @@ def _parse_serverless_functions(
         filepath, include_functions=functions_names_to_parse, remove_top_annotation=True
     )
 
-    # Base path that the all the archives will go 
+    # Base path that the all the archives will go
     base_archive_path = os.path.join(
         Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION,
         Workspace.instance().get_resource_state_uuid(),
@@ -248,7 +248,7 @@ def _parse_serverless_functions(
         os.mkdir(base_archive_path)
 
     if Workspace.instance().settings.USE_DOCKER:
-        # IF the user has denoted that they want to use Docker to build dependencies for 
+        # IF the user has denoted that they want to use Docker to build dependencies for
         # other architectures, then make sure a downloads cache is set up
         download_cache = os.path.join(
             Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION,
@@ -260,7 +260,7 @@ def _parse_serverless_functions(
 
     else:
         download_cache = None
-    
+
     rv = []
     seen_layers = {}
 
@@ -268,10 +268,17 @@ def _parse_serverless_functions(
 
         previous_info = handler_name_to_info.get(parsed_function.name)
         needed_module_information = package_mananger.get_top_level_module_info(
-            parsed_function.imported_packages, filepath, previous_info.platform, download_cache
+            parsed_function.imported_packages,
+            filepath,
+            previous_info.platform,
+            download_cache,
         )
 
-        log.debug("Needed modules (%s) for %s", needed_module_information, parsed_function.name)
+        log.debug(
+            "Needed modules (%s) for %s",
+            needed_module_information,
+            parsed_function.name,
+        )
 
         (
             handler_archive_path,
@@ -285,25 +292,24 @@ def _parse_serverless_functions(
             base_archive_path,
             pkgs=needed_module_information,
         )
-        
-        
-        # Update the seen packages 
+
+        # Update the seen packages
         if dependencies_info:
             # Helps return only one copy of each layer for the file
             # change the path of the artifact to a relative path to the workspace
             for dependency in dependencies_info:
-                dependency.artifact_path = paths.get_relative_to_workspace_path(dependency.artifact_path)
+                dependency.artifact_path = paths.get_relative_to_workspace_path(
+                    dependency.artifact_path
+                )
 
-            seen_layers.update(
-              {x.hash:x.render() for x in dependencies_info}
-            )
+            seen_layers.update({x.hash: x.render() for x in dependencies_info})
 
         handler_path = base_handler_path + "." + parsed_function.name
 
         new_configuration = SimpleFunctionConfiguration(
             handler=handler_path,
             description=previous_info.configuration.description,
-            environment_variables=previous_info.configuration.environment_variables
+            environment_variables=previous_info.configuration.environment_variables,
         )
 
         new_function = SimpleFunction(
@@ -316,10 +322,9 @@ def _parse_serverless_functions(
             src_code_hash=handler_archive_hash,
             nonce=previous_info.nonce,
             preserve_function=previous_info._preserved_function,
-            platform=previous_info.platform
+            platform=previous_info.platform,
         )
 
-    
         rv.append(new_function.render())
 
-    return rv, [layer for _,layer in seen_layers.items()]
+    return rv, [layer for _, layer in seen_layers.items()]

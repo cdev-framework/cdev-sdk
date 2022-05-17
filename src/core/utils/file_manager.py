@@ -13,21 +13,23 @@ from typing import Dict, List, Tuple
 from core.constructs.cloud_output import cloud_output_dynamic_model
 
 from core.constructs.resource_state import Resource_State
-from core.utils.exceptions import Cdev_Error  
+from core.utils.exceptions import Cdev_Error
 from ..constructs.models import frozendict
+
 
 class CustomEncoder(json.JSONEncoder):
     """Custom JSON encoder for handling immutable data
 
-    Since we want to store state as immutable structures to make direct comparisons easier within the framework, 
+    Since we want to store state as immutable structures to make direct comparisons easier within the framework,
     we need to provide this encoder to denote how we want those structures stored as json. Using this encoder means
     that there is some information loss when making the obj a json (i.e. cant tell the difference between a frozenset vs
     list), therefor when loading the json back into the system, a custom utility should be used that reintroduces the
-    immutable structures back into the data. 
+    immutable structures back into the data.
 
     Args:
         json ([type]): [description]
     """
+
     def default(self, obj):
         if isinstance(obj, set):
             return list(obj)
@@ -72,7 +74,9 @@ def safe_json_write(obj: Dict, fp: FilePath):
     try:
         shutil.copyfile(tmp_fp, fp)
     except Exception as e:
-        raise Cdev_Error(f"Could not copy tmp file into actual location; {tmp_fp} -> {fp}", e)
+        raise Cdev_Error(
+            f"Could not copy tmp file into actual location; {tmp_fp} -> {fp}", e
+        )
 
     os.remove(tmp_fp)
 
@@ -92,7 +96,7 @@ def load_resource_state(fp: FilePath) -> Resource_State:
 
     for the `cloud_output`, all the structures in the list container should be loaded as immutable objects
     because they are `cloud_output`models`. They have a special structure that needs to be preserved so that
-    the exectution order of the operations are preserved. 
+    the exectution order of the operations are preserved.
 
     Args:
         fp (FilePath): Path to the file storing the resource state
@@ -105,40 +109,56 @@ def load_resource_state(fp: FilePath) -> Resource_State:
     """
 
     if not os.path.isfile(fp):
-        raise Cdev_Error(f"Trying to load resource state from {fp} but it does not exist")
+        raise Cdev_Error(
+            f"Trying to load resource state from {fp} but it does not exist"
+        )
 
     try:
         with open(fp, "r") as fh:
             _mutable_json = json.load(fh)
-    
-    except Exception as e:
-        raise Cdev_Error(f"Trying to load resource state from {fp} but could not load the file as a json")
 
-    for component in _mutable_json['components']:
-        # The actual resource and reference models need to be immutable data structures so that they can have a 
+    except Exception as e:
+        raise Cdev_Error(
+            f"Trying to load resource state from {fp} but could not load the file as a json"
+        )
+
+    for component in _mutable_json["components"]:
+        # The actual resource and reference models need to be immutable data structures so that they can have a
         # __hash__ value.
 
         try:
-            if component.get('resources'):
-                component['resources'] = [_recursive_make_immutable(x) for x in component.get('resources')]
+            if component.get("resources"):
+                component["resources"] = [
+                    _recursive_make_immutable(x) for x in component.get("resources")
+                ]
 
-            if component.get('references'):
-                component['references'] = [_recursive_make_immutable(x) for x in component.get('references')]
+            if component.get("references"):
+                component["references"] = [
+                    _recursive_make_immutable(x) for x in component.get("references")
+                ]
 
-            if component.get('cloud_output'):
-                component['cloud_output'] = _recursive_make_immutable(component.get('cloud_output'))
+            if component.get("cloud_output"):
+                component["cloud_output"] = _recursive_make_immutable(
+                    component.get("cloud_output")
+                )
 
         except Exception as e:
-            raise Cdev_Error(f"Trying to load resource state from {fp} but could not make dict immutable", e)
-
+            raise Cdev_Error(
+                f"Trying to load resource state from {fp} but could not make dict immutable",
+                e,
+            )
 
     try:
         rv = Resource_State(**_mutable_json)
     except Exception as e:
-        raise Cdev_Error(f"Trying to load resource state from {fp} but could not serialized Dict into Resource_State", e)
+        raise Cdev_Error(
+            f"Trying to load resource state from {fp} but could not serialized Dict into Resource_State",
+            e,
+        )
 
     return rv
-    
+
+
 def _recursive_make_immutable(o):
     """Recursively transform an object into an immutable form
 
@@ -147,8 +167,8 @@ def _recursive_make_immutable(o):
     and therefor can be used to directly compare against eachother and be used as __hash__ able objects in
     things like dicts and `networkx` DAGs.
 
-    Note the special case of handling Cloud Output Dict. These are identified as a dict with the key `id` that has 
-    a value `cdev_cloud_output`. 
+    Note the special case of handling Cloud Output Dict. These are identified as a dict with the key `id` that has
+    a value `cdev_cloud_output`.
 
     Args:
         o (Any): original object
@@ -161,31 +181,32 @@ def _recursive_make_immutable(o):
     # we do not much error handling and let an error in the structure of the data be passed up all the
     # way to `load_resource_state`
 
-
     if isinstance(o, list):
         return frozenset([_recursive_make_immutable(x) for x in o])
     elif isinstance(o, dict):
 
         if "id" in o:
-            if o.get('id') == 'cdev_cloud_output':
-                
+            if o.get("id") == "cdev_cloud_output":
+
                 tmp = {k: _recursive_make_immutable(v) for k, v in o.items()}
-                if not o.get('output_operations'):
+                if not o.get("output_operations"):
                     return frozendict(tmp)
 
-                correctly_loaded_output_operations = _load_cloud_output_operations(o.get('output_operations'))
+                correctly_loaded_output_operations = _load_cloud_output_operations(
+                    o.get("output_operations")
+                )
 
-                tmp['output_operations'] = correctly_loaded_output_operations
-                
+                tmp["output_operations"] = correctly_loaded_output_operations
 
                 return frozendict(tmp)
-
 
         return frozendict({k: _recursive_make_immutable(v) for k, v in o.items()})
     return o
 
 
-def _load_cloud_output_operations(cloud_output_operations: List[List]) -> Tuple[Tuple,...]:
+def _load_cloud_output_operations(
+    cloud_output_operations: List[List],
+) -> Tuple[Tuple, ...]:
     """Load data in structure to conform to being a `cloud_output_operation`
 
     Note this is designed to be specifically used within the loading of a resource state. Therefor,
@@ -202,9 +223,7 @@ def _load_cloud_output_operations(cloud_output_operations: List[List]) -> Tuple[
     # Note this is designed to be specifically used within the loading of a resource state. Therefor,
     # we do not much error handling and let an error in the structure of the data be passed up all the
     # way to `load_resource_state`
-    
+
     return tuple(
-        [
-            (x[0], tuple(x[1]), frozendict(x[2])) for x in cloud_output_operations
-        ]
+        [(x[0], tuple(x[1]), frozendict(x[2])) for x in cloud_output_operations]
     )

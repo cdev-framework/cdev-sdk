@@ -20,11 +20,11 @@ class event_model(ImmutableModel):
     granting_permission: Optional[Union[permission_model, permission_arn_model]]
 
 
-
-class Event():
-    
+class Event:
     def hash(self) -> str:
         raise NotImplementedError
 
-    def render(self,) -> event_model:
+    def render(
+        self,
+    ) -> event_model:
         raise NotImplementedError

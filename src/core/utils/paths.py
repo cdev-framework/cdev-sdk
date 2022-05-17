@@ -2,10 +2,10 @@
 
 
 To make projects work on multiple developers machines, it is important that paths that
-need to be stored in the state be written as relative paths. The relative paths can be 
+need to be stored in the state be written as relative paths. The relative paths can be
 started from two places: Workspace and Intermediate.
 
-The Workspace base is the base folder for all information that is unique to the current work 
+The Workspace base is the base folder for all information that is unique to the current work
 space. This will be default be the directory that a cli command is issued from. Changing
 this value should be done with caution and understanding of how to framework/cli bootstraps
 itself.
@@ -20,9 +20,9 @@ workspaces.
 
 
 
-TODO: Make a custom type that denotes a path is a relative path to the workspace. 
+TODO: Make a custom type that denotes a path is a relative path to the workspace.
 This could be a pydantic type that way the constraints are validated at runtime.
-This is a important part to improve the DX of the working with library. 
+This is a important part to improve the DX of the working with library.
 """
 
 import os
@@ -31,10 +31,11 @@ from pydantic.types import FilePath
 
 from core.constructs.workspace import Workspace
 
+
 def get_relative_to_workspace_path(fullpath: FilePath) -> str:
-    """Generate a relative path starting from the base path of the workspace. 
-    
-    Note that the given path must be a descendent of the workspace path. 
+    """Generate a relative path starting from the base path of the workspace.
+
+    Note that the given path must be a descendent of the workspace path.
 
     Args:
         fullpath (str): Path to convert to a relative path
@@ -49,7 +50,7 @@ def get_relative_to_workspace_path(fullpath: FilePath) -> str:
 
 def get_relative_to_intermediate_path(fullpath: str) -> str:
     """
-    Generate a relative path starting from the intermediate directory of the workspace. The given path must be a descendent of the intermediate directory. 
+    Generate a relative path starting from the intermediate directory of the workspace. The given path must be a descendent of the intermediate directory.
 
     Args:
         fullpath (str): Path to convert to a relative path
@@ -58,14 +59,12 @@ def get_relative_to_intermediate_path(fullpath: str) -> str:
         str: Relative to the intermediate path path
     """
     intermediate_path = Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION
-    return os.path.relpath(
-        fullpath, start=intermediate_path
-    )
+    return os.path.relpath(fullpath, start=intermediate_path)
 
 
 def get_full_path_from_workspace_base(relative_path: str) -> FilePath:
     """
-    Given a relative path from the workspace path, create the full absolute path on the current filesystem. 
+    Given a relative path from the workspace path, create the full absolute path on the current filesystem.
 
     Args:
         relative_path (str): Relative Path from the workspace path.
@@ -82,7 +81,7 @@ def get_full_path_from_workspace_base(relative_path: str) -> FilePath:
 
 def get_full_path_from_intermediate_base(relative_path: str) -> FilePath:
     """
-    Given a relative path from the intermediate folder, create the full absolute path on the current filesystem. 
+    Given a relative path from the intermediate folder, create the full absolute path on the current filesystem.
 
     Args:
         relative_path (str): Relative Path from the workspace path.
@@ -91,9 +90,7 @@ def get_full_path_from_intermediate_base(relative_path: str) -> FilePath:
         FilePath: Absolute path the file.
     """
     intermediate_path = Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION
-    return os.path.join(
-        intermediate_path, relative_path
-    )
+    return os.path.join(intermediate_path, relative_path)
 
 
 def is_in_workspace(full_path: str) -> bool:
@@ -106,9 +103,7 @@ def is_in_workspace(full_path: str) -> bool:
         bool: [description]
     """
     base_path = Workspace.instance().settings.BASE_PATH
-    return os.path.commonprefix(
-        [full_path, base_path]
-    ) == base_path
+    return os.path.commonprefix([full_path, base_path]) == base_path
 
 
 def is_in_intermediate(full_path: str) -> bool:
@@ -121,9 +116,7 @@ def is_in_intermediate(full_path: str) -> bool:
         bool: [description]
     """
     intermediate_path = Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION
-    return os.path.commonprefix(
-        [full_path, intermediate_path]
-    ) == intermediate_path
+    return os.path.commonprefix([full_path, intermediate_path]) == intermediate_path
 
 
 def get_workspace_path() -> DirectoryPath:
@@ -149,7 +142,7 @@ def get_intermediate_path() -> DirectoryPath:
 def create_path(startingpath, fullpath) -> DirectoryPath:
     """This functions takes a starting path and list of child dir and makes them all
 
-    
+
     Example
 
         create_path("./basedir", ["sub1", "sub2"])
@@ -160,7 +153,7 @@ def create_path(startingpath, fullpath) -> DirectoryPath:
 
     Returns:
         DirectoryPath: the final path
-    
+
     """
 
     if not os.path.isdir(startingpath):

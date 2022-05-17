@@ -2,12 +2,12 @@
 
 One of the goals of the Core Framework is to provide flexibility such that end users can easily
 create custom functionality for their projects. One way of providing this flexibility, is to provide
-an easy interface for executing code from within the context of the framework from the CLI. This 
-process is heavily modeled and inspired by the `Django Command Framework` 
+an easy interface for executing code from within the context of the framework from the CLI. This
+process is heavily modeled and inspired by the `Django Command Framework`
 (https://github.com/django/django/blob/b0ed619303d2fb723330ca9efa3acf23d49f1d19/django/core/management/base.py).
 
 The main primitive is the `BaseCommand` class. By deriving from this class, developers can create code
-that is easily accessible and discoverable from the command line. To see how these class are discovered 
+that is easily accessible and discoverable from the command line. To see how these class are discovered
 and execute see our more in depth documentation on the command system at <link>
 
 """
@@ -109,7 +109,7 @@ class OutputWrapper(TextIOBase):
 
 class ConsoleOutputWrapper(TextIOBase):
     """
-    Wrapper around a `rich` console. 
+    Wrapper around a `rich` console.
     """
 
     @property
@@ -137,7 +137,7 @@ class ConsoleOutputWrapper(TextIOBase):
     def isatty(self):
         return self._out.is_terminal
 
-    def write(self, msg: str ="", style_func=None, ending=None):
+    def write(self, msg: str = "", style_func=None, ending=None):
         ending = self.ending if ending is None else ending
         if ending and not msg.endswith(ending):
             msg += ending
@@ -145,11 +145,8 @@ class ConsoleOutputWrapper(TextIOBase):
         self._out.print(style_func(msg))
 
 
-
 class BaseCommand:
-    """Base Class for a user defined command
-    
-    """
+    """Base Class for a user defined command"""
 
     # Help message for this command
     help = ""
@@ -160,9 +157,19 @@ class BaseCommand:
     # If the command should look to substitute args with cloud output values
     substitute_from_output = True
 
-    def __init__(self, stdout: Console = None, stderr: Console = None, no_color=False, force_color=False):
-        self.stdout = ConsoleOutputWrapper(stdout) if stdout else OutputWrapper(sys.stdout)
-        self.stderr = ConsoleOutputWrapper(stderr) if stderr else OutputWrapper(sys.stderr)
+    def __init__(
+        self,
+        stdout: Console = None,
+        stderr: Console = None,
+        no_color=False,
+        force_color=False,
+    ):
+        self.stdout = (
+            ConsoleOutputWrapper(stdout) if stdout else OutputWrapper(sys.stdout)
+        )
+        self.stderr = (
+            ConsoleOutputWrapper(stderr) if stderr else OutputWrapper(sys.stderr)
+        )
 
     def create_arg_parser(self, prog_name, subcommand, **kwargs) -> ArgumentParser:
         parser = ArgumentParser(
@@ -177,9 +184,7 @@ class BaseCommand:
         return parser
 
     def add_arguments(self, parser: ArgumentParser):
-        """Add the cli arguments for the command
-        
-        """
+        """Add the cli arguments for the command"""
         pass
 
     def run_from_command_line(self, argv):
@@ -228,9 +233,19 @@ class BaseCommandContainer:
     # Help message for this container
     help = ""
 
-    def __init__(self, stdout: Console = None, stderr: Console = None, no_color=False, force_color=False):
-        self.stdout = ConsoleOutputWrapper(stdout) if stdout else OutputWrapper(sys.stdout)
-        self.stderr = ConsoleOutputWrapper(stderr) if stderr else OutputWrapper(sys.stderr)
+    def __init__(
+        self,
+        stdout: Console = None,
+        stderr: Console = None,
+        no_color=False,
+        force_color=False,
+    ):
+        self.stdout = (
+            ConsoleOutputWrapper(stdout) if stdout else OutputWrapper(sys.stdout)
+        )
+        self.stderr = (
+            ConsoleOutputWrapper(stderr) if stderr else OutputWrapper(sys.stderr)
+        )
 
     def display_help_message(self) -> str:
         self.stdout.write(self.help)

@@ -18,18 +18,20 @@ from . import topic_deployer
 ##############################################
 ###### API GATEWAY ROUTE EVENTS
 ##############################################
-def _handle_adding_api_event(event: simple_api.route_event_model, cloud_function_id: str) -> Dict:
+def _handle_adding_api_event(
+    event: simple_api.route_event_model, cloud_function_id: str
+) -> Dict:
     # Needed info
     #   - Event model
     #   - originating resource output
     #   - responding resource output
-    
+
     # Returns:
     #   - Info about the deployed stuff
 
     api_id = event.api_id
     route_id = event.route_id
-    
+
     args = {
         "IntegrationType": "AWS_PROXY",
         "IntegrationUri": cloud_function_id,
@@ -39,18 +41,17 @@ def _handle_adding_api_event(event: simple_api.route_event_model, cloud_function
     }
 
     if event.response_type:
-        args.update({
-            "ResponseParameters": {
-                "200": {
-                    "overwrite:header.Content-Type": event.response_type
+        args.update(
+            {
+                "ResponseParameters": {
+                    "200": {"overwrite:header.Content-Type": event.response_type}
                 }
             }
-        })
-    
+        )
+
     integration_rv = aws_client.run_client_function(
         "apigatewayv2", "create_integration", args
     )
-
 
     # Now that the integration has been created we need to attach it to the apigateway route
     update_info = {
@@ -74,15 +75,13 @@ def _handle_adding_api_event(event: simple_api.route_event_model, cloud_function
         "SourceArn": f"arn:aws:execute-api:{aws_region}:{aws_account}:{api_id}/*/{event.verb}{event.path}",
     }
 
-    aws_client.run_client_function(
-        "lambda", "add_permission", permission_model_args
-    )
+    aws_client.run_client_function("lambda", "add_permission", permission_model_args)
 
     return {
         "integration_id": integration_rv.get("IntegrationId"),
         "permission_stmt_id": stmt_id,
         "api_id": api_id,
-        "route_id": route_id
+        "route_id": route_id,
     }
 
 
@@ -90,7 +89,7 @@ def _handle_deleting_api_event(event: dict, function_cloud_id: str) -> bool:
     cloud_id = function_cloud_id
     integration_id = event.get("integration_id")
     stmt_id = event.get("permission_stmt_id")
-    
+
     api_id = event.get("api_id")
     route_id = event.get("route_id")
 
@@ -98,45 +97,37 @@ def _handle_deleting_api_event(event: dict, function_cloud_id: str) -> bool:
     aws_client.run_client_function(
         "lambda",
         "remove_permission",
-        {
-            "FunctionName": cloud_id, 
-            "StatementId": stmt_id
-        },
+        {"FunctionName": cloud_id, "StatementId": stmt_id},
     )
 
-    # To delete a route event from a simple api we need to delete the integration.    
+    # To delete a route event from a simple api we need to delete the integration.
     # Leave the target blank so that the route has no integration.
     # Then delete the actual integration cloud obj
     update_info = {"ApiId": api_id, "RouteId": route_id, "Target": ""}
 
     aws_client.run_client_function("apigatewayv2", "update_route", update_info)
 
-
     aws_client.run_client_function(
         "apigatewayv2",
         "delete_integration",
-        {
-            "ApiId": api_id, 
-            "IntegrationId": integration_id
-        },
+        {"ApiId": api_id, "IntegrationId": integration_id},
     )
+
 
 ##############################################
 ##### DYNAMODB TABLE STREAM EVENT
 ##############################################
 
 
-def _handle_adding_stream_event(event: simple_table.stream_event_model, cloud_function_id) -> Dict:
+def _handle_adding_stream_event(
+    event: simple_table.stream_event_model, cloud_function_id
+) -> Dict:
     table_name = event.table_name
     view_type = event.view_type
     batch_size = event.batch_size
 
     rv = aws_client.run_client_function(
-        "dynamodb", 
-        "describe_table", 
-        {
-            "TableName": table_name
-        }
+        "dynamodb", "describe_table", {"TableName": table_name}
     )
 
     if not rv.get("Table").get("StreamSpecification"):
@@ -174,7 +165,7 @@ def _handle_adding_stream_event(event: simple_table.stream_event_model, cloud_fu
     stream_arn = table_data.get("LatestStreamArn")
 
     sleep(5)
-    function_response_types = [] if event.batch_failure else ['ReportBatchItemFailures'] 
+    function_response_types = [] if event.batch_failure else ["ReportBatchItemFailures"]
 
     rv = aws_client.run_client_function(
         "lambda",
@@ -185,16 +176,13 @@ def _handle_adding_stream_event(event: simple_table.stream_event_model, cloud_fu
             "Enabled": True,
             "BatchSize": batch_size,
             "StartingPosition": "LATEST",
-            "FunctionResponseTypes": function_response_types
+            "FunctionResponseTypes": function_response_types,
         },
     )
 
     uuid = rv.get("UUID")
 
-    return {
-        "stream_arn": stream_arn,  
-        "stream_event_id": uuid
-    }
+    return {"stream_arn": stream_arn, "stream_event_id": uuid}
 
 
 def _handle_deleting_stream_event(event: dict, function_cloud_id: str):
@@ -205,14 +193,14 @@ def _handle_deleting_stream_event(event: dict, function_cloud_id: str):
     )
 
 
-
 ##############################################
 ##### BUCKET EVENT TRIGGER
 ##############################################
 
 
-
-def _handle_adding_bucket_event(bucket_event: simple_bucket.bucket_event_model , cloud_function_id: str) -> Dict:
+def _handle_adding_bucket_event(
+    bucket_event: simple_bucket.bucket_event_model, cloud_function_id: str
+) -> Dict:
 
     bucket_arn = bucket_event.bucket_arn
     bucket_name = bucket_event.bucket_name
@@ -228,22 +216,20 @@ def _handle_adding_bucket_event(bucket_event: simple_bucket.bucket_event_model ,
         "SourceArn": bucket_arn,
     }
 
-    aws_client.run_client_function(
-        "lambda", "add_permission", permission_model_args
-    )
+    aws_client.run_client_function("lambda", "add_permission", permission_model_args)
 
     # Add trigger to the bucket... use helper function in the bucket deployer because bucket can send events to sqs and sns also
     print(f"event to add {events}")
 
     # Wait a few seconds for the newly added permissions to take hold
-    # if this happens too fast, it will say the lambda does not have correct permissions to be triggered. 
+    # if this happens too fast, it will say the lambda does not have correct permissions to be triggered.
     sleep(5)
-    
+
     bucket_event_id = bucket_deployer.add_eventsource(
         bucket_name,
         bucket_deployer.event_hander_types.LAMBDA,
         cloud_function_id,
-        events
+        events,
     )
 
     return {
@@ -254,20 +240,16 @@ def _handle_adding_bucket_event(bucket_event: simple_bucket.bucket_event_model ,
 
 
 def _handle_deleting_bucket_event(event: dict, function_cloud_id: str):
-    
-    bucket_event_id = event.get("bucket_event_id")
-    bucket_name =event.get("bucket_name")
-    stmt_id = event.get("permission_stmt_id")
 
+    bucket_event_id = event.get("bucket_event_id")
+    bucket_name = event.get("bucket_name")
+    stmt_id = event.get("permission_stmt_id")
 
     # Delete the permission on the lambda function
     aws_client.run_client_function(
         "lambda",
         "remove_permission",
-        {
-            "FunctionName": function_cloud_id, 
-            "StatementId": stmt_id
-        },
+        {"FunctionName": function_cloud_id, "StatementId": stmt_id},
     )
 
     bucket_deployer.remove_eventsource(bucket_name, bucket_event_id)
@@ -278,11 +260,13 @@ def _handle_deleting_bucket_event(event: dict, function_cloud_id: str):
 ##############################################
 
 
-def _handle_adding_queue_event(event: simple_queue.queue_event_model, cloud_function_id) -> Dict:
+def _handle_adding_queue_event(
+    event: simple_queue.queue_event_model, cloud_function_id
+) -> Dict:
     queue_arn = event.queue_arn
     batch_size = event.batch_size
 
-    function_response_types = [] if event.batch_failure else ['ReportBatchItemFailures'] 
+    function_response_types = [] if event.batch_failure else ["ReportBatchItemFailures"]
 
     rv = aws_client.run_client_function(
         "lambda",
@@ -292,28 +276,21 @@ def _handle_adding_queue_event(event: simple_queue.queue_event_model, cloud_func
             "FunctionName": cloud_function_id,
             "Enabled": True,
             "BatchSize": batch_size,
-            "FunctionResponseTypes": function_response_types
+            "FunctionResponseTypes": function_response_types,
         },
     )
 
     uuid = rv.get("UUID")
 
-    return {
-        "queue_event_id": uuid
-    }
+    return {"queue_event_id": uuid}
 
 
 def _handle_deleting_queue_event(event: dict, function_cloud_id: str):
-    queue_event_id = event.get('queue_event_id')
+    queue_event_id = event.get("queue_event_id")
 
     aws_client.run_client_function(
-        "lambda", 
-        "delete_event_source_mapping",
-        {
-            "UUID": queue_event_id
-        }
+        "lambda", "delete_event_source_mapping", {"UUID": queue_event_id}
     )
-
 
 
 ##############################################
@@ -321,7 +298,9 @@ def _handle_deleting_queue_event(event: dict, function_cloud_id: str):
 ##############################################
 
 
-def _handle_adding_topic_subscription(event: simple_topic.topic_event_model, cloud_function_id) -> Dict:
+def _handle_adding_topic_subscription(
+    event: simple_topic.topic_event_model, cloud_function_id
+) -> Dict:
     topic_arn = event.topic_arn
 
     # Add permission to lambda to allow apigateway to invoke this function
@@ -334,18 +313,13 @@ def _handle_adding_topic_subscription(event: simple_topic.topic_event_model, clo
         "SourceArn": topic_arn,
     }
 
-    aws_client.run_client_function(
-        "lambda", "add_permission", permission_model_args
-    )
+    aws_client.run_client_function("lambda", "add_permission", permission_model_args)
 
     subscribe_arn = topic_deployer.add_subscriber(
         topic_arn, "lambda", cloud_function_id
     )
 
-    return {
-        "topic_event_id": subscribe_arn, 
-        "permission_stmt_id": stmt_id
-    }
+    return {"topic_event_id": subscribe_arn, "permission_stmt_id": stmt_id}
 
 
 def _handle_deleting_topic_subscription(event: dict, function_cloud_id: str):
@@ -356,10 +330,7 @@ def _handle_deleting_topic_subscription(event: dict, function_cloud_id: str):
     aws_client.run_client_function(
         "lambda",
         "remove_permission",
-        {
-            "FunctionName": function_cloud_id, 
-            "StatementId": permission_stmt_id
-        },
+        {"FunctionName": function_cloud_id, "StatementId": permission_stmt_id},
     )
 
     # Remove subscription
@@ -370,26 +341,25 @@ def _handle_deleting_topic_subscription(event: dict, function_cloud_id: str):
 
 EVENT_TO_HANDLERS = {
     simple_lambda.RUUID: {
-        simple_api.RUUID:{   
+        simple_api.RUUID: {
             "CREATE": _handle_adding_api_event,
             "REMOVE": _handle_deleting_api_event,
         },
-        simple_bucket.RUUID:{
+        simple_bucket.RUUID: {
             "CREATE": _handle_adding_bucket_event,
             "REMOVE": _handle_deleting_bucket_event,
         },
-        simple_table.RUUID:{
+        simple_table.RUUID: {
             "CREATE": _handle_adding_stream_event,
             "REMOVE": _handle_deleting_stream_event,
         },
-        simple_queue.RUUID:{
+        simple_queue.RUUID: {
             "CREATE": _handle_adding_queue_event,
             "REMOVE": _handle_deleting_queue_event,
         },
-        simple_topic.RUUID:{
+        simple_topic.RUUID: {
             "CREATE": _handle_adding_topic_subscription,
             "REMOVE": _handle_deleting_topic_subscription,
-        }
+        },
     },
-    
 }

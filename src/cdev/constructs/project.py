@@ -30,7 +30,6 @@ class project_info(BaseModel):
         environments: List[environment_info],
         backend_info: Backend_Configuration,
         current_environment: str = None,
-       
     ) -> None:
         """
         Represents the data about a cdev project object:
@@ -39,7 +38,7 @@ class project_info(BaseModel):
             project_name (str): Name of the project
             environments (List[environment_info]): The environments that are currently part of the project
             current_environment (str): The current environment
-            
+
         """
 
         super().__init__(
@@ -56,7 +55,6 @@ class Project_State(str, Enum):
     UNINITIALIZED = "UNINITIALIZED"
     INITIALIZING = "INITIALIZING"
     INITIALIZED = "INITIALIZED"
-
 
 
 def wrap_phases(phases: List[Project_State]) -> Callable[[F], F]:
@@ -93,6 +91,7 @@ class Project:
     should keep in mind the lifecycle rules around each API and how it fits into their project.
 
     """
+
     _settings: Settings
 
     @classmethod
@@ -128,7 +127,6 @@ class Project:
 
         _GLOBAL_PROJECT = None
 
-
     def set_name(self, name: str):
         """
         Set the name of this Project
@@ -137,7 +135,6 @@ class Project:
             name (str): name of the Project
         """
         raise NotImplementedError
-
 
     def get_name(self):
         """
@@ -241,7 +238,6 @@ class Project:
         """
         raise NotImplementedError
 
-
     ############################
     ##### Settings
     ############################
@@ -249,19 +245,17 @@ class Project:
     def settings(self) -> Settings:
         raise NotImplementedError
 
-    
     @settings.setter
     def settings(self, value: Settings):
         raise NotImplementedError
 
-
     def get_settings_info(self, environment_name: str = None) -> Settings_Info:
         raise NotImplementedError
 
-    
-    def update_settings_info(self, new_value: Settings_Info, environment_name: str = None):
+    def update_settings_info(
+        self, new_value: Settings_Info, environment_name: str = None
+    ):
         raise NotImplementedError
-
 
     #######################
     ##### Display Output
@@ -276,13 +270,12 @@ class Project:
         """
         raise NotImplementedError
 
-
     def render_outputs(self) -> List[Tuple[str, Any]]:
         """Render the output associated with the Workspace
 
         Returns:
             List[Tuple[str, Any]]: The List of outputs with their associated tag
-        
+
         """
         raise NotImplementedError
 

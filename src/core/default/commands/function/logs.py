@@ -1,4 +1,3 @@
-
 from argparse import ArgumentParser
 import time, math, datetime
 
@@ -12,8 +11,6 @@ from core.utils import hasher
 from core.default.commands.function.utils import get_cloud_id_from_cdev_name
 
 
-
-
 class show_logs(BaseCommand):
 
     help = """
@@ -22,7 +19,9 @@ class show_logs(BaseCommand):
 
     def add_arguments(self, parser: ArgumentParser):
         parser.add_argument(
-            "function_name", type=str, help="The function that you want to watch. Name must include component name. ex: comp1.demo_function"
+            "function_name",
+            type=str,
+            help="The function that you want to watch. Name must include component name. ex: comp1.demo_function",
         )
         parser.add_argument(
             "--watch",
@@ -41,16 +40,20 @@ class show_logs(BaseCommand):
     def command(self, *args, **kwargs):
 
         full_function_name: str = kwargs.get("function_name")
-        component_name = full_function_name.split('.')[0]
-        function_name = full_function_name.split('.')[1]
+        component_name = full_function_name.split(".")[0]
+        function_name = full_function_name.split(".")[1]
         watch_val = kwargs.get("watch")
         tail_val = kwargs.get("tail")
         number_val = kwargs.get("number")
 
-        cloud_name = get_cloud_id_from_cdev_name(component_name, function_name).split(":")[-1]
+        cloud_name = get_cloud_id_from_cdev_name(component_name, function_name).split(
+            ":"
+        )[-1]
 
         if not cloud_name:
-            self.stdout.write(f"Could not find function {function_name} in component {component_name}")
+            self.stdout.write(
+                f"Could not find function {function_name} in component {component_name}"
+            )
             return
 
         cloud_watch_group_name = f"/aws/lambda/{cloud_name}"
@@ -131,8 +134,6 @@ def _watch_log_group(group_name: str, stdout: OutputWrapper, args=None):
                 time.sleep(0.2)
         except KeyboardInterrupt:
             return
-
-
 
 
 def _get_needed_streams(streams: List[Dict], start_time: float = None) -> List[str]:

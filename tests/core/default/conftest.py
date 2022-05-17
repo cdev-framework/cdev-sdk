@@ -13,8 +13,6 @@ for f in os.listdir(base_dir):
     item = os.path.join(base_dir, f)
     if os.path.isdir(item):
         shutil.rmtree(item)
-    
+
     if os.path.isfile(item):
         os.remove(item)
-
-

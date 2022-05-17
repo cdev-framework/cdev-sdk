@@ -9,7 +9,7 @@ from ..commands import (
     run,
     execute_frontend,
     create_resource_state,
-    cloud_output
+    cloud_output,
 )
 from ..constructs.workspace import Workspace
 
@@ -55,8 +55,8 @@ CDEV_COMMANDS = [
     {
         "name": "output",
         "help": "See the generated cloud output",
-        "default": wrap_initialize_workspace(cloud_output.cloud_output_command_cli)
-    }, 
+        "default": wrap_initialize_workspace(cloud_output.cloud_output_command_cli),
+    },
     {
         "name": "run",
         "help": "This command is used to run user defined and resource functions.",
@@ -88,16 +88,22 @@ def add_general_output_options(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        '-d', '--debug',
+        "-d",
+        "--debug",
         help="Print debug log statements. This is mostly for development use",
-        action="store_const", dest="loglevel", const=logging.DEBUG,
+        action="store_const",
+        dest="loglevel",
+        const=logging.DEBUG,
         default=logging.WARNING,
     )
 
     parser.add_argument(
-        '-v', '--verbose',
+        "-v",
+        "--verbose",
         help="Print info log message. Use this to get a more detailed understanding of what is executing.",
-        action="store_const", dest="loglevel", const=logging.INFO,
+        action="store_const",
+        dest="loglevel",
+        const=logging.INFO,
     )
 
 

@@ -9,7 +9,7 @@ from ..constructs import backend as backend_tests
 
 # Monkey patch the file location to be ./tmp
 base_dir = os.path.join(os.path.dirname(__file__), "tmp")
-#state_file = os.path.join(base_dir, "local_state.json")
+# state_file = os.path.join(base_dir, "local_state.json")
 
 
 def local_backend_factory() -> LocalBackend:
@@ -39,7 +39,6 @@ def test_simple_exceptions():
     backend_tests.get_missing_component(local_backend_factory())
     backend_tests.get_missing_resource(local_backend_factory())
     backend_tests.get_missing_cloud_output(local_backend_factory())
-
 
 
 def test_simple_differencing():

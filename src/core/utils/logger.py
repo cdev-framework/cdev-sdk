@@ -4,11 +4,11 @@ Note that logging should work in a duality within the framework. Meaning, that a
 should use the same logging utilities, but how they are provided will differ. All files will have a module
 level definition of a default logger, this will allow the utilities to log when called as simple functions
 through normal python execution. Within the framework, all executions will be wrapped in a global namespace
-that has a logger, therefor when the functions are called as part of the framework, it will be this logger 
+that has a logger, therefor when the functions are called as part of the framework, it will be this logger
 that is used.
 
 This is important in mainting that utility functions for the framework are not bound to used within the framework,
-but it also allows there to be dynamic functionality of how logs will be proccessed and displayed to the user. 
+but it also allows there to be dynamic functionality of how logs will be proccessed and displayed to the user.
 
 """
 import logging.config
@@ -55,9 +55,9 @@ def _create_logging_settings(log_level: str) -> Dict:
         },
         "loggers": {
             "core_file": {
-                "level": log_level, 
-                "handlers": ["fileHandler"], \
-                "propagate": False
+                "level": log_level,
+                "handlers": ["fileHandler"],
+                "propagate": False,
             },
             "core_rich": {
                 "level": log_level,
@@ -76,8 +76,8 @@ def _create_logging_settings(log_level: str) -> Dict:
 
 
 class cdev_logger:
-    """Wrapper around pythons basic logger object to provide a layer of flexibility for logging. 
-    
+    """Wrapper around pythons basic logger object to provide a layer of flexibility for logging.
+
     Specifically, this will add the ability to always process logs into a JSON file for debugging errors, while
     also allowing the user to provide a flag to set a logging level to display to the user.
 
@@ -87,23 +87,27 @@ class cdev_logger:
 
     Note that when formating data into a log message, it must use '%' formatted strings instead of f
     strings. This is allows am optimization used by the logging library to not allocate strings unless the
-    log needs to be evaluated. Within the context of a framework, these allocations can add up. This should 
-    be enforced with code styling at the PR level. 
+    log needs to be evaluated. Within the context of a framework, these allocations can add up. This should
+    be enforced with code styling at the PR level.
 
-    Also note the optimization around formmatted logs. 
+    Also note the optimization around formmatted logs.
 
     For more info read https://docs.python.org/3/howto/logging.html#optimization
     """
 
-    def __init__(self, is_rich_formatted=True, show_logs: bool=False, logging_level: Union[str,int] = "ERROR") -> None:
+    def __init__(
+        self,
+        is_rich_formatted=True,
+        show_logs: bool = False,
+        logging_level: Union[str, int] = "ERROR",
+    ) -> None:
 
         self.is_rich_formatted = is_rich_formatted
         self.show_logs = show_logs
-        
+
         log_info = _create_logging_settings(logging_level)
 
-        fp = os.path.join(os.getcwd(), log_info.get('filename'))
-    
+        fp = os.path.join(os.getcwd(), log_info.get("filename"))
 
         if not os.path.isfile(fp):
             if not os.path.isdir(os.path.dirname(os.path.dirname(fp))):
@@ -120,7 +124,14 @@ class cdev_logger:
         self._simple_logger = logging.getLogger("core_simple")
         self._rich_logger = logging.getLogger("core_rich")
 
-    def _write_log(self, *args, func_name: str, original_msg: str, formatted_msg: str = "",  **kw_args):
+    def _write_log(
+        self,
+        *args,
+        func_name: str,
+        original_msg: str,
+        formatted_msg: str = "",
+        **kw_args,
+    ):
         # Always write a log to the json file
         getattr(self._json_logger, func_name)(original_msg, *args, **kw_args)
         if self.show_logs:
@@ -131,63 +142,44 @@ class cdev_logger:
             else:
                 getattr(self._rich_logger, func_name)(formatted_msg, *args, **kw_args)
 
-
     def debug(self, msg, *args, **kw_args):
         if self.is_rich_formatted:
             self._write_log(
                 *args,
-                func_name="debug", 
-                original_msg=msg, 
+                func_name="debug",
+                original_msg=msg,
                 formatted_msg=f"[bold blue]{msg}",
-                **kw_args
+                **kw_args,
             )
 
         else:
-            self._write_log(
-                *args,
-                func_name="debug", 
-                original_msg=msg, 
-                **kw_args
-            )
-
+            self._write_log(*args, func_name="debug", original_msg=msg, **kw_args)
 
     def info(self, msg, *args, **kw_args):
         if self.is_rich_formatted:
             self._write_log(
                 *args,
-                func_name="info", 
-                original_msg=msg, 
+                func_name="info",
+                original_msg=msg,
                 formatted_msg=f"[bold blue]{msg}",
-                **kw_args
+                **kw_args,
             )
 
         else:
-            self._write_log(
-                *args,
-                func_name="info", 
-                original_msg=msg, 
-                **kw_args
-            )
-
+            self._write_log(*args, func_name="info", original_msg=msg, **kw_args)
 
     def warning(self, msg, *args, **kw_args):
         if self.is_rich_formatted:
             self._write_log(
                 *args,
-                func_name="warning", 
-                original_msg=msg, 
+                func_name="warning",
+                original_msg=msg,
                 formatted_msg=f"[bold yellow blink]{msg}",
-                **kw_args
+                **kw_args,
             )
 
         else:
-            self._write_log(
-                *args,
-                func_name="warning", 
-                original_msg=msg, 
-                **kw_args
-            )
-            
+            self._write_log(*args, func_name="warning", original_msg=msg, **kw_args)
 
     def error(self, msg, *args, **kw_args):
         if self.is_rich_formatted:
@@ -196,16 +188,11 @@ class cdev_logger:
                 func_name="error",
                 original_msg=msg,
                 formatted_msg=f"[bold red blink]:cross_mark: :cross_mark: :cross_mark: {msg} :cross_mark: :cross_mark: :cross_mark:",
-                **kw_args
+                **kw_args,
             )
 
         else:
-            self._write_log(
-                *args,
-                func_name="error",
-                original_msg=msg,
-                **kw_args
-            )
+            self._write_log(*args, func_name="error", original_msg=msg, **kw_args)
 
     def exception(self, msg):
         self._write_log("exception", msg, msg)
@@ -231,22 +218,18 @@ class global_log_container:
 
     def warning(self, msg, *args, **kw_args):
         self._logger.warning(msg, *args, **kw_args)
-        
+
     def error(self, msg, *args, **kw_args):
         self._logger.error(msg, *args, **kw_args)
 
     def exception(self, msg):
         self._logger.exception(msg)
-        
+
 
 log = global_log_container(cdev_logger())
-
 
 
 def set_global_logger(new_logger: cdev_logger):
     global log
 
     log._logger = new_logger
-
-
-

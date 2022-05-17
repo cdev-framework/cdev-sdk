@@ -25,16 +25,10 @@ def local_workspace_config_factory() -> Dict:
         "backend_configuration": {
             "python_module": "core.default.backend",
             "python_class": "LocalBackend",
-            "config":{
-                "base_folder": new_base,
-                "central_state_file": new_state_file
-            }
+            "config": {"base_folder": new_base, "central_state_file": new_state_file},
         },
-        "initialization_module": "example_init"
+        "initialization_module": "example_init",
     }
-        
-
-
 
 
 def test_initialize_workspace():
@@ -44,14 +38,11 @@ def test_initialize_workspace():
     workspace_tests.simple_initialize_workspace(workspace, workspace_config)
 
 
-
-
 def test_add_component():
     workspace = local_workspace()
     workspace_config = local_workspace_config_factory()
 
     workspace_tests.simple_execute_frontend_workspace(workspace, workspace_config)
-
 
 
 def test_add_commands():

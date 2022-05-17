@@ -6,8 +6,6 @@ from pydantic.types import FilePath
 from core.constructs.workspace import Workspace, Workspace_Info
 
 
-
-
 class environment_info(BaseModel):
     """
     Represents the information about an environment.
@@ -20,15 +18,9 @@ class environment_info(BaseModel):
     name: str
     workspace_info: Workspace_Info
 
-    def __init__(
-        __pydantic_self__,
-        name: str,
-        workspace_info: Workspace_Info
-        ) -> None:
+    def __init__(__pydantic_self__, name: str, workspace_info: Workspace_Info) -> None:
 
-        super().__init__(
-            **{"name": name, "workspace_info": workspace_info}
-        )
+        super().__init__(**{"name": name, "workspace_info": workspace_info})
 
 
 class Environment:

@@ -1,4 +1,4 @@
-"""Set of constructs for adding permissions and authorization 
+"""Set of constructs for adding permissions and authorization
 
 """
 
@@ -19,21 +19,21 @@ class permission_model(ImmutableModel):
 
     class Config:
         use_enum_values = True
-        # Beta Feature but should be fine since this is simple data 
+        # Beta Feature but should be fine since this is simple data
         frozen = True
 
 
 class permission_arn_model(ImmutableModel):
     arn: str
     hash: str
-    
+
     class Config:
         use_enum_values = True
-        # Beta Feature but should be fine since this is simple data 
+        # Beta Feature but should be fine since this is simple data
         frozen = True
 
 
-class Permission():
+class Permission:
     """
     Permission that can be attached to a resource to give it permission to access other resources.
     """
@@ -56,40 +56,42 @@ class Permission():
         self.cloud_id = cloud_id
         self.effect = effect
         self.resource_suffix = resource_suffix
-            
+
     def render(self) -> permission_model:
 
         return permission_model(
             actions=frozenset(self.actions),
-            cloud_id=self.cloud_id.render() if isinstance(self.cloud_id, Cloud_Output_Str) else self.cloud_id,
+            cloud_id=self.cloud_id.render()
+            if isinstance(self.cloud_id, Cloud_Output_Str)
+            else self.cloud_id,
             effect=self.effect,
-            hash=self.hash()
+            hash=self.hash(),
         )
 
     def hash(self) -> str:
-        _hash = hasher.hash_list([
-            hasher.hash_list(self.actions),
-            self.cloud_id.hash() if isinstance(self.cloud_id, Cloud_Output_Str) else self.cloud_id,
-            self.effect
-        ])
+        _hash = hasher.hash_list(
+            [
+                hasher.hash_list(self.actions),
+                self.cloud_id.hash()
+                if isinstance(self.cloud_id, Cloud_Output_Str)
+                else self.cloud_id,
+                self.effect,
+            ]
+        )
 
         return _hash
 
 
-class PermissionArn():
+class PermissionArn:
     """
     Id of a permission that is already deployed on the cloud.
     """
+
     def __init__(self, arn: str) -> None:
         self.arn = arn
 
-
     def render(self) -> permission_arn_model:
-        return permission_arn_model(
-            arn=self.arn,
-            hash=self.hash()
-        )
+        return permission_arn_model(arn=self.arn, hash=self.hash())
 
     def hash(self) -> str:
         return hasher.hash_string(self.arn)
-

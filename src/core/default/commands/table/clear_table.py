@@ -17,7 +17,7 @@ RUUID = "cdev::simple::table"
 class clear_table(BaseCommand):
 
     help = """
-Clear the current data from a given Table. This should only be used on development tables.   
+Clear the current data from a given Table. This should only be used on development tables.
 """
 
     def add_arguments(self, parser: ArgumentParser):
@@ -32,11 +32,13 @@ Clear the current data from a given Table. This should only be used on developme
         # https://stackoverflow.com/questions/55169952/delete-all-items-dynamodb-using-python
 
         full_resource_name = kwargs.get("resource_name")
-        component_name = full_resource_name.split('.')[0]
-        table_resource_name = full_resource_name.split('.')[1]
+        component_name = full_resource_name.split(".")[0]
+        table_resource_name = full_resource_name.split(".")[1]
 
-        cloud_output = utils.get_cloud_output_from_cdev_name(component_name, table_resource_name)
-        table_cloud_name = cloud_output.get('table_name')
+        cloud_output = utils.get_cloud_output_from_cdev_name(
+            component_name, table_resource_name
+        )
+        table_cloud_name = cloud_output.get("table_name")
 
         dynamo = boto3.resource("dynamodb")
         table = dynamo.Table(table_cloud_name)

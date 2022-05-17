@@ -4,13 +4,13 @@ from uuid import uuid4
 
 from core.default.resources.simple.iam import permission_model, permission_arn_model
 
-from .. import aws_client 
+from .. import aws_client
 
 
 def create_role_with_permissions(
     role_name: str,
     permissions: FrozenSet[Union[permission_model, permission_arn_model]],
-    assume_role_policy: str
+    assume_role_policy: str,
 ) -> Tuple[str, List[Dict]]:
     """
     This function creates a new IAM role and policies such that the function will have correct access to resources.
@@ -18,36 +18,30 @@ def create_role_with_permissions(
     Arguments:
         role_name: Name of the role
         permissions [List[Union[permission_model, permission_arn_model]]]: The permission to assign to the role
-    
+
     Returns:
         str: The arn of the role created
         List[Tuple[str,bool]]: List of Tuple of permission arn and bool to denote if the permission should be destroyed on delete
-    
+
     """
 
     role_arn = _create_role(role_name, assume_role_policy)
     permission_info: List[Tuple[str, bool]] = []
 
-
     for permission in permissions:
         permission_info.append(add_policy(role_name, permission))
 
-
     basic_execution_permission_arn = permission_arn_model(
         arn="arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-        hash="arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        hash="arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
     )
 
-    permission_info.append(
-        add_policy(role_name, basic_execution_permission_arn)
-    )
+    permission_info.append(add_policy(role_name, basic_execution_permission_arn))
 
     return (role_arn, permission_info)
 
 
-def delete_role_and_permissions(
-    role_name: str, permission_arns: List[Dict]
-):
+def delete_role_and_permissions(role_name: str, permission_arns: List[Dict]):
     """
     Delete all permissions and the associated role
     """
@@ -57,23 +51,20 @@ def delete_role_and_permissions(
     aws_client.run_client_function("iam", "delete_role", {"RoleName": role_name})
 
 
-
-
 def delete_policy(role_name: str, permission_info: Dict):
     """
     Delete a policy
     """
-    detach_policy(role_name, permission_info.get('arn'))
+    detach_policy(role_name, permission_info.get("arn"))
 
-    if permission_info.get('was_created'):
+    if permission_info.get("was_created"):
         aws_client.run_client_function(
-            "iam", "delete_policy", {"PolicyArn": permission_info.get('arn')}
+            "iam", "delete_policy", {"PolicyArn": permission_info.get("arn")}
         )
 
 
 def add_policy(
-    role_name: str,
-    permission: Union[permission_model, permission_arn_model]
+    role_name: str, permission: Union[permission_model, permission_arn_model]
 ) -> Dict:
     """
     Creates a policy if needed and then adds the policy to the given role
@@ -82,18 +73,19 @@ def add_policy(
         # Already deployed policy so just append arn
         returned_permission_arn = permission.arn
         was_created = False
-        
+
     else:
         returned_permission_arn = create_policy(permission)
         was_created = True
-        
+
     _attach_policy_to_arn(role_name, returned_permission_arn)
 
     return {
         "hash": permission.hash,
         "arn": returned_permission_arn,
-        "was_created": was_created
+        "was_created": was_created,
     }
+
 
 def create_policy(permission: permission_model) -> str:
     """
@@ -114,10 +106,7 @@ def create_policy(permission: permission_model) -> str:
     rv = aws_client.run_client_function(
         "iam",
         "create_policy",
-        {
-            "PolicyName": permission_name, 
-            "PolicyDocument": json.dumps(policy)
-        },
+        {"PolicyName": permission_name, "PolicyDocument": json.dumps(policy)},
     )
 
     return rv.get("Policy").get("Arn")
@@ -127,10 +116,7 @@ def detach_policy(role_name: str, permission_arn: str):
     aws_client.run_client_function(
         "iam",
         "detach_role_policy",
-        {
-            "RoleName": role_name, 
-            "PolicyArn": permission_arn
-        },
+        {"RoleName": role_name, "PolicyArn": permission_arn},
     )
 
 
@@ -138,7 +124,7 @@ def _create_role(name: str, assume_role_policy: str) -> str:
     """
     Creates the role and returns the arn
     """
-    
+
     rv = aws_client.run_client_function(
         "iam",
         "create_role",
@@ -151,16 +137,7 @@ def _create_role(name: str, assume_role_policy: str) -> str:
     return rv.get("Role").get("Arn")
 
 
-def _attach_policy_to_arn(role_arn: str, policy_arn: str) -> bool:   
+def _attach_policy_to_arn(role_arn: str, policy_arn: str) -> bool:
     aws_client.run_client_function(
-        "iam", 
-        "attach_role_policy", 
-        {
-            "RoleName": role_arn, 
-            "PolicyArn": policy_arn
-        }
+        "iam", "attach_role_policy", {"RoleName": role_arn, "PolicyArn": policy_arn}
     )
-
-
-
-

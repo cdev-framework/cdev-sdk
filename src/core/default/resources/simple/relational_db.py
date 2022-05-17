@@ -5,8 +5,14 @@
 from enum import Enum
 from typing import Any
 
-from core.constructs.resource import Resource, ResourceModel, ResourceOutputs, update_hash, PermissionsAvailableMixin
-from core.constructs.cloud_output import  Cloud_Output_Str, OutputType
+from core.constructs.resource import (
+    Resource,
+    ResourceModel,
+    ResourceOutputs,
+    update_hash,
+    PermissionsAvailableMixin,
+)
+from core.constructs.cloud_output import Cloud_Output_Str, OutputType
 from core.utils import hasher
 
 from core.default.resources.simple.iam import Permission, PermissionArn
@@ -19,9 +25,8 @@ RUUID = "cdev::simple::relationaldb"
 ###### Permission
 ######################
 class RelationalDBPermissions:
-     
     def __init__(self, resource_name: str) -> None:
-        
+
         self.DATABASE_ACCESS = Permission(
             actions=[
                 "rds-data:BatchExecuteStatement",
@@ -30,7 +35,9 @@ class RelationalDBPermissions:
                 "rds-data:ExecuteStatement",
                 "rds-data:RollbackTransaction",
             ],
-            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
+            cloud_id=Cloud_Output_Str(
+                resource_name, RUUID, "cloud_id", OutputType.RESOURCE
+            ),
             effect="Allow",
         )
         """Access to the DB"""
@@ -45,7 +52,8 @@ class RelationalDBPermissions:
 ##### Output
 ##############
 class RelationalDBOutput(ResourceOutputs):
-    """Container object for the returned values from the cloud after a Relational DB has been deployed."""   
+    """Container object for the returned values from the cloud after a Relational DB has been deployed."""
+
     def __init__(self, name: str) -> None:
         super().__init__(name, RUUID)
 
@@ -53,10 +61,7 @@ class RelationalDBOutput(ResourceOutputs):
     def cluster_arn(self) -> Cloud_Output_Str:
         """The name of the generated db cluster"""
         return Cloud_Output_Str(
-            name=self._name,
-            ruuid=RUUID,
-            key='cluster_arn',
-            type=self.OUTPUT_TYPE
+            name=self._name, ruuid=RUUID, key="cluster_arn", type=self.OUTPUT_TYPE
         )
 
     @cluster_arn.setter
@@ -67,10 +72,7 @@ class RelationalDBOutput(ResourceOutputs):
     def endpoint(self) -> Cloud_Output_Str:
         """The name of the generated db cluster"""
         return Cloud_Output_Str(
-            name=self._name,
-            ruuid=RUUID,
-            key='endpoint',
-            type=self.OUTPUT_TYPE
+            name=self._name, ruuid=RUUID, key="endpoint", type=self.OUTPUT_TYPE
         )
 
     @endpoint.setter
@@ -81,10 +83,7 @@ class RelationalDBOutput(ResourceOutputs):
     def secret_arn(self) -> Cloud_Output_Str:
         """The arn of the secret value create that holds the password for the db"""
         return Cloud_Output_Str(
-            name=self._name,
-            ruuid=RUUID,
-            key='secret_arn',
-            type=self.OUTPUT_TYPE
+            name=self._name, ruuid=RUUID, key="secret_arn", type=self.OUTPUT_TYPE
         )
 
     @secret_arn.setter
@@ -106,9 +105,9 @@ class db_engine(str, Enum):
     """Postgres 10.4-compatible Aurora"""
 
 
-
 class simple_relational_db_model(ResourceModel):
     """Model that represents a relation db"""
+
     Engine: db_engine
     """DB engine"""
     MasterUsername: str
@@ -121,16 +120,15 @@ class simple_relational_db_model(ResourceModel):
     """Allow connection via a generated HTTP endpoint"""
     MaxCapacity: int
     """Maximum amount of capacity to scale to"""
-    MinCapacity: int    
+    MinCapacity: int
     """Amount of seconds to wait before scaling DB completely down."""
     SecondsToPause: int
     """Amount of seconds to wait before scaling DB completely down"""
 
 
-
 class RelationalDB(PermissionsAvailableMixin, Resource):
     """Construct for creating a Serverless Relational DB"""
-    
+
     @update_hash
     def __init__(
         self,
@@ -143,7 +141,7 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
         max_capacity: int = 64,
         min_capacity: int = 2,
         seconds_to_pause: int = 300,
-        nonce: str = ""
+        nonce: str = "",
     ) -> None:
         """
         Args:
@@ -170,7 +168,9 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
         self._seconds_to_pause = seconds_to_pause
 
         self.output: RelationalDBOutput = RelationalDBOutput(cdev_name)
-        self.available_permissions: RelationalDBPermissions = RelationalDBPermissions(cdev_name)
+        self.available_permissions: RelationalDBPermissions = RelationalDBPermissions(
+            cdev_name
+        )
 
     @property
     def seconds_to_pause(self):
@@ -263,7 +263,7 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
                 self.max_capacity,
                 self.min_capacity,
                 self.seconds_to_pause,
-                self.nonce
+                self.nonce,
             ]
         )
 
@@ -283,4 +283,3 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
                 "SecondsToPause": self.seconds_to_pause,
             }
         )
-

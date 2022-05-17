@@ -19,7 +19,6 @@ def develop_command(args):
     print(f"Live Development")
 
 
-
 """import os
 import sys
 from time import sleep
@@ -40,12 +39,12 @@ from cdev.constructs import Cdev_Project
 from cdev.utils import hasher
 
 import threading
-    
+
 from ..utils import project
 from ..frontend import executer as frontend_executer
 from ..backend import executer as backend_executer
 from ..backend import resource_state_manager, cloud_mapper_manager
-    
+
 from cdev import output as cdev_output
 from cdev.settings import set_setting
 
@@ -65,11 +64,11 @@ CURRENT_CONTEXT = {
 def make_develop_layout() -> Layout:
     layout = Layout("tmp")
     layout.split(
-        
+
         Layout(name="stdout"),
-        Layout(name="cloud_output"), 
-        Layout(name="commands"), 
-     
+        Layout(name="cloud_output"),
+        Layout(name="commands"),
+
     )
 
     layout['stdout'].ratio = 80
@@ -119,43 +118,43 @@ def run_enhanced_local_development_environment(args):
         my_event_handler.on_moved = file_change_handler
 
         my_observer.schedule(my_event_handler, path, recursive=go_recursively)
-    
 
-    
+
+
     cdev_output.create_buffer(CLOUD_OUTPUT_BUFFER)
     refresh_local_output({"buffer_name": CLOUD_OUTPUT_BUFFER, "reinitialize_project": True})
     my_observer.start()
     cdev_output.print(f"")
     cdev_output.print(f"[blink] *** waiting for changes ***[/blink]")
-    
+
     handle_std_in_thread = threading.Thread(target=handle_std_input, daemon=True)
     try:
-        
+
         if args.simple:
             # IF this is a simple develop session don't create live panels
             while True:
                 pass
 
-        
+
         with LIVE_OBJECT as l:
             refresh_output_buffer()
-            
+
             handle_std_in_thread.start()
             last_stdout_hash = 0
             while True:
                 messages, start_line_no, messages_hash = cdev_output.get_messages_from_buffer(-25,None)
-                
+
                 modified_messages = [f"({start_line_no+i}) {x}" for i,x in enumerate(messages,0)]
 
                 if messages_hash == last_stdout_hash:
                     pass
                 else:
-                    
+
                     messages_as_string = "\n".join(modified_messages)
                     last_stdout_hash = messages_hash
                     LAYOUT['stdout'].update(Panel(messages_as_string, title="STD OUT"))
                     update_screen()
-                    
+
                     sleep(.1)
 
 
@@ -208,7 +207,7 @@ def file_change_handler_simple(args):
     if did_deploy:
         refresh_output_simple()
     cdev_output.print(f"[blink] *** waiting for changes ***[/blink]")
-    
+
     update_screen()
 
 
@@ -221,7 +220,7 @@ def update_screen():
 def add_line_to_history(line):
     history.append(line)
 
-    
+
 
 def get_output_buffer() -> Tuple[str, str]:
     if not history:
@@ -234,7 +233,7 @@ def get_output_buffer() -> Tuple[str, str]:
     return lines, hash_val
 
 
-def refresh_local_output(args: Dict):  
+def refresh_local_output(args: Dict):
 
     if not "buffer_name" in args:
         write_to_buffer = False
@@ -247,13 +246,13 @@ def refresh_local_output(args: Dict):
 
 
     PROJECT = project.Cdev_Project()
-    
+
     desired_outputs = PROJECT.get_outputs()
 
     rendered_outputs = []
 
-    for label, output in desired_outputs.items(): 
-        
+    for label, output in desired_outputs.items():
+
         identifier = output.resource.split("::")[-1]
 
         if output.transformer:
@@ -274,7 +273,7 @@ def refresh_local_output(args: Dict):
         else:
             cdev_output.add_message_to_buffer(args.get("buffer_name"), str(rendered_output))
 
-    
+
 
 
 """

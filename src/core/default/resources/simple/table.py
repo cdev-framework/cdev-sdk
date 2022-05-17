@@ -3,8 +3,14 @@
 from enum import Enum
 from typing import Any, FrozenSet, List
 
-from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsAvailableMixin
-from core.constructs.cloud_output import  Cloud_Output_Str, OutputType
+from core.constructs.resource import (
+    Resource,
+    ResourceModel,
+    update_hash,
+    ResourceOutputs,
+    PermissionsAvailableMixin,
+)
+from core.constructs.cloud_output import Cloud_Output_Str, OutputType
 from core.constructs.types import cdev_str_model
 from core.constructs.models import ImmutableModel
 
@@ -19,7 +25,7 @@ RUUID = "cdev::simple::table"
 #################
 ##### Events
 #################
-#TODO: Add more documentation on the json schema of the events
+# TODO: Add more documentation on the json schema of the events
 class stream_type(str, Enum):
     """Type of streams for a table."""
 
@@ -41,45 +47,45 @@ class stream_event_model(event_model):
         view_type (stream_type): Type of eventthe stream produces
         batch_size (int): Size of event batches
     """
-    table_name: cdev_str_model    
+
+    table_name: cdev_str_model
     view_type: stream_type
     batch_size: int
-    batch_failure: bool 
+    batch_failure: bool
 
 
 class StreamEvent(Event):
     """Construct for representing the Stream of a `Table`"""
 
-    def __init__(self, table_name: str, view_type: stream_type, batch_size: int, batch_failure: bool= True) -> None:
+    def __init__(
+        self,
+        table_name: str,
+        view_type: stream_type,
+        batch_size: int,
+        batch_failure: bool = True,
+    ) -> None:
         """
         Args:
             table_name (str): Cdev name of the API this route is apart of
             view_type (stream_type): Type of eventthe stream produces
             batch_size (int): Size of event batches
         """
-        
+
         self.cdev_table_name = table_name
-        
-        self.table_name= Cloud_Output_Str(
-                name=table_name, 
-                ruuid=RUUID, 
-                key='table_name',
-                type=OutputType.RESOURCE 
-            )
-            
-        self.view_type=view_type
-        self.batch_size=batch_size
+
+        self.table_name = Cloud_Output_Str(
+            name=table_name, ruuid=RUUID, key="table_name", type=OutputType.RESOURCE
+        )
+
+        self.view_type = view_type
+        self.batch_size = batch_size
         self.batch_failure = batch_failure
 
-
     def hash(self) -> str:
-        return hasher.hash_list([
-            self.cdev_table_name,
-            self.view_type,
-            self.batch_size,
-            self.batch_failure
-        ])
-        
+        return hasher.hash_list(
+            [self.cdev_table_name, self.view_type, self.batch_size, self.batch_failure]
+        )
+
     def render(self) -> stream_event_model:
         return stream_event_model(
             originating_resource_name=self.cdev_table_name,
@@ -88,7 +94,7 @@ class StreamEvent(Event):
             batch_size=self.batch_size,
             view_type=self.view_type.value,
             table_name=self.table_name.render(),
-            batch_failure=self.batch_failure
+            batch_failure=self.batch_failure,
         )
 
 
@@ -108,7 +114,9 @@ class TablePermissions:
                 "dynamodb:Query",
                 "dynamodb:ConditionCheckItem",
             ],
-            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
+            cloud_id=Cloud_Output_Str(
+                resource_name, RUUID, "cloud_id", OutputType.RESOURCE
+            ),
             effect="Allow",
         )
         """Permissions to read data from the Table"""
@@ -127,7 +135,9 @@ class TablePermissions:
                 "dynamodb:UpdateItem",
                 "dynamodb:DescribeLimits",
             ],
-            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
+            cloud_id=Cloud_Output_Str(
+                resource_name, RUUID, "cloud_id", OutputType.RESOURCE
+            ),
             effect="Allow",
         )
         """Permissions to write data to the Table"""
@@ -146,7 +156,9 @@ class TablePermissions:
                 "dynamodb:Scan",
                 "dynamodb:UpdateItem",
             ],
-            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
+            cloud_id=Cloud_Output_Str(
+                resource_name, RUUID, "cloud_id", OutputType.RESOURCE
+            ),
             effect="Allow",
         )
         """Permissions to read and write data to and from the Table"""
@@ -159,16 +171,20 @@ class TablePermissions:
                 "dynamodb:ListShards",
                 "dynamodb:ListStreams",
             ],
-            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE).join(["", "/stream/*"]),
+            cloud_id=Cloud_Output_Str(
+                resource_name, RUUID, "cloud_id", OutputType.RESOURCE
+            ).join(["", "/stream/*"]),
             effect="Allow",
         )
         """Permissions to receive and process events from the Table Stream"""
+
 
 ##############
 ##### Output
 ##############
 class TableOutput(ResourceOutputs):
     """Container object for the returned values from the cloud after a `Table` has been deployed."""
+
     def __init__(self, name: str) -> None:
         super().__init__(name, RUUID)
 
@@ -176,10 +192,7 @@ class TableOutput(ResourceOutputs):
     def table_name(self) -> Cloud_Output_Str:
         """The name of the generated table"""
         return Cloud_Output_Str(
-            name=self._name,
-            ruuid=RUUID,
-            key='table_name',
-            type=self.OUTPUT_TYPE
+            name=self._name, ruuid=RUUID, key="table_name", type=self.OUTPUT_TYPE
         )
 
     @table_name.setter
@@ -208,7 +221,7 @@ class attribute_type(str, Enum):
 
 class key_type(str, Enum):
     """Type of key for a defined key on a table.
-    
+
     These value will be used by the primary key to determine how the data is stored in the table.
     visit https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.CoreComponents.html#HowItWorks.CoreComponents.PrimaryKey for more details.
     """
@@ -226,16 +239,17 @@ class attribute_definition_model(ImmutableModel):
         attribute_name (str)
         attribute_type (`attribute_type`)
     """
-    attribute_name: str 
+
+    attribute_name: str
     attribute_type: attribute_type
 
-    
+
 class AttributeDefinition:
     """Construct representing an attribute of a `Table`"""
 
-    def __init__(self, name:str, type: attribute_type) -> None:
+    def __init__(self, name: str, type: attribute_type) -> None:
         """Create an attribute that will be part of a `Table`
-        
+
         Args:
             name (str): Name of the attribute
             type (attribute_type): Type of value the attribute stores
@@ -243,11 +257,9 @@ class AttributeDefinition:
         self.name = name
         self.type = type
 
-
     def render(self) -> attribute_definition_model:
         return attribute_definition_model(
-            attribute_name=self.name,
-            attribute_type=self.type
+            attribute_name=self.name, attribute_type=self.type
         )
 
 
@@ -258,35 +270,32 @@ class key_definition_model(ImmutableModel):
         attribute_name (str)
         key_type (`key_type`)
     """
-    attribute_name: str 
+
+    attribute_name: str
     key_type: key_type
 
 
 class KeyDefinition:
     """Construct representing a primary key of a `Table`"""
 
-    def __init__(self, name:str, type: key_type) -> None:
+    def __init__(self, name: str, type: key_type) -> None:
         """
         Args:
             name (str): Name of the attribute
             type (key_type): Type of value the attribute stores
 
         Note that the `name` property must match a `name` of a given `AttributeDefinition` on the created
-        table. 
+        table.
 
-        The keys on a table will define the optimal way of retrieving data from the `Table`. 
+        The keys on a table will define the optimal way of retrieving data from the `Table`.
 
 
         """
         self.name = name
         self.type = type
 
-
     def render(self) -> key_definition_model:
-        return key_definition_model(
-            attribute_name=self.name,
-            key_type=self.type
-        )
+        return key_definition_model(attribute_name=self.name, key_type=self.type)
 
 
 class simple_table_model(ResourceModel):
@@ -295,6 +304,7 @@ class simple_table_model(ResourceModel):
     Args:
         ResourceModel ([type]): [description]
     """
+
     attributes: FrozenSet[attribute_definition_model]
     keys: FrozenSet[key_definition_model]
 
@@ -382,13 +392,15 @@ class Table(PermissionsAvailableMixin, Resource):
             StreamEvent: The created `Stream_Event`
         """
         if self._stream:
-            raise Exception(f"Already created stream on this table. Use `get_stream()` to get the current stream.")
+            raise Exception(
+                f"Already created stream on this table. Use `get_stream()` to get the current stream."
+            )
 
         event = StreamEvent(
             table_name=self.name,
             view_type=view_type,
             batch_size=batch_size,
-            batch_failure=batch_failure
+            batch_failure=batch_failure,
         )
 
         self._stream = event
@@ -404,14 +416,13 @@ class Table(PermissionsAvailableMixin, Resource):
             StreamEvent: The `StreamEvent` for this Table
         """
         if not self._stream:
-            raise Exception("Stream has not been created. Create a stream for this table using the `create_stream` function.")
+            raise Exception(
+                "Stream has not been created. Create a stream for this table using the `create_stream` function."
+            )
 
         return self._stream
 
-
-    def _check_attributes_and_keys(
-        self
-    ) -> None:
+    def _check_attributes_and_keys(self) -> None:
         """
         Check key constraints based on https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.create_table
         """
@@ -426,24 +437,20 @@ class Table(PermissionsAvailableMixin, Resource):
         if not primary_key.type == key_type.HASH:
             raise Exception("First key is not Hash key")
 
-        if not primary_key.name in set(
-            [x.name for x in self.attributes]
-        ):
+        if not primary_key.name in set([x.name for x in self.attributes]):
             raise Exception(
                 f"Hash key 'AttributeName' ({primary_key.name}) not defined in attributes",
             )
 
         if len(self.keys) == 1:
-            return 
+            return
 
         range_key = self.keys[1]
 
         if not range_key.type == key_type.RANGE:
             raise Exception("Second key is not a Range key")
 
-        if not range_key.name in set(
-            [x.name for x in self.attributes]
-        ):
+        if not range_key.name in set([x.name for x in self.attributes]):
             raise Exception(
                 f"Range key 'AttributeName' ({range_key.name}) not defined in attributes",
             )
@@ -451,15 +458,15 @@ class Table(PermissionsAvailableMixin, Resource):
     def compute_hash(self):
         self._hash = hasher.hash_list(
             [
-                [x.render() for x in self.attributes], 
-                [x.render() for x in self.keys], 
-                self.nonce
+                [x.render() for x in self.attributes],
+                [x.render() for x in self.keys],
+                self.nonce,
             ]
         )
 
     def render(self) -> simple_table_model:
         self._check_attributes_and_keys()
-        
+
         return simple_table_model(
             ruuid=RUUID,
             name=self.name,

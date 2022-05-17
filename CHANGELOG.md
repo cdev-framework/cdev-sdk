@@ -45,11 +45,11 @@ All release will have a corresponding git tag.
 
 ## [0.0.4] - 2022-03-09
 ### Added
-- Support for parsing functions with annotations 
+- Support for parsing functions with annotations
 - Support for adding JWT authorizers with the API Gateway
 - Support for changing a Project's base settings class
 - Slack Bot template project### Added
-- Support for parsing functions with annotations 
+- Support for parsing functions with annotations
 - Support for adding JWT authorizers with the API Gateway
 - Support for changing a Project's base settings class
 - Slack Bot template project
@@ -62,12 +62,10 @@ All release will have a corresponding git tag.
 ## [0.0.3] - 2022-02-18
 ### Added
 - Create 'MANIFEST.in' to include 'cdev/template-projects/' and exclude '\_\_pycache\_\_'
-- Add 'MANIFEST.in' to the final package 
+- Add 'MANIFEST.in' to the final package
 - Added this Change Log
 
 
 ## [0.0.2] - 2022-02-18
 ### Added
 - Create project on PyPI
-
-
