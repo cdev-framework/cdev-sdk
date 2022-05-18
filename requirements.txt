@@ -36,6 +36,7 @@ s3transfer==0.4.2
 six==1.16.0
 sortedcontainers==2.3.0
 toml==0.10.2
+tox==3.25.0
 typing-extensions==3.10.0.2
 urllib3==1.26.8
 watchdog==2.1.5

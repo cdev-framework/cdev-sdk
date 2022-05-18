@@ -7,15 +7,16 @@ MAIN_DIR = os.path.dirname(os.getcwd())
 print(__file__)
 print(MAIN_DIR)
 # The text of the README file
-README = open(os.path.join(MAIN_DIR, "README.md")).read()
+# README = open(os.path.join(MAIN_DIR, "README.md")).read()
 
-
+print(setuptools.find_packages())
+# raise Exception
 setuptools.setup(
     name="cdev",
     version="0.0.8",
     scripts=["./cdev/scripts/cdev", "./core/scripts/cdev_core"],
     description="CLI for cdev sdk",
-    long_description=README,
+    long_description="description",
     long_description_content_type="text/markdown",
     author="CDEV LLC",
     author_email="daniel@cdevframework.com",
