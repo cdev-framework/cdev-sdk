@@ -1,6 +1,8 @@
 #!/bin/bash
 # Script to set up environment
 
+pyenv local 3.7.12 3.8.13 3.9.12
+
 python -m venv .venv
 
 . ./scripts/activate
