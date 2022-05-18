@@ -9,6 +9,9 @@ All release will have a corresponding git tag.
 ## [Unreleased]
 ### Added
 - Add support for Serverless Function Resource to preserve original callable object
+- Add `pre-commit` to the code base to be used for styling
+- Add `tox` to help with testing multiple `python` versions
+- Add CONTRIBUTING.md
 
 
 ## [0.0.8] - 2022-04-05
