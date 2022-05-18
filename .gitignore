@@ -140,4 +140,4 @@ personal/*
 
 documentation-output/*
 
-.cdev/*
+**/.cdev/*
