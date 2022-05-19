@@ -83,7 +83,6 @@ class cloud_output_dynamic_model(cloud_output_model):
     """
 
 
-
 def evaluate_dynamic_output(original_value: Any, cloud_output_dynamic: cloud_output_dynamic_model) -> Any:
     """Evaluate a set of operations on a starting value.
 
@@ -101,6 +100,7 @@ def evaluate_dynamic_output(original_value: Any, cloud_output_dynamic: cloud_out
 
     intermediate_value = original_value
     for x in operations:
+        assert len(x) == 3
         func_name = x[0]
         xargs = x[1]
         kwargs = x[2]
@@ -121,12 +121,10 @@ def evaluate_dynamic_output(original_value: Any, cloud_output_dynamic: cloud_out
         elif func_name == "join":
             new_rv = getattr(intermediate_value, func_name)(xargs)
 
-
         else:
             object_methods = set([method_name for method_name in dir(str) if callable(getattr(str, method_name))])
-    
-    
-            if not func_name in object_methods:
+
+            if func_name not in object_methods:
                 print(object_methods)
                 raise Exception(f"'{func_name}' not in available methods for {intermediate_value} ({type(intermediate_value)})")
     
@@ -138,10 +136,8 @@ def evaluate_dynamic_output(original_value: Any, cloud_output_dynamic: cloud_out
                 new_rv = getattr(intermediate_value, func_name)(*xargs)
             elif (not xargs) and (not kwargs):
                 new_rv = getattr(intermediate_value, func_name)() 
-    
-    
-        intermediate_value = new_rv
 
+        intermediate_value = new_rv
 
     return intermediate_value
 
@@ -154,13 +150,11 @@ class Cloud_Output():
     Mutable Class that can used during the creation phases to represent a desired cloud output model.
     """
 
-
     def __init__(self, name: str, ruuid: str, key: str, type: OutputType) -> None:
         self._name = name
         self._ruuid = ruuid
         self._key = key
         self._type = type
-
 
     def render(self) -> cloud_output_dynamic_model:
         return cloud_output_model(
@@ -178,6 +172,7 @@ class Cloud_Output():
             self._key,
             self._type
         ])
+
 
 class Cloud_Output_Dynamic(Cloud_Output):
     """
@@ -200,7 +195,6 @@ class Cloud_Output_Dynamic(Cloud_Output):
             output_operations=operations
         )
 
-
     def hash(self) -> str:
         return hasher.hash_list([
             super().hash(),
@@ -209,11 +203,11 @@ class Cloud_Output_Dynamic(Cloud_Output):
 
    
 
-
 ########################
 ##### Types of Output
 ########################
-    
+
+
 class Cloud_Output_Bool(Cloud_Output_Dynamic):
     """
     Cloud Output that will resolve to a Boolean value after being retrieve or after all the operations have been executed
@@ -221,7 +215,6 @@ class Cloud_Output_Bool(Cloud_Output_Dynamic):
 
     def __init__(self, name: str, ruuid: str, key: str, type: OutputType) -> None:
         super().__init__(name, ruuid, key, type)
-
 
     def and_(self, x: bool) -> 'Cloud_Output_Bool':
         """And against x
@@ -238,7 +231,6 @@ class Cloud_Output_Bool(Cloud_Output_Dynamic):
 
         return self
 
-
     def or_(self, x: bool) -> 'Cloud_Output_Bool':
         """Or against x
 
@@ -254,7 +246,6 @@ class Cloud_Output_Bool(Cloud_Output_Dynamic):
 
         return self
 
-
     def xor_(self, x: bool) -> 'Cloud_Output_Bool':
         """Xor against x
 
@@ -269,7 +260,6 @@ class Cloud_Output_Bool(Cloud_Output_Dynamic):
         )
 
         return self
-
 
     def not_(self) -> 'Cloud_Output_Bool':
         """Not Current Value
@@ -297,7 +287,6 @@ class Cloud_Output_Int(Cloud_Output_Dynamic):
     def __init__(self, name: str, ruuid: str, key: str, type: OutputType) -> None:
         super().__init__(name, ruuid, key, type)
 
-
     def add(self, x: int) -> 'Cloud_Output_Int':
         """Add x 
 
@@ -313,7 +302,6 @@ class Cloud_Output_Int(Cloud_Output_Dynamic):
 
         return self
 
-    
     def subtract(self, x: int) -> 'Cloud_Output_Int':
         """Substract x
 
@@ -328,7 +316,6 @@ class Cloud_Output_Int(Cloud_Output_Dynamic):
         )
 
         return self
-
 
     def multiply(self, x: int) -> 'Cloud_Output_Int':
         """Multiply x
@@ -345,7 +332,7 @@ class Cloud_Output_Int(Cloud_Output_Dynamic):
 
         return self
 
-
+    # ANIBAL type return does not match
     def divide_mod(self, x: int) -> Tuple['Cloud_Output_Int', 'Cloud_Output_Int']:
         """Return the pair (i // x, i % x)
 

@@ -38,34 +38,29 @@ AVAILABLE_TEMPLATES = [
     'power-tools'
 ]
 
-def create_project_cli(args):
+
+def create_project_cli(args) -> None:
     config = args
     set_global_logger_from_cli(config.loglevel)
 
-    if args.template:
-        template_name = args.template
-
-        if template_name not in AVAILABLE_TEMPLATES:
-            print(f"{template_name} is not one of the available templates. {AVAILABLE_TEMPLATES}")
-            return
-
-    else:
-        template_name = None
+    template_name = args.template
+    if template_name and template_name not in AVAILABLE_TEMPLATES:
+        print(f"{template_name} is not one of the available templates. {AVAILABLE_TEMPLATES}")
+        return
 
     create_project(args.name)
-    print(f"Loading Template {template_name}")
     _load_template(template_name)
     
 
-def _load_template(template_name: str):
+def _load_template(template_name: str) -> None:
     if not template_name:
         return
 
-    template_folder_name = template_name.replace('-','_')
+    print(f"Loading Template {template_name}")
+    template_folder_name = template_name.replace('-', '_')
 
-
-    if not template_folder_name in os.listdir(TEMPLATE_LOCATIONS):
-        print(f"Could not finder template for {template_folder_name}")
+    if template_folder_name not in os.listdir(TEMPLATE_LOCATIONS):
+        print(f"Could not find template for {template_folder_name}")
         return
 
     template_location = os.path.join(TEMPLATE_LOCATIONS, template_folder_name)
@@ -77,17 +72,16 @@ def _load_template(template_name: str):
         elif os.path.isfile(full_location):
             shutil.copyfile(full_location, os.path.join(BASE_PROJECT_LOCATION, x))
 
-
     print(f"Created Project From Template: {template_name}")
 
-def create_project(project_name: str, base_directory: DirectoryPath = None):
+
+def create_project(project_name: str, base_directory: DirectoryPath = None) -> None:
 
     if not base_directory:
         base_directory = os.getcwd()
 
     if check_if_project_exists(base_directory):
         raise Exception("Project Already Created")
-
 
     _create_folder_structure(base_directory, DEFAULT_ENVIRONMENTS)
 
@@ -121,7 +115,7 @@ def create_project(project_name: str, base_directory: DirectoryPath = None):
 
     for environment in DEFAULT_ENVIRONMENTS:
 
-        environment_settings =  {
+        environment_settings = {
             "user_setting_module": [
                 # set the settings modules as python modules
                 os.path.relpath(os.path.join(base_settings_folder, f'base_settings.py'), start=base_dir)[:-3].replace('/',"."),
@@ -131,14 +125,12 @@ def create_project(project_name: str, base_directory: DirectoryPath = None):
         }
 
         new_project.create_environment(environment, environment_settings)
-    
 
     new_project.set_state(Project_State.UNINITIALIZED)
-
     new_project.set_current_environment(DEFAULT_ENVIRONMENTS[-1])
 
 
-def _create_folder_structure(base_directory: DirectoryPath, extra_settings: List[str]):
+def _create_folder_structure(base_directory: DirectoryPath, extra_settings: List[str]) -> None:
     """Create a skeleton file structure needed to make a project.
 
     Args:
@@ -146,35 +138,35 @@ def _create_folder_structure(base_directory: DirectoryPath, extra_settings: List
         extra_settings (List[str]): [description]
     """
 
-    if not os.path.isdir(os.path.join(base_directory, CDEV_FOLDER)):
+    if os.path.isdir(os.path.join(base_directory, CDEV_FOLDER)) is False:
         os.mkdir(os.path.join(base_directory, CDEV_FOLDER))
 
-    if not os.path.isdir(os.path.join(base_directory, CDEV_FOLDER, STATE_FOLDER)):
+    if os.path.isdir(os.path.join(base_directory, CDEV_FOLDER, STATE_FOLDER)) is False:
         os.mkdir(os.path.join(base_directory, CDEV_FOLDER, STATE_FOLDER))
 
-    if not os.path.isdir(os.path.join(base_directory, CDEV_FOLDER, INTERMEDIATE_FOLDER)):
+    if os.path.isdir(os.path.join(base_directory, CDEV_FOLDER, INTERMEDIATE_FOLDER)) is False:
         os.mkdir(os.path.join(base_directory, CDEV_FOLDER, INTERMEDIATE_FOLDER))
-
 
     base_settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
 
-    if not os.path.isdir(base_settings_folder):
+    if os.path.isdir(base_settings_folder) is False:
         os.mkdir(base_settings_folder)
 
-    with open(os.path.join( base_settings_folder, f'base_settings.py'), 'w'):
+    with open(os.path.join(base_settings_folder, f'base_settings.py'), 'w'):
         pass
 
-    with open(os.path.join( base_settings_folder, f'__init__.py'), 'w'):
+    with open(os.path.join(base_settings_folder, f'__init__.py'), 'w'):
         pass
     
     for environment in extra_settings:
-        with open( os.path.join( base_settings_folder, f'{environment}_settings.py'), 'w' ):
+        with open(os.path.join( base_settings_folder, f'{environment}_settings.py'), 'w'):
             pass
 
         os.mkdir(os.path.join(base_settings_folder, f'{environment}_secrets'))
 
 
-def load_project(args):
+# ANIBAL we should refactor these two into a single function with an extra parameter initialize=False
+def load_project(args) -> None:
     base_directory = os.getcwd()
 
     project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)
@@ -182,7 +174,7 @@ def load_project(args):
     local_project(project_info_location)
 
 
-def load_and_initialize_project(args):
+def load_and_initialize_project(args) -> None:
     base_directory = os.getcwd()
 
     project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)

@@ -55,12 +55,10 @@ class Settings(BaseSettings):
 
     USE_DOCKER: bool = False
 
-
     class Config:
         env_prefix = 'cdev_'
         validate_assignment = True
         #extra = 'allow'
-
 
 
 def initialize_settings(info: Settings_Info) -> Settings:
@@ -82,8 +80,6 @@ def initialize_settings(info: Settings_Info) -> Settings:
 
     if info.user_setting_module:
         for settings_module in info.user_setting_module:
-            
-
             module = import_module(settings_module)
 
             for setting in dir(module):
@@ -92,10 +88,4 @@ def initialize_settings(info: Settings_Info) -> Settings:
 
                     setattr(base_setting_obj, setting, setting_value)
 
-       
-
     return base_setting_obj
-
-    
-
-

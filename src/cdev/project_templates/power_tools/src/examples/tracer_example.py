@@ -17,4 +17,3 @@ def collect_payment(charge_id: str):
 def handler(event, context):
     charge_id = event.get('charge_id')
     payment = collect_payment(charge_id)
-

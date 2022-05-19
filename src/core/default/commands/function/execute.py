@@ -39,8 +39,6 @@ class execute(BaseCommand):
             type=str,
             help="Raw string form of event object to provide as input to the function. Can not be used with '--event' flag.",
         )
-        
-       
 
     def command(self, *args, **kwargs):
 
@@ -65,14 +63,12 @@ class execute(BaseCommand):
                     print(e)
                     raise Exception(f'Could not load {event_file_location} as json')
 
-                
         if event_raw_data:
             try:
                 event_data = json.loads(event_raw_data)
             except Exception as e:
                 print(e)
                 raise Exception(f'Could not load {event_raw_data} as json')
-
 
         component_name = full_function_name.split('.')[0]
         function_name = full_function_name.split('.')[1]
@@ -87,6 +83,5 @@ class execute(BaseCommand):
             InvocationType='RequestResponse',
             Payload=json.dumps(event_data)
         )
-
 
         print(response)

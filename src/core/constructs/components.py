@@ -125,7 +125,6 @@ class Component_Difference(BaseModel):
         frozen = True
 
 
-
 class Component:
     """
     A component is a logical collection of resources. This simple definition is intended to allow flexibility for different

@@ -1,11 +1,7 @@
-from typing import List, Dict
 
 from pydantic import BaseModel
-from pydantic.types import FilePath
 
 from core.constructs.workspace import Workspace, Workspace_Info
-
-
 
 
 class environment_info(BaseModel):
@@ -42,5 +38,5 @@ class Environment:
     def get_workspace(self) -> Workspace:
         raise NotImplementedError
 
-    def initialize_environment(self):
+    def initialize_environment(self) -> None:
         raise NotImplementedError

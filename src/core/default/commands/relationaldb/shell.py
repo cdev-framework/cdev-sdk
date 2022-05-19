@@ -22,7 +22,6 @@ class shell(BaseCommand):
         parser.add_argument(
             "resource", type=str, help="The database to execute on. Name must include component name. ex: comp1.myDb"
         )
-      
 
     def command(self, *args, **kwargs):
 
@@ -33,7 +32,6 @@ class shell(BaseCommand):
         cluster_arn, secret_arn, db_name = get_db_info_from_cdev_name(component_name, database_name)
 
         interactive_shell(fmt(Console()), cluster_arn, secret_arn, db_name).cmdloop()
-
 
 
 class db_connection():
@@ -53,7 +51,6 @@ class db_connection():
         except Exception as e:
             raise e
 
-
     def begin(self):
         try:
             res = self.conn._client.begin_transaction(
@@ -67,10 +64,8 @@ class db_connection():
         except Exception as e:
             raise e
 
-
     def commit(self):
         try:
-            
             self.conn.commit()
 
         except Exception as e:

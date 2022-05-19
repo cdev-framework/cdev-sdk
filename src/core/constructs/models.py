@@ -16,6 +16,7 @@ from pydantic.typing import (
 
 from typing import  Any
 
+
 class frozendict(Mapping):
 
     def __init__(self, d: dict):
@@ -128,6 +129,3 @@ class ImmutableModel(BaseModel):
     class Config:
         extra = "allow"
         frozen = True
-
-
-        

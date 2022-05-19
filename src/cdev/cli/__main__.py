@@ -202,11 +202,12 @@ def add_general_output_options(parser: argparse.ArgumentParser):
 for command in CDEV_COMMANDS:
     tmp = subparsers.add_parser(command.get("name"), help=command.get("help"))
 
-    if command.get("subcommands"):
+    subcommands = command.get("subcommands")
+    if subcommands:
         tmp.set_defaults(func=subcommand_function_wrapper("", command.get("default")))
         t1 = tmp.add_subparsers()
 
-        for subcommand in command.get("subcommands"):
+        for subcommand in subcommands:
             t2 = t1.add_parser(subcommand.get("command"), help=subcommand.get("help"))
             t2.set_defaults(
                 func=subcommand_function_wrapper(
@@ -215,18 +216,15 @@ for command in CDEV_COMMANDS:
             )
 
             for arg in subcommand.get("args"):
-                dest = arg.get("dest")
-                arg.pop("dest")
+                dest = arg.pop("dest")
                 t2.add_argument(dest, **arg)
 
-           
             add_general_output_options(t2)
 
     else:
         if command.get("args"):
             for arg in command.get("args"):
-                dest = arg.get("dest")
-                arg.pop("dest")
+                dest = arg.pop("dest")
                 tmp.add_argument(dest, **arg)
 
         tmp.set_defaults(func=command.get("default"))

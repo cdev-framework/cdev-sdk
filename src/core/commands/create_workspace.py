@@ -16,6 +16,7 @@ def create_workspace(args):
 
     if manager.check_if_workspace_exists():
         print("Workspace already initialized")
+        # ANIBAL shouldn't we return here?
 
     workspace_info = cdev_workspace.Workspace_Info(
         "core.default.workspace",
@@ -38,5 +39,4 @@ def create_workspace(args):
     )
 
     manager.create_new_workspace(workspace_info)
-
     return

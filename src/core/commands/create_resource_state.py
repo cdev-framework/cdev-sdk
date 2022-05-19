@@ -7,9 +7,8 @@ from ..constructs.workspace import Workspace
 
 def create_resource_state_cli(args):
 
-    WORKSPACE = Workspace.instance()
-
-    create_resource_state(WORKSPACE)
+    workspace = Workspace.instance()
+    create_resource_state(workspace)
 
 
 def create_resource_state(workspace: Workspace):

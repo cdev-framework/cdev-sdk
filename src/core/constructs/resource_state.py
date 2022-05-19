@@ -56,7 +56,6 @@ class Resource_State(BaseModel):
     A dictionary of transaction tokens to a tuple of (component_name, diff, error_info) for the changes that failed
     """
 
-
     def __init__(
         __pydantic_self__,
         name: str,

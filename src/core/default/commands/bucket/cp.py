@@ -20,7 +20,6 @@ class cp(BaseCommand):
     Command to mirror s3 `cp` command.
     
     """
-
     def add_arguments(self, parser: ArgumentParser):
         parser.add_argument(
             "source",
@@ -62,8 +61,6 @@ class cp(BaseCommand):
         else:
             raise Exception(f"Source {source_raw} is neither a valid location on the file system or a valid remote location")
 
-
-
         if utils.is_valid_remote(destination_raw):
             is_destination_remote = True
             destination = utils.parse_remote_location(destination_raw)
@@ -75,9 +72,6 @@ class cp(BaseCommand):
         elif os.path.isdir(os.path.dirname(destination_raw)):
             is_destination_remote = False
             destination = destination_raw
-
-        
-
         else:
             raise Exception(f"Destination {destination_raw} is neither a valid location on the file system or a valid remote location")
 
@@ -85,9 +79,7 @@ class cp(BaseCommand):
         if not is_destination_remote and not is_source_remote:
             raise Exception(f"Both destination ({destination}) and source ({source}) are file system locations")
 
-
         s3 = boto3.resource("s3")
-        
 
         if is_destination_remote and not is_source_remote:
             # Remote destination and local file system. 
@@ -125,7 +117,6 @@ class cp(BaseCommand):
             self.stdout.write(f"Download {source_raw} -> {destination_raw} ")
             bucket.download_file(source.path, destination)
 
-
         if is_destination_remote and is_source_remote:
             # Local destination and remote source.
             # Pulling down
@@ -135,7 +126,6 @@ class cp(BaseCommand):
 
             destination_cloud_output = utils.get_cloud_output_from_cdev_name(destination.component_name, destination.cdev_bucket_name)
             destination_bucket_name = destination_cloud_output.get('bucket_name')
-            
 
             destination_bucket = s3.Bucket(destination_bucket_name)
 
@@ -149,8 +139,3 @@ class cp(BaseCommand):
                 }, 
                 destination_key
             )
-
-
-
-
-

@@ -45,14 +45,12 @@ class sync_files(BaseCommand):
         final_dir = get_full_path_from_workspace_base(content_directory)
 
         bucket_name = cloud_output.get("bucket_name")
-        
 
         s3 = boto3.resource("s3")
         bucket = s3.Bucket(bucket_name)
 
         if clear_bucket:
             bucket.object_versions.delete()
-
 
         for subdir, dirs, files in os.walk(final_dir):
             for file in files:

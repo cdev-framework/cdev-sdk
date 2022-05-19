@@ -12,10 +12,8 @@ import networkx as nx
 
 def execute_deployment_cli(args):
 
-    WORKSPACE = Workspace.instance()
-
-    execute_deployment(WORKSPACE, OutputManager())
-
+    workspace = Workspace.instance()
+    execute_deployment(workspace, OutputManager())
 
 
 def execute_deployment(workspace: Workspace, output: OutputManager):
@@ -29,15 +27,11 @@ def execute_deployment(workspace: Workspace, output: OutputManager):
     print("")
     do_deployment = Confirm.ask("Do you want to deploy differences?")
 
-    if not do_deployment:
+    if do_deployment is not True:
         return
 
     workspace.set_state(Workspace_State.EXECUTING_BACKEND)
-
     workspace.deploy_differences(differences_structured)
-
-
-    
 
     for tag, cloud_output in workspace.render_outputs():
         print(f"{tag} -> {cloud_output}")

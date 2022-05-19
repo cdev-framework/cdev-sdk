@@ -106,7 +106,7 @@ class Project:
         return _GLOBAL_PROJECT
 
     @classmethod
-    def set_global_instance(cls, project: "Project"):
+    def set_global_instance(cls, project: "Project") -> None:
         """
         Method to set the global Project object. Should only be used to as defined in the lifecycle of the Cdev process. (documentation)
         """
@@ -114,7 +114,7 @@ class Project:
         _GLOBAL_PROJECT = project
 
     @classmethod
-    def remove_global_instance(cls, caller: "Project"):
+    def remove_global_instance(cls, caller: "Project") -> None:
         """
         Method to reset the Global Project object. This should be the final cleanup step for a Cdev process.
         """
@@ -128,8 +128,7 @@ class Project:
 
         _GLOBAL_PROJECT = None
 
-
-    def set_name(self, name: str):
+    def set_name(self, name: str) -> None:
         """
         Set the name of this Project
 
@@ -138,8 +137,7 @@ class Project:
         """
         raise NotImplementedError
 
-
-    def get_name(self):
+    def get_name(self) -> str:
         """
         Get the name of this Project
 
@@ -157,27 +155,27 @@ class Project:
         """
         raise NotImplementedError
 
-    def initialize_project(self):
+    def initialize_project(self) -> None:
         """
         Initialize the Project object so that it is ready to perform a given operation. Note that any configuration needed for the initialization
         process should be defined during the creation of the object, and set such that this function needs no input.
         """
         raise NotImplementedError
 
-    def terminate_project(self):
+    def terminate_project(self) -> None:
         """
         Terminate the Project object as a cleanup operation after a given operation is complete. This should be the final step in the life cycle
         of an operation that need to initialize the project.
         """
         raise NotImplementedError
 
-    def create_environment(self, environment_name: str, settings_files: List[str]):
+    def create_environment(self, environment_name: str, settings_files: List[str]) -> None:
         """
         Create a new environment for this project.
         """
         raise NotImplementedError
 
-    def destroy_environment(self, environment_name: str):
+    def destroy_environment(self, environment_name: str) -> None:
         """
         Destroy an environment. This function should only be called when the project is in the Initialized state, so that
         any cloud resources in the environment will be destroyed.
@@ -202,7 +200,7 @@ class Project:
         """
         raise NotImplementedError
 
-    def set_current_environment(self, environment_name: str):
+    def set_current_environment(self, environment_name: str) -> None:
         """
         Change the currently active environment for this Project. This should only be called when the Project is
         in the Uninitialized state to prevent it from being called during operations that modify an environment.
@@ -241,7 +239,6 @@ class Project:
         """
         raise NotImplementedError
 
-
     ############################
     ##### Settings
     ############################
@@ -249,19 +246,15 @@ class Project:
     def settings(self) -> Settings:
         raise NotImplementedError
 
-    
     @settings.setter
     def settings(self, value: Settings):
         raise NotImplementedError
 
-
     def get_settings_info(self, environment_name: str = None) -> Settings_Info:
         raise NotImplementedError
 
-    
     def update_settings_info(self, new_value: Settings_Info, environment_name: str = None):
         raise NotImplementedError
-
 
     #######################
     ##### Display Output
@@ -275,7 +268,6 @@ class Project:
             output: The Cloud Output to render
         """
         raise NotImplementedError
-
 
     def render_outputs(self) -> List[Tuple[str, Any]]:
         """Render the output associated with the Workspace

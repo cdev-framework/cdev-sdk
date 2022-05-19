@@ -13,23 +13,18 @@ from core.utils.logger import log
 
 def execute_frontend_cli(args):
 
-    WORKSPACE = Workspace.instance()
-
+    workspace = Workspace.instance()
     output_manager = OutputManager()
 
-
-    
-    execute_frontend(WORKSPACE, output_manager)
+    execute_frontend(workspace, output_manager)
 
 
-
-def execute_frontend(workspace: Workspace, output: OutputManager, previous_component_names: List[str]=None) -> Tuple[List[Component_Difference], List[Resource_Difference], List[Resource_Reference_Difference]]:
+def execute_frontend(workspace: Workspace, output: OutputManager, previous_component_names: List[str] = None) -> Tuple[List[Component_Difference], List[Resource_Difference], List[Resource_Reference_Difference]]:
 
     log.debug("Executing Frontend")
 
     workspace.set_state(Workspace_State.EXECUTING_FRONTEND)
     current_state = workspace.generate_current_state()
-
 
     output.print_local_state(current_state)
 
@@ -38,18 +33,17 @@ def execute_frontend(workspace: Workspace, output: OutputManager, previous_compo
     else:
         diff_previous_component_names = previous_component_names
 
-    
+
     output.print_components_to_diff_against(diff_previous_component_names)
 
     differences = workspace.create_state_differences(current_state, diff_previous_component_names)
 
-
+    # ANIBAL simple use any(differences)
     if any(x for x in differences):
         output.print_state_differences(differences)
-
     else:
+        differences = None
         print("No Differences")
-        return None
 
     log.debug("Finish Executing Frontend")
     

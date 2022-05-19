@@ -5,13 +5,13 @@ from core.commands.deploy_differences import execute_deployment
 from cdev.default.output_manager import CdevOutputManager
 
 
-def develop_command_cli(args):
+def develop_command_cli(args) -> None:
     config = args[0]
     set_global_logger_from_cli(config.loglevel)
     develop_command(args)
 
 
-def develop_command(args):
+def develop_command(args) -> None:
 
     output_manager = CdevOutputManager()
     myProject = Project.instance()
@@ -19,7 +19,7 @@ def develop_command(args):
     print(f"Live Development")
 
 
-
+# ANIBAL dead code
 """import os
 import sys
 from time import sleep

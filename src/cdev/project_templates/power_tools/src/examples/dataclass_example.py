@@ -12,6 +12,7 @@ DemoApi = Api("demoapi")
 
 hello_route = DemoApi.route("/helloworld", "GET")
 
+
 @simple_function_annotation("dataclass_example", events=[hello_route.event()])
 @event_source(data_class=APIGatewayProxyEventV2)
 def lambda_handler(event: APIGatewayProxyEventV2, context):

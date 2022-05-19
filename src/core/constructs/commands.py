@@ -16,6 +16,8 @@ import os
 from argparse import ArgumentParser, HelpFormatter
 import sys
 from io import TextIOBase
+from typing import Any
+
 from rich.console import Console
 
 
@@ -56,15 +58,15 @@ class CdevHelpFormatter(HelpFormatter):
         "--skip-checks",
     }
 
-    def _reordered_actions(self, actions):
+    def _reordered_actions(self, actions) -> Any:
         return sorted(
             actions, key=lambda a: set(a.option_strings) & self.show_last != set()
         )
 
-    def add_usage(self, usage, actions, *args, **kwargs):
+    def add_usage(self, usage, actions, *args, **kwargs) -> None:
         super().add_usage(usage, self._reordered_actions(actions), *args, **kwargs)
 
-    def add_arguments(self, actions):
+    def add_arguments(self, actions) -> None:
         super().add_arguments(self._reordered_actions(actions))
 
 
@@ -92,13 +94,15 @@ class OutputWrapper(TextIOBase):
     def __getattr__(self, name):
         return getattr(self._out, name)
 
-    def flush(self):
-        if hasattr(self._out, "flush"):
-            self._out.flush()
+    def flush(self) -> None:
+        if hasattr(self._out, "flush") is False:
+            return
+        self._out.flush()
 
-    def isatty(self):
+    def isatty(self) -> bool:
         return hasattr(self._out, "isatty") and self._out.isatty()
 
+    # ANIBAL write is the same in both. We may refactor in a base Wrapper or a Mixin
     def write(self, msg="", style_func=None, ending=None):
         ending = self.ending if ending is None else ending
         if ending and not msg.endswith(ending):
@@ -131,19 +135,19 @@ class ConsoleOutputWrapper(TextIOBase):
     def __getattr__(self, name):
         return getattr(self._out, name)
 
-    def flush(self):
+    def flush(self) -> None:
         self._out.clear()
 
-    def isatty(self):
+    def isatty(self) -> bool:
         return self._out.is_terminal
 
-    def write(self, msg: str ="", style_func=None, ending=None):
+    # ANIBAL write is the same in both. We may refactor in a base Wrapper or a Mixin
+    def write(self, msg: str = "", style_func=None, ending=None) -> None:
         ending = self.ending if ending is None else ending
         if ending and not msg.endswith(ending):
             msg += ending
         style_func = style_func or self.style_func
         self._out.print(style_func(msg))
-
 
 
 class BaseCommand:
@@ -176,13 +180,13 @@ class BaseCommand:
 
         return parser
 
-    def add_arguments(self, parser: ArgumentParser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         """Add the cli arguments for the command
         
         """
         pass
 
-    def run_from_command_line(self, argv):
+    def run_from_command_line(self, argv) -> None:
         """
         Handles input from command line and builds arg parser and uses it to validate input.
 
@@ -232,5 +236,5 @@ class BaseCommandContainer:
         self.stdout = ConsoleOutputWrapper(stdout) if stdout else OutputWrapper(sys.stdout)
         self.stderr = ConsoleOutputWrapper(stderr) if stderr else OutputWrapper(sys.stderr)
 
-    def display_help_message(self) -> str:
+    def display_help_message(self) -> None:
         self.stdout.write(self.help)

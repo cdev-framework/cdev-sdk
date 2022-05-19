@@ -77,24 +77,25 @@ class Workspace_State(str, Enum):
     EXECUTING_BACKEND = "EXECUTING_BACKEND"
 
 
+# ANIBAL: I would rename this into a more obvious
+# require_phase or something like that
 def wrap_phase(phases: List[Workspace_State]) -> Callable[[F], F]:
     """
-    Annotation that denotes when a function can be executed within the life cycle of a workspace. Throws excpetion if the workspace is not in the correct
-    phase.
+    Annotation that denotes when a function can be executed within the life cycle of a workspace.
+    Throws excpetion if the workspace is not in the correct phase.
     """
 
     def inner_wrap(func: F) -> F:
         def wrapper_func(workspace: "Workspace", *func_posargs, **func_kwargs):
 
             current_state = workspace.get_state()
-            if not current_state in phases:
+            if current_state not in phases:
                 raise Exception(
                     f"Trying to call {func} while in workspace state {current_state} but need to be in {phases}"
                 )
 
-            else:
-                rv = func(workspace, *func_posargs, **func_kwargs)
-                return rv
+            rv = func(workspace, *func_posargs, **func_kwargs)
+            return rv
 
         return wrapper_func
 

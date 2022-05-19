@@ -15,7 +15,7 @@ passed as configuration into the dynamicall loaded class.
 
 """
 import inspect
-from typing import Dict, Tuple, Any, List
+from typing import Dict, Tuple, Any, List, Callable, Optional
 from pydantic import BaseModel
 
 from .components import Component_Difference, ComponentModel
@@ -76,7 +76,7 @@ class Backend:
         """
         raise NotImplementedError
 
-    def delete_resource_state(self, resource_state_uuid: str):
+    def delete_resource_state(self, resource_state_uuid: str) -> None:
         """
         Delete a resource state within this store state.
 
@@ -137,7 +137,7 @@ class Backend:
 
     def update_component(
         self, resource_state_uuid: str, component_difference: Component_Difference
-    ):
+    ) -> None:
         """Make an update to the component. 
 
         Args:
@@ -202,7 +202,7 @@ class Backend:
         transaction_token: str,
         cloud_output: Dict,
         resolved_cloud_information: Dict={}
-    ):
+    ) -> None:
         """
         Notify the resource state that all changes to a resource have completed successfully. This will cause the resource to
         update the state of the resource to the new state.
@@ -230,7 +230,7 @@ class Backend:
         diff: Resource_Difference,
         transaction_token: str,
         failed_state: Dict,
-    ):
+    ) -> None:
         """
         Notify the resource state that an attempted change to a resource has failed. The provided failed state should encapsulate any needed information
         for a future mapper to recover the state of the resource back into a proper state.
@@ -255,7 +255,7 @@ class Backend:
         self,
         resource_state_uuid: str,
         diff: Resource_Reference_Difference,
-    ):
+    ) -> None:
         """
         Either reference or dereference a resource from a different component.
 
@@ -275,7 +275,7 @@ class Backend:
     # We can just delete the failure from our failed state (not recommended unless you know what you are doing because it can leave resources in the cloud)
     def change_failed_state_of_resource_change(
         self, resource_state_uuid: str, transaction_token: str, new_failed_state: Dict
-    ):
+    ) -> None:
         """
         Update the failed state of a 'resource change'.
 
@@ -296,7 +296,7 @@ class Backend:
         resource_state_uuid: str,
         transaction_token: str,
         to_previous_state: bool = True,
-    ):
+    ) -> None:
         """
         Recover the state of the change back to the previous state or forward to the new state. Note this will result in the failed resource change being removed from the stored state.
 
@@ -314,7 +314,7 @@ class Backend:
 
     def remove_failed_resource_change(
         self, resource_state_uuid: str, transaction_token: str
-    ):
+    ) -> None:
         """
         Completely remove the failed resource change from the stored state. Note that this should be used with caution as it can lead to hanging cloud resources.
 
@@ -402,7 +402,6 @@ class Backend:
 
         """
         raise NotImplementedError
-
 
     def get_cloud_output_by_name(
         self,
@@ -500,7 +499,7 @@ def load_backend(config: Backend_Configuration) -> Backend:
 
         raise e
 
-    backend_class = None
+    backend_class: Optional[Callable] = None
     for item in dir(backend_module):
         potential_obj = getattr(backend_module, item)
         if (
@@ -511,15 +510,16 @@ def load_backend(config: Backend_Configuration) -> Backend:
             backend_class = potential_obj
             break
 
-    if not backend_class:
+    if backend_class is None:
         print(f"Could not find {config.python_class} in {config.python_module}")
         raise Exception
 
     try:
+        # ANIBAL Changing potential_obj -> backend_class
         # initialize the backend obj with the provided configuration values
-        initialized_obj = potential_obj(**config.config)
+        initialized_obj = backend_class(**config.config)
     except Exception as e:
-        print(f"Could not initialize {potential_obj} Class from config {config.config}")
+        print(f"Could not initialize {backend_class} Class from config {config.config}")
         raise e
 
     return initialized_obj

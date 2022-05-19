@@ -202,6 +202,7 @@ class ResourceOutputs():
 ##### Reference
 ##################
 
+
 class ResourceReferenceModel(ImmutableModel):
     """
     This is the information needed to reference a resource that is defined outside this component
@@ -334,13 +335,11 @@ class PermissionsAvailableMixin:
         self._available_permissions = permissions
 
 
-
 class PermissionsGrantableMixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)  # forwards all unused arguments
         self._granted_permissions = [] # Needs to be set later in the calling subclass
-
 
     @property
     def granted_permissions(self):
