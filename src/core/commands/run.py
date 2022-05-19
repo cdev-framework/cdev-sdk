@@ -1,4 +1,4 @@
-"""Utilities for running custom scripts 
+"""Utilities for running custom scripts
 
 """
 
@@ -10,7 +10,7 @@ from ..constructs.output_manager import OutputManager
 
 def execute_run_cli(args):
     ws = Workspace.instance()
-    
+
     output_manager = OutputManager()
 
     run_command(ws, output_manager, args)
@@ -30,7 +30,6 @@ def run_command(workspace: Workspace, output: OutputManager, cli_args):
     sub_command = params.get("subcommand")
     command_args = params.get("args") if params.get("args") else []
 
-    
     try:
         workspace.execute_command(sub_command, command_args)
     except Exception as e:

@@ -30,18 +30,17 @@ class ComponentModel(BaseModel):
 
     name: str
     """
-    A human readable logical name for the component. 
+    A human readable logical name for the component.
 
-    This value is important for allow human level refactoring of components. To update a component name once created, you must edit only the 
-    name and not change the hash. If you change both the hash and name in the same deployment, it will register this as a delete and create 
-    instead of update. 
+    This value is important for allow human level refactoring of components. To update a component name once created, you must edit only the
+    name and not change the hash. If you change both the hash and name in the same deployment, it will register this as a delete and create
+    instead of update.
     """
-
 
     hash: str
     """
     A hash that is used to identify if changes in the resources have occurred. It should have the property:
-    - This value changes only if a there is a change in the resource. 
+    - This value changes only if a there is a change in the resource.
     """
 
     resources: Optional[List[ResourceModel]]
@@ -76,7 +75,7 @@ class ComponentModel(BaseModel):
         resources: List[ResourceModel] = [],
         references: List[ResourceReferenceModel] = [],
         cloud_output: Dict[str, Dict] = {},
-        previous_resolved_cloud_values: Dict[str, Dict]={},
+        previous_resolved_cloud_values: Dict[str, Dict] = {},
         external_references: Dict[str, Dict] = {},
     ) -> None:
         super().__init__(
@@ -88,7 +87,6 @@ class ComponentModel(BaseModel):
                 "cloud_output": dict(cloud_output),
                 "previous_resolved_cloud_values": dict(previous_resolved_cloud_values),
                 "external_references": dict(external_references),
-
             }
         )
 
@@ -121,9 +119,8 @@ class Component_Difference(BaseModel):
 
     class Config:
         use_enum_values = True
-        # Beta Feature but should be fine since this is simple data 
+        # Beta Feature but should be fine since this is simple data
         frozen = True
-
 
 
 class Component:

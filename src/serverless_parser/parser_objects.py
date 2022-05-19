@@ -9,16 +9,17 @@ from typing import List
 
 from sortedcontainers import SortedList
 
-INCLUDE_REGEX = '^#include <(\w+)>$'
+INCLUDE_REGEX = "^#include <(\w+)>$"
+
 
 def _hash_line_numbers(line_no_1: int, line_no_2: int) -> str:
     s_numbers = f"{line_no_1}:{line_no_2}"
-    return int.from_bytes( hashlib.md5(s_numbers.encode()).digest(), byteorder='big')
+    return int.from_bytes(hashlib.md5(s_numbers.encode()).digest(), byteorder="big")
 
 
-class parsed_function():
+class parsed_function:
     """
-        This class represents the information for a parsed function. It mostly is used to house a function that can keep track of the line numbers.
+    This class represents the information for a parsed function. It mostly is used to house a function that can keep track of the line numbers.
     """
 
     def __init__(self, name):
@@ -28,7 +29,7 @@ class parsed_function():
         # set of imported packages
         self.imported_packages: str = set()
 
-        # some packages come with the lambda runtime so they do not need to be packaged into a layer so we need to make a new set with 
+        # some packages come with the lambda runtime so they do not need to be packaged into a layer so we need to make a new set with
         # just packages we need to actually package into layers
         # EX: 'os' does not need to be packaged into a layer
         self.needed_imports = set()
@@ -49,11 +50,15 @@ class parsed_function():
         return list(self.needed_line_numbers)
 
     def add_import(self, global_import_obj):
-        #self.add_line_numbers(global_import_obj.get_line_no())
+        # self.add_line_numbers(global_import_obj.get_line_no())
         # original package will be how it is denoted in the import statement
         # for absolute packages we only want the top level name (absolutes don't start with '.')
         # for relative packages we want the entire name (relatives start with '.')
-        top_level_package_name = global_import_obj.original_package.split('.')[0] if not global_import_obj.original_package.startswith('.') else global_import_obj.original_package
+        top_level_package_name = (
+            global_import_obj.original_package.split(".")[0]
+            if not global_import_obj.original_package.startswith(".")
+            else global_import_obj.original_package
+        )
         self.imported_packages.add(top_level_package_name)
 
 
@@ -64,11 +69,12 @@ class GlobalStatementType(Enum):
     CLASS_DEF = 4
 
 
-class GlobalStatement():
+class GlobalStatement:
     """
-        This class represents the extra information for the global statements of a file. A global statement are the first children in the 
-        ast for a file. 
+    This class represents the extra information for the global statements of a file. A global statement are the first children in the
+    ast for a file.
     """
+
     def __init__(self, node, line_no, symbols):
         self.line_no = line_no
 
@@ -80,7 +86,6 @@ class GlobalStatement():
 
         # The type of statement
         self.statement_type = GlobalStatementType.STANDARD
-
 
     def __hash__(self):
         return self.hashed
@@ -146,15 +151,13 @@ class FunctionStatement(GlobalStatement):
     def decrement_line_number(self):
         if self.has_decremented:
             return
-        
-        
+
         old_lineno = self.line_no
-        self.line_no = [old_lineno[0]+1, old_lineno[1]]
+        self.line_no = [old_lineno[0] + 1, old_lineno[1]]
         self.has_decremented = True
 
 
 class ClassDefinitionStatement(GlobalStatement):
-
     def __init__(self, node, line_no, symbol_table, name):
         super().__init__(node, line_no, symbol_table)
         self.class_name = name
@@ -164,21 +167,20 @@ class ClassDefinitionStatement(GlobalStatement):
 
     def get_class_name(self):
         return self.class_name
-    
 
 
-
-class file_information():
+class file_information:
     """
-        This class represents a file that needs to have functions parsed out of it. 
+    This class represents a file that needs to have functions parsed out of it.
     """
 
     # init method or constructor
     def __init__(self, location):
         if not os.path.isfile(location):
             raise FileNotFoundError(
-                f"parser_utils: could not find file at -> {location}")
-        
+                f"parser_utils: could not find file at -> {location}"
+            )
+
         # Path to the file
         self.file_location = location
 
@@ -197,7 +199,6 @@ class file_information():
         # dict<str, global_statement>: function name to its global statement
         self.global_functions = {}
 
-        
         # dict<statement, list(str)>: function from statement to symbols
         self.statement_to_symbol = {}
 
@@ -216,23 +217,23 @@ class file_information():
         # symbol table for the file
         self.symbol_table = None
 
-        
         # abstract syntax tree for the file
         self.ast = ""
 
-        with open(location, 'r') as fh:
+        with open(location, "r") as fh:
             self.src_code = fh.readlines()
             fh.seek(0)
 
             for toktype, tok, start, end, line in tokenize.generate_tokens(fh.readline):
                 # we can also use token.tok_name[toktype] instead of 'COMMENT'
-                # from the token module 
+                # from the token module
                 if toktype == tokenize.COMMENT:
                     self._evaluate_comment(line, start)
 
         try:
-            self.symbol_table = symtable.symtable("".join(self.src_code),
-                                                  location, 'exec')
+            self.symbol_table = symtable.symtable(
+                "".join(self.src_code), location, "exec"
+            )
         except SyntaxError as e:
             print(e)
 
@@ -242,7 +243,7 @@ class file_information():
             print(e)
 
     def _evaluate_comment(self, line, start):
-        #print(f"COMMENT {start} {line}")
+        # print(f"COMMENT {start} {line}")
 
         match_obj = re.match(INCLUDE_REGEX, line)
 
@@ -250,12 +251,11 @@ class file_information():
             if len(match_obj.groups()) == 1:
                 self.include_overrides_lineno[match_obj.groups()[0]] = start[0]
 
-
     def get_source_code(self):
         return "".join(self.src_code)
 
     def get_lines_of_source_code(self, start_line, end_line):
-        return "".join(self.src_code[(start_line - 1):(end_line)])
+        return "".join(self.src_code[(start_line - 1) : (end_line)])
 
     def get_symbol_table(self):
         return self.symbol_table
@@ -278,9 +278,8 @@ class file_information():
         self.add_global_statement(global_obj)
 
     def add_global_import(self, global_obj):
-        self.imported_symbol_to_global_statement[
-            global_obj.as_symbol] = global_obj
-            
+        self.imported_symbol_to_global_statement[global_obj.as_symbol] = global_obj
+
         self.add_global_statement(global_obj)
 
     def add_class_definition(self, name, global_obj):

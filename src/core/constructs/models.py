@@ -14,10 +14,10 @@ from pydantic.typing import (
     is_namedtuple,
 )
 
-from typing import  Any
+from typing import Any
+
 
 class frozendict(Mapping):
-
     def __init__(self, d: dict):
         self._d = d
 
@@ -39,13 +39,13 @@ class frozendict(Mapping):
 
     @classmethod
     def validate(cls, v):
-        
-        if not (isinstance(v, frozendict)) :
-            
-            raise TypeError(f'{v} Not Frozen Dict')
+
+        if not (isinstance(v, frozendict)):
+
+            raise TypeError(f"{v} Not Frozen Dict")
 
         return v
-    
+
     def __repr__(self) -> str:
         return f"FrozenDict({self._d})"
 
@@ -57,7 +57,7 @@ class ImmutableModel(BaseModel):
         v: Any,
         to_dict: bool,
         by_alias: bool,
-        include ,
+        include,
         exclude,
         exclude_unset: bool,
         exclude_defaults: bool,
@@ -66,14 +66,16 @@ class ImmutableModel(BaseModel):
 
         if isinstance(v, BaseModel):
             if to_dict:
-                v_dict = frozendict( v.dict(
-                    by_alias=by_alias,
-                    exclude_unset=exclude_unset,
-                    exclude_defaults=exclude_defaults,
-                    include=include,
-                    exclude=exclude,
-                    exclude_none=exclude_none,
-                ))
+                v_dict = frozendict(
+                    v.dict(
+                        by_alias=by_alias,
+                        exclude_unset=exclude_unset,
+                        exclude_defaults=exclude_defaults,
+                        include=include,
+                        exclude=exclude,
+                        exclude_none=exclude_none,
+                    )
+                )
                 if ROOT_KEY in v_dict:
                     return v_dict[ROOT_KEY]
                 return v_dict
@@ -84,21 +86,23 @@ class ImmutableModel(BaseModel):
         value_include = ValueItems(v, include) if include else None
 
         if isinstance(v, dict):
-            return frozendict( {
-                k_: cls._get_value(
-                    v_,
-                    to_dict=to_dict,
-                    by_alias=by_alias,
-                    exclude_unset=exclude_unset,
-                    exclude_defaults=exclude_defaults,
-                    include=value_include and value_include.for_element(k_),
-                    exclude=value_exclude and value_exclude.for_element(k_),
-                    exclude_none=exclude_none,
-                )
-                for k_, v_ in v.items()
-                if (not value_exclude or not value_exclude.is_excluded(k_))
-                and (not value_include or value_include.is_included(k_))
-            })
+            return frozendict(
+                {
+                    k_: cls._get_value(
+                        v_,
+                        to_dict=to_dict,
+                        by_alias=by_alias,
+                        exclude_unset=exclude_unset,
+                        exclude_defaults=exclude_defaults,
+                        include=value_include and value_include.for_element(k_),
+                        exclude=value_exclude and value_exclude.for_element(k_),
+                        exclude_none=exclude_none,
+                    )
+                    for k_, v_ in v.items()
+                    if (not value_exclude or not value_exclude.is_excluded(k_))
+                    and (not value_include or value_include.is_included(k_))
+                }
+            )
 
         elif sequence_like(v):
             seq_args = (
@@ -116,10 +120,14 @@ class ImmutableModel(BaseModel):
                 if (not value_exclude or not value_exclude.is_excluded(i))
                 and (not value_include or value_include.is_included(i))
             )
-            
-            return v.__class__(*seq_args) if is_namedtuple(v.__class__) else v.__class__(seq_args)
 
-        elif isinstance(v, Enum) and getattr(cls.Config, 'use_enum_values', False):
+            return (
+                v.__class__(*seq_args)
+                if is_namedtuple(v.__class__)
+                else v.__class__(seq_args)
+            )
+
+        elif isinstance(v, Enum) and getattr(cls.Config, "use_enum_values", False):
             return v.value
 
         else:
@@ -128,6 +136,3 @@ class ImmutableModel(BaseModel):
     class Config:
         extra = "allow"
         frozen = True
-
-
-        

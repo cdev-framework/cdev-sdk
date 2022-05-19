@@ -28,7 +28,7 @@
       margin-bottom: 2cm;
     }
 
-  
+
   #sidebar::-webkit-scrollbar {
       width: 8px;
   }
@@ -344,7 +344,7 @@
 <%def name="desktop()" filter="minify_css">
   @media screen and (min-width: 700px) {
     #sidebar {
-      
+
       height: 100vh;
       overflow: auto;
       position: sticky;

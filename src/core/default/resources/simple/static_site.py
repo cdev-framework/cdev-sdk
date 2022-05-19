@@ -3,8 +3,13 @@
 """
 from typing import Any, Optional
 
-from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs
-from core.constructs.cloud_output import  Cloud_Output_Str
+from core.constructs.resource import (
+    Resource,
+    ResourceModel,
+    update_hash,
+    ResourceOutputs,
+)
+from core.constructs.cloud_output import Cloud_Output_Str
 from core.utils import hasher
 
 RUUID = "cdev::simple::staticsite"
@@ -14,61 +19,44 @@ class StaticSiteOutput(ResourceOutputs):
     def __init__(self, name: str) -> None:
         super().__init__(name, RUUID)
 
-
     @property
     def bucket_name(self) -> Cloud_Output_Str:
         """The name of the underlying S3 Bucket where the content for the site is stored."""
         return Cloud_Output_Str(
-            name=self._name,
-            ruuid=RUUID,
-            key='bucket_name',
-            type=self.OUTPUT_TYPE
+            name=self._name, ruuid=RUUID, key="bucket_name", type=self.OUTPUT_TYPE
         )
 
     @bucket_name.setter
     def bucket_name(self, value: Any):
         raise Exception
 
-
     @property
     def cloudfront_id(self) -> Cloud_Output_Str:
         """The id of the site on the Cloudfront CDN"""
         return Cloud_Output_Str(
-            name=self._name,
-            ruuid=RUUID,
-            key='cloudfront_id',
-            type=self.OUTPUT_TYPE
+            name=self._name, ruuid=RUUID, key="cloudfront_id", type=self.OUTPUT_TYPE
         )
 
     @cloudfront_id.setter
     def cloudfront_id(self, value: Any):
         raise Exception
 
-
     @property
     def cloudfront_arn(self) -> Cloud_Output_Str:
         """The arn of the site on the Cloudfront CDN"""
         return Cloud_Output_Str(
-            name=self._name,
-            ruuid=RUUID,
-            key='cloudfront_arn',
-            type=self.OUTPUT_TYPE
+            name=self._name, ruuid=RUUID, key="cloudfront_arn", type=self.OUTPUT_TYPE
         )
 
     @cloudfront_arn.setter
     def cloudfront_arn(self, value: Any):
         raise Exception
 
-
-
     @property
     def site_url(self) -> Cloud_Output_Str:
         """The url of the created site"""
         return Cloud_Output_Str(
-            name=self._name,
-            ruuid=RUUID,
-            key='site_url',
-            type=self.OUTPUT_TYPE
+            name=self._name, ruuid=RUUID, key="site_url", type=self.OUTPUT_TYPE
         )
 
     @site_url.setter
@@ -93,11 +81,10 @@ class simple_static_site_model(ResourceModel):
     ssl_certificate_arn: Optional[str]
     """Arn of a SSL certificate to use with the site."""
 
+
 class StaticSite(Resource):
-    """A Static Site that can be used to serve static web content. 
-    
-    """
-    
+    """A Static Site that can be used to serve static web content."""
+
     @update_hash
     def __init__(
         self,
@@ -108,8 +95,7 @@ class StaticSite(Resource):
         content_folder: str = None,
         domain_name: str = None,
         ssl_certificate_arn: str = None,
-        nonce: str = ""
-
+        nonce: str = "",
     ) -> None:
         """Create a static hosted site.
 
@@ -120,7 +106,7 @@ class StaticSite(Resource):
             sync_folder (bool): Whether to consider changes in the state of the content folder to trigger a sync of the content folder.
             content_folder (str): The relative path within the `Workspace` of the folder containting the static content for the site.
             domain_name (str): The domain name to associate with this site. This will set up the site to be aliased via DNS to the given domain name.
-            ssl_certificate_arn (str): Arn of a SSL certificate to use with the site. 
+            ssl_certificate_arn (str): Arn of a SSL certificate to use with the site.
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
         """
         super().__init__(cdev_name, RUUID, nonce)
@@ -204,14 +190,16 @@ class StaticSite(Resource):
                 self.content_folder,
                 self.domain_name,
                 self.ssl_certificate_arn,
-                self.nonce
+                self.nonce,
             ]
         )
 
     def render(self) -> simple_static_site_model:
         if self.sync_folder and not self.content_folder:
 
-            raise Exception(f"If sync_folder is set to 'True' then you must provide a path to the folder.")
+            raise Exception(
+                f"If sync_folder is set to 'True' then you must provide a path to the folder."
+            )
 
         return simple_static_site_model(
             ruuid=self.ruuid,
@@ -220,9 +208,7 @@ class StaticSite(Resource):
             index_document=self.index_document,
             error_document=self.error_document,
             sync_folder=self.sync_folder,
-            content_folder=self.content_folder,  
+            content_folder=self.content_folder,
             domain_name=self.domain_name,
-            ssl_certificate_arn=self.ssl_certificate_arn 
+            ssl_certificate_arn=self.ssl_certificate_arn,
         )
-
-

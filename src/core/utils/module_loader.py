@@ -10,14 +10,16 @@ from typing import TextIO
 import inspect
 
 
-def import_module(module_name: str, denote_output: bool = False, override_stdout: bool = True) -> ModuleType:
+def import_module(
+    module_name: str, denote_output: bool = False, override_stdout: bool = True
+) -> ModuleType:
     """Helper function for dynamically loading python modules.
-    
-    This function should be used whenever a python module needs to be dynamically loaded within the framework. 
-    
+
+    This function should be used whenever a python module needs to be dynamically loaded within the framework.
+
     For more information about python modules see https://docs.python.org/3/tutorial/modules.html. Any changes
     to the PYTHONPATH needed to find the module should be done before this function is called.
-    
+
     Arguments:
         module_name (str): The python module to be loaded. Note that this is not a file path. It is the name of a module that can be loaded.
 
@@ -72,12 +74,12 @@ def import_class(module_name: str, class_name: str) -> type:
         if inspect.isclass(potential_obj):
             return potential_obj
 
-        
     raise Exception
 
+
 class override_sys_out(TextIO):
-   
-    encoding = sys.__stdout__.encoding 
+
+    encoding = sys.__stdout__.encoding
 
     def write(s: str):
         if len(s) > 0 and not s == "\n":

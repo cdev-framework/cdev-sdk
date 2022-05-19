@@ -1,7 +1,7 @@
 """Utilities to help work with the Resource Dependency Graph.
 
 One of the core components of the Cdev Core framework is the Resource Dependency Graph. This graph is implemented
-using the `networkx` packages as it provides helpful utilities for working with graph data structures. 
+using the `networkx` packages as it provides helpful utilities for working with graph data structures.
 """
 
 from concurrent.futures import ThreadPoolExecutor, Future
@@ -14,13 +14,20 @@ from networkx.classes.reportviews import NodeView
 from typing import Callable, Dict, List, Set, Tuple
 from time import sleep
 
-from core.constructs.resource import Resource_Change_Type, Resource_Reference_Change_Type, ResourceModel, Resource_Difference, Resource_Reference_Difference
+from core.constructs.resource import (
+    Resource_Change_Type,
+    Resource_Reference_Change_Type,
+    ResourceModel,
+    Resource_Difference,
+    Resource_Reference_Difference,
+)
 from core.constructs.cloud_output import OutputType, cloud_output_model
 from core.constructs.components import Component_Change_Type, Component_Difference
 from core.constructs.output_manager import OutputManager, OutputTask
 from core.constructs.models import frozendict
 
-deliminator = '+'
+deliminator = "+"
+
 
 def find_parents(resource: ResourceModel) -> Tuple[List, List]:
     """Find any parents resources via any linked Cloud Output Models
@@ -39,12 +46,15 @@ def find_parents(resource: ResourceModel) -> Tuple[List, List]:
         ]
     """
     resource_as_obj = resource.dict()
-    
+
     cloud_outputs = find_cloud_output(resource_as_obj)
 
-    parent_resources = [(x.ruuid,x.name) for x in cloud_outputs if x.type == OutputType.RESOURCE ]
-    parent_references = [(x.ruuid,x.name) for x in cloud_outputs if x.type == OutputType.REFERENCE]
-    
+    parent_resources = [
+        (x.ruuid, x.name) for x in cloud_outputs if x.type == OutputType.RESOURCE
+    ]
+    parent_references = [
+        (x.ruuid, x.name) for x in cloud_outputs if x.type == OutputType.REFERENCE
+    ]
 
     return parent_resources, parent_references
 
@@ -59,14 +69,14 @@ def find_cloud_output(obj: dict) -> List[cloud_output_model]:
 def _recursive_find_output(obj) -> List[cloud_output_model]:
     rv = []
 
-    if isinstance(obj, frozendict) or isinstance(obj, dict): 
-        
-        if "id" in obj and obj.get("id") == 'cdev_cloud_output':
+    if isinstance(obj, frozendict) or isinstance(obj, dict):
+
+        if "id" in obj and obj.get("id") == "cdev_cloud_output":
             rv.append(cloud_output_model(**obj))
         else:
-            for k,v in obj.items():
+            for k, v in obj.items():
                 if isinstance(v, frozendict) or isinstance(v, dict):
-                    if "id" in v and v.get("id") == 'cdev_cloud_output':
+                    if "id" in v and v.get("id") == "cdev_cloud_output":
                         rv.append(cloud_output_model(**v))
                     else:
                         rv.extend(_recursive_find_output(v))
@@ -81,38 +91,74 @@ def _recursive_find_output(obj) -> List[cloud_output_model]:
 
     elif isinstance(obj, frozenset) or isinstance(obj, list):
         all_items_rendered = [_recursive_find_output(x) for x in obj]
-                
+
         for item in all_items_rendered:
             rv.extend(item)
 
     return rv
 
 
-def generate_sorted_resources(differences: Tuple[List[Component_Difference], List[Resource_Difference], List[Resource_Reference_Difference]]) -> DiGraph:
+def generate_sorted_resources(
+    differences: Tuple[
+        List[Component_Difference],
+        List[Resource_Difference],
+        List[Resource_Reference_Difference],
+    ]
+) -> DiGraph:
     # nx graphs work on the element level by using the __hash__ of objects added to the graph, so all the elements added to the graph should be a pydantic Model with
     # the 'frozen' feature set
     change_dag = DiGraph()
 
-
     component_differences = differences[0]
     resource_differences = differences[1]
     reference_differences = differences[2]
-    
 
-    component_ids = {_create_component_id(x.new_name):x for x in component_differences if x.action_type == Component_Change_Type.CREATE or x.action_type == Component_Change_Type.UPDATE_NAME or x.action_type == Component_Change_Type.UPDATE_IDENTITY}
-    component_ids.update({_create_component_id(x.previous_name):x for x in component_differences if x.action_type == Component_Change_Type.DELETE})
+    component_ids = {
+        _create_component_id(x.new_name): x
+        for x in component_differences
+        if x.action_type == Component_Change_Type.CREATE
+        or x.action_type == Component_Change_Type.UPDATE_NAME
+        or x.action_type == Component_Change_Type.UPDATE_IDENTITY
+    }
+    component_ids.update(
+        {
+            _create_component_id(x.previous_name): x
+            for x in component_differences
+            if x.action_type == Component_Change_Type.DELETE
+        }
+    )
 
-    
-    resource_ids = {_create_resource_id(x.component_name, x.new_resource.ruuid, x.new_resource.name):x for x in resource_differences if x.action_type == Resource_Change_Type.UPDATE_IDENTITY or x.action_type == Resource_Change_Type.CREATE or x.action_type == Resource_Change_Type.UPDATE_NAME}
-    resource_ids.update({_create_resource_id(x.component_name, x.previous_resource.ruuid, x.previous_resource.name):x for x in resource_differences if x.action_type == Resource_Change_Type.DELETE})
+    resource_ids = {
+        _create_resource_id(
+            x.component_name, x.new_resource.ruuid, x.new_resource.name
+        ): x
+        for x in resource_differences
+        if x.action_type == Resource_Change_Type.UPDATE_IDENTITY
+        or x.action_type == Resource_Change_Type.CREATE
+        or x.action_type == Resource_Change_Type.UPDATE_NAME
+    }
+    resource_ids.update(
+        {
+            _create_resource_id(
+                x.component_name, x.previous_resource.ruuid, x.previous_resource.name
+            ): x
+            for x in resource_differences
+            if x.action_type == Resource_Change_Type.DELETE
+        }
+    )
 
-    
-    reference_ids = {_create_reference_id(x.originating_component_name, x.resource_reference.component_name, x.resource_reference.ruuid, x.resource_reference.name):x for x in reference_differences}
+    reference_ids = {
+        _create_reference_id(
+            x.originating_component_name,
+            x.resource_reference.component_name,
+            x.resource_reference.ruuid,
+            x.resource_reference.name,
+        ): x
+        for x in reference_differences
+    }
 
-    
     for _, component in component_ids.items():
         change_dag.add_node(component)
-
 
     for _, resource in resource_ids.items():
         change_dag.add_node(resource)
@@ -120,26 +166,37 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
         component_id = _create_component_id(resource.component_name)
 
         if component_id in component_ids:
-            if resource.action_type == Resource_Change_Type.DELETE and component_ids.get(component_id).action_type == Component_Change_Type.DELETE:
+            if (
+                resource.action_type == Resource_Change_Type.DELETE
+                and component_ids.get(component_id).action_type
+                == Component_Change_Type.DELETE
+            ):
                 # Since these are both deletes, it should happen in the reverse order
-                change_dag.add_edge(resource,component_ids.get(component_id))
+                change_dag.add_edge(resource, component_ids.get(component_id))
 
             else:
                 change_dag.add_edge(component_ids.get(component_id), resource)
         else:
-            raise Exception(f"There should always be a change in a component for a resource change {resource}")
+            raise Exception(
+                f"There should always be a change in a component for a resource change {resource}"
+            )
 
-        parent_resources, parent_references = find_parents(resource.new_resource) if not resource.action_type == Resource_Change_Type.DELETE else find_parents(resource.previous_resource)
+        parent_resources, parent_references = (
+            find_parents(resource.new_resource)
+            if not resource.action_type == Resource_Change_Type.DELETE
+            else find_parents(resource.previous_resource)
+        )
 
         if not parent_resources and not parent_references:
             continue
 
-
         for parent_ruuid, parent_name in parent_resources:
             # Parent resources must be in the same component
-            
+
             # Cloud outputs of a resource will always be from the same component
-            parent_resource_id = _create_resource_id(resource.component_name, parent_ruuid, parent_name)
+            parent_resource_id = _create_resource_id(
+                resource.component_name, parent_ruuid, parent_name
+            )
 
             if parent_resource_id in resource_ids:
                 if resource.action_type == Resource_Change_Type.DELETE:
@@ -151,7 +208,12 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
                     change_dag.add_edge(resource_ids.get(parent_resource_id), resource)
 
         for parent_ruuid, parent_name in parent_references:
-            parent_reference_id = _create_reference_id(resource.component_name, resource.component_name, parent_ruuid, parent_name)
+            parent_reference_id = _create_reference_id(
+                resource.component_name,
+                resource.component_name,
+                parent_ruuid,
+                parent_name,
+            )
 
             if parent_reference_id in reference_ids:
                 if resource.action_type == Resource_Change_Type.DELETE:
@@ -165,25 +227,37 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
         change_dag.add_node(reference)
 
         # Reference changes should be a child to an Update Identity component diff
-        originating_component_id = _create_component_id(reference.originating_component_name)
+        originating_component_id = _create_component_id(
+            reference.originating_component_name
+        )
 
         if originating_component_id in component_ids:
             change_dag.add_edge(component_ids.get(originating_component_id), reference)
 
         else:
-            raise Exception(f"There should always be a change in a component for a reference change {resource}")
-
+            raise Exception(
+                f"There should always be a change in a component for a reference change {resource}"
+            )
 
         # Reference change should also be a child to any change to the referenced resource
-        resource_id = _create_resource_id(reference.resource_reference.component_name, reference.resource_reference.ruuid, reference.resource_reference.name)
+        resource_id = _create_resource_id(
+            reference.resource_reference.component_name,
+            reference.resource_reference.ruuid,
+            reference.resource_reference.name,
+        )
         if resource_id in resource_ids:
             # If there is also a change to the component this reference is apart of then the changes need to be ordered
             if reference.action_type == Resource_Reference_Change_Type.CREATE:
-                if resource_ids.get(resource_id).action_type == Resource_Change_Type.DELETE:
+                if (
+                    resource_ids.get(resource_id).action_type
+                    == Resource_Change_Type.DELETE
+                ):
                     # We can not create a reference if that resource is currently being destroyed.
-                    raise Exception(f"Trying to reference a resource that is being deleted {reference} -> {resource_id}")
+                    raise Exception(
+                        f"Trying to reference a resource that is being deleted {reference} -> {resource_id}"
+                    )
 
-                # Since the reference is being created, we should perform the operation after the changes to the underlying resource 
+                # Since the reference is being created, we should perform the operation after the changes to the underlying resource
                 change_dag.add_edge(resource_ids.get(resource_id), reference)
 
             else:
@@ -192,26 +266,27 @@ def generate_sorted_resources(differences: Tuple[List[Component_Difference], Lis
         else:
             # Since the original resource is not in the change set, it should be checked to be sure that it is accessible from the backend
             pass
-            
 
     return change_dag
 
 
-def _create_component_id(component_name: str ) -> str:
+def _create_component_id(component_name: str) -> str:
     # Component Differences will be identified by the key component<deliminator><component_name>
-    return f'component{deliminator}{component_name}'
+    return f"component{deliminator}{component_name}"
 
 
 def _create_resource_id(component_name: str, ruuid: str, name: str) -> str:
     # Resource Differences will be identified by the key resource<deliminator><ruuid><deliminator><name>
-    return f'resource{deliminator}{component_name}{deliminator}{ruuid}{deliminator}{name}'
+    return (
+        f"resource{deliminator}{component_name}{deliminator}{ruuid}{deliminator}{name}"
+    )
 
 
-def _create_reference_id(originating_component_name: str, component_name: str, ruuid: str, name: str) -> str:
+def _create_reference_id(
+    originating_component_name: str, component_name: str, ruuid: str, name: str
+) -> str:
     # Reference Differences will be identified by the key reference<deliminator><ruuid><deliminator><name>
-    return f'reference{deliminator}{originating_component_name}{deliminator}{component_name}{deliminator}{ruuid}{deliminator}{name}'
-
-
+    return f"reference{deliminator}{originating_component_name}{deliminator}{component_name}{deliminator}{ruuid}{deliminator}{name}"
 
 
 class node_state(str, Enum):
@@ -222,44 +297,57 @@ class node_state(str, Enum):
     PARENT_ERROR = "PARENT_ERROR"
 
 
-def topological_iteration(dag: DiGraph, process: Callable[[NodeView], None], failed_parent_handler: Callable[[NodeView], None]=None, thread_count: int = 1, interval: float = .3, pass_through_exceptions: bool = False):
-    """Execute the `process` over a DAG in a topologically constrained way. 
-    
-    This means that the `process` will not be executed on a node until the `process` has been executed on all parents of that node. 
-    
-    If the `process` throws an Exception when executing on a Node, then any child nodes will not be executed (if provided, the 
-    failed_parent_handler will be executed on the child nodes). 
-    
-    This iteration supports multiple threads via the `thread_count` param. Multiple threads can speed up the total iteration time if the `process` 
+def topological_iteration(
+    dag: DiGraph,
+    process: Callable[[NodeView], None],
+    failed_parent_handler: Callable[[NodeView], None] = None,
+    thread_count: int = 1,
+    interval: float = 0.3,
+    pass_through_exceptions: bool = False,
+):
+    """Execute the `process` over a DAG in a topologically constrained way.
+
+    This means that the `process` will not be executed on a node until the `process` has been executed on all parents of that node.
+
+    If the `process` throws an Exception when executing on a Node, then any child nodes will not be executed (if provided, the
+    failed_parent_handler will be executed on the child nodes).
+
+    This iteration supports multiple threads via the `thread_count` param. Multiple threads can speed up the total iteration time if the `process`
     is not CPU bound and there are non-dependant paths through the DAG. Note that the `process` provided should be thread safe when using multiple threads.
 
     Args:
         dag (DiGraph): The graph to execute over.
         process (Callable[[NodeView], None]): The function to call on each Node.
         failed_parent_handler (Callable[[NodeView], None], optional): A function to call on Nodes that do not execute because a parent failed.
-        thread_count (int, optional): [description]. Defaults to 1 
+        thread_count (int, optional): [description]. Defaults to 1
         interval (float, optional): Interval (in seconds) to poll threads for completion. Defaults to .3
     """
-    
+
     all_children: Set[NodeView] = set(x[1] for x in dag.edges)
     all_nodes: Set[NodeView] = set(x for x in dag.nodes())
 
     # starting nodes are those that have no parents
     starting_nodes = all_nodes - all_children
-    
+
     nodes_to_process: list[NodeView] = []
     nodes_to_process.extend(starting_nodes)
 
     _processing_future_to_resource: Dict[Future, NodeView] = {}
 
     # Keep track of the state of all nodes to determine when the entire DAG has been traversed
-    _node_to_state: Dict[NodeView,node_state] = {x:node_state.UNPROCESSED for x in all_nodes}
+    _node_to_state: Dict[NodeView, node_state] = {
+        x: node_state.UNPROCESSED for x in all_nodes
+    }
 
     executor = ThreadPoolExecutor(thread_count)
-    
+
     # While any node is unprocessed or still processing
-    while any(_node_to_state.get(x) == node_state.UNPROCESSED or _node_to_state.get(x) == node_state.PROCESSING for x in all_nodes):
-        
+    while any(
+        _node_to_state.get(x) == node_state.UNPROCESSED
+        or _node_to_state.get(x) == node_state.PROCESSING
+        for x in all_nodes
+    ):
+
         # Pull any ready nodes to be processed and add them to the thread pool
         for _ in range(0, len(nodes_to_process)):
             node_to_process = nodes_to_process.pop(0)
@@ -268,7 +356,6 @@ def topological_iteration(dag: DiGraph, process: Callable[[NodeView], None], fai
             _processing_future_to_resource[future] = node_to_process
             _node_to_state[node_to_process] = node_state.PROCESSING
 
-        
         # Check if any of the futures are finished and then make decisions about their children from the rv of the future
         for fut, node in _processing_future_to_resource.copy().items():
             # Note python throws runtime error if you change a dict size while iterating so use a copy for now.
@@ -277,7 +364,6 @@ def topological_iteration(dag: DiGraph, process: Callable[[NodeView], None], fai
             if not fut.done():
                 # Still processing
                 continue
-
 
             try:
                 result = fut.result()
@@ -289,45 +375,56 @@ def topological_iteration(dag: DiGraph, process: Callable[[NodeView], None], fai
 
                 for child in children:
                     # If any of the parents of the child have not been processed, than the child node is not ready to be processed
-                    if any(not _node_to_state.get(x) == node_state.PROCESSED for x in dag.predecessors(child)):
+                    if any(
+                        not _node_to_state.get(x) == node_state.PROCESSED
+                        for x in dag.predecessors(child)
+                    ):
                         continue
-                    
+
                     nodes_to_process.append(child)
 
             except Exception as e:
                 # Since this returned a error need to mark all children as unable to deploy
                 _node_to_state[node] = node_state.ERROR
-                
-                  
+
                 # mark an descdents of this node as unable to process
-                _recursively_mark_parent_failure(_node_to_state, dag, node, handler=failed_parent_handler)
+                _recursively_mark_parent_failure(
+                    _node_to_state, dag, node, handler=failed_parent_handler
+                )
 
                 if pass_through_exceptions:
-                    raise e 
-                         
+                    raise e
 
             # Remove the future from the dictionary
             _processing_future_to_resource.pop(fut)
 
         sleep(interval)
 
-
     executor.shutdown()
 
 
-def _recursively_mark_parent_failure(_node_to_state: Dict[NodeView, node_state], dag: DiGraph, parent_node: NodeView, handler: Callable[[NodeView, OutputTask], None]=None, pass_through_exceptions: bool = False) -> None:
+def _recursively_mark_parent_failure(
+    _node_to_state: Dict[NodeView, node_state],
+    dag: DiGraph,
+    parent_node: NodeView,
+    handler: Callable[[NodeView, OutputTask], None] = None,
+    pass_through_exceptions: bool = False,
+) -> None:
 
     if parent_node not in _node_to_state:
-        raise Exception(f"trying to mark node ({parent_node}) but cant not find it in given dict")
+        raise Exception(
+            f"trying to mark node ({parent_node}) but cant not find it in given dict"
+        )
 
-    
     children = dag.successors(parent_node)
 
     for child in children:
 
         if child not in _node_to_state:
-            raise Exception(f"trying to mark node ({child}) but cant not find it in given dict")
-        
+            raise Exception(
+                f"trying to mark node ({child}) but cant not find it in given dict"
+            )
+
         _node_to_state[child] = node_state.PARENT_ERROR
 
         if handler:
@@ -336,11 +433,9 @@ def _recursively_mark_parent_failure(_node_to_state: Dict[NodeView, node_state],
                 handler(child)
 
             except Exception as e:
-                #handler threw exception but we should continue
-                
-                if pass_through_exceptions:
-                    raise e 
+                # handler threw exception but we should continue
 
+                if pass_through_exceptions:
+                    raise e
 
         _recursively_mark_parent_failure(_node_to_state, dag, child)
-

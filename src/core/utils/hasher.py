@@ -1,8 +1,8 @@
-"""Utilities to provide a 'standardized' way of producing hashes to identify uniqueness. 
+"""Utilities to provide a 'standardized' way of producing hashes to identify uniqueness.
 
 These hash functions are **not**
 cryptographically secure and should not be used for that. Instead, these functions should simply be used to create hashes
-that will be used to track changes throughout the system. 
+that will be used to track changes throughout the system.
 """
 
 import hashlib
@@ -60,15 +60,15 @@ def clear_file_cache():
 def hash_file(fp: FilePath, bypass_cache: bool = False) -> str:
     """Hash a file given a path
 
-    Note that the implementation contains a reference to a cache. Since this utility is primarily 
+    Note that the implementation contains a reference to a cache. Since this utility is primarily
     used as an internal tool with the framework, the cache helps speeds things up when we know the file has
-    not changed. Note that the framework periodically flushes this cache when needed within the context of 
-    the execution of the framework using the `clear_file_cache` function. 
+    not changed. Note that the framework periodically flushes this cache when needed within the context of
+    the execution of the framework using the `clear_file_cache` function.
 
     If using this outside the confides of the framework, you can by pass the cache by setting the `bypass_cache`
     flag.
 
-    Note that the implementation returns a md5 hash of the bytes in the file. 
+    Note that the implementation returns a md5 hash of the bytes in the file.
 
     Args:
         fp (FilePath): Path to the file. Must be a resolvable path on the filesystem.
@@ -82,7 +82,6 @@ def hash_file(fp: FilePath, bypass_cache: bool = False) -> str:
     """
     if fp in FILE_CACHE.cache and not bypass_cache:
         return FILE_CACHE.cache.get(fp)
-
 
     if not os.path.isfile(fp):
         raise Cdev_Error(f"Could not find file ({fp}) to hash", FileNotFoundError)

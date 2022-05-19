@@ -2,7 +2,6 @@ from cdev.resources.simple.api import Api
 from cdev import Project as cdev_project
 
 
-
 myProject = cdev_project.instance()
 
 webhooks_api = Api("demoapi")

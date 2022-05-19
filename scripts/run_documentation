@@ -1,4 +1,3 @@
 #!/bin/bash
 
 pdoc --skip-errors --http  : --config "logo_path='https://s3.amazonaws.com/cdevframework.io/images/CdevLogo.svg'" --template-dir ./scripts/documentation-template/templates  src/cdev src/core
-

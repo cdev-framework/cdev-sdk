@@ -16,7 +16,7 @@ def run_command(args):
     output_manager = CdevOutputManager()
 
     myProject = Project.instance()
-    
+
     ws = myProject.get_current_environment().get_workspace()
-    
+
     core_run_command(ws, output_manager, args)

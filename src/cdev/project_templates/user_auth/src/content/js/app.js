@@ -31,7 +31,7 @@ window.onload = async () => {
   //check for the code and state parameters.. These are set when redirected back from Auth0 universal login page
   const query = window.location.search;
   if (query.includes("code=") && query.includes("state=")) {
-   
+
     // Process the login state
     await auth0.handleRedirectCallback();
 
@@ -44,10 +44,10 @@ window.onload = async () => {
 
 
 const updateUI = async () => {
-  
+
   const isAuthenticated = await auth0.isAuthenticated();
 
-  // Update button states 
+  // Update button states
   document.getElementById("btn-logout").disabled = !isAuthenticated;
   document.getElementById("btn-api").disabled = !isAuthenticated;
   document.getElementById("btn-login").disabled = isAuthenticated;
@@ -106,7 +106,7 @@ const hit_api = async () => {
     user = await auth0.getUser()
 
     var params = {
-      user_id: user.sub, 
+      user_id: user.sub,
     }
 
     var final_endpoint = endpoint + "/demo" + formatParams(params)
@@ -123,9 +123,9 @@ const hit_api = async () => {
       data => {
         rv = JSON.parse(data.body)
         alert(rv.message)
-      
+
       });
-   
+
 
   }
 

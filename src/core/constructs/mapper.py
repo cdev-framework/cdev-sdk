@@ -1,4 +1,4 @@
-"""Structure that deploys the resources onto the cloud 
+"""Structure that deploys the resources onto the cloud
 
 """
 
@@ -20,7 +20,14 @@ class CloudMapper:
     def get_namespaces(self) -> List[str]:
         raise NotImplementedError
 
-    def deploy_resource(self, transaction_token: str, namespace_token: str, resource_diff: Resource_Difference, previous_output: Dict, output_task: OutputTask) -> Dict:
+    def deploy_resource(
+        self,
+        transaction_token: str,
+        namespace_token: str,
+        resource_diff: Resource_Difference,
+        previous_output: Dict,
+        output_task: OutputTask,
+    ) -> Dict:
         raise NotImplementedError
 
     def get_available_resources(self) -> Set[str]:
@@ -28,4 +35,3 @@ class CloudMapper:
 
     def get_resource_to_handler(self) -> Dict[str, Callable]:
         raise NotImplementedError
-

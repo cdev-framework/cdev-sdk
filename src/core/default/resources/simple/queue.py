@@ -3,8 +3,14 @@
 """
 from typing import Any
 
-from core.constructs.resource import Resource, ResourceModel, update_hash, ResourceOutputs, PermissionsAvailableMixin
-from core.constructs.cloud_output import  Cloud_Output_Str, OutputType
+from core.constructs.resource import (
+    Resource,
+    ResourceModel,
+    update_hash,
+    ResourceOutputs,
+    PermissionsAvailableMixin,
+)
+from core.constructs.cloud_output import Cloud_Output_Str, OutputType
 from core.constructs.types import cdev_str_model
 
 from core.default.resources.simple.events import Event, event_model
@@ -25,14 +31,18 @@ class queue_event_model(event_model):
         batch_size: int
         batch_window: int
     """
-    queue_arn: cdev_str_model   
+
+    queue_arn: cdev_str_model
     batch_size: int
-    batch_failure: bool 
+    batch_failure: bool
 
 
 class QueueEvent(Event):
     """Construct representing the Events from the Queue"""
-    def __init__(self, queue_name: str, batch_size: int, batch_failure: bool = True) -> None:
+
+    def __init__(
+        self, queue_name: str, batch_size: int, batch_failure: bool = True
+    ) -> None:
 
         if batch_size > 10000 or batch_size < 0:
             raise Exception
@@ -40,15 +50,11 @@ class QueueEvent(Event):
         self.cdev_queue_name = queue_name
 
         self.queue_arn = Cloud_Output_Str(
-                name=queue_name, 
-                ruuid=RUUID, 
-                key='arn',
-                type=OutputType.RESOURCE 
-            )
+            name=queue_name, ruuid=RUUID, key="arn", type=OutputType.RESOURCE
+        )
 
         self.batch_size = batch_size
         self.batch_failure = batch_failure
-
 
     def render(self) -> queue_event_model:
         return queue_event_model(
@@ -57,22 +63,19 @@ class QueueEvent(Event):
             hash=self.hash(),
             queue_arn=self.queue_arn.render(),
             batch_size=self.batch_size,
-            batch_failure=self.batch_failure 
+            batch_failure=self.batch_failure,
         )
 
-
     def hash(self) -> str:
-        return hasher.hash_list([
-            self.cdev_queue_name,
-            self.batch_size,
-            self.batch_failure 
-        ])
+        return hasher.hash_list(
+            [self.cdev_queue_name, self.batch_size, self.batch_failure]
+        )
+
 
 ######################
 ###### Permission
 ######################
 class QueuePermissions:
-
     def __init__(self, resource_name: str) -> None:
         self.READ_QUEUE = Permission(
             actions=[
@@ -80,7 +83,9 @@ class QueuePermissions:
                 "sqs:DeleteMessage",
                 "sqs:GetQueueAttributes",
             ],
-            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
+            cloud_id=Cloud_Output_Str(
+                resource_name, RUUID, "cloud_id", OutputType.RESOURCE
+            ),
             effect="Allow",
         )
         """Permission to poll for messages from the Queue"""
@@ -90,7 +95,9 @@ class QueuePermissions:
                 "sqs:SendMessage",
                 "sqs:GetQueueAttributes",
             ],
-            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
+            cloud_id=Cloud_Output_Str(
+                resource_name, RUUID, "cloud_id", OutputType.RESOURCE
+            ),
             effect="Allow",
         )
         """Permission to write messages to the Queue"""
@@ -102,7 +109,9 @@ class QueuePermissions:
                 "sqs:GetQueueAttributes",
                 "sqs:SendMessage",
             ],
-            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
+            cloud_id=Cloud_Output_Str(
+                resource_name, RUUID, "cloud_id", OutputType.RESOURCE
+            ),
             effect="Allow",
         )
         """Permission to read and write messages to and from the Queue"""
@@ -113,10 +122,13 @@ class QueuePermissions:
                 "sqs:DeleteMessage",
                 "sqs:GetQueueAttributes",
             ],
-            cloud_id=Cloud_Output_Str(resource_name, RUUID, 'cloud_id', OutputType.RESOURCE),
+            cloud_id=Cloud_Output_Str(
+                resource_name, RUUID, "cloud_id", OutputType.RESOURCE
+            ),
             effect="Allow",
         )
         """Permission to receive events to and from the Queue"""
+
 
 ######################
 ##### Output
@@ -129,10 +141,7 @@ class QueueOutput(ResourceOutputs):
     def queue_name(self) -> Cloud_Output_Str:
         """The name of the generated queue"""
         return Cloud_Output_Str(
-            name=self._name,
-            ruuid=RUUID,
-            key='queue_name',
-            type=self.OUTPUT_TYPE
+            name=self._name, ruuid=RUUID, key="queue_name", type=self.OUTPUT_TYPE
         )
 
     @queue_name.setter
@@ -145,7 +154,7 @@ class QueueOutput(ResourceOutputs):
 ######################
 class queue_model(ResourceModel):
     """Model representing a Message Queue"""
-    
+
     is_fifo: bool
     """Should the Queue guarantee ordering of messages"""
 
@@ -166,7 +175,7 @@ class Queue(PermissionsAvailableMixin, Resource):
         self.is_fifo = is_fifo
         self.output = QueueOutput(cdev_name)
         self._event = None
-        
+
         self.available_permissions: QueuePermissions = QueuePermissions(cdev_name)
 
     @property
@@ -195,16 +204,16 @@ class Queue(PermissionsAvailableMixin, Resource):
             QueueEvent
         """
         if self._event:
-            raise Exception("Already created stream on this table. Use `get_stream()` to get the current stream.")
-    
+            raise Exception(
+                "Already created stream on this table. Use `get_stream()` to get the current stream."
+            )
+
         # https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#events-sqs-eventsource
         if self.is_fifo and batch_size > 10:
             raise Exception
 
         event = QueueEvent(
-            queue_name=self.name,
-            batch_size=batch_size,
-            batch_failure=batch_failure
+            queue_name=self.name, batch_size=batch_size, batch_failure=batch_failure
         )
 
         self._event = event
@@ -221,14 +230,15 @@ class Queue(PermissionsAvailableMixin, Resource):
             QueueEvent
         """
         if not self._event:
-            raise Exception("Queue Event has not been created. Create a stream for this table using the `create_stream` function before calling this function.")
+            raise Exception(
+                "Queue Event has not been created. Create a stream for this table using the `create_stream` function before calling this function."
+            )
 
         return self._event
 
-        
     def compute_hash(self):
         self._hash = hasher.hash_list([self.is_fifo, self.nonce])
-        
+
     def render(self) -> queue_model:
         return queue_model(
             name=self.name,

@@ -1,7 +1,7 @@
-""" from cdev.default.fs_manager import external_dependencies_index 
+""" from cdev.default.fs_manager import external_dependencies_index
 from cdev.default.fs_manager.utils import ModulePackagingInfo, PackageTypes
 
- 
+
 fake_sizes = {
     "a": 10,
     "b": 5,

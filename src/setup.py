@@ -11,13 +11,13 @@ README = open(os.path.join(MAIN_DIR, "README.md")).read()
 
 
 setuptools.setup(
-    name='cdev',
-    version='0.0.8',
-    scripts=['./cdev/scripts/cdev', './core/scripts/cdev_core' ],
-    description='CLI for cdev sdk',
+    name="cdev",
+    version="0.0.8",
+    scripts=["./cdev/scripts/cdev", "./core/scripts/cdev_core"],
+    description="CLI for cdev sdk",
     long_description=README,
     long_description_content_type="text/markdown",
-    author='CDEV LLC',
+    author="CDEV LLC",
     author_email="daniel@cdevframework.com",
     license="Clear BSD",
     packages=setuptools.find_packages(),
@@ -50,5 +50,5 @@ setuptools.setup(
         "watchdog",
         "websocket-client",
     ],
-    python_requires='>=3.7'
+    python_requires=">=3.7",
 )

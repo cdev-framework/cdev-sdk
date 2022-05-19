@@ -1,4 +1,4 @@
-"""Construct that represents the collection of other primitives 
+"""Construct that represents the collection of other primitives
 
 
 """
@@ -6,7 +6,13 @@
 from enum import Enum
 import inspect
 from rich.console import Console
-from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn, SpinnerColumn
+from rich.progress import (
+    Progress,
+    BarColumn,
+    TextColumn,
+    TimeElapsedColumn,
+    SpinnerColumn,
+)
 from typing import Callable, List, Dict, Any, Tuple, TypeVar
 
 from networkx.algorithms.dag import topological_sort
@@ -18,12 +24,27 @@ from pydantic import BaseModel
 from core.constructs.models import frozendict
 from core.constructs.output_manager import OutputManager, OutputTask
 
-from core.constructs.resource import Resource_Change_Type, Resource_Difference, Resource_Reference_Difference, Resource_Reference_Change_Type, ResourceModel
+from core.constructs.resource import (
+    Resource_Change_Type,
+    Resource_Difference,
+    Resource_Reference_Difference,
+    Resource_Reference_Change_Type,
+    ResourceModel,
+)
 from core.constructs.backend import Backend
 from core.constructs.mapper import CloudMapper
-from core.constructs.components import Component, Component_Change_Type, Component_Difference, ComponentModel
+from core.constructs.components import (
+    Component,
+    Component_Change_Type,
+    Component_Difference,
+    ComponentModel,
+)
 from core.constructs.commands import BaseCommand, BaseCommandContainer
-from core.constructs.cloud_output import Cloud_Output, evaluate_dynamic_output, cloud_output_dynamic_model
+from core.constructs.cloud_output import (
+    Cloud_Output,
+    evaluate_dynamic_output,
+    cloud_output_dynamic_model,
+)
 from core.constructs.settings import Settings_Info, Settings, initialize_settings
 
 
@@ -37,8 +58,6 @@ from core.constructs.types import F
 _GLOBAL_WORKSPACE: "Workspace" = None
 
 
-
-
 class Workspace_Info(BaseModel):
     python_module: str
     python_class: str
@@ -46,7 +65,11 @@ class Workspace_Info(BaseModel):
     config: Dict
 
     def __init__(
-        __pydantic_self__, python_module: str, python_class: str, settings_info: Settings_Info, config: Dict
+        __pydantic_self__,
+        python_module: str,
+        python_class: str,
+        settings_info: Settings_Info,
+        config: Dict,
     ) -> None:
         """
         Represents the data needed to create a new cdev workspace:
@@ -107,10 +130,11 @@ class Workspace:
     can be used within the different components to gain information about the higher level project that it is within. Once constructed,
     the object should remain a read only object to prevent components from changing configuration beyond their scope.
     """
+
     _settings: Settings
 
     @classmethod
-    def instance(cls) -> 'Workspace':
+    def instance(cls) -> "Workspace":
         if not _GLOBAL_WORKSPACE:
             raise Exception("Currently No Global Workspace")
 
@@ -150,16 +174,13 @@ class Workspace:
     ##### Settings
     ############################
 
-    
     @property
     def settings(cls) -> Settings:
         return Workspace._settings
 
-    
     @settings.setter
     def settings(cls, value: Settings):
         Workspace._settings = value
-
 
     ############################
     ##### Initialized
@@ -283,16 +304,14 @@ class Workspace:
         """
         raise NotImplementedError
 
-
     def render_outputs(self) -> List[Tuple[str, Any]]:
         """Render the output associated with the Workspace
 
         Returns:
             List[Tuple[str, Any]]: The List of outputs with their associated tag
-        
+
         """
         raise NotImplementedError
-
 
     #######################
     ##### Components
@@ -398,9 +417,13 @@ class Workspace:
 
     @wrap_phase([Workspace_State.EXECUTING_FRONTEND])
     def create_state_differences(
-        self, desired_state: List[ComponentModel], previous_state_component_names: List[str]
+        self,
+        desired_state: List[ComponentModel],
+        previous_state_component_names: List[str],
     ) -> Tuple[
-        Component_Difference, Resource_Difference, Resource_Reference_Difference,
+        Component_Difference,
+        Resource_Difference,
+        Resource_Reference_Difference,
     ]:
         """
         Produce the differences between the desired state of the components and the current saved state
@@ -424,54 +447,73 @@ class Workspace:
         )
 
     @wrap_phase([Workspace_State.EXECUTING_FRONTEND])
-    def sort_differences(self, differences: Tuple[List[Component_Difference], List[Resource_Reference_Difference], List[Resource_Difference]]) -> DiGraph:
+    def sort_differences(
+        self,
+        differences: Tuple[
+            List[Component_Difference],
+            List[Resource_Reference_Difference],
+            List[Resource_Difference],
+        ],
+    ) -> DiGraph:
         return topological_helper.generate_sorted_resources(differences)
-
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
     def deploy_differences(self, differences_dag: DiGraph) -> None:
 
         console = Console()
         with Progress(
-                SpinnerColumn(),
-                "[progress.description]{task.description}",
-                BarColumn(finished_style='white'),
-                TimeElapsedColumn(),
-                TextColumn("{task.fields[comment]}"),
-                console=console
-            ) as progress:
+            SpinnerColumn(),
+            "[progress.description]{task.description}",
+            BarColumn(finished_style="white"),
+            TimeElapsedColumn(),
+            TextColumn("{task.fields[comment]}"),
+            console=console,
+        ) as progress:
             output_manager = OutputManager(console, progress)
 
-            all_nodes_sorted: List[NodeView] = [x for x in topological_sort(differences_dag)]
+            all_nodes_sorted: List[NodeView] = [
+                x for x in topological_sort(differences_dag)
+            ]
 
             # There seems to be some bug in Rich that causes a deadlock when creating a bunch of Tasks in a row.
             # The problem seems to be around it refreshing after creating each task, so to avoid this problem,
-            # we are disabling the console while the task are created. Then turn the console back on when they 
+            # we are disabling the console while the task are created. Then turn the console back on when they
             # are created.
             # TODO: Recreate problem in isolated environment, and submit bug report.
             output_manager._progress.disable = True
 
-            node_to_task= {x: output_manager.create_task(output_manager.create_output_description(x), start=False, total=10, comment='Waiting') for x in all_nodes_sorted}
+            node_to_task = {
+                x: output_manager.create_task(
+                    output_manager.create_output_description(x),
+                    start=False,
+                    total=10,
+                    comment="Waiting",
+                )
+                for x in all_nodes_sorted
+            }
 
             # Re-enable to console to update
             output_manager._progress.disable = False
 
-            topological_helper.topological_iteration(differences_dag, self.wrap_output_deploy_change(node_to_task), failed_parent_handler=self.wrap_output_failed_child(node_to_task))
-            
-
+            topological_helper.topological_iteration(
+                differences_dag,
+                self.wrap_output_deploy_change(node_to_task),
+                failed_parent_handler=self.wrap_output_failed_child(node_to_task),
+            )
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
     def wrap_output_failed_child(self, tasks: Dict[NodeView, OutputTask]):
         def mark_failure_by_parent(change: NodeView) -> None:
             output_task = tasks.get(change)
-            output_task.update(advance=10, comment="Failed because parent resource failed to deploy :cross_mark:")
+            output_task.update(
+                advance=10,
+                comment="Failed because parent resource failed to deploy :cross_mark:",
+            )
 
         return mark_failure_by_parent
 
-
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
     def wrap_output_deploy_change(self, tasks: Dict[NodeView, OutputTask]):
-
         def deploy_change(change: NodeView) -> None:
             output_task = tasks.get(change)
             output_task.start_task()
@@ -480,30 +522,51 @@ class Workspace:
                 # Step 1 is to register a transaction with the backend
 
                 try:
-                    transaction_token, namespace_token = self.get_backend().create_resource_change_transaction(self.get_resource_state_uuid(), change.component_name, change)
+                    (
+                        transaction_token,
+                        namespace_token,
+                    ) = self.get_backend().create_resource_change_transaction(
+                        self.get_resource_state_uuid(), change.component_name, change
+                    )
                 except Exception as e:
                     print(e)
                     print(f"Error Creating Transaction: {change}")
                     raise e
-                
 
-                ruuid = change.new_resource.ruuid if change.new_resource else change.previous_resource.ruuid
+                ruuid = (
+                    change.new_resource.ruuid
+                    if change.new_resource
+                    else change.previous_resource.ruuid
+                )
 
                 # The Previous output is used by the mappers to make changes to the underlying resources.
                 previous_output = (
-                    self.get_backend().get_cloud_output_by_name(self.get_resource_state_uuid(), change.component_name, ruuid, change.previous_resource.name)
-                    if not change.action_type == Resource_Change_Type.CREATE else
-                    {}
+                    self.get_backend().get_cloud_output_by_name(
+                        self.get_resource_state_uuid(),
+                        change.component_name,
+                        ruuid,
+                        change.previous_resource.name,
+                    )
+                    if not change.action_type == Resource_Change_Type.CREATE
+                    else {}
                 )
 
                 try:
                     # Substitute the model with a model that has the cloud outputs evaluated.
-                    new_evaluated_resource, evaluated_keys = self.evaluate_and_replace_cloud_output(change.component_name, change.new_resource)
-                    previous_evaluated_resource = self.evaluate_and_replace_previous_cloud_output(change.component_name, change.previous_resource)
+                    (
+                        new_evaluated_resource,
+                        evaluated_keys,
+                    ) = self.evaluate_and_replace_cloud_output(
+                        change.component_name, change.new_resource
+                    )
+                    previous_evaluated_resource = (
+                        self.evaluate_and_replace_previous_cloud_output(
+                            change.component_name, change.previous_resource
+                        )
+                    )
 
-                    
                     # If there was no cloud output in the resource, then the evaluated resources will equal the original resources
-                    # so using that value is safe. 
+                    # so using that value is safe.
                     _evaluated_change = Resource_Difference(
                         change.action_type,
                         change.component_name,
@@ -511,7 +574,6 @@ class Workspace:
                         new_evaluated_resource,
                     )
 
-                    
                 except Exception as e:
                     print(e)
                     print(f"Error evaluating cloud output from change: {change}")
@@ -521,19 +583,37 @@ class Workspace:
                     log.debug("evaluated information %s", _evaluated_change)
                     output_task.update(advance=5, comment="Deploying on Cloud :cloud:")
                     mapper = self.get_mapper_namespace().get(ruuid)
-                    cloud_output = mapper.deploy_resource(transaction_token, namespace_token, _evaluated_change, previous_output, output_task)
-                    output_task.update(advance=3, comment="Completing transaction with Backend")
+                    cloud_output = mapper.deploy_resource(
+                        transaction_token,
+                        namespace_token,
+                        _evaluated_change,
+                        previous_output,
+                        output_task,
+                    )
+                    output_task.update(
+                        advance=3, comment="Completing transaction with Backend"
+                    )
 
                 except Exception as e:
-                    self.get_backend().fail_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, {"message": "deployment error"})
-                    output_task.update(advance=10, comment="Failed because mapper raised error :cross_mark:")
+                    self.get_backend().fail_resource_change(
+                        self.get_resource_state_uuid(),
+                        change.component_name,
+                        change,
+                        transaction_token,
+                        {"message": "deployment error"},
+                    )
+                    output_task.update(
+                        advance=10,
+                        comment="Failed because mapper raised error :cross_mark:",
+                    )
                     print(e)
                     raise e
 
                 try:
                     if change.action_type == Resource_Change_Type.CREATE:
-                        cloud_output['cloud_region'] = Workspace.instance().settings.AWS_REGION
-
+                        cloud_output[
+                            "cloud_region"
+                        ] = Workspace.instance().settings.AWS_REGION
 
                     self.get_backend().complete_resource_change(
                         self.get_resource_state_uuid(),
@@ -541,36 +621,52 @@ class Workspace:
                         change,
                         transaction_token,
                         cloud_output,
-                        evaluated_keys
+                        evaluated_keys,
                     )
 
                 except Exception as e:
-                    self.get_backend().fail_resource_change(self.get_resource_state_uuid(), change.component_name, change, transaction_token, {"message": "backend error"})
-                    output_task.update(advance=10, comment="Failed because backend raised error :cross_mark:")
+                    self.get_backend().fail_resource_change(
+                        self.get_resource_state_uuid(),
+                        change.component_name,
+                        change,
+                        transaction_token,
+                        {"message": "backend error"},
+                    )
+                    output_task.update(
+                        advance=10,
+                        comment="Failed because backend raised error :cross_mark:",
+                    )
                     print(e)
                     raise e
 
             elif isinstance(change, Resource_Reference_Difference):
-                output_task.update(advance=5, comment=f'{"Creating" if change.action_type == Resource_Reference_Change_Type.CREATE else "Removing"} Reference')
-                self.get_backend().resolve_reference_change(self.get_resource_state_uuid(), change)
-
+                output_task.update(
+                    advance=5,
+                    comment=f'{"Creating" if change.action_type == Resource_Reference_Change_Type.CREATE else "Removing"} Reference',
+                )
+                self.get_backend().resolve_reference_change(
+                    self.get_resource_state_uuid(), change
+                )
 
             elif isinstance(change, Component_Difference):
-                output_task.update(advance=5, comment='Updating Component in Backend')
-                self.get_backend().update_component(self.get_resource_state_uuid(), change)
-
+                output_task.update(advance=5, comment="Updating Component in Backend")
+                self.get_backend().update_component(
+                    self.get_resource_state_uuid(), change
+                )
 
             else:
-                raise Exception(f"Trying to deploy node {change} but it is not a correct type ")
+                raise Exception(
+                    f"Trying to deploy node {change} but it is not a correct type "
+                )
 
-
-            output_task.update(completed=10, comment='Completed :white_check_mark:')
-
+            output_task.update(completed=10, comment="Completed :white_check_mark:")
 
         return deploy_change
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
-    def evaluate_and_replace_cloud_output(self, component_name: str, original_resource: ResourceModel) -> Tuple[ResourceModel, Dict]:
+    def evaluate_and_replace_cloud_output(
+        self, component_name: str, original_resource: ResourceModel
+    ) -> Tuple[ResourceModel, Dict]:
         """[stuff]
 
         Args:
@@ -582,27 +678,26 @@ class Workspace:
         """
         if not original_resource:
             return original_resource, None
-        
+
         original_resource_dict = frozendict(original_resource.dict())
-        
+
         def _resolver(ruuid, name, key) -> Any:
             return self.get_backend().get_cloud_output_value_by_name(
-                self.get_resource_state_uuid(),
-                component_name,
-                ruuid,
-                name,
-                key
+                self.get_resource_state_uuid(), component_name, ruuid, name, key
             )
-            
-        updated_resource, resolved_value = self._recursive_replace_output(_resolver, original_resource_dict, {})
-        
+
+        updated_resource, resolved_value = self._recursive_replace_output(
+            _resolver, original_resource_dict, {}
+        )
+
         evaluated_resource = original_resource.__class__(**updated_resource)
 
         return evaluated_resource, resolved_value
 
-
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
-    def evaluate_and_replace_previous_cloud_output(self, component_name: str, previous_resource: ResourceModel) -> ResourceModel:
+    def evaluate_and_replace_previous_cloud_output(
+        self, component_name: str, previous_resource: ResourceModel
+    ) -> ResourceModel:
         """[stuff]
 
         Args:
@@ -612,27 +707,32 @@ class Workspace:
         Returns:
             Tuple[ResourceModel, Dict]: [description]
         """
-        
+
         if not previous_resource:
             return previous_resource
-        
+
         original_resource_dict = frozendict(previous_resource.dict())
-        
 
         def wrap_resolver() -> Callable:
-            previous_resolved_values = self.get_backend().get_component(self.get_resource_state_uuid(), component_name).previous_resolved_cloud_values
+            previous_resolved_values = (
+                self.get_backend()
+                .get_component(self.get_resource_state_uuid(), component_name)
+                .previous_resolved_cloud_values
+            )
 
             if not previous_resolved_values:
                 raise Exception
 
-            previous_resource_resolved_values = previous_resolved_values.get(f'{previous_resource.ruuid};{previous_resource.name}')
+            previous_resource_resolved_values = previous_resolved_values.get(
+                f"{previous_resource.ruuid};{previous_resource.name}"
+            )
 
             def _resolver(ruuid, name, key) -> Any:
 
                 if not previous_resource_resolved_values:
                     raise Exception
 
-                key  = f"{ruuid};{name};{key}"
+                key = f"{ruuid};{name};{key}"
 
                 if not key in previous_resource_resolved_values:
                     raise Exception
@@ -640,61 +740,65 @@ class Workspace:
                 return previous_resource_resolved_values.get(key)
 
             return _resolver
-            
-            
-        updated_resource, _ = self._recursive_replace_output(wrap_resolver(), original_resource_dict, {})
-        
+
+        updated_resource, _ = self._recursive_replace_output(
+            wrap_resolver(), original_resource_dict, {}
+        )
+
         evaluated_resource = previous_resource.__class__(**updated_resource)
 
         return evaluated_resource
 
-
-    def _recursive_replace_output(self, resolver: Callable, original: Any, resolved_values: Dict = {}) -> Tuple[Any, Dict]:
+    def _recursive_replace_output(
+        self, resolver: Callable, original: Any, resolved_values: Dict = {}
+    ) -> Tuple[Any, Dict]:
         # This function works over ImmutableModel that were converted using the `.dict` method. Therefore,
         # the collections will be `frozendict` and `frozenset` instead of `dict` and `list`
-        
+
         if isinstance(original, frozendict):
-            if "id" in original and original.get("id") == 'cdev_cloud_output':
-                
+            if "id" in original and original.get("id") == "cdev_cloud_output":
+
                 _value = resolver(
-                    original.get('ruuid'),
-                    original.get('name'),
-                    original.get('key')
+                    original.get("ruuid"), original.get("name"), original.get("key")
                 )
-                
+
                 values_key = f"{original.get('ruuid')};{original.get('name')};{original.get('key')}"
                 resolved_values[values_key] = _value
 
-                if original.get('output_operations'):
-                    return (evaluate_dynamic_output(_value, cloud_output_dynamic_model(**original)), resolved_values)
+                if original.get("output_operations"):
+                    return (
+                        evaluate_dynamic_output(
+                            _value, cloud_output_dynamic_model(**original)
+                        ),
+                        resolved_values,
+                    )
 
                 return (_value, resolved_values)
 
             rv = {}
-            for k,v in original.items():
-                new_v, tmp_resolved_values = self._recursive_replace_output(resolver, v, resolved_values)
-                
+            for k, v in original.items():
+                new_v, tmp_resolved_values = self._recursive_replace_output(
+                    resolver, v, resolved_values
+                )
+
                 rv[k] = new_v
 
                 resolved_values.update(tmp_resolved_values)
 
-
             return (frozendict(rv), resolved_values)
 
-        elif isinstance(original, frozenset): 
+        elif isinstance(original, frozenset):
             rv = []
             for x in original:
                 new_v, tmp_resolved_values = self._recursive_replace_output(resolver, x)
-                
+
                 rv.append(new_v)
 
                 resolved_values.update(tmp_resolved_values)
 
             return frozenset(rv), resolved_values
 
-        
         return original, resolved_values
-
 
     @wrap_phase([Workspace_State.INITIALIZED])
     def execute_command(self, command: str, args: List):
@@ -714,7 +818,6 @@ class Workspace:
 
         # Create list of all directories to start searching in
         all_search_locations_list = self.get_commands()
-
 
         obj, program_name, command_name, is_command = find_specified_command(
             command_list, all_search_locations_list
@@ -811,20 +914,13 @@ def load_workspace(config: Workspace_Info) -> Workspace:
         raise e
 
 
-def initialize_workspace(workspace: Workspace, settings: Settings_Info , config: Dict):
+def initialize_workspace(workspace: Workspace, settings: Settings_Info, config: Dict):
     try:
         Workspace.settings = initialize_settings(settings)
-        
+
         # initialize the backend obj with the provided configuration values
         workspace.initialize_workspace(config)
-        
 
     except Exception as e:
-        print(
-            f"Could not initialize {workspace} Class from config {config}; {e}"
-        )
+        print(f"Could not initialize {workspace} Class from config {config}; {e}")
         raise e
-
-
-
-

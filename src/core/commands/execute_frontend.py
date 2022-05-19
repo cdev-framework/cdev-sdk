@@ -17,32 +17,41 @@ def execute_frontend_cli(args):
 
     output_manager = OutputManager()
 
-
-    
     execute_frontend(WORKSPACE, output_manager)
 
 
-
-def execute_frontend(workspace: Workspace, output: OutputManager, previous_component_names: List[str]=None) -> Tuple[List[Component_Difference], List[Resource_Difference], List[Resource_Reference_Difference]]:
+def execute_frontend(
+    workspace: Workspace,
+    output: OutputManager,
+    previous_component_names: List[str] = None,
+) -> Tuple[
+    List[Component_Difference],
+    List[Resource_Difference],
+    List[Resource_Reference_Difference],
+]:
 
     log.debug("Executing Frontend")
 
     workspace.set_state(Workspace_State.EXECUTING_FRONTEND)
     current_state = workspace.generate_current_state()
 
-
     output.print_local_state(current_state)
 
     if not previous_component_names:
-        diff_previous_component_names = [x.name for x in workspace.get_backend().get_resource_state(workspace.get_resource_state_uuid()).components]
+        diff_previous_component_names = [
+            x.name
+            for x in workspace.get_backend()
+            .get_resource_state(workspace.get_resource_state_uuid())
+            .components
+        ]
     else:
         diff_previous_component_names = previous_component_names
 
-    
     output.print_components_to_diff_against(diff_previous_component_names)
 
-    differences = workspace.create_state_differences(current_state, diff_previous_component_names)
-
+    differences = workspace.create_state_differences(
+        current_state, diff_previous_component_names
+    )
 
     if any(x for x in differences):
         output.print_state_differences(differences)
@@ -52,5 +61,5 @@ def execute_frontend(workspace: Workspace, output: OutputManager, previous_compo
         return None
 
     log.debug("Finish Executing Frontend")
-    
+
     return differences

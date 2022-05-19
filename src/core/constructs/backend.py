@@ -5,12 +5,12 @@ for managing all changes within the state of a project. The backend touches almo
 the framework. To gain a better understanding of its larger role with the framework, refer to the documentation
 about the design of the framework (link).
 
-This file provides the definition of the functionality a backend should implement, but it does not provide 
-a concrete implementation. 
+This file provides the definition of the functionality a backend should implement, but it does not provide
+a concrete implementation.
 
-This file also contains the definition of how to configure and dynamically load a backend class. To denote a 
+This file also contains the definition of how to configure and dynamically load a backend class. To denote a
 concrete implementation, a python `module` and `class` must be provide. These should both be strings. They are
-used to load a class that inherits from the base `Backend` class. It also takes in a generic dictionary to be 
+used to load a class that inherits from the base `Backend` class. It also takes in a generic dictionary to be
 passed as configuration into the dynamicall loaded class.
 
 """
@@ -114,7 +114,6 @@ class Backend:
         """
         raise NotImplementedError
 
-
     def get_component(
         self, resource_state_uuid: str, component_name: str
     ) -> ComponentModel:
@@ -134,11 +133,10 @@ class Backend:
         """
         raise NotImplementedError
 
-
     def update_component(
         self, resource_state_uuid: str, component_difference: Component_Difference
     ):
-        """Make an update to the component. 
+        """Make an update to the component.
 
         Args:
             resource_state_uuid (str): The resource state that the change is in.
@@ -150,10 +148,9 @@ class Backend:
         """
         pass
 
-
     def get_component_uuid(self, resource_state_uuid: str, component_name: str) -> str:
         """
-        Get the unique namespace for this resource state and component. 
+        Get the unique namespace for this resource state and component.
 
         Args:
             resource_state_uuid (str): The resource state that this component will be in.
@@ -186,7 +183,7 @@ class Backend:
         Returns:
             transaction_token (str): The transaction token to be used by the mapper when deploying the resource. This token can be used to give to a cloud
             provider as a idempotency token.
-            namespace_token (str): A suffix that can be added to deployed cloud resources that acts as a namespace for the resource within the cloud. 
+            namespace_token (str): A suffix that can be added to deployed cloud resources that acts as a namespace for the resource within the cloud.
 
         Raises:
             ResourceStateDoesNotExist
@@ -201,7 +198,7 @@ class Backend:
         diff: Resource_Difference,
         transaction_token: str,
         cloud_output: Dict,
-        resolved_cloud_information: Dict={}
+        resolved_cloud_information: Dict = {},
     ):
         """
         Notify the resource state that all changes to a resource have completed successfully. This will cause the resource to
@@ -213,7 +210,7 @@ class Backend:
             diff (Resource_Difference): The desired change in the resource
             transaction_token (str): Identifying token representing what transaction is being completed
             cloud_output (Dict): Output information from the cloud provider
-            resolved_cloud_information (Dict): Information that was resolved from the cloud output of the component to deploy this change. 
+            resolved_cloud_information (Dict): Information that was resolved from the cloud output of the component to deploy this change.
 
 
         Raises:
@@ -403,7 +400,6 @@ class Backend:
         """
         raise NotImplementedError
 
-
     def get_cloud_output_by_name(
         self,
         resource_state_uuid: str,
@@ -469,7 +465,9 @@ class Backend:
         new_components: List[ComponentModel],
         old_components: List[str],
     ) -> Tuple[
-        Component_Difference,  Resource_Difference, Resource_Reference_Difference,
+        Component_Difference,
+        Resource_Difference,
+        Resource_Reference_Difference,
     ]:
         """
         Create the set of differences from a proposed set of components to a provided set of current components identified by their name. This allows the flexibility for working on a particular
