@@ -1,6 +1,6 @@
 import json
 from pydantic.types import FilePath
-from typing import Dict, List, Callable, Any, TypeVar, Tuple
+from typing import Dict, List, Any, Tuple
 
 
 from cdev.constructs.project import Project, Project_State, project_info, wrap_phases
@@ -61,11 +61,10 @@ class local_project(Project):
 
             # Load the backend
             cls._instance._current_environment = None
-            
+
             cls._instance.set_state(Project_State.UNINITIALIZED)
 
             Project.set_global_instance(cls._instance)
-
 
         return cls._instance
 
@@ -76,7 +75,7 @@ class local_project(Project):
     def initialize_project(self) -> None:
         self.set_state(Project_State.INITIALIZING)
         current_env = self.get_current_environment()
-        
+
         if current_env:
             current_env.initialize_environment()
         self.set_state(Project_State.INITIALIZED)
@@ -108,11 +107,13 @@ class local_project(Project):
     def set_state(self, new_state: Project_State) -> None:
         self._project_state = new_state
 
-    # Note that the class methods should not include doc strings so that they inherit the doc string of the 
-    # parent class. 
+    # Note that the class methods should not include doc strings so that they inherit the doc string of the
+    # parent class.
 
     @wrap_phases([Project_State.INITIALIZED, Project_State.UNINITIALIZED])
-    def create_environment(self, environment_name: str, settings_files: Dict[str,str] = None) -> None:
+    def create_environment(
+        self, environment_name: str, settings_files: Dict[str, str] = None
+    ) -> None:
         self._load_state()
         resource_state_id = self._backend.create_resource_state(environment_name)
 
@@ -122,22 +123,24 @@ class local_project(Project):
             "initialization_module": "src.cdev_project",
         }
 
-        settings = Settings_Info(
-            base_class="core.constructs.settings.Settings"
-        ) if not settings_files else Settings_Info(
-            base_class="core.constructs.settings.Settings",
-            user_setting_module=settings_files.get('user_setting_module'),
-            secret_dir=settings_files.get('secret_dir'),
+        settings = (
+            Settings_Info(base_class="core.constructs.settings.Settings")
+            if not settings_files
+            else Settings_Info(
+                base_class="core.constructs.settings.Settings",
+                user_setting_module=settings_files.get("user_setting_module"),
+                secret_dir=settings_files.get("secret_dir"),
+            )
         )
 
         self._central_state.environments.append(
             environment_info(
                 environment_name,
                 Workspace_Info(
-                    "core.default.workspace", 
-                    "local_workspace", 
+                    "core.default.workspace",
+                    "local_workspace",
                     settings,
-                    workspace_config
+                    workspace_config,
                 ),
             )
         )
@@ -215,29 +218,39 @@ class local_project(Project):
         self.get_current_environment().get_workspace().settings = value
 
     def get_settings_info(self, environment_name: str = None) -> Settings_Info:
+
         if not environment_name:
             environment_name = self.get_current_environment_name()
 
         self._load_state()
-        
+
         if environment_name not in [x.name for x in self._central_state.environments]:
             raise Exception(f"No environment named {environment_name}")
 
-        # ANIBAL: This looks weird, can we use get_all_environment_names ?
-        return [x for x in self._central_state.environments if x.name == environment_name][0].workspace_info.settings_info
-    
-    def update_settings_info(self, new_value: Settings_Info, environment_name: str = None) -> None:
+        # ANIBAL: This looks weird
+        return [
+            x for x in self._central_state.environments if x.name == environment_name
+        ][0].workspace_info.settings_info
+
+    def update_settings_info(
+        self, new_value: Settings_Info, environment_name: str = None
+    ) -> None:
         if not environment_name:
             environment_name = self.get_current_environment_name()
-            
+
         self._load_state()
 
         # Remove the old environment
-        previous_environment_var = [x for x in self._central_state.environments if x.name == environment_name][0]
+        previous_environment_var = [
+            x for x in self._central_state.environments if x.name == environment_name
+        ][0]
         previous_environment_var.workspace_info.settings_info = new_value
 
-
-        self._central_state.environments = [x for x in self._central_state.environments if not x.name == environment_name]
+        self._central_state.environments = [
+            x
+            for x in self._central_state.environments
+            if not x.name == environment_name
+        ]
 
         self._central_state.environments.append(previous_environment_var)
 
@@ -260,7 +273,7 @@ class local_project(Project):
 
         Returns:
             List[Tuple[str, Any]]: The List of outputs with their associated tag
-        
+
         """
         return self.get_current_environment().get_workspace().render_outputs()
 

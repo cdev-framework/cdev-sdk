@@ -12,23 +12,23 @@ from core.constructs.types import F
 
 from ..utils.hasher import hash_list
 
-    
+
 ##################
 ##### Resource
 ##################
 class ResourceModel(ImmutableModel):
     """Base class with basic information about a defined resource.
-    
-    All classes derived from this should contain additional information about the state of a resource. 
+
+    All classes derived from this should contain additional information about the state of a resource.
     Within the life cycle of the Cdev Core framework,this is used to represent resources after any
     configuration; hence the need to make these immutable data
-    classes. 
+    classes.
 
     Attributes:
-        name: The name of the resource. Note that the combination of a name and ruuid should be unique 
+        name: The name of the resource. Note that the combination of a name and ruuid should be unique
           within a namespace
         ruuid: The identifier of this resource type.
-        hash: A string that is the hash of this object. This hash must be computed such that it changes 
+        hash: A string that is the hash of this object. This hash must be computed such that it changes
           only if a change in the state is desired.
     """
 
@@ -37,9 +37,9 @@ class ResourceModel(ImmutableModel):
     This is a human readable logical name for the resource. This must be unique for the resource within the namespace and resource type
     (i.e. the concat value of <ruuid>:<name> must be unique)
 
-    This value is important for allow human level refactoring of resources. To update a resources name once created, you must edit only the 
-    name and not change the hash. If you change both the hash and name in the same deployment, it will register this as a delete and create 
-    instead of update. 
+    This value is important for allow human level refactoring of resources. To update a resources name once created, you must edit only the
+    name and not change the hash. If you change both the hash and name in the same deployment, it will register this as a delete and create
+    instead of update.
     """
 
     ruuid: str
@@ -89,7 +89,7 @@ class Resource_Difference(ImmutableModel):
 
     class Config:
         use_enum_values = True
-        # Beta Feature but should be fine since this is simple data 
+        # Beta Feature but should be fine since this is simple data
         frozen = True
 
 
@@ -102,6 +102,7 @@ def update_hash(func: F) -> F:
     Returns:
         F: Wrapped function to compute new hash after changes have been made
     """
+
     @wraps(func)
     def wrapped_func(resource: "Resource", *func_posargs, **func_kwargs):
         rv = func(resource, *func_posargs, **func_kwargs)
@@ -158,14 +159,17 @@ class Resource:
 
     @hash.setter
     def hash(self, value: str):
-        raise Exception("The `hash` of a Resource can only be set by the `compute_hash` method")
+        raise Exception(
+            "The `hash` of a Resource can only be set by the `compute_hash` method"
+        )
 
     def compute_hash(self):
         raise NotImplementedError
 
 
-class ResourceOutputs():
+class ResourceOutputs:
     """Container object for the returned values from the cloud after the resource has been deployed."""
+
     OUTPUT_TYPE = OutputType.RESOURCE
 
     def __init__(self, name: str, ruuid: str) -> None:
@@ -173,12 +177,9 @@ class ResourceOutputs():
         self._ruuid = ruuid
 
     @property
-    def cloud_id(self) -> 'Cloud_Output_Str':
+    def cloud_id(self) -> "Cloud_Output_Str":
         return Cloud_Output_Str(
-            name=self._name,
-            ruuid=self._ruuid,
-            key='cloud_id',
-            type=self.OUTPUT_TYPE
+            name=self._name, ruuid=self._ruuid, key="cloud_id", type=self.OUTPUT_TYPE
         )
 
     @cloud_id.setter
@@ -186,17 +187,18 @@ class ResourceOutputs():
         raise Exception
 
     @property
-    def cloud_region(self) -> 'Cloud_Output_Str':
+    def cloud_region(self) -> "Cloud_Output_Str":
         return Cloud_Output_Str(
             name=self._name,
             ruuid=self._ruuid,
-            key='cloud_region',
-            type=self.OUTPUT_TYPE
+            key="cloud_region",
+            type=self.OUTPUT_TYPE,
         )
 
     @cloud_region.setter
     def cloud_region(self, value: Any):
         raise Exception
+
 
 ##################
 ##### Reference
@@ -232,9 +234,9 @@ class ResourceReferenceModel(ImmutableModel):
     This is a human readable logical name for the resource. This must be unique for the resource within the namespace and resource type
     (i.e. the concat value of <ruuid>:<name> must be unique)
 
-    This value is important for allow human level refactoring of resources. To update a resources name once created, you must edit only the 
-    name and not change the hash. If you change both the hash and name in the same deployment, it will register this as a delete and create 
-    instead of update. 
+    This value is important for allow human level refactoring of resources. To update a resources name once created, you must edit only the
+    name and not change the hash. If you change both the hash and name in the same deployment, it will register this as a delete and create
+    instead of update.
     """
 
     is_in_parent_resource_state: Optional[bool]
@@ -316,14 +318,15 @@ class Resource_Reference:
         )
 
 
-
 ####################
 ##### Mixins
 ####################
 class PermissionsAvailableMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)  # forwards all unused arguments
-        self._available_permissions = None # Needs to be set later in the calling subclass
+        self._available_permissions = (
+            None  # Needs to be set later in the calling subclass
+        )
 
     @property
     def available_permissions(self):
@@ -336,10 +339,9 @@ class PermissionsAvailableMixin:
 
 
 class PermissionsGrantableMixin:
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)  # forwards all unused arguments
-        self._granted_permissions = [] # Needs to be set later in the calling subclass
+        self._granted_permissions = []  # Needs to be set later in the calling subclass
 
     @property
     def granted_permissions(self):

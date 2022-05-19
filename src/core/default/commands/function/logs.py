@@ -1,8 +1,8 @@
+import time, datetime
 
 from argparse import ArgumentParser
-import time, math, datetime
+from typing import List, Dict
 
-from typing import List, Dict, Tuple
 from boto3 import client
 
 from core.constructs.commands import BaseCommand, OutputWrapper
@@ -20,7 +20,9 @@ class show_logs(BaseCommand):
 
     def add_arguments(self, parser: ArgumentParser):
         parser.add_argument(
-            "function_name", type=str, help="The function that you want to watch. Name must include component name. ex: comp1.demo_function"
+            "function_name",
+            type=str,
+            help="The function that you want to watch. Name must include component name. ex: comp1.demo_function",
         )
         parser.add_argument(
             "--watch",
@@ -39,15 +41,19 @@ class show_logs(BaseCommand):
     def command(self, *args, **kwargs):
 
         full_function_name: str = kwargs.get("function_name")
-        component_name = full_function_name.split('.')[0]
-        function_name = full_function_name.split('.')[1]
+        component_name = full_function_name.split(".")[0]
+        function_name = full_function_name.split(".")[1]
         # tail_val = kwargs.get("tail")
         # number_val = kwargs.get("number")
 
-        cloud_name = get_cloud_id_from_cdev_name(component_name, function_name).split(":")[-1]
+        cloud_name = get_cloud_id_from_cdev_name(component_name, function_name).split(
+            ":"
+        )[-1]
 
         if not cloud_name:
-            self.stdout.write(f"Could not find function {function_name} in component {component_name}")
+            self.stdout.write(
+                f"Could not find function {function_name} in component {component_name}"
+            )
             return
 
         cloud_watch_group_name = f"/aws/lambda/{cloud_name}"

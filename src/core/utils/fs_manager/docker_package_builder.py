@@ -14,7 +14,7 @@ from .utils import (
     lambda_python_environment,
     parse_requirement_line,
     CONTAINER_NAMES,
-    environment_to_architecture_suffix
+    environment_to_architecture_suffix,
 )
 
 from core.utils.logger import log
@@ -22,6 +22,7 @@ from core.utils.logger import log
 
 def docker_available() -> bool:
     return True
+
 
 has_run_container = False
 build_container = None
@@ -38,7 +39,6 @@ class DockerDownloadCache:
 
         if not os.path.isdir(self._downloads_locations):
             os.mkdir(self._downloads_locations)
-
 
         if not os.path.isfile(self._cache_location):
             self._cache = {
@@ -84,25 +84,28 @@ class DockerDownloadCache:
             json.dump(self._cache, fh, indent=4)
 
     def get_packaging_dir(self, environment: lambda_python_environment):
-        FULL_DIR = os.path.join(self._downloads_locations, self._cache_dirs.get(environment))
+        FULL_DIR = os.path.join(
+            self._downloads_locations, self._cache_dirs.get(environment)
+        )
 
         if not os.path.isdir(FULL_DIR):
             os.mkdir(FULL_DIR)
 
         return FULL_DIR
 
-DOWNLOAD_CACHE:  DockerDownloadCache = None 
+
+DOWNLOAD_CACHE: DockerDownloadCache = None
 
 
 def download_package_and_create_moduleinfo(
-    project: Distribution, 
-    environment: lambda_python_environment, 
+    project: Distribution,
+    environment: lambda_python_environment,
     module_name: str,
-    downloads_directory: str
+    downloads_directory: str,
 ) -> ModulePackagingInfo:
-    """Download a project in a platform compatible way to extract a particular top level module info from the project. 
-    
-    Note that this function implements a cache so that it only downloads the project the first time it ever is called 
+    """Download a project in a platform compatible way to extract a particular top level module info from the project.
+
+    Note that this function implements a cache so that it only downloads the project the first time it ever is called
     for the pair (project_name, environment). This means that most calls to this function will not have to actually download the project.
 
     Args:
@@ -117,7 +120,6 @@ def download_package_and_create_moduleinfo(
 
     DOWNLOAD_CACHE = DockerDownloadCache(downloads_directory)
 
-    
     package_information = _download_package(project, environment)
 
     potential_modules = [x for x in package_information if x.module_name == module_name]
@@ -151,16 +153,19 @@ def _download_package(
 
     cache_item = DOWNLOAD_CACHE.find_item(environment, project.project_name)
     if cache_item:
-        log.debug("Hit Cache for Download Pkg (%s, %s)", environment, project.project_name)
+        log.debug(
+            "Hit Cache for Download Pkg (%s, %s)", environment, project.project_name
+        )
         return cache_item
 
     packaging_dir = DOWNLOAD_CACHE.get_packaging_dir(environment)
 
-    
     client = docker.from_env()
 
     if not environment in CONTAINER_NAMES:
-        raise Exception(f"No available Images for building projects on environment {environment}")
+        raise Exception(
+            f"No available Images for building projects on environment {environment}"
+        )
 
     image_name = CONTAINER_NAMES.get(environment)
 
@@ -171,7 +176,7 @@ def _download_package(
     except Exception as e:
         print(e)
         raise Exception(f"Could Not Pull Docker Images {image_name}")
-        
+
     print(f"PULLED IMAGE")
 
     try:
@@ -200,7 +205,9 @@ def _download_package(
 
     except Exception as e:
         print(e)
-        raise Exception(f"Could Install {project.project_name} ({project.version}) using Image {image_name}")
+        raise Exception(
+            f"Could Install {project.project_name} ({project.version}) using Image {image_name}"
+        )
 
     # Create the actual packaging information and store it in cache via this function
     info = _create_package_info(project.project_name, environment)
@@ -212,8 +219,8 @@ def _create_package_info(
     project_name: str, environment: lambda_python_environment
 ) -> List[ModulePackagingInfo]:
     """Creates a list of ModulePackagingInfo objects that represent the top level modules made available from this
-    package. 
-    
+    package.
+
     It uses the information from the 'dist-info' that was downloaded for the projects by PIP. This function
     recursively calls itself to compute the information for dependant projects that were downloaded.
 
@@ -263,13 +270,20 @@ def _create_package_info(
                 dist_info_dir = os.path.join(
                     packaging_dir, f"{name}-{version}.dist-info"
                 )
-                log.debug("Found dist info for (%s, %s) at %s", environment, project_name, dist_info_dir)
+                log.debug(
+                    "Found dist info for (%s, %s) at %s",
+                    environment,
+                    project_name,
+                    dist_info_dir,
+                )
                 break
 
         break
 
     if not dist_info_dir:
-        raise Exception(f"Could not find dist info for {project_name} -> {dist_info_dir}")
+        raise Exception(
+            f"Could not find dist info for {project_name} -> {dist_info_dir}"
+        )
 
     if not os.path.isdir(os.path.join(packaging_dir, dist_info_dir)):
         raise Exception(f"COULD NOT FIND {os.path.join(packaging_dir, dist_info_dir)}")
@@ -282,7 +296,12 @@ def _create_package_info(
         with open(os.path.join(packaging_dir, dist_info_dir, "top_level.txt")) as fh:
             top_level_module_names = [x.strip() for x in fh.readlines()]
 
-        log.debug("top level modules for (%s, %s) are %s", environment, project_name, top_level_module_names)
+        log.debug(
+            "top level modules for (%s, %s) are %s",
+            environment,
+            project_name,
+            top_level_module_names,
+        )
 
     tmp_flat_requirements: List[ModulePackagingInfo] = []
     tmp_tree_requirements: List[ModulePackagingInfo] = []
@@ -290,7 +309,9 @@ def _create_package_info(
 
     if not os.path.isfile(os.path.join(packaging_dir, dist_info_dir, "METADATA")):
         # If not metadata file is found then assume no dependencies
-        log.debug("COULD NOT FIND %s", os.path.join(packaging_dir, dist_info_dir, 'METADATA'))
+        log.debug(
+            "COULD NOT FIND %s", os.path.join(packaging_dir, dist_info_dir, "METADATA")
+        )
 
     else:
         required_packages = set()
@@ -315,20 +336,23 @@ def _create_package_info(
                     # Requires-Dist: pytz (>=2017.3)
                     stripped_information = line.split(":")[1].strip()
 
-
                     requirement_project_name = parse_requirement_line(
                         stripped_information
                     )
 
                     if requirement_project_name:
-                        log.debug("Pkg %s requires pkg %s", project_name, requirement_project_name)
+                        log.debug(
+                            "Pkg %s requires pkg %s",
+                            project_name,
+                            requirement_project_name,
+                        )
                         required_packages.add(requirement_project_name)
 
         for required_package in required_packages:
-            # Recursively find the requirements to each needed project 
+            # Recursively find the requirements to each needed project
             dependent_pkg_infos = _create_package_info(required_package, environment)
             for dependent_pkg_info in dependent_pkg_infos:
-                # For the flat data structure add both the dependency and the dependencies dependencies 
+                # For the flat data structure add both the dependency and the dependencies dependencies
                 tmp_flat_requirements.extend(dependent_pkg_info.flat)
                 tmp_flat_requirements.append(dependent_pkg_info)
 

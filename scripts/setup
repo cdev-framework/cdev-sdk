@@ -1,0 +1,10 @@
+#!/bin/bash
+# Script to set up environment
+
+python -m venv .venv
+
+. ./scripts/activate
+
+pip install -r requirements.txt
+
+pre-commit install

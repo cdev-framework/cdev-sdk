@@ -30,7 +30,7 @@ class Resource_State(BaseModel):
     """
     The list of components owned by this namespace
     """
-    
+
     component_name_to_uuid: Optional[Dict[str, str]]
     """
     A dictionary from the uuid of a component to the component name
@@ -61,12 +61,11 @@ class Resource_State(BaseModel):
         name: str,
         uuid: str,
         components: List[ComponentModel] = [],
-        component_name_to_uuid: Dict[str, str]={},
+        component_name_to_uuid: Dict[str, str] = {},
         parent_uuid: Optional[str] = None,
         children: List[str] = [],
         resource_changes: Dict[str, Tuple[str, Resource_Difference]] = {},
         failed_changes: Dict[str, Tuple[str, Resource_Difference, Dict]] = {},
-        
     ) -> None:
         super().__init__(
             **{
@@ -77,6 +76,6 @@ class Resource_State(BaseModel):
                 "parent_uuid": parent_uuid,
                 "children": children,
                 "resource_changes": resource_changes,
-                "failed_changes": failed_changes
+                "failed_changes": failed_changes,
             }
         )

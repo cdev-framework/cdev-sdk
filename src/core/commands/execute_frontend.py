@@ -19,7 +19,15 @@ def execute_frontend_cli(args):
     execute_frontend(workspace, output_manager)
 
 
-def execute_frontend(workspace: Workspace, output: OutputManager, previous_component_names: List[str] = None) -> Tuple[List[Component_Difference], List[Resource_Difference], List[Resource_Reference_Difference]]:
+def execute_frontend(
+    workspace: Workspace,
+    output: OutputManager,
+    previous_component_names: List[str] = None,
+) -> Tuple[
+    List[Component_Difference],
+    List[Resource_Difference],
+    List[Resource_Reference_Difference],
+]:
 
     log.debug("Executing Frontend")
 
@@ -29,14 +37,20 @@ def execute_frontend(workspace: Workspace, output: OutputManager, previous_compo
     output.print_local_state(current_state)
 
     if not previous_component_names:
-        diff_previous_component_names = [x.name for x in workspace.get_backend().get_resource_state(workspace.get_resource_state_uuid()).components]
+        diff_previous_component_names = [
+            x.name
+            for x in workspace.get_backend()
+            .get_resource_state(workspace.get_resource_state_uuid())
+            .components
+        ]
     else:
         diff_previous_component_names = previous_component_names
 
-
     output.print_components_to_diff_against(diff_previous_component_names)
 
-    differences = workspace.create_state_differences(current_state, diff_previous_component_names)
+    differences = workspace.create_state_differences(
+        current_state, diff_previous_component_names
+    )
 
     # ANIBAL simple use any(differences)
     if any(x for x in differences):
@@ -46,5 +60,5 @@ def execute_frontend(workspace: Workspace, output: OutputManager, previous_compo
         print("No Differences")
 
     log.debug("Finish Executing Frontend")
-    
+
     return differences

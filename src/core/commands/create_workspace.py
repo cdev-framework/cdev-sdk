@@ -21,9 +21,7 @@ def create_workspace(args):
     workspace_info = cdev_workspace.Workspace_Info(
         "core.default.workspace",
         "local_workspace",
-        Settings_Info(
-            base_class="core.constructs.settings.Settings"
-        ),
+        Settings_Info(base_class="core.constructs.settings.Settings"),
         {
             "backend_configuration": {
                 "python_module": "core.default.backend",
@@ -34,7 +32,6 @@ def create_workspace(args):
                 },
             },
             "initialization_file": "cdev_project",
-
         },
     )
 

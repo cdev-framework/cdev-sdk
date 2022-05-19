@@ -19,7 +19,12 @@ def destroy_command(args) -> None:
     ws = my_project.get_current_environment().get_workspace()
     ws.set_state(Workspace_State.EXECUTING_FRONTEND)
 
-    diff_previous_component_names = [x.name for x in ws.get_backend().get_resource_state(ws.get_resource_state_uuid()).components]
+    diff_previous_component_names = [
+        x.name
+        for x in ws.get_backend()
+        .get_resource_state(ws.get_resource_state_uuid())
+        .components
+    ]
 
     differences = ws.create_state_differences([], diff_previous_component_names)
 
@@ -29,7 +34,6 @@ def destroy_command(args) -> None:
 
     print("")
     do_deployment = Confirm.ask("Are you sure you want to Destroy the environment?")
-
     if do_deployment is not True:
         return
 

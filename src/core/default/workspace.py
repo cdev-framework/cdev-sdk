@@ -15,17 +15,21 @@ from core.constructs.workspace import (
     WorkspaceManager,
     wrap_phase,
 )
-from core.constructs.cloud_output import Cloud_Output, cloud_output_dynamic_model, evaluate_dynamic_output, cloud_output_model
+from core.constructs.cloud_output import (
+    Cloud_Output,
+    cloud_output_dynamic_model,
+    evaluate_dynamic_output,
+    cloud_output_model,
+)
 
 from ..utils import file_manager, module_loader
 
 
-DEFAULT_COMMAND_LOCATIONS = [
-    'core.default.commands'
-]
+DEFAULT_COMMAND_LOCATIONS = ["core.default.commands"]
 
 ROOT_FOLDER_NAME = ".cdev"
 WORKSPACE_FILE_NAME = "workspace_info.json"
+
 
 class local_workspace_configuration(BaseModel):
     initialization_module: str
@@ -87,7 +91,7 @@ class local_workspace(Workspace):
         workspace_configuration = local_workspace_configuration(
             **workspace_configuration_dict
         )
-        
+
         try:
             backend_config = workspace_configuration.backend_configuration
             self.set_backend(load_backend(backend_config))
@@ -96,7 +100,7 @@ class local_workspace(Workspace):
             raise e
 
         module_loader.import_module(workspace_configuration.initialization_module)
-        
+
         if workspace_configuration.resource_state_uuid:
             if not workspace_configuration.resource_state_uuid in set(
                 [x.uuid for x in self._backend.get_top_level_resource_states()]
@@ -106,8 +110,6 @@ class local_workspace(Workspace):
                 )
 
         self.set_resource_state_uuid(workspace_configuration.resource_state_uuid)
-        
-        
 
     def destroy_workspace(self):
         Workspace.destroy_workspace(self)
@@ -121,7 +123,6 @@ class local_workspace(Workspace):
 
     def get_state(self) -> Workspace_State:
         return self._state
-
 
     @wrap_phase([Workspace_State.EXECUTING_FRONTEND])
     def generate_current_state(self) -> List[ComponentModel]:
@@ -141,14 +142,18 @@ class local_workspace(Workspace):
 
         return rv
 
-
     #######################
     ##### Display Output
     #######################
-    @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_FRONTEND, Workspace_State.EXECUTING_BACKEND])
+    @wrap_phase(
+        [
+            Workspace_State.INITIALIZED,
+            Workspace_State.EXECUTING_FRONTEND,
+            Workspace_State.EXECUTING_BACKEND,
+        ]
+    )
     def display_output(self, tag: str, output: Cloud_Output):
         self._output.append((tag, self._current_component, output.render()))
-
 
     @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_BACKEND])
     def render_outputs(self) -> List[Tuple[str, Any]]:
@@ -156,10 +161,9 @@ class local_workspace(Workspace):
 
         Returns:
             List[Tuple[str, Any]]: The List of outputs with their associated tag
-        
+
         """
         rv = []
-
 
         if not self._current_component:
             raise Exception
@@ -170,14 +174,11 @@ class local_workspace(Workspace):
                 component,
                 cloud_output.ruuid,
                 cloud_output.name,
-                cloud_output.key
+                cloud_output.key,
             )
 
             if isinstance(cloud_output, cloud_output_dynamic_model):
-                resolved_value = evaluate_dynamic_output(
-                    resolved_value,
-                    cloud_output
-                )
+                resolved_value = evaluate_dynamic_output(resolved_value, cloud_output)
 
             rv.append((tag, resolved_value))
 
@@ -259,7 +260,13 @@ class local_workspace(Workspace):
 
         self._backend = backend
 
-    @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_FRONTEND, Workspace_State.EXECUTING_BACKEND])
+    @wrap_phase(
+        [
+            Workspace_State.INITIALIZED,
+            Workspace_State.EXECUTING_FRONTEND,
+            Workspace_State.EXECUTING_BACKEND,
+        ]
+    )
     def get_backend(self) -> Backend:
         return self._backend
 
@@ -267,7 +274,13 @@ class local_workspace(Workspace):
     def set_resource_state_uuid(self, resource_state_uuid: str):
         self._resource_state_uuid = resource_state_uuid
 
-    @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_FRONTEND,  Workspace_State.EXECUTING_BACKEND])
+    @wrap_phase(
+        [
+            Workspace_State.INITIALIZED,
+            Workspace_State.EXECUTING_FRONTEND,
+            Workspace_State.EXECUTING_BACKEND,
+        ]
+    )
     def get_resource_state_uuid(self) -> str:
         return self._resource_state_uuid
 
@@ -280,13 +293,9 @@ class local_workspace_manager(WorkspaceManager):
         workspace_filename: str = None,
     ) -> None:
         self.base_dir = base_dir
-        self.workspace_dir = (
-            workspace_dir if workspace_dir else ROOT_FOLDER_NAME
-        )
+        self.workspace_dir = workspace_dir if workspace_dir else ROOT_FOLDER_NAME
         self.workspace_filename = (
-            workspace_filename
-            if workspace_filename
-            else WORKSPACE_FILE_NAME
+            workspace_filename if workspace_filename else WORKSPACE_FILE_NAME
         )
 
     def create_new_workspace(self, workspace_info: Workspace_Info):

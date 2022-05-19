@@ -30,7 +30,6 @@ class project_info(BaseModel):
         environments: List[environment_info],
         backend_info: Backend_Configuration,
         current_environment: str = None,
-       
     ) -> None:
         """
         Represents the data about a cdev project object:
@@ -39,7 +38,7 @@ class project_info(BaseModel):
             project_name (str): Name of the project
             environments (List[environment_info]): The environments that are currently part of the project
             current_environment (str): The current environment
-            
+
         """
 
         super().__init__(
@@ -56,7 +55,6 @@ class Project_State(str, Enum):
     UNINITIALIZED = "UNINITIALIZED"
     INITIALIZING = "INITIALIZING"
     INITIALIZED = "INITIALIZED"
-
 
 
 def wrap_phases(phases: List[Project_State]) -> Callable[[F], F]:
@@ -93,6 +91,7 @@ class Project:
     should keep in mind the lifecycle rules around each API and how it fits into their project.
 
     """
+
     _settings: Settings
 
     @classmethod
@@ -253,7 +252,9 @@ class Project:
     def get_settings_info(self, environment_name: str = None) -> Settings_Info:
         raise NotImplementedError
 
-    def update_settings_info(self, new_value: Settings_Info, environment_name: str = None):
+    def update_settings_info(
+        self, new_value: Settings_Info, environment_name: str = None
+    ) -> None:
         raise NotImplementedError
 
     #######################
@@ -274,7 +275,7 @@ class Project:
 
         Returns:
             List[Tuple[str, Any]]: The List of outputs with their associated tag
-        
+
         """
         raise NotImplementedError
 
@@ -432,8 +433,6 @@ def check_if_project_exists(base_directory: DirectoryPath) -> bool:
             os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE), "r"
         ) as fh:
             project_info(**json.load(fh))
-
         return True
-
     except Exception as e:
         return False

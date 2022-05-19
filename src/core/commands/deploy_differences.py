@@ -1,4 +1,4 @@
-"""Utilities for creating a deploying a set of changes 
+"""Utilities for creating a deploying a set of changes
 
 """
 
@@ -14,7 +14,6 @@ def execute_deployment_cli(args):
 
     workspace = Workspace.instance()
     execute_deployment(workspace, OutputManager())
-
 
 def execute_deployment(workspace: Workspace, output: OutputManager):
     unsorted_differences = execute_frontend(workspace, output)

@@ -9,13 +9,9 @@ from cdev import Project as cdev_project
 myProject = cdev_project.instance()
 
 
-myProject.add_mapper(
-    DefaultMapper()
-)
+myProject.add_mapper(DefaultMapper())
 
 
 myProject.add_component(
-    Cdev_FileSystem_Component(os.path.join("src","hello_world"), "hello_world_comp")
+    Cdev_FileSystem_Component(os.path.join("src", "hello_world"), "hello_world_comp")
 )
-
-

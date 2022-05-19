@@ -11,8 +11,4 @@ logger = Logger(service="payment")
 @logger.inject_lambda_context
 def handler(event, context):
     logger.info("Collecting payment")
-
-    logger.info({
-        "operation": "collect_payment",
-        "charge_id": event['charge_id']
-    })
+    logger.info({"operation": "collect_payment", "charge_id": event["charge_id"]})

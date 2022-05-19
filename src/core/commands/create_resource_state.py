@@ -13,4 +13,3 @@ def create_resource_state_cli(args):
 
 def create_resource_state(workspace: Workspace):
     new_uuid = workspace.get_backend().create_resource_state("demo")
-    

@@ -1,4 +1,9 @@
-from core.constructs.workspace import Workspace, Workspace_State, initialize_workspace, load_workspace
+from core.constructs.workspace import (
+    Workspace,
+    Workspace_State,
+    initialize_workspace,
+    load_workspace,
+)
 
 
 from ..constructs.environment import Environment, environment_info
@@ -25,8 +30,8 @@ class local_environment(Environment):
         # Set the default mapper as a mapper in the workspace
         ws.add_mapper(DefaultMapper())
 
-        initialize_workspace(ws, self.workspace_info.settings_info, self.workspace_info.config)
+        initialize_workspace(
+            ws, self.workspace_info.settings_info, self.workspace_info.config
+        )
 
         ws.set_state(Workspace_State.INITIALIZED)
-
-        

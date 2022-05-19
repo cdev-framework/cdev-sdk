@@ -16,7 +16,6 @@ from parsley import makeGrammar
 from rich import print
 
 
-
 def get_lines_from_file_list(file_list, function_info) -> List[str]:
     # Get the list of lines from a file based on the function info provided
     line_nos = _compress_lines(function_info)
@@ -62,12 +61,14 @@ def _compress_lines(original_lines):
     return rv
 
 
-def get_parsed_path(original_path, function_name, final_base_directory: DirectoryPath, prefix=None):
+def get_parsed_path(
+    original_path, function_name, final_base_directory: DirectoryPath, prefix=None
+):
     split_path = core_paths.get_relative_to_workspace_path(original_path).split("/")
-    
+
     # the last item in the path is .py file name... change the  .py to _py so it works as a dir
     final_file_name = split_path[-1].split(".")[0] + "_" + function_name + ".py"
-    
+
     try:
         split_path.remove(".")
         split_path.remove("..")
@@ -79,8 +80,9 @@ def get_parsed_path(original_path, function_name, final_base_directory: Director
 
     final_file_dir = core_paths.create_path(final_base_directory, split_path[:-1])
 
-
-    log.debug("Created Parsed Path is %s", os.path.join(final_file_dir, final_file_name) )
+    log.debug(
+        "Created Parsed Path is %s", os.path.join(final_file_dir, final_file_name)
+    )
     return os.path.join(final_file_dir, final_file_name)
 
 
@@ -107,11 +109,11 @@ class PackageTypes(str, Enum):
     LOCALPACKAGE = "localpackage"
     AWSINCLUDED = "awsincluded"
 
+
 class Architecture(str, Enum):
     X86 = "x86_64"
     ARM64 = "aarch64"
     ANY = "any"
-
 
 
 class ModulePackagingInfo(BaseModel):
@@ -187,8 +189,6 @@ def print_handler_package():
 
 def print_layer_package():
     pass
-
-
 
 
 environment_to_architecture_suffix: Dict[lambda_python_environment, Architecture] = {
@@ -413,7 +413,7 @@ def parse_requirement_line(line: str) -> str:
     # https://www.python.org/dev/peps/pep-0508/
     try:
         parsed_info = compiled(line).specification()
-        
+
         if parsed_info[3]:
             if not evaluate_expression(parsed_info[3]):
                 return None

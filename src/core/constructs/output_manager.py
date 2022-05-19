@@ -7,13 +7,22 @@
 from rich.console import Console
 from typing import Any, List, Tuple, Union
 
-from rich.progress import Progress, TaskID  
+from rich.progress import Progress, TaskID
 
-from core.constructs.components import Component_Change_Type, ComponentModel, Component_Difference
-from core.constructs.resource import Resource_Change_Type, Resource_Difference, Resource_Reference_Change_Type, Resource_Reference_Difference
+from core.constructs.components import (
+    Component_Change_Type,
+    ComponentModel,
+    Component_Difference,
+)
+from core.constructs.resource import (
+    Resource_Change_Type,
+    Resource_Difference,
+    Resource_Reference_Change_Type,
+    Resource_Reference_Difference,
+)
 
 
-class OutputManager():
+class OutputManager:
     def __init__(self, console: Console = None, progress: Progress = None) -> None:
 
         self._console = console or Console()
@@ -24,9 +33,8 @@ class OutputManager():
         print("")
 
     def print_local_state(self, rendered_components: List[ComponentModel]) -> None:
-
         rendered_components.sort(key=lambda x: x.name)
-        
+
         self._console.print(f"Current State:")
         for component in rendered_components:
             self._console.print(f"Component: [bold blue]{component.name}[/bold blue]")
@@ -41,10 +49,16 @@ class OutputManager():
         for component_name in old_component_names:
             self._console.print(f"    {component_name}")
 
-
         self._console.print("")
 
-    def print_state_differences(self, differences: Tuple[List[Component_Difference], List[Resource_Difference], List[Resource_Reference_Difference]]):
+    def print_state_differences(
+        self,
+        differences: Tuple[
+            List[Component_Difference],
+            List[Resource_Difference],
+            List[Resource_Reference_Difference],
+        ],
+    ) -> None:
 
         if any(differences) is False:
             return
@@ -60,8 +74,16 @@ class OutputManager():
             self._print_component_resource_differences(component_diff, resource_differences)
             self._print_component_reference_differences(component_diff, reference_differences)
 
-    def create_task(self, description: str, start: bool = True, total: int = 100, completed: int = 0, visible: bool = True, **fields: Any) -> 'OutputTask':
-        """Create a task for the progress object in this output manager. 
+    def create_task(
+        self,
+        description: str,
+        start: bool = True,
+        total: int = 100,
+        completed: int = 0,
+        visible: bool = True,
+        **fields: Any,
+    ) -> "OutputTask":
+        """Create a task for the progress object in this output manager.
 
         Raises:
             Exception: [description]
@@ -70,16 +92,27 @@ class OutputManager():
             OutputTask: Object to use to track the progress of the event
         """
 
-
         if not self._progress:
             raise Exception
 
-
-        task_id = self._progress.add_task(description=description, start=start, total=total, completed=completed, visible=visible, **fields)
+        task_id = self._progress.add_task(
+            description=description,
+            start=start,
+            total=total,
+            completed=completed,
+            visible=visible,
+            **fields,
+        )
 
         return OutputTask(self, task_id)
 
-    def create_output_description(self, node: Union[Resource_Difference, Resource_Reference_Difference, Component_Difference]) -> str:
+    def create_output_description(
+        self,
+        node: Union[
+            Resource_Difference, Resource_Reference_Difference, Component_Difference
+        ],
+    ) -> str:
+
         if isinstance(node, Resource_Difference):
             if node.action_type == Resource_Change_Type.CREATE:
                 return f"[bold green]Creating:[/bold green][bold blue] {node.new_resource.name} ({node.new_resource.ruuid})[/bold blue]"
@@ -114,7 +147,9 @@ class OutputManager():
                 return f"[bold red]Delete: [/bold red] [bold blue]{node.previous_name} (component)[/bold blue]"
 
         else:
-            raise Exception(f"Trying to deploy node {node} but it is not a correct type ")
+            raise Exception(
+                f"Trying to deploy node {node} but it is not a correct type "
+            )
 
     def _print_component_resources(self, component) -> None:
         if component.resources is None or any(component.resources):
@@ -122,7 +157,9 @@ class OutputManager():
 
         self._console.print(f"    Resources:")
         for resource in component.resources:
-            self._console.print(f"        [bold blue]{resource.name} ({resource.ruuid})[/bold blue]")
+            self._console.print(
+                f"        [bold blue]{resource.name} ({resource.ruuid})[/bold blue]"
+            )
 
     def _print_component_references(self, component) -> None:
         if component.references is None or any(component.references):
@@ -130,55 +167,96 @@ class OutputManager():
 
         self._console.print(f"    References:")
         for reference in component.references:
-            self._console.print(f"        [bold blue]From {reference.component_name} reference {reference.name} ({reference.ruuid})[/bold blue]")
+            self._console.print(
+                f"        [bold blue]From {reference.component_name} reference {reference.name} ({reference.ruuid})[/bold blue]"
+            )
 
     def _print_component_differences(self, component_diff: Component_Difference) -> None:
         if component_diff.action_type == Component_Change_Type.UPDATE_NAME:
-            self._console.print(f"    [bold yellow]Update Name: [/bold yellow][bold blue]{component_diff.previous_name} to {component_diff.new_name} (component)[/bold blue]")
+            self._console.print(
+                f"    [bold yellow]Update Name: [/bold yellow][bold blue]{component_diff.previous_name} to {component_diff.new_name} (component)[/bold blue]"
+            )
             return
 
         if component_diff.action_type == Component_Change_Type.UPDATE_IDENTITY:
-            self._console.print(f"    [bold yellow]Update Identity: [/bold yellow][bold blue]{component_diff.new_name} (component)[/bold blue]")
+            self._console.print(
+                f"    [bold yellow]Update Identity: [/bold yellow][bold blue]{component_diff.new_name} (component)[/bold blue]"
+            )
             return
 
         if component_diff.action_type == Component_Change_Type.CREATE:
-            self._console.print(f"    [bold green]Create: [/bold green][bold blue]{component_diff.new_name} (component)[/bold blue]")
+            self._console.print(
+                f"    [bold green]Create: [/bold green][bold blue]{component_diff.new_name} (component)[/bold blue]"
+            )
             return
 
         if component_diff.action_type == Component_Change_Type.DELETE:
-            self._console.print(f"    [bold red]Delete: [/bold red] [bold blue]{component_diff.previous_name} (component)[/bold blue]")
+            self._console.print(
+                f"    [bold red]Delete: [/bold red] [bold blue]{component_diff.previous_name} (component)[/bold blue]"
+            )
+        return
 
     def _print_component_resource_differences(self, component_diff: Component_Difference, resource_differences: List[Resource_Difference]) -> None:
-        resource_changes = [x for x in resource_differences if x.component_name == component_diff.new_name or x.component_name == component_diff.previous_name ]
+        resource_changes = [
+            x
+            for x in resource_differences
+            if x.component_name == component_diff.new_name
+               or x.component_name == component_diff.previous_name
+        ]
+
         for resource_diff in resource_changes:
             if resource_diff.action_type == Resource_Change_Type.CREATE:
-                self._console.print(f"        [bold green]Create:[/bold green][bold blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]")
+                self._console.print(
+                    f"        [bold green]Create:[/bold green][bold blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
+                )
 
             elif resource_diff.action_type == Resource_Change_Type.DELETE:
-                self._console.print(f"        [bold red]Delete:[/bold red][bold blue] {resource_diff.previous_resource.name} ({resource_diff.previous_resource.ruuid})[/bold blue]")
+                self._console.print(
+                    f"        [bold red]Delete:[/bold red][bold blue] {resource_diff.previous_resource.name} ({resource_diff.previous_resource.ruuid})[/bold blue]"
+                )
 
-            elif resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY:
-                self._console.print(f"        [bold yellow]Update:[/bold yellow][bold blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]")
+            elif (
+                    resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY
+                ):
+                self._console.print(
+                    f"        [bold yellow]Update:[/bold yellow][bold blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
+                )
 
             elif resource_diff.action_type == Resource_Change_Type.UPDATE_NAME:
-                self._console.print(f"        [bold yellow]Update Name:[/bold yellow][bold blue] from {resource_diff.previous_resource.name} to {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]")
+                self._console.print(
+                    f"        [bold yellow]Update Name:[/bold yellow][bold blue] from {resource_diff.previous_resource.name} to {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
+                )
 
     def _print_component_reference_differences(self, component_diff: Component_Difference, reference_differences: List[Resource_Reference_Difference]) -> None:
-        reference_changes = [x for x in reference_differences if x.originating_component_name == component_diff.new_name]
+        reference_changes = [
+            x
+            for x in reference_differences
+            if x.originating_component_name == component_diff.new_name
+        ]
+
         for reference_diff in reference_changes:
-            if reference_diff.action_type == Resource_Reference_Change_Type.CREATE:
-                self._console.print(f"        [bold green]Create reference:[/bold green][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]")
+            if (
+                    reference_diff.action_type
+                    == Resource_Reference_Change_Type.CREATE
+            ):
+                self._console.print(
+                    f"        [bold green]Create reference:[/bold green][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]"
+                )
 
-            elif reference_diff.action_type == Resource_Reference_Change_Type.DELETE:
-                self._console.print(f"        [bold red]Delete reference:[/bold red][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]")
+            elif (
+                    reference_diff.action_type
+                    == Resource_Reference_Change_Type.DELETE
+            ):
+                self._console.print(
+                    f"        [bold red]Delete reference:[/bold red][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]"
+                )
 
-
-class OutputTask():
+class OutputTask:
     """
     Wrapper around an output that can be used to track long running events. The implementation is as a wrapper around a 'progress task' from the
     rich library. Thus, the api for 'update' and 'start' follows the same pattern as that of a 'task' in the rich library. The print method provides
-    access for sending messages to the parent console of this task. 
-    """  
+    access for sending messages to the parent console of this task.
+    """
 
     def __init__(self, output_manager: OutputManager, task_id: TaskID) -> None:
         self._output_manager = output_manager
@@ -201,9 +279,29 @@ class OutputTask():
         """
         self.print(f"[bold red]{msg}[/bold red]")
 
-    def update(self, *args, total: float = None, completed: float = None, advance: None = None, description: str = None, visible: bool = None, refresh: bool = False, **fields: Any) -> None:
-        #self._output_manager._console.print(fields.get('comment'))
-        self._output_manager._progress.update(self._task_id, *args, total=total, completed=completed, advance=advance, description=description, visible=visible, refresh=refresh, **fields)
+    def update(
+        self,
+        *args,
+        total: float = None,
+        completed: float = None,
+        advance: None = None,
+        description: str = None,
+        visible: bool = None,
+        refresh: bool = False,
+        **fields: Any,
+    ) -> None:
+        # self._output_manager._console.print(fields.get('comment'))
+        self._output_manager._progress.update(
+            self._task_id,
+            *args,
+            total=total,
+            completed=completed,
+            advance=advance,
+            description=description,
+            visible=visible,
+            refresh=refresh,
+            **fields,
+        )
 
     def start_task(self) -> None:
         self._output_manager._progress.start_task(self._task_id)

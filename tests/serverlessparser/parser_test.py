@@ -24,7 +24,7 @@ SIMPLE_PATH = os.path.join(EXAMPLE_PATH, "simple")
 
     try:
         rv = cp.parse_functions_from_file(fp)
-        
+
         print(rv.parsed_functions)
         assert len(rv.parsed_functions) == 3
 
@@ -54,7 +54,7 @@ def test_no_imports_basic():
 
     try:
         rv = cp.parse_functions_from_file(fp)
-        
+
         print(rv.parsed_functions)
         assert len(rv.parsed_functions) == 1
 
@@ -72,7 +72,7 @@ def test_global_symbols_basic():
 
     try:
         rv = cp.parse_functions_from_file(fp)
-        
+
         print(rv.parsed_functions)
         assert len(rv.parsed_functions) == 1
 
@@ -91,7 +91,7 @@ def test_import_symbols_basic():
 
     try:
         rv = cp.parse_functions_from_file(fp)
-        
+
         print(rv.parsed_functions)
         assert len(rv.parsed_functions) == 1
 

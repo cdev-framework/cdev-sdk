@@ -2,7 +2,7 @@
 
 python_version=('3.6' '3.7' '3.8')
 
-for i in ${python_version[@]}; 
+for i in ${python_version[@]};
   do html_page=$(curl https://docs.python.org/$i/library/);
 
 

@@ -4,10 +4,20 @@ import logging
 import traceback
 from typing import Callable, Any
 
-from ..commands import initializer, environment, plan, deploy, run, cloud_output, local_development, destroy
+from ..commands import (
+    initializer,
+    environment,
+    plan,
+    deploy,
+    run,
+    cloud_output,
+    local_development,
+    destroy,
+)
 
 parser = argparse.ArgumentParser(description="cdev cli")
 subparsers = parser.add_subparsers(title="sub_command", description="valid subcommands")
+
 
 def wrap_load_project(command: Callable) -> Callable[[Any], Any]:
     def wrapped_caller(*args, **kwargs):
@@ -52,32 +62,51 @@ CDEV_COMMANDS = [
         "default": initializer.create_project_cli,
         "args": [
             {"dest": "name", "type": str, "help": "Name of the new project"},
-            {"dest": "--template", "type": str, "help": "Name of the template for the new project"}
+            {
+                "dest": "--template",
+                "type": str,
+                "help": "Name of the template for the new project",
+            },
         ],
     },
     {
         "name": "develop",
         "help": "Open an interactive development environment",
-        "default": wrap_load_and_initialize_project(local_development.develop_command_cli),
+        "default": wrap_load_and_initialize_project(
+            local_development.develop_command_cli
+        ),
         "args": [
-            {"dest": "--complex", "help": "run a simple follower instead of full development environment", "action":"store_true"}
-        ]
+            {
+                "dest": "--complex",
+                "help": "run a simple follower instead of full development environment",
+                "action": "store_true",
+            }
+        ],
     },
     {
         "name": "destroy",
         "help": "Destroy all the resources in the current environment",
-        "default": wrap_load_and_initialize_project(destroy.destroy_command_cli)
-    }, 
-
+        "default": wrap_load_and_initialize_project(destroy.destroy_command_cli),
+    },
     {
         "name": "output",
         "help": "See the generated cloud output",
-        "default": wrap_load_and_initialize_project(cloud_output.cloud_output_command_cli),
+        "default": wrap_load_and_initialize_project(
+            cloud_output.cloud_output_command_cli
+        ),
         "args": [
-            {"dest": "cloud_output_id", "type": str, "help": "Id of the cloud output to display. ex: <component>.<ruuid>.<cdev_name>.<output_key>"},
-            {"dest": "--value", "help": "display only the value. Helpful for exporting values.", "action":"store_true"}
-        ]
-    }, 
+            {
+                "dest": "cloud_output_id",
+                "type": str,
+                "help": "Id of the cloud output to display. ex: <component>.<ruuid>.<cdev_name>.<output_key>",
+            },
+            {
+                "dest": "--value",
+                "help": "display only the value. Helpful for exporting values.",
+                "action": "store_true",
+            },
+        ],
+    },
     {
         "name": "environment",
         "help": "Change and create environments for deployment",
@@ -145,7 +174,7 @@ CDEV_COMMANDS = [
                         "dest": "--all",
                         "action": "store_true",
                         "help": "Set the value for all environments. Must be used with --new-value.",
-                    }
+                    },
                 ],
             },
         ],
@@ -153,7 +182,7 @@ CDEV_COMMANDS = [
     {
         "name": "deploy",
         "help": "Deploy a set of changes",
-        "default": wrap_load_and_initialize_project(deploy.deploy_command_cli)
+        "default": wrap_load_and_initialize_project(deploy.deploy_command_cli),
     },
     {
         "name": "run",
@@ -186,16 +215,22 @@ def add_general_output_options(parser: argparse.ArgumentParser):
     )
 
     parser.add_argument(
-        '-d', '--debug',
+        "-d",
+        "--debug",
         help="Print debug log statements. This is mostly for development use",
-        action="store_const", dest="loglevel", const=logging.DEBUG,
+        action="store_const",
+        dest="loglevel",
+        const=logging.DEBUG,
         default=logging.WARNING,
     )
 
     parser.add_argument(
-        '-v', '--verbose',
+        "-v",
+        "--verbose",
         help="Print info log message. Use this to get a more detailed understanding of what is executing.",
-        action="store_const", dest="loglevel", const=logging.INFO,
+        action="store_const",
+        dest="loglevel",
+        const=logging.INFO,
     )
 
 

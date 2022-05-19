@@ -4,4 +4,4 @@ Resource documentation can be found <a href='/docs/api/core/default/resources/si
 
 from . import simple
 
-__all__ = ['simple']
+__all__ = ["simple"]

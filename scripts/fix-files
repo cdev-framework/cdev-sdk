@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Run pre commit to fix files
+pre-commit run --all-files

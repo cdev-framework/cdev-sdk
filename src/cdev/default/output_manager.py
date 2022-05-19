@@ -9,10 +9,10 @@ from ..constructs.project import Project
 class CdevOutputManager(OutputManager):
 
     def print_header(self) -> None:
-        myproject = Project.instance()
+        my_project = Project.instance()
 
         print("")
-        print(f"Project: {myproject.get_name()}")
+        print(f"Project: {my_project.get_name()}")
         print("")
 
     def print_components_to_diff_against(self, old_component_names: List[str]) -> None:

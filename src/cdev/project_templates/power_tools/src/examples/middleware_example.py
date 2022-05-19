@@ -1,4 +1,4 @@
-# Generated as part of Quick Start project template 
+# Generated as part of Quick Start project template
 from aws_lambda_powertools.middleware_factory import lambda_handler_decorator
 
 from cdev.resources.simple.xlambda import simple_function_annotation
@@ -18,4 +18,4 @@ def middleware_before_after(handler, event, context):
 @middleware_before_after
 def lambda_handler(event, context):
 
-    print('Hello from inside your Function!')
+    print("Hello from inside your Function!")

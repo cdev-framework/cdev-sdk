@@ -17,9 +17,5 @@ def cloud_output_command(cloud_output_id: str, only_value: bool) -> None:
     output_manager = CdevOutputManager()
 
     my_project = Project.instance()
-    
     ws = my_project.get_current_environment().get_workspace()
-
     core_cloud_output_command(ws, output_manager, cloud_output_id, only_value)
-    
-

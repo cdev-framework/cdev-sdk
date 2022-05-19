@@ -1,4 +1,7 @@
-from aws_lambda_powertools.utilities.data_classes import event_source, APIGatewayProxyEventV2
+from aws_lambda_powertools.utilities.data_classes import (
+    event_source,
+    APIGatewayProxyEventV2,
+)
 
 
 from cdev.resources.simple.api import Api
@@ -16,5 +19,5 @@ hello_route = DemoApi.route("/helloworld", "GET")
 @simple_function_annotation("dataclass_example", events=[hello_route.event()])
 @event_source(data_class=APIGatewayProxyEventV2)
 def lambda_handler(event: APIGatewayProxyEventV2, context):
-    if 'helloworld' in event.path and event.http_method == 'GET':
+    if "helloworld" in event.path and event.http_method == "GET":
         print("Made it here!")

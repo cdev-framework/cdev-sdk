@@ -1,4 +1,3 @@
-
 from ..constructs.workspace import Workspace
 from ..constructs.output_manager import OutputManager
 
@@ -11,13 +10,17 @@ def cloud_output_command_cli(args):
     cloud_output_command(config)
 
 
-def cloud_output_command(workspace: Workspace, output: OutputManager, cloud_output_id: str, only_value: bool):
+def cloud_output_command(
+    workspace: Workspace, output: OutputManager, cloud_output_id: str, only_value: bool
+):
     log.debug("Executing Frontend")
 
     split_names = cloud_output_id.split('.')
 
     if len(split_names) != 4:
-        raise Exception("Output not provided in correct structure. ex: <component>.<ruuid>.<cdev_name>.<output_key>")
+        raise Exception(
+            "Output not provided in correct structure. ex: <component>.<ruuid>.<cdev_name>.<output_key>"
+        )
 
     component_name = split_names[0]
     resource_ruuid = f"cdev::simple::{split_names[1]}"
@@ -29,7 +32,7 @@ def cloud_output_command(workspace: Workspace, output: OutputManager, cloud_outp
             workspace.get_resource_state_uuid(),
             component_name,
             resource_ruuid,
-            resource_name
+            resource_name,
         )
     except Exception as e:
         print(e)

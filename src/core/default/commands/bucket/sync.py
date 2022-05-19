@@ -1,4 +1,3 @@
-
 """Command for syncing a set of resources to a static site
 """
 from argparse import ArgumentParser
@@ -35,12 +34,14 @@ class sync_files(BaseCommand):
 
     def command(self, *args, **kwargs):
         full_resource_name: str = kwargs.get("resource_name")
-        component_name = full_resource_name.split('.')[0]
-        bucket_cdev_name = full_resource_name.split('.')[1]
+        component_name = full_resource_name.split(".")[0]
+        bucket_cdev_name = full_resource_name.split(".")[1]
         content_directory = kwargs.get("dir")
         clear_bucket = kwargs.get("clear")
 
-        cloud_output = utils.get_cloud_output_from_cdev_name(component_name, bucket_cdev_name)
+        cloud_output = utils.get_cloud_output_from_cdev_name(
+            component_name, bucket_cdev_name
+        )
 
         final_dir = get_full_path_from_workspace_base(content_directory)
 

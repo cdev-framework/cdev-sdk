@@ -2,40 +2,38 @@ import json
 import os
 from pydantic.types import DirectoryPath
 import shutil
-from typing import Dict, Tuple, List
+from typing import List
 
-from rich.prompt import Prompt
 from cdev.default.project import local_project
 from cdev.cli.logger import set_global_logger_from_cli
 
-from core.constructs.backend import Backend, Backend_Configuration
-from core.constructs.workspace import Workspace_Info
 from core.default.backend import Local_Backend_Configuration, LocalBackend
-
 
 from ..constructs.project import Project_State, check_if_project_exists, project_info
 
 
 STATE_FOLDER = "state"
-INTERMEDIATE_FOLDER = 'intermediate'
+INTERMEDIATE_FOLDER = "intermediate"
 CDEV_FOLDER = ".cdev"
 CDEV_PROJECT_FILE = "cdev_project.json"
 CENTRAL_STATE_FILE = "central_state.json"
-SETTINGS_FOLDER_NAME = 'settings'
+SETTINGS_FOLDER_NAME = "settings"
 DEFAULT_ENVIRONMENTS = ["prod", "stage", "dev"]
-TEMPLATE_LOCATIONS = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'project_templates')
+TEMPLATE_LOCATIONS = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), "project_templates"
+)
 
 
 BASE_PROJECT_LOCATION = os.getcwd()
 
 AVAILABLE_TEMPLATES = [
-    'quick-start',
-    'quick-start-twilio',
-    'resources-test',
-    'packages',
-    'slack-bot',
-    'user-auth',
-    'power-tools'
+    "quick-start",
+    "quick-start-twilio",
+    "resources-test",
+    "packages",
+    "slack-bot",
+    "user-auth",
+    "power-tools",
 ]
 
 
@@ -45,12 +43,14 @@ def create_project_cli(args) -> None:
 
     template_name = args.template
     if template_name and template_name not in AVAILABLE_TEMPLATES:
-        print(f"{template_name} is not one of the available templates. {AVAILABLE_TEMPLATES}")
+        print(
+            f"{template_name} is not one of the available templates. {AVAILABLE_TEMPLATES}"
+        )
         return
 
     create_project(args.name)
     _load_template(template_name)
-    
+
 
 def _load_template(template_name: str) -> None:
     if not template_name:
@@ -59,13 +59,13 @@ def _load_template(template_name: str) -> None:
     print(f"Loading Template {template_name}")
     template_folder_name = template_name.replace('-', '_')
 
-    if template_folder_name not in os.listdir(TEMPLATE_LOCATIONS):
-        print(f"Could not find template for {template_folder_name}")
+    if not template_folder_name in os.listdir(TEMPLATE_LOCATIONS):
+        print(f"Could not finder template for {template_folder_name}")
         return
 
     template_location = os.path.join(TEMPLATE_LOCATIONS, template_folder_name)
     for x in os.listdir(template_location):
-        
+
         full_location = os.path.join(template_location, x)
         if os.path.isdir(full_location):
             shutil.copytree(full_location, os.path.join(BASE_PROJECT_LOCATION, x))
@@ -118,10 +118,19 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
         environment_settings = {
             "user_setting_module": [
                 # set the settings modules as python modules
-                os.path.relpath(os.path.join(base_settings_folder, f'base_settings.py'), start=base_dir)[:-3].replace('/',"."),
-                os.path.relpath(os.path.join(base_settings_folder, f'{environment}_settings.py'), start=base_dir)[:-3].replace('/',".")
+                os.path.relpath(
+                    os.path.join(base_settings_folder, f"base_settings.py"),
+                    start=base_dir,
+                )[:-3].replace("/", "."),
+                os.path.relpath(
+                    os.path.join(base_settings_folder, f"{environment}_settings.py"),
+                    start=base_dir,
+                )[:-3].replace("/", "."),
             ],
-            "secret_dir":  os.path.relpath(os.path.join(base_settings_folder, f'{environment}_secrets'), start=base_dir),
+            "secret_dir": os.path.relpath(
+                os.path.join(base_settings_folder, f"{environment}_secrets"),
+                start=base_dir,
+            ),
         }
 
         new_project.create_environment(environment, environment_settings)
@@ -144,7 +153,8 @@ def _create_folder_structure(base_directory: DirectoryPath, extra_settings: List
     if os.path.isdir(os.path.join(base_directory, CDEV_FOLDER, STATE_FOLDER)) is False:
         os.mkdir(os.path.join(base_directory, CDEV_FOLDER, STATE_FOLDER))
 
-    if os.path.isdir(os.path.join(base_directory, CDEV_FOLDER, INTERMEDIATE_FOLDER)) is False:
+    if os.path.isdir(
+        os.path.join(base_directory, CDEV_FOLDER, INTERMEDIATE_FOLDER)) is False:
         os.mkdir(os.path.join(base_directory, CDEV_FOLDER, INTERMEDIATE_FOLDER))
 
     base_settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
@@ -152,17 +162,19 @@ def _create_folder_structure(base_directory: DirectoryPath, extra_settings: List
     if os.path.isdir(base_settings_folder) is False:
         os.mkdir(base_settings_folder)
 
-    with open(os.path.join(base_settings_folder, f'base_settings.py'), 'w'):
+    with open(os.path.join(base_settings_folder, f"base_settings.py"), "w"):
         pass
 
-    with open(os.path.join(base_settings_folder, f'__init__.py'), 'w'):
+    with open(os.path.join(base_settings_folder, f"__init__.py"), "w"):
         pass
-    
+
     for environment in extra_settings:
-        with open(os.path.join( base_settings_folder, f'{environment}_settings.py'), 'w'):
+        with open(
+            os.path.join(base_settings_folder, f"{environment}_settings.py"), "w"
+        ):
             pass
 
-        os.mkdir(os.path.join(base_settings_folder, f'{environment}_secrets'))
+        os.mkdir(os.path.join(base_settings_folder, f"{environment}_secrets"))
 
 
 # ANIBAL we should refactor these two into a single function with an extra parameter initialize=False

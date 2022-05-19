@@ -1,4 +1,4 @@
-# Generated as part of the User Auth project template 
+# Generated as part of the User Auth project template
 import json
 
 from cdev.resources.simple.api import Api
@@ -14,14 +14,12 @@ demo_route = DemoApi.route("/demo", "GET")
 
 @simple_function_annotation("demo_handler", events=[demo_route.event()])
 def hello_world(event, context):
-    print('Hello from inside your Function!')
+    print("Hello from inside your Function!")
 
     return {
         "status_code": 200,
         "body": json.dumps({"message": "Hello World From The Backend!"}),
-        "headers": {
-            "content-type": "application/json"
-        } 
+        "headers": {"content-type": "application/json"},
     }
 
 

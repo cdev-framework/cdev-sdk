@@ -16,15 +16,9 @@ class environment_info(BaseModel):
     name: str
     workspace_info: Workspace_Info
 
-    def __init__(
-        __pydantic_self__,
-        name: str,
-        workspace_info: Workspace_Info
-        ) -> None:
+    def __init__(__pydantic_self__, name: str, workspace_info: Workspace_Info) -> None:
 
-        super().__init__(
-            **{"name": name, "workspace_info": workspace_info}
-        )
+        super().__init__(**{"name": name, "workspace_info": workspace_info})
 
 
 class Environment:

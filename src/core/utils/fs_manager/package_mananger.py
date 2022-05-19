@@ -12,7 +12,12 @@ from typing import List, Set, Dict, Tuple, Union, Optional
 from serverless_parser import parser as cdev_parser
 
 from . import docker_package_builder
-from .utils import PackageTypes, ModulePackagingInfo, environment_to_architecture_suffix, Architecture
+from .utils import (
+    PackageTypes,
+    ModulePackagingInfo,
+    environment_to_architecture_suffix,
+    Architecture,
+)
 
 from core.utils.platforms import lambda_python_environment, get_current_closest_platform
 from core.utils.logger import log
@@ -42,7 +47,7 @@ download_package_location = None
 target_platform = get_current_closest_platform()
 CURRENT_PLATFORM = get_current_closest_platform()
 
-#_current_working_dir = CDEV_SETTINGS.get("CURRENT_PARSING_DIR")
+# _current_working_dir = CDEV_SETTINGS.get("CURRENT_PARSING_DIR")
 # TODO: Make this a setting
 _current_working_dir = os.getcwd()
 
@@ -77,7 +82,7 @@ def _is_platform_compatible(tags: List[str]) -> bool:
         return False
 
     else:
-        #Linux specific package
+        # Linux specific package
         return False
 
 
@@ -88,7 +93,7 @@ for project_obj in pkg_resources.working_set:
     # Compute:
     # MOD_NAME_TO_PRJ_OBJ -> Dict from the module name to the project object that contains the metadata about the project the module is from
     # PRJ_NAME_TO_TOP_LEVEL_MODULES -> Dict from the project name to all of its top level modules which are used when including the project as a dependency
-    # INCOMPATIBLE_PROJECTS -> Projects that are not platform agnostic and would therefore need to be redownloaded for the correct deployment architecture 
+    # INCOMPATIBLE_PROJECTS -> Projects that are not platform agnostic and would therefore need to be redownloaded for the correct deployment architecture
 
     # For information on this object check
     # https://setuptools.pypa.io/en/latest/pkg_resources.html#distribution-objects
@@ -101,15 +106,14 @@ for project_obj in pkg_resources.working_set:
     )
     toplevel_file_location = os.path.join(dist_dir_location, "top_level.txt")
     wheel_info = os.path.join(dist_dir_location, "WHEEL")
-    
+
     if not os.path.isdir(dist_dir_location):
         continue
 
-
     if not os.path.isfile(toplevel_file_location):
         # If not top level file is present, then assume the only top level module available is the project name
-        
-        MOD_NAME_TO_PRJ_OBJ[project_obj.project_name.replace('-','_')] = project_obj
+
+        MOD_NAME_TO_PRJ_OBJ[project_obj.project_name.replace("-", "_")] = project_obj
         PRJ_NAME_TO_TOP_LEVEL_MODULES[project_obj.project_name] = [
             project_obj.project_name.replace("-", "_")
         ]
@@ -158,6 +162,7 @@ for project_obj in pkg_resources.working_set:
 ##### Helper Functions
 ######################
 
+
 def _load_aws_packages(version="3_6"):
     """Returns the given built in third party packages for a given platform
 
@@ -186,6 +191,7 @@ def _load_standard_library_information(version="3_6"):
     with open(FILE_LOC) as fh:
         return set(fh.read().splitlines())
 
+
 def _clear_already_checked_cache(starting_location: str):
     # Add the starting file of the recursive calls
     global _already_checked_cache
@@ -194,14 +200,19 @@ def _clear_already_checked_cache(starting_location: str):
 
     _already_checked_cache.add(starting_location)
 
+
 ##########################
 ##### Main Entry Point
 ##########################
 
+
 def get_top_level_module_info(
-    modules: List[str], start_location: FilePath, target_platform_param: lambda_python_environment, download_package_location_param: DirectoryPath = None,
+    modules: List[str],
+    start_location: FilePath,
+    target_platform_param: lambda_python_environment,
+    download_package_location_param: DirectoryPath = None,
 ) -> Dict[str, ModulePackagingInfo]:
-    """Given a set of modules, find the information needed to package those modules. 
+    """Given a set of modules, find the information needed to package those modules.
 
     Args:
         modules (List[str]): Module names used to by a handler
@@ -215,11 +226,11 @@ def get_top_level_module_info(
 
 
     A handler file will have a set top level modules that are defined at the top of the file. We need to determine the module information
-    about these and then return them in a way that allows them to be packaged efficiently. 
+    about these and then return them in a way that allows them to be packaged efficiently.
 
 
     """
-    
+
     # Set the global value for the recursive function to use
     global download_package_location
     download_package_location = download_package_location_param
@@ -227,8 +238,12 @@ def get_top_level_module_info(
     global target_platform
     target_platform = target_platform_param
 
-    log.debug('Getting Module Packaging Info for modules %s for target platform %s', modules, target_platform)
-    
+    log.debug(
+        "Getting Module Packaging Info for modules %s for target platform %s",
+        modules,
+        target_platform,
+    )
+
     all_packages = {}
 
     # we want to keep a cache of files we have already checked to speed up the process
@@ -244,8 +259,8 @@ def get_top_level_module_info(
 def _get_module_info(
     module_name: str, original_file_location: str
 ) -> ModulePackagingInfo:
-    """Create the information needed to package this dependency with a parsed function. 
-    
+    """Create the information needed to package this dependency with a parsed function.
+
     Args:
         module_name (str): The module name to look up. It can also be a relative name (begins with '.')
         original_file_location (str): Since the module name can be a relative import it needs to have the location of the
@@ -254,19 +269,16 @@ def _get_module_info(
     Returns
         info (ModulePackagingInfo): information for the packages to package
 
-    We use the recursive method because we must compute the package information for the dependencies of this dependency. 
-   
+    We use the recursive method because we must compute the package information for the dependencies of this dependency.
+
     """
-    log.debug('Top Getting Module Packaging Info for module %s', module_name)
+    log.debug("Top Getting Module Packaging Info for module %s", module_name)
     # Note the package cache is implemented at the recursive level so that recursive calls can benefit from the cache also
     info = _recursive_create_module_package_info(module_name, original_file_location)
 
-    log.debug('Top Recieve Module Packaging Info %s for module %s', info, module_name)
+    log.debug("Top Recieve Module Packaging Info %s for module %s", info, module_name)
 
     return info
-
-
-
 
 
 def _recursive_create_module_package_info(
@@ -289,7 +301,7 @@ def _recursive_create_module_package_info(
 
     if (module_name, original_file_location) in PACKAGE_CACHE:
         # Look in the cache if there is already information about this module to speed up the process
-        log.debug('Package CACHE HIT for  (%s,%s)', module_name, original_file_location)
+        log.debug("Package CACHE HIT for  (%s,%s)", module_name, original_file_location)
         return PACKAGE_CACHE.get((module_name, original_file_location))
 
     if (
@@ -298,17 +310,23 @@ def _recursive_create_module_package_info(
         and not module_name[0] == "."
     ):
         # The module name is not in the available system modules and also not a relative module
-        
-        raise Exception(f"Bad module name {module_name}; Not a sys module, relatively referenced package, or pip installed package")
+
+        raise Exception(
+            f"Bad module name {module_name}; Not a sys module, relatively referenced package, or pip installed package"
+        )
 
     else:
-        standard_lib_info = _load_standard_library_information(environment_to_python_std.get(target_platform))
-        aws_packages = _load_aws_packages(environment_to_python_std.get(target_platform))
+        standard_lib_info = _load_standard_library_information(
+            environment_to_python_std.get(target_platform)
+        )
+        aws_packages = _load_aws_packages(
+            environment_to_python_std.get(target_platform)
+        )
         pip_packages = _load_mod_to_prj()
 
         if module_name in standard_lib_info:
             # Module is from the standard library
-            log.debug('Standard Library: %s', module_name)
+            log.debug("Standard Library: %s", module_name)
             rv = ModulePackagingInfo(
                 **{
                     "module_name": module_name,
@@ -320,7 +338,7 @@ def _recursive_create_module_package_info(
 
         elif module_name in aws_packages:
             # Module is part of the default libraries available in the aws lambda python environment
-            log.debug('Library included with runtime environment: %s', module_name)
+            log.debug("Library included with runtime environment: %s", module_name)
             rv = ModulePackagingInfo(
                 **{
                     "module_name": module_name,
@@ -332,7 +350,7 @@ def _recursive_create_module_package_info(
 
         elif module_name in pip_packages:
             # Module was installed with a package manager and therefor contains additional metadata that can be used to find the dependencies
-            log.debug('Pip package: %s', module_name)
+            log.debug("Pip package: %s", module_name)
             tmp_distribution_obj = pip_packages.get(module_name)
 
             project_name = tmp_distribution_obj.project_name
@@ -340,19 +358,25 @@ def _recursive_create_module_package_info(
             module_arch = Architecture.ANY
 
             if project_name in PLATFORM_DEPENDENT_PROJECTS:
-                log.debug('Pip package %s is not a universal package', module_name)
+                log.debug("Pip package %s is not a universal package", module_name)
                 # Some of the projects that can be installed are platform dependant and the users environment might not match the aws lambda
                 # environment. So, we need to use docker to pull the compatible version of the library then use that in the final archive
-                
+
                 if CURRENT_PLATFORM and (CURRENT_PLATFORM == target_platform):
                     # IF the current platform exists and is the same as the target platform no need to download a new version
-                    module_arch = environment_to_architecture_suffix.get(CURRENT_PLATFORM)
-                    log.debug('Target Platform matches Current Platform (%s) for pkg %s ', target_platform, module_name)
+                    module_arch = environment_to_architecture_suffix.get(
+                        CURRENT_PLATFORM
+                    )
+                    log.debug(
+                        "Target Platform matches Current Platform (%s) for pkg %s ",
+                        target_platform,
+                        module_name,
+                    )
 
                 elif download_package_location:
                     # Else there needs to be a provided download location
                     if docker_package_builder.docker_available():
-                        log.debug('User Docker to pull pkg %s ', module_name)
+                        log.debug("User Docker to pull pkg %s ", module_name)
 
                         # Note that the download package function uses a cache so it will only actually pull the first time the user wants to
                         # package this function.
@@ -360,16 +384,20 @@ def _recursive_create_module_package_info(
                             tmp_distribution_obj,
                             target_platform,
                             module_name,
-                            download_package_location
+                            download_package_location,
                         )
                         PACKAGE_CACHE[(module_name, original_file_location)] = rv
                         return rv
 
                     else:
-                        raise Exception("Trying to target an architecture with a dependant package but Docker is not available")
+                        raise Exception(
+                            "Trying to target an architecture with a dependant package but Docker is not available"
+                        )
 
                 else:
-                    raise Exception("Trying to target an architecture with a dependant package but have Docker is not allowed")
+                    raise Exception(
+                        "Trying to target an architecture with a dependant package but have Docker is not allowed"
+                    )
 
             # The package could be either a folder (normal case) or a single python file (ex: 'six' package)
             # If it can not be found as either than there is an issue
@@ -395,10 +423,13 @@ def _recursive_create_module_package_info(
                 tmp_dependencies_tree,
             ) = _recursive_check_for_dependencies_project(tmp_distribution_obj)
 
+            log.debug(
+                "Flat dependencies for %s -> %s", module_name, tmp_dependencies_flat
+            )
+            log.debug(
+                "Tree dependencies for %s -> %s", module_name, tmp_dependencies_tree
+            )
 
-            log.debug("Flat dependencies for %s -> %s", module_name, tmp_dependencies_flat)
-            log.debug("Tree dependencies for %s -> %s", module_name, tmp_dependencies_tree)
-            
             rv = ModulePackagingInfo(
                 **{
                     "module_name": module_name,
@@ -433,10 +464,12 @@ def _recursive_create_module_package_info(
                     # TODO: Maybe support this in the future
                     log.debug("Local absolute reference for module %s", module_name)
 
-                    raise Exception(f"{module_name}: Referencing local package using absolute import statement. Change it to a relative import to work with Cdev.")
+                    raise Exception(
+                        f"{module_name}: Referencing local package using absolute import statement. Change it to a relative import to work with Cdev."
+                    )
             elif module_name[0] == ".":
                 # IF the module name started with a '.' then it is a relative import
-                
+
                 tmp_type = PackageTypes.LOCALPACKAGE
                 original_path = Path(original_file_location)
 
@@ -454,7 +487,7 @@ def _recursive_create_module_package_info(
                         levels = levels + 1
                     else:
                         break
-                
+
                 log.debug("%s if %s levels up from handler", module_name, levels)
 
                 # go up the amount of levels need to get to the top of the search path
@@ -475,17 +508,22 @@ def _recursive_create_module_package_info(
 
                 if os.path.isfile(tmp_potential_file):
                     tmp_fp = tmp_potential_file
-                    
+
                 elif os.path.isdir(tmp_potential_dir):
                     tmp_fp = tmp_potential_dir
                 else:
                     raise Exception
 
-                log.debug("Final relative file location (%s) from workspace to %s", tmp_fp, module_name)
-                
+                log.debug(
+                    "Final relative file location (%s) from workspace to %s",
+                    tmp_fp,
+                    module_name,
+                )
 
             else:
-                raise Exception(f"Unmanageable module name for local module {module_name}")
+                raise Exception(
+                    f"Unmanageable module name for local module {module_name}"
+                )
 
             # Since this is a local package, it does not contain any extra metadata. This means the only way to find the dependencies is to
             # parse each python file in the needed module and look at its imports :/
@@ -547,7 +585,7 @@ def _recursive_check_for_dependencies_project(
             raise Exception
 
         top_level_modules = PRJ_NAME_TO_TOP_LEVEL_MODULES.get(project_name)
-        
+
         for req in top_level_modules:
 
             tmp_dep = _recursive_create_module_package_info(req, None)
@@ -563,10 +601,10 @@ def _recursive_check_for_dependencies_project(
 def _recursive_check_for_dependencies_package(
     fp: Union[FilePath, DirectoryPath]
 ) -> Tuple[List[ModulePackagingInfo], List[ModulePackagingInfo]]:
-    """Create the ModulePackagingInfo objects for all dependencies of a local module. 
-    
+    """Create the ModulePackagingInfo objects for all dependencies of a local module.
+
     By calling the '_recursive_create_module_package_info' to create the ModulePackagingInfo objects,
-    it creates a recursive stack that eventually leads to tmp_flat being a list of ALL needed dependencies 
+    it creates a recursive stack that eventually leads to tmp_flat being a list of ALL needed dependencies
     and the tmp_tree to be the first level in the dependency tree for this project.
 
     Args:
@@ -649,16 +687,16 @@ def _get_local_package_dependencies(
                 module_names = module_names.union(
                     cdev_parser.parse_file_for_dependencies(os.path.join(dir, file))
                 )
-                log.debug("Found dependent modules %s for %s", module_names, os.path.join(dir, file))
+                log.debug(
+                    "Found dependent modules %s for %s",
+                    module_names,
+                    os.path.join(dir, file),
+                )
 
     else:
         _already_checked_cache.add(fp)
         module_names = cdev_parser.parse_file_for_dependencies(fp)
-        
+
     log.debug("Found dependent modules %s for %s", module_names, fp)
 
     return list(module_names)
-
-
-
-
