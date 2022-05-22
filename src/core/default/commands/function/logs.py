@@ -18,7 +18,7 @@ class show_logs(BaseCommand):
         Get the logs of a deployed lambda function
     """
 
-    def add_arguments(self, parser: ArgumentParser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "function_name",
             type=str,
@@ -38,11 +38,10 @@ class show_logs(BaseCommand):
             help="number of events to show. Must be used with --tail.",
         )
 
-    def command(self, *args, **kwargs):
+    def command(self, *args, **kwargs) -> None:
 
-        full_function_name: str = kwargs.get("function_name")
-        component_name = full_function_name.split(".")[0]
-        function_name = full_function_name.split(".")[1]
+        component_name, function_name = self.get_component_and_resource_from_qualified_name(kwargs.get("function_name"))
+
         # tail_val = kwargs.get("tail")
         # number_val = kwargs.get("number")
 

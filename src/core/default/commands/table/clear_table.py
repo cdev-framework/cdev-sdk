@@ -1,12 +1,9 @@
-from argparse import ArgumentParser
-from typing import Dict, List
 
 import boto3
 
+from argparse import ArgumentParser
 
 from core.constructs.commands import BaseCommand, OutputWrapper
-from core.default.resources.simple.table import Table
-from core.utils.paths import get_full_path_from_workspace_base
 
 
 from . import utils
@@ -20,20 +17,18 @@ class clear_table(BaseCommand):
 Clear the current data from a given Table. This should only be used on development tables.
 """
 
-    def add_arguments(self, parser: ArgumentParser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "resource_name", type=str, help="The resource you want to sync data to"
         )
 
-    def command(self, *args, **kwargs):
+    def command(self, *args, **kwargs) -> None:
         """
         Clear all items for the table
         """
         # https://stackoverflow.com/questions/55169952/delete-all-items-dynamodb-using-python
 
-        full_resource_name = kwargs.get("resource_name")
-        component_name = full_resource_name.split(".")[0]
-        table_resource_name = full_resource_name.split(".")[1]
+        component_name, table_resource_name = self.get_component_and_resource_from_qualified_name(kwargs.get("resource_name"))
 
         cloud_output = utils.get_cloud_output_from_cdev_name(
             component_name, table_resource_name

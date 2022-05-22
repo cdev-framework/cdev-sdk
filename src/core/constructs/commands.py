@@ -16,7 +16,7 @@ import os
 from argparse import ArgumentParser, HelpFormatter
 import sys
 from io import TextIOBase
-from typing import Any
+from typing import Any, Tuple
 
 from rich.console import Console
 
@@ -216,7 +216,7 @@ class BaseCommand:
             self.stderr.write("%s: %s" % (e.__class__.__name__, e))
             sys.exit(e.returncode)
 
-    def command(self, *args, **kwargs):
+    def command(self, *args, **kwargs) -> None:
         """
         The actual logic of the command. Subclasses must implement
         this method.
@@ -224,6 +224,20 @@ class BaseCommand:
         raise NotImplementedError(
             "subclasses of BaseCommand must provide a command() method"
         )
+
+    def get_component_and_resource_from_qualified_name(self,
+                                                       full_name: str,
+                                                       ) -> Tuple[str, str]:
+        if full_name is None:
+            raise Exception("Invalid arguments provided to get resource detail")
+
+        component_and_function = full_name.split(".")
+        if len(component_and_function) != 2:
+            raise Exception(f"Could not get resource detail from {full_name}")
+
+        component_name = full_name.split(".")[0]
+        resource_name = full_name.split(".")[1]
+        return component_name, resource_name
 
 
 class BaseCommandContainer:

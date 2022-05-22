@@ -1,6 +1,6 @@
 import cmd
 
-    from argparse import ArgumentParser
+from argparse import ArgumentParser
 from typing import List
 
 import aurora_data_api
@@ -17,19 +17,16 @@ class shell(BaseCommand):
         Open an interactive shell to a relational db.
     """
 
-    def add_arguments(self, parser: ArgumentParser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "resource",
             type=str,
             help="The database to execute on. Name must include component name. ex: comp1.myDb",
         )
 
-    def command(self, *args, **kwargs):
+    def command(self, *args, **kwargs) -> None:
 
-        full_database_name: str = kwargs.get("resource")
-        component_name = full_database_name.split(".")[0]
-        database_name = full_database_name.split(".")[1]
-
+        component_name, database_name = self.get_component_and_resource_from_qualified_name(kwargs.get("resource"))
         cluster_arn, secret_arn, db_name = get_db_info_from_cdev_name(
             component_name, database_name
         )
