@@ -26,13 +26,15 @@ from core.constructs.components import Component_Change_Type, Component_Differen
 from core.constructs.output_manager import OutputManager, OutputTask
 from core.constructs.models import frozendict
 
+from core.utils.operations import concatenate
+
 deliminator = "+"
 
 
 def find_parents(resource: ResourceModel) -> Tuple[List, List]:
     """Find any parents resources via any linked Cloud Output Models
 
-    If a resource constains the cloud output of another resource, the relationship
+    If a resource contains the cloud output of another resource, the relationship
     needs to be identified as a parent-child relationship with the Resource Dependency
     Graph.
 
@@ -67,35 +69,17 @@ def find_cloud_output(obj: dict) -> List[cloud_output_model]:
 
 
 def _recursive_find_output(obj) -> List[cloud_output_model]:
-    rv = []
-
     if isinstance(obj, frozendict) or isinstance(obj, dict):
-
         if "id" in obj and obj.get("id") == "cdev_cloud_output":
-            rv.append(cloud_output_model(**obj))
+            return [cloud_output_model(**obj)]
         else:
-            for k, v in obj.items():
-                if isinstance(v, frozendict) or isinstance(v, dict):
-                    if "id" in v and v.get("id") == "cdev_cloud_output":
-                        rv.append(cloud_output_model(**v))
-                    else:
-                        rv.extend(_recursive_find_output(v))
-
-                elif isinstance(v, frozenset) or isinstance(v, list):
-                    all_items_rendered = [_recursive_find_output(x) for x in v]
-
-                    for item in all_items_rendered:
-                        rv.extend(item)
-
-        return rv
+            return concatenate([_recursive_find_output(v) for _, v in obj.items()])
 
     elif isinstance(obj, frozenset) or isinstance(obj, list):
-        all_items_rendered = [_recursive_find_output(x) for x in obj]
+        return concatenate([_recursive_find_output(x) for x in obj])
 
-        for item in all_items_rendered:
-            rv.extend(item)
-
-    return rv
+    else:
+        return []
 
 
 def generate_sorted_resources(
