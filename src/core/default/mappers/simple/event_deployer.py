@@ -1,5 +1,5 @@
 from time import sleep
-from typing import Dict, List
+from typing import Dict
 from uuid import uuid4
 
 from core.default.resources.simple import xlambda as simple_lambda
@@ -285,7 +285,7 @@ def _handle_adding_queue_event(
     return {"queue_event_id": uuid}
 
 
-def _handle_deleting_queue_event(event: dict, function_cloud_id: str):
+def _handle_deleting_queue_event(event: dict, function_cloud_id: str) -> None:
     queue_event_id = event.get("queue_event_id")
 
     aws_client.run_client_function(
@@ -322,7 +322,7 @@ def _handle_adding_topic_subscription(
     return {"topic_event_id": subscribe_arn, "permission_stmt_id": stmt_id}
 
 
-def _handle_deleting_topic_subscription(event: dict, function_cloud_id: str):
+def _handle_deleting_topic_subscription(event: dict, function_cloud_id: str) -> bool:
     subscription_arn = event.get("topic_event_id")
     permission_stmt_id = event.get("permission_stmt_id")
 

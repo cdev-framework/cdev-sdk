@@ -1,10 +1,12 @@
+from typing import Optional
+
 from core.constructs.workspace import Workspace
 
 
 RUUID = "cdev::simple::function"
 
 
-def get_cloud_id_from_cdev_name(component_name: str, cdev_function_name: str) -> str:
+def get_cloud_id_from_cdev_name(component_name: str, cdev_function_name: str) -> Optional[str]:
     try:
         ws = Workspace.instance()
 

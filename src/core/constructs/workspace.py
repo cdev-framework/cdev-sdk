@@ -141,12 +141,12 @@ class Workspace:
         return _GLOBAL_WORKSPACE
 
     @classmethod
-    def set_global_instance(cls, workspace: "Workspace"):
+    def set_global_instance(cls, workspace: "Workspace") -> None:
         global _GLOBAL_WORKSPACE
         _GLOBAL_WORKSPACE = workspace
 
     @classmethod
-    def remove_global_instance(cls, caller: "Workspace"):
+    def remove_global_instance(cls, caller: "Workspace") -> None:
         """
         Method to reset the Global Workspace object. This should be the final cleanup step for a Cdev process.
         """
@@ -160,14 +160,14 @@ class Workspace:
 
         _GLOBAL_WORKSPACE = None
 
-    def initialize_workspace(self, workspace_configuration: Workspace_Info):
+    def initialize_workspace(self, workspace_configuration: Workspace_Info) -> None:
         """
         Run the configuration needed to initialize a workspace. This should generally only be called by the Core framework itself to ensure that the
         life cycle of a workspace is correctly handled.
         """
         raise NotImplementedError
 
-    def destroy_workspace(self):
+    def destroy_workspace(self) -> None:
         raise NotImplementedError
 
     ############################
@@ -175,11 +175,11 @@ class Workspace:
     ############################
 
     @property
-    def settings(cls) -> Settings:
+    def settings(self) -> Settings:
         return Workspace._settings
 
     @settings.setter
-    def settings(cls, value: Settings):
+    def settings(self, value: Settings) -> None:
         Workspace._settings = value
 
     ############################
@@ -194,7 +194,7 @@ class Workspace:
         """
         raise NotImplementedError
 
-    def set_state(self, value: Workspace_State):
+    def set_state(self, value: Workspace_State) -> None:
         """
         Set the current lifecycle state of the Workspace.
 
@@ -255,7 +255,7 @@ class Workspace:
     #################
     ##### Commands
     #################
-    def add_command(self, command_location: str):
+    def add_command(self, command_location: str) -> None:
         """
         Add a Command Location to the Workspace. The order that the Command is added to the Workspace defines the precedence
         give when searching for Commands. Command Locations should adhere to the defined form to ensure that they can be
@@ -268,7 +268,7 @@ class Workspace:
         """
         raise NotImplementedError
 
-    def add_commands(self, command_locations: List[str]):
+    def add_commands(self, command_locations: List[str]) -> None:
         """
         Add a List of Command Locations to the Workspace. The order that the Commands are added to the Workspace defines the precedence
         give when searching for a Command. Command Locations should adhere to the defined form to ensure that they can be
@@ -295,7 +295,7 @@ class Workspace:
     ##### Display Output
     #######################
 
-    def display_output(self, tag: str, output: Cloud_Output):
+    def display_output(self, tag: str, output: Cloud_Output) -> None:
         """Display the output from a Resource or Reference after a process has completed
 
         Args:
@@ -316,7 +316,7 @@ class Workspace:
     #######################
     ##### Components
     #######################
-    def add_component(self, component: Component):
+    def add_component(self, component: Component) -> None:
         """
         Add a Component to the Workspace. Components are used to determine the desired state of the Workspace. They should represent
         a logical separation for the Resources in a project.
@@ -328,7 +328,7 @@ class Workspace:
         """
         raise NotImplementedError
 
-    def add_components(self, components: List[Component]):
+    def add_components(self, components: List[Component]) -> None:
         """
         Add a List of Components to the Workspace. Components are used to determine the desired state of the Workspace. They
         should represent a logical separation for the Resources in a project.
@@ -365,7 +365,7 @@ class Workspace:
         """
         raise NotImplementedError
 
-    def set_backend(self, backend: Backend):
+    def set_backend(self, backend: Backend) -> None:
         """
         Set the Backend for the Workspace.
 
@@ -801,7 +801,7 @@ class Workspace:
         return original, resolved_values
 
     @wrap_phase([Workspace_State.INITIALIZED])
-    def execute_command(self, command: str, args: List):
+    def execute_command(self, command: str, args: List) -> None:
         """
         Find the desired command based on the search path and execute it with the given arguments.
 
@@ -844,7 +844,7 @@ class Workspace:
 
 
 class WorkspaceManager:
-    def create_new_workspace(self, workspace_info: Workspace_Info, *posargs, **kwargs):
+    def create_new_workspace(self, workspace_info: Workspace_Info, *posargs, **kwargs) -> None:
         """
         Create a new workspace based on the information provided.
 
@@ -866,7 +866,7 @@ class WorkspaceManager:
         raise NotImplementedError
 
 
-def load_and_initialize_workspace(config: Workspace_Info):
+def load_and_initialize_workspace(config: Workspace_Info) -> None:
     """
     Load and initialize the workspace from the given configuration
     """
@@ -914,7 +914,7 @@ def load_workspace(config: Workspace_Info) -> Workspace:
         raise e
 
 
-def initialize_workspace(workspace: Workspace, settings: Settings_Info, config: Dict):
+def initialize_workspace(workspace: Workspace, settings: Settings_Info, config: Dict) -> None:
     try:
         Workspace.settings = initialize_settings(settings)
 

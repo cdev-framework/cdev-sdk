@@ -240,7 +240,7 @@ class ApiOutput(ResourceOutputs):
         )
 
     @endpoint.setter
-    def endpoint(self, value: Any):
+    def endpoint(self, value: Any) -> None:
         raise Exception
 
     @property
@@ -268,7 +268,7 @@ class ApiOutput(ResourceOutputs):
         )
 
     @endpoints.setter
-    def endpoints(self, value: Any):
+    def endpoints(self, value: Any) -> None:
         raise Exception
 
 
@@ -347,7 +347,7 @@ class Api(Resource):
 
     @allow_cors.setter
     @update_hash
-    def allow_cors(self, value: bool):
+    def allow_cors(self, value: bool) -> None:
         self._allow_cors = value
 
     @update_hash
@@ -386,7 +386,7 @@ class Api(Resource):
 
         return route
 
-    def compute_hash(self):
+    def compute_hash(self) -> None:
         self._hash = hasher.hash_list(
             [
                 hasher.hash_list([x.hash() for x in self._routes]),

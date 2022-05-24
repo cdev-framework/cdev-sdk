@@ -10,14 +10,14 @@ from .execute_frontend import execute_frontend
 import networkx as nx
 
 
-def execute_deployment_cli(args):
+def execute_deployment_cli(args) -> None:
 
     WORKSPACE = Workspace.instance()
 
     execute_deployment(WORKSPACE, OutputManager())
 
 
-def execute_deployment(workspace: Workspace, output: OutputManager):
+def execute_deployment(workspace: Workspace, output: OutputManager) -> None:
     unsorted_differences = execute_frontend(workspace, output)
 
     if not unsorted_differences:

@@ -8,7 +8,7 @@ from ..constructs.workspace import Workspace
 from ..constructs.output_manager import OutputManager
 
 
-def execute_run_cli(args):
+def execute_run_cli(args) -> None:
     ws = Workspace.instance()
 
     output_manager = OutputManager()
@@ -16,7 +16,7 @@ def execute_run_cli(args):
     run_command(ws, output_manager, args)
 
 
-def run_command(workspace: Workspace, output: OutputManager, cli_args):
+def run_command(workspace: Workspace, output: OutputManager, cli_args) -> None:
     """
     Attempts to find and run a user defined command
 

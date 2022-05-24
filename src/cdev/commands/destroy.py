@@ -7,13 +7,13 @@ from rich.prompt import Confirm
 from core.constructs.workspace import Workspace_State
 
 
-def destroy_command_cli(args):
+def destroy_command_cli(args) -> None:
     config = args[0]
     set_global_logger_from_cli(config.loglevel)
     destroy_command(args)
 
 
-def destroy_command(args):
+def destroy_command(args) -> None:
 
     output_manager = CdevOutputManager()
     myProject = Project.instance()

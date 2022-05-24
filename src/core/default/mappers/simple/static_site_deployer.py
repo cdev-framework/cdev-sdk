@@ -1,7 +1,7 @@
-import site
+
 import boto3
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict
 from uuid import uuid4
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
@@ -182,7 +182,7 @@ def _update_simple_static_site(
     new_resource: static_site.simple_static_site_model,
     previous_output: Dict,
     output_task: OutputTask,
-) -> bool:
+) -> Dict:
 
     if not previous_resource.domain_name == new_resource.domain_name:
         raise Exception(
@@ -259,7 +259,7 @@ def _update_simple_static_site(
 
 def _remove_simple_static_site(
     transaction_token: str, previous_output: Dict, output_task: OutputTask
-):
+) -> None:
     previous_cloudfront_id = previous_output.get("cloudfront_id")
 
     all_info = aws_client.run_client_function(

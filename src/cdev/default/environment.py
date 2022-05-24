@@ -22,7 +22,7 @@ class local_environment(Environment):
     def get_workspace(self) -> Workspace:
         return Workspace.instance()
 
-    def initialize_environment(self):
+    def initialize_environment(self) -> None:
         ws = load_workspace(self.workspace_info)
 
         ws.set_state(Workspace_State.INITIALIZING)

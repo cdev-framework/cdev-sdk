@@ -101,7 +101,7 @@ class DependencyLayerOutput(ResourceOutputs):
         )
 
     @layer_arn.setter
-    def layer_arn(self, value: Any):
+    def layer_arn(self, value: Any) -> None:
         raise Exception
 
 
@@ -250,25 +250,25 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
         self.__doc__ = preserve_function.__doc__
 
     @property
-    def filepath(self):
+    def filepath(self) -> str:
         return self._filepath
 
     @filepath.setter
     @update_hash
-    def filepath(self, value: str):
+    def filepath(self, value: str) -> None:
         self._filepath = value
 
     @property
-    def events(self):
+    def events(self) -> List[Event]:
         return self._events
 
     @events.setter
     @update_hash
-    def events(self, value: List[Event]):
+    def events(self, value: List[Event]) -> None:
         self._events = value
 
     @property
-    def configuration(self):
+    def configuration(self) -> SimpleFunctionConfiguration:
         return self._configuration
 
     @configuration.setter
@@ -277,24 +277,24 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
         self._configuration = value
 
     @property
-    def platform(self):
+    def platform(self) -> lambda_python_environment:
         return self._platform
 
     @platform.setter
     @update_hash
-    def platform(self, value: lambda_python_environment):
+    def platform(self, value: lambda_python_environment) -> None:
         self._platform = value
 
     @property
-    def external_dependencies(self):
+    def external_dependencies(self) -> List[Union[DeployedLayer, DependencyLayer]]:
         return self._external_dependencies
 
     @external_dependencies.setter
     @update_hash
-    def external_dependencies(self, value: List[Union[DeployedLayer, DependencyLayer]]):
+    def external_dependencies(self, value: List[Union[DeployedLayer, DependencyLayer]]) -> None:
         self._external_dependencies = value
 
-    def compute_hash(self):
+    def compute_hash(self) -> None:
         self._permissions_hash = hasher.hash_list(
             [x.hash() for x in self._granted_permissions]
         )

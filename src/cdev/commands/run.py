@@ -5,14 +5,14 @@ from cdev.default.output_manager import CdevOutputManager
 from core.commands.run import run_command as core_run_command
 
 
-def run_command_cli(args):
+def run_command_cli(args) -> None:
     config = args[0]
     set_global_logger_from_cli(config.loglevel)
 
     run_command(args[0])
 
 
-def run_command(args):
+def run_command(args) -> None:
     output_manager = CdevOutputManager()
 
     myProject = Project.instance()

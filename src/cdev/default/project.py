@@ -69,10 +69,10 @@ class local_project(Project):
         return cls._instance
 
     @classmethod
-    def terminate_singleton(cls):
+    def terminate_singleton(cls) -> None:
         cls._instance = None
 
-    def initialize_project(self):
+    def initialize_project(self) -> None:
         self.set_state(Project_State.INITIALIZING)
         current_env = self.get_current_environment()
 
@@ -80,10 +80,10 @@ class local_project(Project):
             current_env.initialize_environment()
         self.set_state(Project_State.INITIALIZED)
 
-    def terminate_project(self):
+    def terminate_project(self) -> None:
         Project.remove_global_instance(self)
 
-    def set_name(self, name: str):
+    def set_name(self, name: str) -> None:
         """
         Set the name of this Project
 
@@ -92,7 +92,7 @@ class local_project(Project):
         """
         self._project_name = name
 
-    def get_name(self):
+    def get_name(self) -> str:
         """
         Get the name of this Project
 
@@ -104,7 +104,7 @@ class local_project(Project):
     def get_state(self) -> Project_State:
         return self._project_state
 
-    def set_state(self, new_state: Project_State):
+    def set_state(self, new_state: Project_State) -> None:
         self._project_state = new_state
 
     # Note that the class methods should not include doc strings so that they inherit the doc string of the
@@ -113,7 +113,7 @@ class local_project(Project):
     @wrap_phases([Project_State.INITIALIZED, Project_State.UNINITIALIZED])
     def create_environment(
         self, environment_name: str, settings_files: Dict[str, str] = None
-    ):
+    ) -> None:
         self._load_state()
         resource_state_id = self._backend.create_resource_state(environment_name)
 
@@ -163,7 +163,7 @@ class local_project(Project):
         return [x.name for x in self._central_state.environments]
 
     @wrap_phases([Project_State.INITIALIZED, Project_State.UNINITIALIZED])
-    def set_current_environment(self, environment_name: str):
+    def set_current_environment(self, environment_name: str) -> None:
         self._load_state()
 
         if not environment_name in self.get_all_environment_names():
@@ -213,7 +213,7 @@ class local_project(Project):
         return self.get_current_environment().get_workspace().settings
 
     @settings.setter
-    def settings(self, value: Settings):
+    def settings(self, value: Settings) -> None:
         self.get_current_environment().get_workspace().settings = value
 
     def get_settings_info(self, environment_name: str = None) -> Settings_Info:
@@ -231,7 +231,7 @@ class local_project(Project):
 
     def update_settings_info(
         self, new_value: Settings_Info, environment_name: str = None
-    ):
+    ) -> None:
         if not environment_name:
             environment_name = self.get_current_environment_name()
 
@@ -256,7 +256,7 @@ class local_project(Project):
     #######################
     ##### Display Output
     #######################
-    def display_output(self, tag: str, output: Cloud_Output):
+    def display_output(self, tag: str, output: Cloud_Output) -> None:
         """Display the output from a Resource or Reference after a process has completed
 
         Args:
@@ -301,12 +301,12 @@ class local_project(Project):
     ##### Commands
     #################
     @wrap_phases([Workspace_State.INITIALIZING])
-    def add_command(self, command_location: str):
+    def add_command(self, command_location: str) -> None:
         ws = self.get_current_environment().get_workspace()
         ws.add_command(command_location)
 
     @wrap_phases([Workspace_State.INITIALIZING])
-    def add_commands(self, command_locations: List[str]):
+    def add_commands(self, command_locations: List[str]) -> None:
         ws = self.get_current_environment().get_workspace()
         ws.add_commands(command_locations)
 
@@ -319,12 +319,12 @@ class local_project(Project):
     ##### Components
     #################
     @wrap_phases([Workspace_State.INITIALIZING])
-    def add_component(self, component: Component):
+    def add_component(self, component: Component) -> None:
         ws = self.get_current_environment().get_workspace()
         ws.add_component(component)
 
     @wrap_phases([Workspace_State.INITIALIZING])
-    def add_components(self, components: List[Component]):
+    def add_components(self, components: List[Component]) -> None:
         ws = self.get_current_environment().get_workspace()
         ws.add_components(components)
 
@@ -333,7 +333,7 @@ class local_project(Project):
         ws = self.get_current_environment().get_workspace()
         return ws.get_components()
 
-    def _write_state(self):
+    def _write_state(self) -> None:
         file_manager.safe_json_write(
             self._central_state.dict(), self._project_info_location
         )

@@ -65,7 +65,7 @@ class RelationalDBOutput(ResourceOutputs):
         )
 
     @cluster_arn.setter
-    def cluster_arn(self, value: Any):
+    def cluster_arn(self, value: Any) -> None:
         raise Exception
 
     @property
@@ -87,7 +87,7 @@ class RelationalDBOutput(ResourceOutputs):
         )
 
     @secret_arn.setter
-    def secret_arn(self, value: Any):
+    def secret_arn(self, value: Any) -> None:
         raise Exception
 
 
@@ -173,33 +173,33 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
         )
 
     @property
-    def seconds_to_pause(self):
+    def seconds_to_pause(self) -> int:
         """Amount of seconds to wait before scaling DB completely down"""
         return self._seconds_to_pause
 
     @seconds_to_pause.setter
     @update_hash
-    def seconds_to_pause(self, value: int):
+    def seconds_to_pause(self, value: int) -> None:
         self._seconds_to_pause = value
 
     @property
-    def min_capacity(self):
+    def min_capacity(self) -> int:
         """Amount of seconds to wait before scaling DB completely down."""
         return self._min_capacity
 
     @min_capacity.setter
     @update_hash
-    def min_capacity(self, value: int):
+    def min_capacity(self, value: int) -> None:
         self._min_capacity = value
 
     @property
-    def max_capacity(self):
+    def max_capacity(self) -> int:
         """Maximum amount of capacity to scale to"""
         return self._max_capacity
 
     @max_capacity.setter
     @update_hash
-    def max_capacity(self, value: int):
+    def max_capacity(self, value: int) -> None:
         self._max_capacity = value
 
     @property
@@ -209,37 +209,37 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
 
     @enable_http_endpoint.setter
     @update_hash
-    def enable_http_endpoint(self, value: bool):
+    def enable_http_endpoint(self, value: bool) -> None:
         self._enable_http_endpoint = value
 
     @property
-    def database_name(self):
+    def database_name(self) -> str:
         """Name for the main db"""
         return self._database_name
 
     @database_name.setter
     @update_hash
-    def database_name(self, value: str):
+    def database_name(self, value: str) -> None:
         self._database_name = value
 
     @property
-    def master_user_password(self):
+    def master_user_password(self) -> str:
         """Password used to connect to the DB"""
         return self._master_user_password
 
     @master_user_password.setter
     @update_hash
-    def master_user_password(self, value: str):
+    def master_user_password(self, value: str) -> None:
         self._master_user_password = value
 
     @property
-    def master_username(self):
+    def master_username(self) -> str:
         """Username used to connect to the DB"""
         return self._master_username
 
     @master_username.setter
     @update_hash
-    def master_username(self, value: str):
+    def master_username(self, value: str) -> None:
         self._master_username = value
 
     @property
@@ -249,10 +249,10 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
 
     @engine.setter
     @update_hash
-    def engine(self, value: db_engine):
+    def engine(self, value: db_engine) -> None:
         self._engine = value
 
-    def compute_hash(self):
+    def compute_hash(self) -> None:
         self._hash = hasher.hash_list(
             [
                 self.engine,

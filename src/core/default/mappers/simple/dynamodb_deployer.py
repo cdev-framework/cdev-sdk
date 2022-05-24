@@ -73,7 +73,7 @@ def _update_simple_dynamodb_table(
 
 def _remove_simple_dynamodb_table(
     transaction_token: str, previous_output: Dict, output_task: OutputTask
-) -> bool:
+) -> None:
 
     table_name = previous_output.get("table_name")
 
@@ -91,6 +91,7 @@ def _remove_simple_dynamodb_table(
     )
 
 
+# ANIBAL return type doesn't match
 def handle_simple_table_deployment(
     transaction_token: str,
     namespace_token: str,

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict
 from uuid import uuid4
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
@@ -78,7 +78,7 @@ def _update_simple_queue(
 
 def _remove_simple_queue(
     transaction_token: str, previous_output: Dict, output_task: OutputTask
-):
+) -> None:
     queue_url = previous_output.get("queue_url")
 
     output_task.update(comment=f"Deleting Queue")

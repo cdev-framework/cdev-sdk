@@ -131,7 +131,7 @@ class cdev_logger:
         original_msg: str,
         formatted_msg: str = "",
         **kw_args,
-    ):
+    ) -> None:
         # Always write a log to the json file
         getattr(self._json_logger, func_name)(original_msg, *args, **kw_args)
         if self.show_logs:
@@ -142,7 +142,7 @@ class cdev_logger:
             else:
                 getattr(self._rich_logger, func_name)(formatted_msg, *args, **kw_args)
 
-    def debug(self, msg, *args, **kw_args):
+    def debug(self, msg, *args, **kw_args) -> None:
         if self.is_rich_formatted:
             self._write_log(
                 *args,
@@ -168,7 +168,7 @@ class cdev_logger:
         else:
             self._write_log(*args, func_name="info", original_msg=msg, **kw_args)
 
-    def warning(self, msg, *args, **kw_args):
+    def warning(self, msg, *args, **kw_args) -> None:
         if self.is_rich_formatted:
             self._write_log(
                 *args,
@@ -181,7 +181,7 @@ class cdev_logger:
         else:
             self._write_log(*args, func_name="warning", original_msg=msg, **kw_args)
 
-    def error(self, msg, *args, **kw_args):
+    def error(self, msg, *args, **kw_args) -> None:
         if self.is_rich_formatted:
             self._write_log(
                 *args,
@@ -194,7 +194,7 @@ class cdev_logger:
         else:
             self._write_log(*args, func_name="error", original_msg=msg, **kw_args)
 
-    def exception(self, msg):
+    def exception(self, msg) -> None:
         self._write_log("exception", msg, msg)
 
 
@@ -210,26 +210,26 @@ class global_log_container:
     def show_logs(self) -> bool:
         return self._logger.show_logs
 
-    def debug(self, msg, *args, **kw_args):
+    def debug(self, msg, *args, **kw_args) -> None:
         self._logger.debug(msg, *args, **kw_args)
 
-    def info(self, msg, *args, **kw_args):
+    def info(self, msg, *args, **kw_args) -> None:
         self._logger.info(msg, *args, **kw_args)
 
-    def warning(self, msg, *args, **kw_args):
+    def warning(self, msg, *args, **kw_args) -> None:
         self._logger.warning(msg, *args, **kw_args)
 
-    def error(self, msg, *args, **kw_args):
+    def error(self, msg, *args, **kw_args) -> None:
         self._logger.error(msg, *args, **kw_args)
 
-    def exception(self, msg):
+    def exception(self, msg) -> None:
         self._logger.exception(msg)
 
 
 log = global_log_container(cdev_logger())
 
 
-def set_global_logger(new_logger: cdev_logger):
+def set_global_logger(new_logger: cdev_logger) -> None:
     global log
 
     log._logger = new_logger

@@ -304,7 +304,7 @@ def topological_iteration(
     thread_count: int = 1,
     interval: float = 0.3,
     pass_through_exceptions: bool = False,
-):
+) -> None:
     """Execute the `process` over a DAG in a topologically constrained way.
 
     This means that the `process` will not be executed on a node until the `process` has been executed on all parents of that node.

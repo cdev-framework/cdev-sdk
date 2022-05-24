@@ -168,7 +168,7 @@ class LocalBackend(Backend):
 
         return new_resource_state.uuid
 
-    def delete_resource_state(self, resource_state_uuid: str):
+    def delete_resource_state(self, resource_state_uuid: str) -> None:
         if not resource_state_uuid in self._central_state.resource_state_locations:
             raise ResourceStateDoesNotExist(
                 f"Resource state: {resource_state_uuid} does not exist"
@@ -233,7 +233,7 @@ class LocalBackend(Backend):
         return rv
 
     # Components
-    def _create_component(self, resource_state_uuid: str, component_name: str):
+    def _create_component(self, resource_state_uuid: str, component_name: str) -> None:
 
         resource_state = self.get_resource_state(resource_state_uuid)
         resource_state_file_location = self._get_resource_state_file_location(
@@ -256,7 +256,7 @@ class LocalBackend(Backend):
 
         self._write_resource_state_file(resource_state, resource_state_file_location)
 
-    def _delete_component(self, resource_state_uuid: str, component_name: str):
+    def _delete_component(self, resource_state_uuid: str, component_name: str) -> None:
 
         resource_state = self.get_resource_state(resource_state_uuid)
         resource_state_file_location = self._get_resource_state_file_location(
@@ -291,7 +291,7 @@ class LocalBackend(Backend):
         resource_state_uuid: str,
         previous_component_name: str,
         new_component_name: str,
-    ):
+    ) -> None:
         resource_state = self.get_resource_state(resource_state_uuid)
         resource_state_file_location = self._get_resource_state_file_location(
             resource_state_uuid
@@ -371,7 +371,7 @@ class LocalBackend(Backend):
 
     def update_component(
         self, resource_state_uuid: str, component_difference: Component_Difference
-    ):
+    ) -> None:
         if component_difference.action_type == Component_Change_Type.CREATE:
             self._create_component(resource_state_uuid, component_difference.new_name)
             return
@@ -435,7 +435,7 @@ class LocalBackend(Backend):
         transaction_token: str,
         cloud_output: Dict = None,
         resolved_cloud_information: Dict = {},
-    ):
+    ) -> None:
 
         resource_state = self.get_resource_state(resource_state_uuid)
         resource_state_file_location = self._get_resource_state_file_location(
@@ -469,7 +469,7 @@ class LocalBackend(Backend):
         diff: Resource_Difference,
         transaction_token: str,
         failed_state: Dict,
-    ):
+    ) -> None:
 
         resource_state = self.get_resource_state(resource_state_uuid)
         resource_state_file_location = self._get_resource_state_file_location(
@@ -492,7 +492,7 @@ class LocalBackend(Backend):
 
     def change_failed_state_of_resource_change(
         self, resource_state_uuid: str, transaction_token: str, new_failed_state: Dict
-    ):
+    ) -> None:
 
         resource_state = self.get_resource_state(resource_state_uuid)
         resource_state_file_location = self._get_resource_state_file_location(
@@ -522,7 +522,7 @@ class LocalBackend(Backend):
         transaction_token: str,
         to_previous_state: bool = True,
         cloud_output: Dict = None,
-    ):
+    ) -> None:
 
         resource_state = self.get_resource_state(resource_state_uuid)
         resource_state_file_location = self._get_resource_state_file_location(
@@ -549,7 +549,7 @@ class LocalBackend(Backend):
 
     def remove_failed_resource_change(
         self, resource_state_uuid: str, transaction_token: str
-    ):
+    ) -> None:
 
         resource_state = self.get_resource_state(resource_state_uuid)
         resource_state_file_location = self._get_resource_state_file_location(
@@ -569,7 +569,7 @@ class LocalBackend(Backend):
         self,
         resource_state_uuid: str,
         diff: Resource_Reference_Difference,
-    ):
+    ) -> None:
         resource_state = self.get_resource_state(resource_state_uuid)
         resource_state_file_location = self._get_resource_state_file_location(
             resource_state_uuid

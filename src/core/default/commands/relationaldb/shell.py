@@ -3,7 +3,6 @@ import cmd
 from typing import List
 
 import aurora_data_api
-from boto3 import client
 from rich.console import Console
 from rich.table import Table
 
@@ -17,14 +16,14 @@ class shell(BaseCommand):
         Open an interactive shell to a relational db.
     """
 
-    def add_arguments(self, parser: ArgumentParser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "resource",
             type=str,
             help="The database to execute on. Name must include component name. ex: comp1.myDb",
         )
 
-    def command(self, *args, **kwargs):
+    def command(self, *args, **kwargs) -> None:
 
         full_database_name: str = kwargs.get("resource")
         component_name = full_database_name.split(".")[0]
@@ -38,7 +37,7 @@ class shell(BaseCommand):
 
 
 class db_connection:
-    def __init__(self, cluster_arn: str, secret_arn: str, database_name: str):
+    def __init__(self, cluster_arn: str, secret_arn: str, database_name: str) -> None:
         self.conn = aurora_data_api.connect(
             aurora_cluster_arn=cluster_arn,
             secret_arn=secret_arn,
@@ -48,7 +47,7 @@ class db_connection:
         self._cluster_arn = cluster_arn
         self._secret_arn = secret_arn
 
-    def execute(self, line: str):
+    def execute(self, line: str) -> None:
         try:
             with self.conn.cursor() as cursor:
                 cursor.execute(line)
@@ -62,7 +61,7 @@ class db_connection:
         except Exception as e:
             raise e
 
-    def begin(self):
+    def begin(self) -> None:
         try:
             res = self.conn._client.begin_transaction(
                 database=self._db_name,
@@ -75,7 +74,7 @@ class db_connection:
         except Exception as e:
             raise e
 
-    def commit(self):
+    def commit(self) -> None:
         try:
 
             self.conn.commit()
@@ -83,7 +82,7 @@ class db_connection:
         except Exception as e:
             raise e
 
-    def rollback(self):
+    def rollback(self) -> None:
         try:
             self.conn.rollback()
 
@@ -95,7 +94,7 @@ class fmt:
     def __init__(self, console: Console) -> None:
         self._console = console
 
-    def print_results(self, column_descriptions: List, rows: List, updated_rows: int):
+    def print_results(self, column_descriptions: List, rows: List, updated_rows: int) -> None:
         if rows:
             display = Table()
 
@@ -113,30 +112,30 @@ class fmt:
 
 
 class interactive_shell(cmd.Cmd):
-    def __init__(self, fmt: fmt, cluster_arn: str, secret_arn: str, database_name: str):
+    def __init__(self, fmt: fmt, cluster_arn: str, secret_arn: str, database_name: str) -> None:
         super().__init__()
         self.prompt = f"{database_name}=> "
         self._db_connection = db_connection(cluster_arn, secret_arn, database_name)
         self.formater = fmt
 
-    def default(self, line):
+    def default(self, line) -> None:
         try:
             col_descriptions, rows, updated_row_cnt = self._db_connection.execute(line)
             self.formater.print_results(col_descriptions, rows, updated_row_cnt)
         except Exception as e:
             self.formater._console.print(e)
 
-    def do_quit(self, arg):
+    def do_quit(self, arg) -> bool:
         return True
 
-    def do_BEGIN(self, args):
+    def do_BEGIN(self, args) -> None:
         self._db_connection.begin()
         self.formater._console.print("BEGIN TRANSACTION")
 
-    def do_COMMIT(self, args):
+    def do_COMMIT(self, args) -> None:
         self._db_connection.commit()
         self.formater._console.print("COMMIT")
 
-    def do_ROLLBACK(self, args):
+    def do_ROLLBACK(self, args) -> None:
         self._db_connection.rollback()
         self.formater._console.print("ROLLBACK")

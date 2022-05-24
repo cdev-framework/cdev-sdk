@@ -141,7 +141,7 @@ class BucketOutput(ResourceOutputs):
         )
 
     @bucket_name.setter
-    def bucket_name(self, value: Any):
+    def bucket_name(self, value: Any) -> None:
         raise Exception
 
 
@@ -167,7 +167,7 @@ class Bucket(PermissionsAvailableMixin, Resource):
 
         return event
 
-    def compute_hash(self):
+    def compute_hash(self) -> None:
         self._hash = hasher.hash_list([self.nonce])
 
     def render(self) -> bucket_model:
