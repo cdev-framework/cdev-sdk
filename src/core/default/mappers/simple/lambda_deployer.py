@@ -213,7 +213,6 @@ def _remove_simple_lambda(
     output_task.update(comment=f"Removed resources for lambda {cloud_id}")
 
 
-#ANIBAL return type does not match
 def _update_simple_lambda(
     transaction_token: str,
     namespace_token: str,
@@ -221,7 +220,7 @@ def _update_simple_lambda(
     new_resource: simple_xlambda.simple_function_model,
     previous_output: Dict,
     output_task: OutputTask,
-) -> bool:
+) -> Dict:
     # Updates can be of:
     # Update source code or dependencies
     # Update configuration
@@ -496,14 +495,13 @@ def _upload_s3_dependency(
 ##### Main Entry Point
 #######################
 
-# ANIBAL return type does not match
 def handle_simple_lambda_function_deployment(
     transaction_token: str,
     namespace_token: str,
     resource_diff: Resource_Difference,
     previous_output: Dict[str, Any],
     output_task: OutputTask,
-) -> Dict:
+) -> Optional[Dict]:
     try:
         log.debug("Calling lambda mapper")
         if resource_diff.action_type == Resource_Change_Type.CREATE:

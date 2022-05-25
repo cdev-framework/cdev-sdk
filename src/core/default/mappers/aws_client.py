@@ -2,31 +2,28 @@ from time import sleep
 from typing import Callable, List, Optional, Any
 import boto3
 
-AVAILABLE_SERVICES = set(
-    ["lambda", "s3", "dynamodb", "iam", "apigatewayv2", "sqs", "apigateway"]
-)
+AVAILABLE_SERVICES = {"lambda", "s3", "dynamodb", "iam", "apigatewayv2", "sqs", "apigateway"}
 
 
-def _get_boto_client(service_name, credentials=None, profile_name=None) -> Optional[boto3.session.Session]:
+def _get_boto_client(service_name, credentials=None, profile_name=None) -> boto3.session.Session:
 
     # TODO readd this check after development is finished and we have the full list of services
     # if not service_name in AVAILABLE_SERVICES:
     #    return None
-
-    if not credentials or not profile_name:
-        return boto3.client(service_name)
-
     if credentials:
-        return boto3.Session(
+        session = boto3.Session(
             aws_access_key_id=credentials.get("access_key"),
             aws_secret_access_key=credentials.get("secret_key"),
-        ).client(service_name)
+        )
+    elif profile_name:
+        session = boto3.Session(profile_name=profile_name)
+    else:
+        session = boto3
 
-    if profile_name:
-        return boto3.Session(profile_name=profile_name).client(service_name)
+    return session.client(service_name)
 
 
-def get_boto_client(service_name) -> Optional[boto3.session.Session]:
+def get_boto_client(service_name) -> boto3.session.Session:
     # TODO: Come back and make this settable from the workspace settings
     # if not cdev_settings.SETTINGS.get("CREDENTIALS"):
     return _get_boto_client(service_name)

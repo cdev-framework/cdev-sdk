@@ -24,11 +24,11 @@ def execute_frontend(
     workspace: Workspace,
     output: OutputManager,
     previous_component_names: List[str] = None,
-) -> Optional[Tuple[
+) -> Tuple[
     List[Component_Difference],
     List[Resource_Difference],
     List[Resource_Reference_Difference],
-]]:
+]:
 
     log.debug("Executing Frontend")
 
@@ -58,7 +58,6 @@ def execute_frontend(
 
     else:
         print("No Differences")
-        return None
 
     log.debug("Finish Executing Frontend")
 
