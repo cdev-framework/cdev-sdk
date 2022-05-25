@@ -3,18 +3,15 @@
 """
 
 from core.constructs.output_manager import OutputManager
-from ..constructs.workspace import Workspace, Workspace_State
+from core.constructs.workspace import Workspace, Workspace_State
 from rich.prompt import Confirm
 from .execute_frontend import execute_frontend
-
-import networkx as nx
 
 
 def execute_deployment_cli(args) -> None:
 
-    WORKSPACE = Workspace.instance()
-
-    execute_deployment(WORKSPACE, OutputManager())
+    workspace = Workspace.instance()
+    execute_deployment(workspace, OutputManager())
 
 
 def execute_deployment(workspace: Workspace, output: OutputManager) -> None:
@@ -28,11 +25,10 @@ def execute_deployment(workspace: Workspace, output: OutputManager) -> None:
     print("")
     do_deployment = Confirm.ask("Do you want to deploy differences?")
 
-    if not do_deployment:
+    if do_deployment is not True:
         return
 
     workspace.set_state(Workspace_State.EXECUTING_BACKEND)
-
     workspace.deploy_differences(differences_structured)
 
     for tag, cloud_output in workspace.render_outputs():

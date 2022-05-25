@@ -1,5 +1,5 @@
-from ..constructs.workspace import Workspace
-from ..constructs.output_manager import OutputManager
+from core.constructs.workspace import Workspace
+from core.constructs.output_manager import OutputManager
 
 from core.utils.logger import log
 
@@ -16,7 +16,7 @@ def cloud_output_command(
 
     split_names = cloud_output_id.split(".")
 
-    if not len(split_names) == 4:
+    if len(split_names) != 4:
         raise Exception(
             "Output not provided in correct structure. ex: <component>.<ruuid>.<cdev_name>.<output_key>"
         )
@@ -37,7 +37,7 @@ def cloud_output_command(
         print(e)
         raise e
 
-    if not output_key in cloud_output:
+    if output_key not in cloud_output:
         raise Exception(f"Key {output_key} not in Cloud Output {cloud_output}")
 
     if not only_value:

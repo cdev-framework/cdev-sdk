@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from core.constructs.resource import ResourceModel
 from core.constructs.workspace import Workspace
@@ -39,10 +39,10 @@ def get_resource_from_cdev_name(component_name: str, cdev_name: str) -> Resource
 _attribute_types_to_python_type = {"S": [str], "N": [int, float], "B": [bytes]}
 
 
-def validate_data(data: Dict, attributes: Dict, keys: List[Dict]) -> Tuple[bool, str]:
+def validate_data(data: Dict, attributes: Dict, keys: List[Dict]) -> bool:
     for key in keys:
         if not key.get("attribute_name") in data:
-            return False, f"Table key {key.get('attribute_name')} not in data"
+            return (False, f"Table key {key.get('attribute_name')} not in data")
 
         valid_types = _attribute_types_to_python_type.get(
             attributes.get(key.get("attribute_name"))
@@ -60,7 +60,7 @@ def validate_data(data: Dict, attributes: Dict, keys: List[Dict]) -> Tuple[bool,
                 f"Table key {key.get('attribute_name')} ({valid_types}) not correct type in data ({type(data.get(key.get('attribute_name')))})",
             )
 
-    return True, ""
+    return (True, "")
 
 
 def recursive_translate_data(value) -> Dict:

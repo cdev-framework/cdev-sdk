@@ -17,7 +17,7 @@ class sync_files(BaseCommand):
     Command to sync a folder of content to a bucket
     """
 
-    def add_arguments(self, parser: ArgumentParser) -> None:
+    def add_arguments(self, parser: ArgumentParser):
         parser.add_argument(
             "resource_name", type=str, help="The bucket resource you want to sync."
         )
@@ -32,7 +32,7 @@ class sync_files(BaseCommand):
             help="Clear the existing content of the bucket before syncing the new data.",
         )
 
-    def command(self, *args, **kwargs) -> None:
+    def command(self, *args, **kwargs):
         full_resource_name: str = kwargs.get("resource_name")
         component_name = full_resource_name.split(".")[0]
         bucket_cdev_name = full_resource_name.split(".")[1]

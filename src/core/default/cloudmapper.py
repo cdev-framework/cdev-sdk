@@ -10,6 +10,7 @@ from ..constructs.resource import (
 )
 from ..constructs.mapper import CloudMapper
 
+# from .mappers.aws import aws_lambda, dynamodb, iam, s3, sqs, apigatewayv2, apigateway
 
 from .mappers.simple import (
     api_deployer,

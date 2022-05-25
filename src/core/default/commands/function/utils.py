@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Tuple, Optional
 
 from core.constructs.workspace import Workspace
 
@@ -22,4 +22,4 @@ def get_cloud_id_from_cdev_name(component_name: str, cdev_function_name: str) ->
     except Exception as e:
         print(f"Could not find cloud id")
         print(e)
-        return None
+    return None

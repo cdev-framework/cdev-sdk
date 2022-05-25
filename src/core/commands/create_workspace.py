@@ -4,7 +4,6 @@
 import os
 
 from core.constructs import workspace as cdev_workspace
-from core.constructs.backend import Backend_Configuration
 from core.constructs.settings import Settings_Info
 
 from core.default.workspace import local_workspace_manager
@@ -16,6 +15,7 @@ def create_workspace(args) -> None:
 
     if manager.check_if_workspace_exists():
         print("Workspace already initialized")
+        return
 
     workspace_info = cdev_workspace.Workspace_Info(
         "core.default.workspace",

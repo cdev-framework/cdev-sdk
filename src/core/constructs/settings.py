@@ -3,12 +3,7 @@ Basic available settings
 """
 import os
 
-from typing import Any, Optional
-from rich.logging import RichHandler
-
-from rich.traceback import install
-
-from typing import List, Set
+from typing import Optional, List
 
 from pydantic import (
     BaseModel,
@@ -75,7 +70,6 @@ def initialize_settings(info: Settings_Info) -> Settings:
 
     if info.user_setting_module:
         for settings_module in info.user_setting_module:
-
             module = import_module(settings_module)
 
             for setting in dir(module):

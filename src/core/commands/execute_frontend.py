@@ -1,7 +1,7 @@
 """Utilities for creating a representation of a desired state of the workspace
 
 """
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 
 from ..constructs.workspace import Workspace, Workspace_State
 from ..constructs.components import Component_Difference
@@ -11,13 +11,12 @@ from ..constructs.output_manager import OutputManager
 from core.utils.logger import log
 
 
-def execute_frontend_cli(args) -> None:
+def execute_frontend_cli(args):
 
-    WORKSPACE = Workspace.instance()
-
+    workspace = Workspace.instance()
     output_manager = OutputManager()
 
-    execute_frontend(WORKSPACE, output_manager)
+    execute_frontend(workspace, output_manager)
 
 
 def execute_frontend(
@@ -53,10 +52,11 @@ def execute_frontend(
         current_state, diff_previous_component_names
     )
 
+    # ANIBAL simple use any(differences)
     if any(x for x in differences):
         output.print_state_differences(differences)
-
     else:
+        differences = None
         print("No Differences")
 
     log.debug("Finish Executing Frontend")
