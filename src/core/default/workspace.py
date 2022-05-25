@@ -1,9 +1,9 @@
 import json
 import os
-from typing import Callable, List, Dict, Optional, Any, Tuple, Union
+from typing import List, Dict, Optional, Any, Tuple
 from pydantic.main import BaseModel
 
-from pydantic.types import DirectoryPath, FilePath
+from pydantic.types import DirectoryPath
 
 from core.constructs.backend import Backend, Backend_Configuration, load_backend
 from core.constructs.mapper import CloudMapper
@@ -79,12 +79,12 @@ class local_workspace(Workspace):
         return cls._instance
 
     @classmethod
-    def terminate_singleton(cls):
+    def terminate_singleton(cls) -> None:
         cls._instance = None
 
     def initialize_workspace(
         self, workspace_configuration_dict: local_workspace_configuration
-    ):
+    ) -> None:
 
         # It is the responsibility of the higher up callers to set the correct states for initialization.
         # This allows the flexibility of higher up frameworks injecting initialization steps into the process.
@@ -111,14 +111,14 @@ class local_workspace(Workspace):
 
         self.set_resource_state_uuid(workspace_configuration.resource_state_uuid)
 
-    def destroy_workspace(self):
+    def destroy_workspace(self) -> None:
         Workspace.destroy_workspace(self)
         local_workspace.terminate_singleton()
 
     ################
     ##### State
     ################
-    def set_state(self, value: Workspace_State):
+    def set_state(self, value: Workspace_State) -> None:
         self._state = value
 
     def get_state(self) -> Workspace_State:
@@ -152,7 +152,7 @@ class local_workspace(Workspace):
             Workspace_State.EXECUTING_BACKEND,
         ]
     )
-    def display_output(self, tag: str, output: Cloud_Output):
+    def display_output(self, tag: str, output: Cloud_Output) -> None:
         self._output.append((tag, self._current_component, output.render()))
 
     @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_BACKEND])
@@ -222,11 +222,11 @@ class local_workspace(Workspace):
     ##### Commands
     #################
     @wrap_phase([Workspace_State.INITIALIZING])
-    def add_command(self, command_location: str):
+    def add_command(self, command_location: str) -> None:
         self._COMMANDS.append(command_location)
 
     @wrap_phase([Workspace_State.INITIALIZING])
-    def add_commands(self, command_locations: List[str]):
+    def add_commands(self, command_locations: List[str]) -> None:
         for command_location in command_locations:
             self.add_command(command_location)
 
@@ -238,11 +238,11 @@ class local_workspace(Workspace):
     ##### Components
     #################
     @wrap_phase([Workspace_State.INITIALIZING])
-    def add_component(self, component: Component):
+    def add_component(self, component: Component) -> None:
         self._COMPONENTS.append(component)
 
     @wrap_phase([Workspace_State.INITIALIZING])
-    def add_components(self, components: List[Component]):
+    def add_components(self, components: List[Component]) -> None:
         for component in components:
             self.add_component(component)
 
@@ -254,7 +254,7 @@ class local_workspace(Workspace):
     ##### Backend
     #################
     @wrap_phase([Workspace_State.INITIALIZING])
-    def set_backend(self, backend: Backend):
+    def set_backend(self, backend: Backend) -> None:
         if not isinstance(backend, Backend):
             raise Exception("Not a backend object")
 
@@ -271,7 +271,7 @@ class local_workspace(Workspace):
         return self._backend
 
     @wrap_phase([Workspace_State.INITIALIZING])
-    def set_resource_state_uuid(self, resource_state_uuid: str):
+    def set_resource_state_uuid(self, resource_state_uuid: str) -> None:
         self._resource_state_uuid = resource_state_uuid
 
     @wrap_phase(
@@ -298,7 +298,7 @@ class local_workspace_manager(WorkspaceManager):
             workspace_filename if workspace_filename else WORKSPACE_FILE_NAME
         )
 
-    def create_new_workspace(self, workspace_info: Workspace_Info):
+    def create_new_workspace(self, workspace_info: Workspace_Info) -> None:
         """
         Create a new workspace based on the information provided.
 

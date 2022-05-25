@@ -81,6 +81,6 @@ class override_sys_out(TextIO):
 
     encoding = sys.__stdout__.encoding
 
-    def write(s: str):
+    def write(s: str) -> None:
         if len(s) > 0 and not s == "\n":
             sys.__stdout__.write(f"> {s}\n")

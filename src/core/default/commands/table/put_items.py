@@ -1,12 +1,10 @@
 from argparse import ArgumentParser
 import json
 import os
-from tempfile import TemporaryFile
-from typing import Dict, List
+
 
 from core.constructs.commands import BaseCommand, OutputWrapper
 from core.default.resources.simple.table import Table, simple_table_model
-from core.utils.paths import get_full_path_from_workspace_base
 
 from core.default.mappers import aws_client
 
@@ -18,7 +16,7 @@ RUUID = "cdev::simple::table"
 
 
 class put_object(BaseCommand):
-    def add_arguments(self, parser: ArgumentParser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "resource_name", type=str, help="The resource you want to sync data to"
         )
@@ -29,7 +27,7 @@ class put_object(BaseCommand):
             "--data", type=str, help="The json data you want to put in the db"
         )
 
-    def command(self, *args, **kwargs):
+    def command(self, *args, **kwargs) -> None:
         full_resource_name = kwargs.get("resource_name")
         component_name = full_resource_name.split(".")[0]
         table_resource_name = full_resource_name.split(".")[1]

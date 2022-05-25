@@ -151,18 +151,18 @@ def _recursive_find_specified_command(
         # A location was specified and we are the final part of the command so the command must be a py file in this dir
         # of be a directory that has a command container
         if os.path.isfile(os.path.join(search_path, command_list[0] + ".py")):
-            return (True, True)
+            return True, True
 
         if os.path.isdir(os.path.join(search_path, command_list[0])):
             if os.path.join(os.path.join(search_path, command_list[0], "__init__.py")):
-                return (True, False)
+                return True, False
 
-        return (False, False)
+        return False, False
 
     next_command_part = command_list.pop(0)
 
     if not next_command_part in os.listdir(search_path):
-        return (False, False)
+        return False, False
 
     return _recursive_find_specified_command(
         command_list, os.path.join(search_path, next_command_part)

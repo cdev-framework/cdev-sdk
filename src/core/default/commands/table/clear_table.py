@@ -20,12 +20,12 @@ class clear_table(BaseCommand):
 Clear the current data from a given Table. This should only be used on development tables.
 """
 
-    def add_arguments(self, parser: ArgumentParser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "resource_name", type=str, help="The resource you want to sync data to"
         )
 
-    def command(self, *args, **kwargs):
+    def command(self, *args, **kwargs) -> None:
         """
         Clear all items for the table
         """

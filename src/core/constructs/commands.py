@@ -61,10 +61,10 @@ class CdevHelpFormatter(HelpFormatter):
             actions, key=lambda a: set(a.option_strings) & self.show_last != set()
         )
 
-    def add_usage(self, usage, actions, *args, **kwargs):
+    def add_usage(self, usage, actions, *args, **kwargs) -> None:
         super().add_usage(usage, self._reordered_actions(actions), *args, **kwargs)
 
-    def add_arguments(self, actions):
+    def add_arguments(self, actions) -> None:
         super().add_arguments(self._reordered_actions(actions))
 
 
@@ -78,13 +78,13 @@ class OutputWrapper(TextIOBase):
         return self._style_func
 
     @style_func.setter
-    def style_func(self, style_func):
+    def style_func(self, style_func) -> None:
         if style_func and self.isatty():
             self._style_func = style_func
         else:
             self._style_func = lambda x: x
 
-    def __init__(self, out, ending="\n"):
+    def __init__(self, out, ending="\n") -> None:
         self._out = out
         self.style_func = None
         self.ending = ending
@@ -92,14 +92,14 @@ class OutputWrapper(TextIOBase):
     def __getattr__(self, name):
         return getattr(self._out, name)
 
-    def flush(self):
+    def flush(self) -> None:
         if hasattr(self._out, "flush"):
             self._out.flush()
 
-    def isatty(self):
+    def isatty(self) -> bool:
         return hasattr(self._out, "isatty") and self._out.isatty()
 
-    def write(self, msg="", style_func=None, ending=None):
+    def write(self, msg="", style_func=None, ending=None) -> None:
         ending = self.ending if ending is None else ending
         if ending and not msg.endswith(ending):
             msg += ending
@@ -117,13 +117,13 @@ class ConsoleOutputWrapper(TextIOBase):
         return self._style_func
 
     @style_func.setter
-    def style_func(self, style_func):
+    def style_func(self, style_func) -> None:
         if style_func and self.isatty():
             self._style_func = style_func
         else:
             self._style_func = lambda x: x
 
-    def __init__(self, console: Console, ending="\n"):
+    def __init__(self, console: Console, ending="\n") -> None:
         self._out = console
         self.style_func = None
         self.ending = ending
@@ -131,13 +131,13 @@ class ConsoleOutputWrapper(TextIOBase):
     def __getattr__(self, name):
         return getattr(self._out, name)
 
-    def flush(self):
+    def flush(self) -> None:
         self._out.clear()
 
-    def isatty(self):
+    def isatty(self) -> bool:
         return self._out.is_terminal
 
-    def write(self, msg: str = "", style_func=None, ending=None):
+    def write(self, msg: str = "", style_func=None, ending=None) -> None:
         ending = self.ending if ending is None else ending
         if ending and not msg.endswith(ending):
             msg += ending
@@ -163,7 +163,7 @@ class BaseCommand:
         stderr: Console = None,
         no_color=False,
         force_color=False,
-    ):
+    ) -> None:
         self.stdout = (
             ConsoleOutputWrapper(stdout) if stdout else OutputWrapper(sys.stdout)
         )
@@ -183,11 +183,11 @@ class BaseCommand:
 
         return parser
 
-    def add_arguments(self, parser: ArgumentParser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         """Add the cli arguments for the command"""
         pass
 
-    def run_from_command_line(self, argv):
+    def run_from_command_line(self, argv) -> None:
         """
         Handles input from command line and builds arg parser and uses it to validate input.
 
@@ -211,7 +211,7 @@ class BaseCommand:
             self.stderr.write("%s: %s" % (e.__class__.__name__, e))
             sys.exit(e.returncode)
 
-    def command(self, *args, **kwargs):
+    def command(self, *args, **kwargs) -> None:
         """
         The actual logic of the command. Subclasses must implement
         this method.
@@ -239,7 +239,7 @@ class BaseCommandContainer:
         stderr: Console = None,
         no_color=False,
         force_color=False,
-    ):
+    ) -> None:
         self.stdout = (
             ConsoleOutputWrapper(stdout) if stdout else OutputWrapper(sys.stdout)
         )

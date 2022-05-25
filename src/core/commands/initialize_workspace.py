@@ -11,7 +11,7 @@ from ..constructs.workspace import load_and_initialize_workspace
 from ..default.workspace import local_workspace_manager
 
 
-def initialize_workspace_cli(args):
+def initialize_workspace_cli(args) -> None:
 
     workspace_manager = local_workspace_manager(os.getcwd())
 
@@ -23,7 +23,7 @@ def initialize_workspace_cli(args):
         raise e
 
 
-def initialize_workspace(workspace_config: Workspace_Info):
+def initialize_workspace(workspace_config: Workspace_Info) -> None:
 
     try:
         load_and_initialize_workspace(workspace_config)

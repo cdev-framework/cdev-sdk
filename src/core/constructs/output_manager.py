@@ -23,6 +23,7 @@ from core.constructs.resource import (
 
 
 class OutputManager:
+
     def __init__(self, console: Console = None, progress: Progress = None) -> None:
 
         if console:
@@ -35,12 +36,12 @@ class OutputManager:
         else:
             self._progress = None
 
-    def print_header(self, resource_state_uuid: str):
+    def print_header(self, resource_state_uuid: str) -> None:
         print(f"Resource State: {resource_state_uuid}")
 
         print("")
 
-    def print_local_state(self, rendered_components: List[ComponentModel]):
+    def print_local_state(self, rendered_components: List[ComponentModel]) -> None:
 
         rendered_components.sort(key=lambda x: x.name)
 
@@ -64,7 +65,7 @@ class OutputManager:
 
         self._console.print("")
 
-    def print_components_to_diff_against(self, old_component_names: List[str]):
+    def print_components_to_diff_against(self, old_component_names: List[str]) -> None:
 
         self._console.print("Components to diff against:")
         for component_name in old_component_names:
@@ -79,7 +80,7 @@ class OutputManager:
             List[Resource_Difference],
             List[Resource_Reference_Difference],
         ],
-    ):
+    ) -> None:
         component_differences = differences[0]
         resource_differences = differences[1]
         reference_differences = differences[2]
@@ -252,7 +253,7 @@ class OutputTask:
         self._output_manager = output_manager
         self._task_id = task_id
 
-    def print(self, msg: str):
+    def print(self, msg: str) -> None:
         """Print a message to the parent output context.
 
         Args:
@@ -260,7 +261,7 @@ class OutputTask:
         """
         self._output_manager._console.print(msg)
 
-    def print_error(self, msg: str):
+    def print_error(self, msg: str) -> None:
         """
         Print a message as an error
 
@@ -279,7 +280,7 @@ class OutputTask:
         visible: bool = None,
         refresh: bool = False,
         **fields: Any,
-    ):
+    ) -> None:
         # self._output_manager._console.print(fields.get('comment'))
         self._output_manager._progress.update(
             self._task_id,
@@ -293,5 +294,5 @@ class OutputTask:
             **fields,
         )
 
-    def start_task(self):
+    def start_task(self) -> None:
         self._output_manager._progress.start_task(self._task_id)

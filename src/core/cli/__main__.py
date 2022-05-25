@@ -73,13 +73,12 @@ def subcommand_function_wrapper(name, subcommand):
     # This wraps a function so that is can be used for subcommands by basing the subcommand as the first arg to the function
     # then the remaining args as the second arg
     def inner(args):
-
         return command(subcommand, args)
 
     return inner
 
 
-def add_general_output_options(parser: argparse.ArgumentParser):
+def add_general_output_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--output",
         type=str,

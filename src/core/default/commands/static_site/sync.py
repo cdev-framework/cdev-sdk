@@ -16,7 +16,7 @@ from . import utils
 
 
 class sync_files(BaseCommand):
-    def add_arguments(self, parser: ArgumentParser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "resource_name", type=str, help="The static site resource you want to sync"
         )
@@ -36,7 +36,7 @@ class sync_files(BaseCommand):
             help="If set, preserve the .html extension for objects.",
         )
 
-    def command(self, *args, **kwargs):
+    def command(self, *args, **kwargs) -> None:
         full_resource_name: str = kwargs.get("resource_name")
         component_name = full_resource_name.split(".")[0]
         static_site_name = full_resource_name.split(".")[1]

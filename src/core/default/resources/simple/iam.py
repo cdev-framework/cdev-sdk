@@ -44,7 +44,7 @@ class Permission:
         cloud_id: cdev_str,
         effect: str,
         resource_suffix: Optional[str] = "",
-    ):
+    ) -> None:
         """
         Arguments:
             actions (List[str]): List of the actions that this policy will include

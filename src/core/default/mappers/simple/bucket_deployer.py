@@ -68,7 +68,7 @@ def _update_simple_bucket(
 
 def _remove_simple_bucket(
     transaction_token: str, previous_output: Dict, output_task: OutputTask
-):
+) -> None:
 
     previous_bucket_name = previous_output.get("bucket_name")
 
@@ -195,7 +195,7 @@ def _get_current_bucket_event_configuration(bucket_name: str) -> Dict:
     return rv
 
 
-def _deploy_bucket_event_configuration(bucket_name: str, new_config: Dict):
+def _deploy_bucket_event_configuration(bucket_name: str, new_config: Dict) -> None:
     final_config = {k: v for k, v in new_config.items() if v}
 
     raw_aws_client.run_client_function(

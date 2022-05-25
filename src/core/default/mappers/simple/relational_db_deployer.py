@@ -1,6 +1,6 @@
 import boto3
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict
 from uuid import uuid4
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
@@ -19,7 +19,7 @@ def _create_simple_relational_db(
     namespace_token: str,
     resource: relational_db.simple_relational_db_model,
     output_task: OutputTask,
-) -> bool:
+) -> Dict:
 
     full_namespace_suffix = hasher.hash_list([namespace_token, str(uuid4())])
     cluster_name = f"cdev-relationaldb-{full_namespace_suffix}"
@@ -99,7 +99,7 @@ def _update_simple_relational_db(
     new_resource: relational_db.simple_relational_db_model,
     previous_output: Dict,
     output_task: OutputTask,
-) -> bool:
+) -> Dict:
     if not new_resource.Engine.value == previous_resource.Engine:
         raise Exception
 
@@ -178,7 +178,7 @@ def _update_simple_relational_db(
 
 def _remove_simple_relational_db(
     transaction_token: str, previous_output: Dict, output_task: OutputTask
-):
+) -> None:
     cluster_id = previous_output.get("cluster_name")
 
     output_task.update(

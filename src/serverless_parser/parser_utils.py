@@ -46,7 +46,7 @@ def find_ending_line(
     start_line: int,
     end_line: int,
     line_start_match: str,
-):
+) -> int:
     for i in range(start_line + 1, end_line):
         tmp = file_info_obj.get_lines_of_source_code(i, i)
 
@@ -56,7 +56,7 @@ def find_ending_line(
     raise Exception("Should not end loop without returning")
 
 
-def _get_global_variables_in_symboltable(table):
+def _get_global_variables_in_symboltable(table) -> Set:
     if not isinstance(table, symtable.SymbolTable):
         raise InvalidParamError(
             f"Invalid Param in _get_functions_in_symboltable: Expected symtable.SymbolTable got {type(table)}"
@@ -75,7 +75,7 @@ def _get_global_variables_in_symboltable(table):
     return rv_variables
 
 
-def _get_imported_variables_in_symboltable(table):
+def _get_imported_variables_in_symboltable(table) -> Set:
     # TODO Change error that is raised
     if not isinstance(table, symtable.SymbolTable):
         raise InvalidParamError(
@@ -95,7 +95,7 @@ def _get_imported_variables_in_symboltable(table):
     return rv_variables
 
 
-def _get_local_variables_in_symboltable(table):
+def _get_local_variables_in_symboltable(table) -> Set:
     if not isinstance(table, symtable.SymbolTable):
         raise InvalidParamError(
             f"Invalid Param in _get_functions_in_symboltable: Expected symtable.SymbolTable got {type(table)}"
@@ -114,7 +114,7 @@ def _get_local_variables_in_symboltable(table):
     return rv_variables
 
 
-def _get_functions_in_symboltable(table):
+def _get_functions_in_symboltable(table) -> Set:
     if not isinstance(table, symtable.SymbolTable):
         raise InvalidParamError(
             f"Invalid Param in _get_functions_in_symboltable: Expected symtable.SymbolTable got {type(table)}"
@@ -136,7 +136,7 @@ def _get_functions_in_symboltable(table):
     return rv_functions
 
 
-def _get_global_class_definitions_in_symboltable(table):
+def _get_global_class_definitions_in_symboltable(table) -> Set:
     if not isinstance(table, symtable.SymbolTable):
         raise InvalidParamError(
             f"Invalid Param in _get_functions_in_symboltable: Expected symtable.SymbolTable got {type(table)}"
@@ -163,7 +163,7 @@ def _generate_global_statement(
     ast_node: ast.NodeVisitor,
     line_info: List[str],
     remove_annotation_functions: Set[str] = set(),
-):
+) -> None:
     # This function is used to determine the type of global statement the node is and create the corresponding global statement obj
 
     last_line = line_info[1]
@@ -341,7 +341,7 @@ def get_file_information(
     function_manual_includes: Dict[str, str] = {},
     global_manual_includes: List[str] = [],
     remove_top_annotation: bool = False,
-):
+) -> file_information:
     if not os.path.isfile(file_path):
         raise CouldNotParseFileError(
             CdevFileNotFoundError(f"cdev_parser: could not find file at -> {file_path}")
@@ -581,7 +581,7 @@ def get_file_information(
 _individual_file_cache = {}
 
 
-def _get_individual_files_imported_symbols(file_location):
+def _get_individual_files_imported_symbols(file_location) -> Set:
     if file_location in _individual_file_cache:
         return _individual_file_cache.get(file_location)
 
@@ -623,7 +623,7 @@ def _get_individual_files_imported_symbols(file_location):
     return rv
 
 
-def get_file_imported_symbols(file_loc: FilePath):
+def get_file_imported_symbols(file_loc: FilePath) -> Set:
     # Walk the whole dir/children importing all python files and then searching their symbol tree to find import statements
     rv = _get_individual_files_imported_symbols(file_loc)
 

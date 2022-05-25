@@ -47,7 +47,7 @@ class CustomEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def safe_json_write(obj: Dict, fp: FilePath):
+def safe_json_write(obj: Dict, fp: FilePath) -> None:
     """
     Safely write files by first writing to a tmp file then copying to final location. This ensures that no file is
     partially written thus leaving a file in an unrecoverable state.

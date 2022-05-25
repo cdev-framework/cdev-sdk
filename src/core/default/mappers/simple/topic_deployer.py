@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict
 from uuid import uuid4
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
@@ -62,7 +62,7 @@ def _update_simple_topic(
 
 def _remove_simple_topic(
     transaction_token: str, previous_output: Dict, output_task: OutputTask
-):
+) -> None:
     topic_arn = previous_output.get("cloud_id")
 
     aws_client.run_client_function("sns", "delete_topic", {"TopicArn": topic_arn})
@@ -83,7 +83,7 @@ def add_subscriber(topic_arn: str, protocol: str, endpoint: str) -> str:
     return rv.get("SubscriptionArn")
 
 
-def remove_subscriber(subscription_arn: str):
+def remove_subscriber(subscription_arn: str) -> None:
     rv = aws_client.run_client_function(
         "sns", "unsubscribe", {"SubscriptionArn": subscription_arn}
     )

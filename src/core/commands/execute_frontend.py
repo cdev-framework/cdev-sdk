@@ -1,7 +1,7 @@
 """Utilities for creating a representation of a desired state of the workspace
 
 """
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from ..constructs.workspace import Workspace, Workspace_State
 from ..constructs.components import Component_Difference
@@ -11,7 +11,7 @@ from ..constructs.output_manager import OutputManager
 from core.utils.logger import log
 
 
-def execute_frontend_cli(args):
+def execute_frontend_cli(args) -> None:
 
     WORKSPACE = Workspace.instance()
 
@@ -58,7 +58,6 @@ def execute_frontend(
 
     else:
         print("No Differences")
-        return None
 
     log.debug("Finish Executing Frontend")
 
