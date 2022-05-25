@@ -117,7 +117,6 @@ def evaluate_dynamic_output(
 
     intermediate_value = original_value
     for x in operations:
-        assert len(x) == 3
         func_name = x[0]
         xargs = x[1]
         kwargs = x[2]
