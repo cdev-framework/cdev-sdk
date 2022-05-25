@@ -52,8 +52,7 @@ def execute_frontend(
         current_state, diff_previous_component_names
     )
 
-    # ANIBAL simple use any(differences)
-    if any(x for x in differences):
+    if any(differences):
         output.print_state_differences(differences)
     else:
         differences = None
