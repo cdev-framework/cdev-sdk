@@ -84,7 +84,7 @@ class show_logs(BaseCommand):
                 )
 
 
-def _watch_log_group(group_name: str, stdout: OutputWrapper, args=None):
+def _watch_log_group(group_name: str, stdout: OutputWrapper, args=None) -> None:
     cloud_watch_client = client("logs")
 
     events_hash = set()

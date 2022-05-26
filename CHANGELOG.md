@@ -13,6 +13,8 @@ All release will have a corresponding git tag.
 - Add `tox` to help with testing multiple `python` versions
 - Add CONTRIBUTING.md
 - Add type hint to functions
+- Updated imports to be absolute when possible
+- Added function to parse qualified resources into its parts
 
 
 ## [0.0.8] - 2022-04-05

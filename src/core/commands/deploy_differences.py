@@ -25,7 +25,7 @@ def execute_deployment(workspace: Workspace, output: OutputManager) -> None:
     print("")
     do_deployment = Confirm.ask("Do you want to deploy differences?")
 
-    if do_deployment is not True:
+    if not do_deployment:
         return
 
     workspace.set_state(Workspace_State.EXECUTING_BACKEND)

@@ -1,7 +1,7 @@
 import cmd
 
 from argparse import ArgumentParser
-from typing import List
+from typing import List, Tuple
 
 import aurora_data_api
 from rich.console import Console
@@ -35,7 +35,7 @@ class shell(BaseCommand):
 
 
 class db_connection:
-    def __init__(self, cluster_arn: str, secret_arn: str, database_name: str):
+    def __init__(self, cluster_arn: str, secret_arn: str, database_name: str) -> None:
         self.conn = aurora_data_api.connect(
             aurora_cluster_arn=cluster_arn,
             secret_arn=secret_arn,
@@ -45,46 +45,30 @@ class db_connection:
         self._cluster_arn = cluster_arn
         self._secret_arn = secret_arn
 
-    def execute(self, line: str) -> None:
-        try:
-            with self.conn.cursor() as cursor:
-                cursor.execute(line)
+    def execute(self, line: str) -> Tuple:
+        with self.conn.cursor() as cursor:
+            cursor.execute(line)
 
-                return (
-                    cursor.description,
-                    cursor.fetchall(),
-                    cursor._current_response.get("numberOfRecordsUpdated"),
-                )
-
-        except Exception as e:
-            # ANIBAL: if we don't do anything with e
-            # same below
-            raise e
-
-    def begin(self) -> None:
-        try:
-            res = self.conn._client.begin_transaction(
-                database=self._db_name,
-                resourceArn=self._cluster_arn,
-                secretArn=self._secret_arn,
+            return (
+                cursor.description,
+                cursor.fetchall(),
+                cursor._current_response.get("numberOfRecordsUpdated"),
             )
 
-            self.conn._transaction_id = res["transactionId"]
+    def begin(self) -> None:
+        res = self.conn._client.begin_transaction(
+            database=self._db_name,
+            resourceArn=self._cluster_arn,
+            secretArn=self._secret_arn,
+        )
 
-        except Exception as e:
-            raise e
+        self.conn._transaction_id = res["transactionId"]
 
     def commit(self) -> None:
-        try:
-            self.conn.commit()
-        except Exception as e:
-            raise e
+        self.conn.commit()
 
     def rollback(self) -> None:
-        try:
-            self.conn.rollback()
-        except Exception as e:
-            raise e
+        self.conn.rollback()
 
 
 class fmt:
@@ -109,7 +93,7 @@ class fmt:
 
 
 class interactive_shell(cmd.Cmd):
-    def __init__(self, fmt: fmt, cluster_arn: str, secret_arn: str, database_name: str):
+    def __init__(self, fmt: fmt, cluster_arn: str, secret_arn: str, database_name: str) -> None:
         super().__init__()
         self.prompt = f"{database_name}=> "
         self._db_connection = db_connection(cluster_arn, secret_arn, database_name)
