@@ -1,4 +1,4 @@
-from typing import Any, Dict, FrozenSet, List, Tuple
+from typing import Any, Dict, FrozenSet, List, Tuple, Optional
 from uuid import uuid4
 from core.constructs.models import frozendict
 
@@ -404,7 +404,7 @@ def _update_simple_api(
 
 def _remove_simple_api(
     transaction_token: str, previous_output: Dict, output_task: OutputTask
-):
+) -> None:
     """
     Delete an API from AWS.
 
@@ -475,14 +475,14 @@ def _update_authorizer(
     aws_client.run_client_function("apigatewayv2", "update_authorizer", args)
 
 
-def _delete_authorizer(api_id: str, authorizer_id: str):
+def _delete_authorizer(api_id: str, authorizer_id: str) -> None:
     args = {"ApiId": api_id, "AuthorizerId": authorizer_id}
     aws_client.run_client_function("apigatewayv2", "delete_authorizer", args)
 
 
 def _find_authorization_id(
     route: simple_api.route_model, output_ids: Dict[str, Dict]
-) -> str:
+) -> Optional[str]:
     """Function for finding a route's authorizer cloud id
 
     This function takes into account that a route will by default use the api's default authorizer unless the route has the `override_authorizer_name`
@@ -558,7 +558,7 @@ def _create_route(
     return rv.get("RouteId")
 
 
-def _delete_route(api_id: str, route_id: str):
+def _delete_route(api_id: str, route_id: str) -> None:
     """
     Helper Function for deleting routes on an API. Note that any error raised by the aws client will not be caught by this function and should
     be handled by the caller of this function.

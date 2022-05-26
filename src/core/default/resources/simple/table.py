@@ -372,7 +372,7 @@ class Table(PermissionsAvailableMixin, Resource):
 
     @keys.setter
     @update_hash
-    def keys(self, value: List[KeyDefinition]):
+    def keys(self, value: List[KeyDefinition]) -> None:
         self._keys = value
 
     def create_stream(
@@ -455,7 +455,7 @@ class Table(PermissionsAvailableMixin, Resource):
                 f"Range key 'AttributeName' ({range_key.name}) not defined in attributes",
             )
 
-    def compute_hash(self):
+    def compute_hash(self) -> None:
         self._hash = hasher.hash_list(
             [
                 [x.render() for x in self.attributes],

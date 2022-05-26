@@ -10,7 +10,7 @@ from core.constructs.settings import Settings_Info
 from core.default.workspace import local_workspace_manager
 
 
-def create_workspace(args):
+def create_workspace(args) -> None:
     base_project_dir = os.getcwd()
     manager = local_workspace_manager(base_project_dir)
 
@@ -35,5 +35,3 @@ def create_workspace(args):
     )
 
     manager.create_new_workspace(workspace_info)
-
-    return

@@ -27,7 +27,7 @@ class StaticSiteOutput(ResourceOutputs):
         )
 
     @bucket_name.setter
-    def bucket_name(self, value: Any):
+    def bucket_name(self, value: Any) -> None:
         raise Exception
 
     @property
@@ -38,7 +38,7 @@ class StaticSiteOutput(ResourceOutputs):
         )
 
     @cloudfront_id.setter
-    def cloudfront_id(self, value: Any):
+    def cloudfront_id(self, value: Any) -> None:
         raise Exception
 
     @property
@@ -49,7 +49,7 @@ class StaticSiteOutput(ResourceOutputs):
         )
 
     @cloudfront_arn.setter
-    def cloudfront_arn(self, value: Any):
+    def cloudfront_arn(self, value: Any) -> None:
         raise Exception
 
     @property
@@ -60,7 +60,7 @@ class StaticSiteOutput(ResourceOutputs):
         )
 
     @site_url.setter
-    def site_url(self, value: Any):
+    def site_url(self, value: Any) -> None:
         raise Exception
 
 
@@ -121,66 +121,66 @@ class StaticSite(Resource):
         self.output = StaticSiteOutput(cdev_name)
 
     @property
-    def index_document(self):
+    def index_document(self) -> str:
         """The suffix for documents when request are made for a folder."""
         return self._index_document
 
     @index_document.setter
     @update_hash
-    def index_document(self, value: str):
+    def index_document(self, value: str) -> None:
         self._index_document = value
 
     @property
-    def error_document(self):
+    def error_document(self) -> str:
         """The absolute path of document within the site that will be used as a general error page."""
         return self._error_document
 
     @error_document.setter
     @update_hash
-    def error_document(self, value: str):
+    def error_document(self, value: str) -> None:
         self._error_document = value
 
     @property
-    def content_folder(self):
+    def content_folder(self) -> str:
         """The relative path within the `Workspace` of the folder containting the static content for the site."""
         return self._content_folder
 
     @content_folder.setter
     @update_hash
-    def content_folder(self, value: str):
+    def content_folder(self, value: str) -> None:
         self._content_folder = value
 
     @property
-    def sync_folder(self):
+    def sync_folder(self) -> str:
         """Whether to consider changes in the state of the content folder to trigger a sync of the content folder."""
         return self._sync_folder
 
     @sync_folder.setter
     @update_hash
-    def sync_folder(self, value: bool):
+    def sync_folder(self, value: bool) -> None:
         self._sync_folder = value
 
     @property
-    def domain_name(self):
+    def domain_name(self) -> str:
         """The domain name to associate with this site. This will set up the site to be aliased via DNS to the given domain name."""
         return self._domain_name
 
     @domain_name.setter
     @update_hash
-    def domain_name(self, value: str):
+    def domain_name(self, value: str) -> None:
         self._domain_name = value
 
     @property
-    def ssl_certificate_arn(self):
+    def ssl_certificate_arn(self) -> str:
         """The domain name to associate with this site. This will set up the site to be aliased via DNS to the given domain name."""
         return self._ssl_certificate_arn
 
     @ssl_certificate_arn.setter
     @update_hash
-    def ssl_certificate_arn(self, value: str):
+    def ssl_certificate_arn(self, value: str) -> None:
         self._ssl_certificate_arn = value
 
-    def compute_hash(self):
+    def compute_hash(self) -> None:
         # TODO update component to look at the content if the sync folder command is given
         self._hash = hasher.hash_list(
             [

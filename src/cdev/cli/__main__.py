@@ -206,7 +206,7 @@ def subcommand_function_wrapper(name, func):
     return inner
 
 
-def add_general_output_options(parser: argparse.ArgumentParser):
+def add_general_output_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--output",
         type=str,

@@ -5,7 +5,7 @@ from cdev.constructs.project import Project
 from cdev.cli.logger import set_global_logger_from_cli
 
 
-def environment_cli(args):
+def environment_cli(args) -> None:
     command = args[0]
     parsed_args = vars(args[1])
 
@@ -29,7 +29,7 @@ def environment_cli(args):
         )
 
 
-def list_environments() -> Tuple[List[str], str]:
+def list_environments() -> None:
     """
     Get the current list of environments and the current environment from the Project object.
     Must be called when the Project is in the UNINITIALIZED phase.
@@ -43,12 +43,11 @@ def list_environments() -> Tuple[List[str], str]:
     for environment_name in all_environment_names:
         if current_environment_name == environment_name:
             print(f"> {environment_name}")
-
         else:
             print(environment_name)
 
 
-def set_current_environment(new_current_environment: str):
+def set_current_environment(new_current_environment: str) -> None:
     myProject = Project.instance()
 
     try:
@@ -60,7 +59,7 @@ def set_current_environment(new_current_environment: str):
     print(f"Set Current Environment -> {new_current_environment}")
 
 
-def create_environment(new_environment_name: str):
+def create_environment(new_environment_name: str) -> None:
     myProject = Project.instance()
 
     myProject.create_environment(new_environment_name)
@@ -68,7 +67,7 @@ def create_environment(new_environment_name: str):
     print(f"Created Environment -> {new_environment_name}")
 
 
-def settings_information(key: str = None, new_value: str = None, all: bool = False):
+def settings_information(key: str = None, new_value: str = None, all: bool = False) -> None:
     myProject = Project.instance()
 
     if all and not new_value:
@@ -88,7 +87,6 @@ def settings_information(key: str = None, new_value: str = None, all: bool = Fal
                 )
 
             print(f"    {key} -> {settings_dict.get(key)}")
-
         else:
             # Print all values
             for key, value in settings_dict.items():

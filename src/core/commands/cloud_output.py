@@ -4,14 +4,14 @@ from ..constructs.output_manager import OutputManager
 from core.utils.logger import log
 
 
-def cloud_output_command_cli(args):
+def cloud_output_command_cli(args) -> None:
     config = args[0]
     cloud_output_command(config)
 
 
 def cloud_output_command(
     workspace: Workspace, output: OutputManager, cloud_output_id: str, only_value: bool
-):
+) -> None:
     log.debug("Executing Frontend")
 
     split_names = cloud_output_id.split(".")

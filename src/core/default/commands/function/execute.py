@@ -21,7 +21,7 @@ class execute(BaseCommand):
         Execute a function in the cloud.
     """
 
-    def add_arguments(self, parser: ArgumentParser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "function_id", type=str, help="The id of the function to execute."
         )
@@ -36,7 +36,7 @@ class execute(BaseCommand):
             help="Raw string form of event object to provide as input to the function. Can not be used with '--event' flag.",
         )
 
-    def command(self, *args, **kwargs):
+    def command(self, *args, **kwargs) -> None:
 
         full_function_name: str = kwargs.get("function_id")
 

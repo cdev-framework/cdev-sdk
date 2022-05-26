@@ -36,20 +36,20 @@ class parsed_function:
 
         self.needed_imports_hash = ""
 
-    def __eq__(self):
+    def __eq__(self) -> bool:
         return self.name == self.name
 
-    def add_line_numbers(self, line_no):
+    def add_line_numbers(self, line_no) -> None:
         # Use a sorted list
         self.needed_line_numbers.add(line_no)
 
-    def get_line_numbers(self):
+    def get_line_numbers(self) -> SortedList:
         return self.needed_line_numbers
 
-    def get_line_numbers_serializeable(self):
+    def get_line_numbers_serializeable(self) -> List:
         return list(self.needed_line_numbers)
 
-    def add_import(self, global_import_obj):
+    def add_import(self, global_import_obj) -> None:
         # self.add_line_numbers(global_import_obj.get_line_no())
         # original package will be how it is denoted in the import statement
         # for absolute packages we only want the top level name (absolutes don't start with '.')
@@ -75,7 +75,7 @@ class GlobalStatement:
     ast for a file.
     """
 
-    def __init__(self, node, line_no, symbols):
+    def __init__(self, node, line_no, symbols) -> None:
         self.line_no = line_no
 
         self.set_symbols(symbols)
@@ -90,13 +90,13 @@ class GlobalStatement:
     def __hash__(self):
         return self.hashed
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.hashed == other.hashed
 
     def __repr__(self):
         return f"<statement at {self.line_no[0]} thru {self.line_no[1]}>"
 
-    def set_symbols(self, symbols: List[str]):
+    def set_symbols(self, symbols: List[str]) -> None:
         self.symbols = symbols
 
     def get_symbols(self) -> List[str]:
@@ -133,11 +133,11 @@ class ImportStatement(GlobalStatement):
 class FunctionStatement(GlobalStatement):
 
     # function name is a func
-    func_name = ""
+    func_name: str = ""
 
-    has_decremented = False
+    has_decremented: bool = False
 
-    def __init__(self, node, line_no, symbol_table, name):
+    def __init__(self, node, line_no, symbol_table, name) -> None:
         super().__init__(node, line_no, symbol_table)
         self.func_name = name
         self.has_decremented = False
@@ -145,10 +145,10 @@ class FunctionStatement(GlobalStatement):
     def get_type(self):
         return GlobalStatementType.FUNCTION
 
-    def get_function_name(self):
+    def get_function_name(self) -> str:
         return self.func_name
 
-    def decrement_line_number(self):
+    def decrement_line_number(self) -> None:
         if self.has_decremented:
             return
 
@@ -165,7 +165,7 @@ class ClassDefinitionStatement(GlobalStatement):
     def get_type(self):
         return GlobalStatementType.CLASS_DEF
 
-    def get_class_name(self):
+    def get_class_name(self) -> str:
         return self.class_name
 
 
@@ -175,7 +175,7 @@ class file_information:
     """
 
     # init method or constructor
-    def __init__(self, location):
+    def __init__(self, location) -> None:
         if not os.path.isfile(location):
             raise FileNotFoundError(
                 f"parser_utils: could not find file at -> {location}"
@@ -251,10 +251,10 @@ class file_information:
             if len(match_obj.groups()) == 1:
                 self.include_overrides_lineno[match_obj.groups()[0]] = start[0]
 
-    def get_source_code(self):
+    def get_source_code(self) -> str:
         return "".join(self.src_code)
 
-    def get_lines_of_source_code(self, start_line, end_line):
+    def get_lines_of_source_code(self, start_line, end_line) -> str:
         return "".join(self.src_code[(start_line - 1) : (end_line)])
 
     def get_symbol_table(self):
@@ -263,31 +263,31 @@ class file_information:
     def get_ast(self):
         return self.ast
 
-    def add_global_statement(self, global_statement):
+    def add_global_statement(self, global_statement) -> None:
         self.top_level_statements.append(global_statement)
         self.statement_to_symbol[global_statement] = set()
 
     def get_global_statements(self) -> List[GlobalStatement]:
         return self.top_level_statements
 
-    def get_file_length(self):
+    def get_file_length(self) -> int:
         return len(self.src_code)
 
-    def add_global_function(self, name, global_obj):
+    def add_global_function(self, name, global_obj) -> None:
         self.global_functions[name] = global_obj
         self.add_global_statement(global_obj)
 
-    def add_global_import(self, global_obj):
+    def add_global_import(self, global_obj) -> None:
         self.imported_symbol_to_global_statement[global_obj.as_symbol] = global_obj
 
         self.add_global_statement(global_obj)
 
-    def add_class_definition(self, name, global_obj):
+    def add_class_definition(self, name, global_obj) -> None:
         self.global_functions[name] = global_obj
         self.add_global_statement(global_obj)
 
-    def add_parsed_functions(self, func):
+    def add_parsed_functions(self, func) -> None:
         self.parsed_functions.append(func)
 
-    def set_imported_symbols(self, symbols):
+    def set_imported_symbols(self, symbols) -> None:
         self.imported_symbols = symbols

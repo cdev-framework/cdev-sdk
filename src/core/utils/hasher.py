@@ -52,7 +52,7 @@ def hash_string(val: str) -> str:
     return hashlib.md5(val.encode()).hexdigest()
 
 
-def clear_file_cache():
+def clear_file_cache() -> None:
     """Clear the cache used by the `hash_file` utility."""
     FILE_CACHE.cache = {}
 
@@ -87,8 +87,8 @@ def hash_file(fp: FilePath, bypass_cache: bool = False) -> str:
         raise Cdev_Error(f"Could not find file ({fp}) to hash", FileNotFoundError)
 
     with open(fp, "rb") as fh:
-        hash = hashlib.md5(fh.read()).hexdigest()
+        the_hash = hashlib.md5(fh.read()).hexdigest()
 
-    FILE_CACHE.cache[fp] = hash
+    FILE_CACHE.cache[fp] = the_hash
 
-    return hash
+    return the_hash

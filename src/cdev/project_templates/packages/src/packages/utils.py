@@ -1,5 +1,4 @@
 import boto3
-import jinja2
 
 
 def helper_function():

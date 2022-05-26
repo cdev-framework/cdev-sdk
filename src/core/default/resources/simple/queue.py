@@ -179,7 +179,7 @@ class Queue(PermissionsAvailableMixin, Resource):
         self.available_permissions: QueuePermissions = QueuePermissions(cdev_name)
 
     @property
-    def is_fifo(self):
+    def is_fifo(self) -> bool:
         """Should the Queue guarantee ordering of messages"""
         return self._is_fifo
 
@@ -236,7 +236,7 @@ class Queue(PermissionsAvailableMixin, Resource):
 
         return self._event
 
-    def compute_hash(self):
+    def compute_hash(self) -> None:
         self._hash = hasher.hash_list([self.is_fifo, self.nonce])
 
     def render(self) -> queue_model:

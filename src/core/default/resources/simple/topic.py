@@ -101,7 +101,7 @@ class TopicOutput(ResourceOutputs):
         )
 
     @topic_name.setter
-    def topic_name(self, value: Any):
+    def topic_name(self, value: Any) -> None:
         raise Exception
 
 
@@ -134,13 +134,13 @@ class Topic(PermissionsAvailableMixin, Resource):
         self._event = None
 
     @property
-    def is_fifo(self):
+    def is_fifo(self) -> bool:
         """Should the Pub/Sub Topic guarantee ordering of messages"""
         return self._is_fifo
 
     @is_fifo.setter
     @update_hash
-    def is_fifo(self, value: bool):
+    def is_fifo(self, value: bool) -> None:
         self._is_fifo = value
 
     def create_event_trigger(self) -> TopicEvent:
@@ -182,7 +182,7 @@ class Topic(PermissionsAvailableMixin, Resource):
 
         return self._event
 
-    def compute_hash(self):
+    def compute_hash(self) -> None:
         self._hash = hasher.hash_list([self.is_fifo, self.nonce])
 
     def render(self) -> simple_topic_model:

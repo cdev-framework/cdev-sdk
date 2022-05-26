@@ -123,34 +123,34 @@ class Resource:
         raise NotImplementedError
 
     @property
-    def name(self):
+    def name(self) -> str:
         """The name of the created resource"""
         return self._name
 
     @name.setter
-    def name(self, value: str):
+    def name(self, value: str) -> None:
         raise Exception("The Name of a resource can only be set when initialized.")
 
     @property
-    def ruuid(self):
+    def ruuid(self) -> str:
         """The ruuid of the created resource"""
         return self._ruuid
 
     @ruuid.setter
-    def ruuid(self, value: str):
+    def ruuid(self, value: str) -> None:
         raise Exception("The Ruuid of a resource can only be set when initialized.")
 
     @property
-    def nonce(self):
+    def nonce(self) -> str:
         """The nonce of the created resource"""
         return self._nonce
 
     @nonce.setter
-    def nonce(self, value: str):
+    def nonce(self, value: str) -> None:
         raise Exception("The nonce of a resource can only be set when initialized.")
 
     @property
-    def hash(self):
+    def hash(self) -> str:
         """The cdev hash of the resource"""
         if self._hash is None:
             raise Exception
@@ -158,7 +158,7 @@ class Resource:
         return self._hash
 
     @hash.setter
-    def hash(self, value: str):
+    def hash(self, value: str) -> None:
         raise Exception(
             "The `hash` of a Resource can only be set by the `compute_hash` method"
         )
@@ -299,7 +299,7 @@ class Resource_Reference:
 
     def __init__(
         self, component_name: str, name: str, is_in_parent_resource_state: bool = False
-    ):
+    ) -> None:
         self.component_name = component_name
         self.name = name
         self.is_in_parent_resource_state = is_in_parent_resource_state
@@ -334,12 +334,12 @@ class PermissionsAvailableMixin:
         return self._available_permissions
 
     @available_permissions.setter
-    def available_permissions(self, permissions: Any):
+    def available_permissions(self, permissions: Any) -> None:
         self._available_permissions = permissions
 
 
 class PermissionsGrantableMixin:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)  # forwards all unused arguments
         self._granted_permissions = []  # Needs to be set later in the calling subclass
 
@@ -349,5 +349,5 @@ class PermissionsGrantableMixin:
 
     @granted_permissions.setter
     @update_hash
-    def granted_permissions(self, value: List):
+    def granted_permissions(self, value: List) -> None:
         self._granted_permissions = value

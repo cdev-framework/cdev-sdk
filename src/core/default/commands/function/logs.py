@@ -17,7 +17,7 @@ class show_logs(BaseCommand):
         Get the logs of a deployed lambda function
     """
 
-    def add_arguments(self, parser: ArgumentParser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "function_name",
             type=str,
@@ -37,7 +37,7 @@ class show_logs(BaseCommand):
             help="number of events to show. Must be used with --tail.",
         )
 
-    def command(self, *args, **kwargs):
+    def command(self, *args, **kwargs) -> None:
 
         full_function_name: str = kwargs.get("function_name")
         component_name = full_function_name.split(".")[0]
@@ -84,7 +84,7 @@ class show_logs(BaseCommand):
                 )
 
 
-def _watch_log_group(group_name: str, stdout: OutputWrapper, args=None):
+def _watch_log_group(group_name: str, stdout: OutputWrapper, args=None) -> None:
     cloud_watch_client = client("logs")
     _previous_refresh_time = int(
         (time.mktime(datetime.datetime.now().timetuple()) - 60) * 1000

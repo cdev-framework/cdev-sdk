@@ -133,7 +133,7 @@ class Component:
     method or other defined methods.
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.name = name
 
     def render(self) -> ComponentModel:

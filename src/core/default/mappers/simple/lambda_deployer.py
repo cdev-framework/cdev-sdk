@@ -1,7 +1,7 @@
-import math
+
 import os
 from time import sleep
-from typing import Any, Dict, FrozenSet, Union, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 from uuid import uuid4
 
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
@@ -9,7 +9,6 @@ from core.constructs.output_manager import OutputTask
 from core.constructs.models import frozendict
 
 from core.default.resources.simple import xlambda as simple_xlambda
-from core.default.resources.simple.iam import permission_arn_model, permission_model
 
 from core.utils import paths as core_paths, hasher
 from core.utils.logger import log
@@ -174,7 +173,7 @@ def _remove_simple_lambda(
     previous_resource: simple_xlambda.simple_function_model,
     previous_output: Dict,
     output_task: OutputTask,
-) -> bool:
+) -> None:
     # Steps:
     # Remove and event that is on the function to make sure resources are properly cleaned up
     # Remove the actual function
@@ -203,7 +202,7 @@ def _remove_simple_lambda(
         "lambda", "delete_function", {"FunctionName": cloud_id}
     )
 
-    role_arn = previous_output.get("role_id")
+    # role_arn = previous_output.get("role_id")
     role_name = previous_output.get("role_name")
     permissions = previous_output.get("permissions")
 
@@ -221,7 +220,7 @@ def _update_simple_lambda(
     new_resource: simple_xlambda.simple_function_model,
     previous_output: Dict,
     output_task: OutputTask,
-) -> bool:
+) -> Dict:
     # Updates can be of:
     # Update source code or dependencies
     # Update configuration
@@ -496,14 +495,13 @@ def _upload_s3_dependency(
 ##### Main Entry Point
 #######################
 
-
 def handle_simple_lambda_function_deployment(
     transaction_token: str,
     namespace_token: str,
     resource_diff: Resource_Difference,
     previous_output: Dict[str, Any],
     output_task: OutputTask,
-) -> Dict:
+) -> Optional[Dict]:
     try:
         log.debug("Calling lambda mapper")
         if resource_diff.action_type == Resource_Change_Type.CREATE:
@@ -549,7 +547,7 @@ def _create_simple_layer(
     namespace_token: str,
     resource: simple_xlambda.dependency_layer_model,
     output_task: OutputTask,
-):
+) -> Dict:
 
     output_task.update(
         comment=f"Creating dependencies for lambda function {resource.name}"
@@ -583,13 +581,13 @@ def _update_simple_layer(
     new_resource: simple_xlambda.dependency_layer_model,
     previous_output: Dict,
     output_task: OutputTask,
-):
+) -> Dict:
     return _create_simple_layer(
         transaction_token, namespace_token, new_resource, output_task
     )
 
 
-def _remove_simple_layer(transaction_token, resource, previous_output, output_task):
+def _remove_simple_layer(transaction_token, resource, previous_output, output_task) -> None:
     aws_client.run_client_function(
         "lambda",
         "delete_layer_version",
@@ -606,7 +604,7 @@ def handle_simple_layer_deployment(
     resource_diff: Resource_Difference,
     previous_output: Dict[str, Any],
     output_task: OutputTask,
-) -> Dict:
+) -> Optional[Dict]:
     try:
         if resource_diff.action_type == Resource_Change_Type.CREATE:
             return _create_simple_layer(

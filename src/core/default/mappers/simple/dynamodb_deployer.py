@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from uuid import uuid4
 
 
@@ -15,7 +15,7 @@ def _create_simple_dynamodb_table(
     namespace_token: str,
     resource: table.simple_table_model,
     output_task: OutputTask,
-) -> bool:
+) -> Dict:
 
     full_namespace_suffix = hasher.hash_list([namespace_token, str(uuid4())])
     table_name = f"cdev-table-{full_namespace_suffix}"
@@ -67,13 +67,13 @@ def _update_simple_dynamodb_table(
     new_resource: table.simple_table_model,
     previous_output: Dict,
     output_task: OutputTask,
-) -> bool:
+) -> Dict:
     raise Exception
 
 
 def _remove_simple_dynamodb_table(
     transaction_token: str, previous_output: Dict, output_task: OutputTask
-) -> bool:
+) -> None:
 
     table_name = previous_output.get("table_name")
 
@@ -97,14 +97,13 @@ def handle_simple_table_deployment(
     resource_diff: Resource_Difference,
     previous_output: Dict[str, Any],
     output_task: OutputTask,
-) -> Dict:
+) -> Optional[Dict]:
 
     if resource_diff.action_type == Resource_Change_Type.CREATE:
         return _create_simple_dynamodb_table(
             transaction_token, namespace_token, resource_diff.new_resource, output_task
         )
     elif resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY:
-
         return _update_simple_dynamodb_table(
             transaction_token,
             namespace_token,
@@ -113,9 +112,6 @@ def handle_simple_table_deployment(
             previous_output,
             output_task,
         )
-
     elif resource_diff.action_type == Resource_Change_Type.DELETE:
-
         _remove_simple_dynamodb_table(transaction_token, previous_output, output_task)
-
         return {}

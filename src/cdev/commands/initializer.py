@@ -41,7 +41,7 @@ AVAILABLE_TEMPLATES = [
 ]
 
 
-def create_project_cli(args):
+def create_project_cli(args) -> None:
     config = args
     set_global_logger_from_cli(config.loglevel)
 
@@ -62,7 +62,7 @@ def create_project_cli(args):
     _load_template(template_name)
 
 
-def _load_template(template_name: str):
+def _load_template(template_name: str) -> None:
     if not template_name:
         return
 
@@ -84,7 +84,7 @@ def _load_template(template_name: str):
     print(f"Created Project From Template: {template_name}")
 
 
-def create_project(project_name: str, base_directory: DirectoryPath = None):
+def create_project(project_name: str, base_directory: DirectoryPath = None) -> None:
 
     if not base_directory:
         base_directory = os.getcwd()
@@ -149,7 +149,7 @@ def create_project(project_name: str, base_directory: DirectoryPath = None):
     new_project.set_current_environment(DEFAULT_ENVIRONMENTS[-1])
 
 
-def _create_folder_structure(base_directory: DirectoryPath, extra_settings: List[str]):
+def _create_folder_structure(base_directory: DirectoryPath, extra_settings: List[str]) -> None:
     """Create a skeleton file structure needed to make a project.
 
     Args:
@@ -188,7 +188,7 @@ def _create_folder_structure(base_directory: DirectoryPath, extra_settings: List
         os.mkdir(os.path.join(base_settings_folder, f"{environment}_secrets"))
 
 
-def load_project(args):
+def load_project(args) -> None:
     base_directory = os.getcwd()
 
     project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)
@@ -196,7 +196,7 @@ def load_project(args):
     local_project(project_info_location)
 
 
-def load_and_initialize_project(args):
+def load_and_initialize_project(args) -> None:
     base_directory = os.getcwd()
 
     project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)
