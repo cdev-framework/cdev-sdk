@@ -1,15 +1,11 @@
-from argparse import ArgumentParser
 import json
 import os
-from typing import List, Dict
 
+from argparse import ArgumentParser
+from typing import Dict
 from boto3 import client
 
-from core.constructs.commands import BaseCommand, OutputWrapper
-from core.constructs.workspace import Workspace
-from core.utils import hasher
-
-
+from core.constructs.commands import BaseCommand
 from core.default.commands.function.utils import get_cloud_id_from_cdev_name
 
 RUUID = "cdev::simple::function"
@@ -38,36 +34,10 @@ class execute(BaseCommand):
 
     def command(self, *args, **kwargs) -> None:
 
-        full_function_name: str = kwargs.get("function_id")
+        event_data = self._get_event_data(*args, **kwargs)
 
-        event_file_location: str = kwargs.get("event")
-        event_raw_data: str = kwargs.get("event_data")
-
-        if event_file_location and event_raw_data:
-            raise Exception("Can not provide both '--event-data' and '--event'")
-
-        event_data = {}
-
-        if event_file_location:
-            if not os.path.isfile(event_file_location):
-                raise Exception(f"{event_file_location} is not a valid file location")
-
-            with open(event_file_location) as fh:
-                try:
-                    event_data = json.load(fh)
-                except Exception as e:
-                    print(e)
-                    raise Exception(f"Could not load {event_file_location} as json")
-
-        if event_raw_data:
-            try:
-                event_data = json.loads(event_raw_data)
-            except Exception as e:
-                print(e)
-                raise Exception(f"Could not load {event_raw_data} as json")
-
-        component_name = full_function_name.split(".")[0]
-        function_name = full_function_name.split(".")[1]
+        full_function_name = kwargs.get("function_id")
+        component_name, function_name = self.get_component_and_resource_from_qualified_name(full_function_name)
 
         cloud_name = get_cloud_id_from_cdev_name(component_name, function_name)
 
@@ -81,3 +51,31 @@ class execute(BaseCommand):
         )
 
         print(response)
+
+    def _get_event_data(self, *args, **kwargs) -> Dict:
+        event_file_location: str = kwargs.get("event")
+        event_raw_data: str = kwargs.get("event_data")
+
+        if event_file_location and event_raw_data:
+            raise Exception("Can not provide both '--event-data' and '--event'")
+
+        if event_file_location:
+            if not os.path.isfile(event_file_location):
+                raise Exception(f"{event_file_location} is not a valid file location")
+
+            with open(event_file_location) as fh:
+                try:
+                    event_data = json.load(fh)
+                    return event_data
+                except Exception as e:
+                    print(e)
+                    raise Exception(f"Could not load {event_file_location} as json")
+
+        if event_raw_data:
+            try:
+                event_data = json.loads(event_raw_data)
+                return event_data
+            except Exception as e:
+                print(e)
+                raise Exception(f"Could not load {event_raw_data} as json")
+        return {}
