@@ -100,8 +100,6 @@ class Workspace_State(str, Enum):
     EXECUTING_BACKEND = "EXECUTING_BACKEND"
 
 
-# ANIBAL: I would rename this into a more obvious
-# require_phase or something like that
 def wrap_phase(phases: List[Workspace_State]) -> Callable[[F], F]:
     """
     Annotation that denotes when a function can be executed within the life cycle of a workspace.

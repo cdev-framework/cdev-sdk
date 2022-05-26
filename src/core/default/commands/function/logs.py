@@ -1,8 +1,7 @@
-import time, datetime
-
 from argparse import ArgumentParser
-from typing import List, Dict
+import time, math, datetime
 
+from typing import List, Dict
 from boto3 import client
 
 from core.constructs.commands import BaseCommand, OutputWrapper
@@ -40,10 +39,12 @@ class show_logs(BaseCommand):
 
     def command(self, *args, **kwargs) -> None:
 
-        component_name, function_name = self.get_component_and_resource_from_qualified_name(kwargs.get("function_name"))
-
-        # tail_val = kwargs.get("tail")
-        # number_val = kwargs.get("number")
+        full_function_name: str = kwargs.get("function_name")
+        component_name = full_function_name.split(".")[0]
+        function_name = full_function_name.split(".")[1]
+        watch_val = kwargs.get("watch")
+        tail_val = kwargs.get("tail")
+        number_val = kwargs.get("number")
 
         cloud_name = get_cloud_id_from_cdev_name(component_name, function_name).split(
             ":"
@@ -57,7 +58,6 @@ class show_logs(BaseCommand):
 
         cloud_watch_group_name = f"/aws/lambda/{cloud_name}"
 
-        watch_val = kwargs.get("watch")
         if watch_val:
             _watch_log_group(cloud_watch_group_name, self.stdout)
             return
@@ -86,59 +86,57 @@ class show_logs(BaseCommand):
 
 def _watch_log_group(group_name: str, stdout: OutputWrapper, args=None) -> None:
     cloud_watch_client = client("logs")
-
+    _previous_refresh_time = int(
+        (time.mktime(datetime.datetime.now().timetuple()) - 60) * 1000
+    )
     events_hash = set()
-    keep_watching = True
-    while keep_watching:
-        _previous_refresh_time = int(
-            (time.mktime(datetime.datetime.now().timetuple()) - 60) * 1000
-        )
-        keep_watching = _read_from_streams(cloud_watch_client, group_name, stdout, events_hash, _previous_refresh_time)
 
+    while True:
+        try:
 
-def _read_from_streams(cloud_watch_client, group_name: str, stdout: OutputWrapper, events_hash, _previous_refresh_time) -> bool:
-    try:
-        log_streams_rv = cloud_watch_client.describe_log_streams(
-            logGroupName=group_name,
-            orderBy="LastEventTime",
-        )
-
-        streams = _get_needed_streams(
-            log_streams_rv.get("logStreams"), _previous_refresh_time
-        )
-
-        for stream in streams:
-            response = cloud_watch_client.get_log_events(
+            log_streams_rv = cloud_watch_client.describe_log_streams(
                 logGroupName=group_name,
-                logStreamName=stream,
-                startTime=_previous_refresh_time,
-                startFromHead=True,
+                orderBy="LastEventTime",
             )
 
-            for event in response.get("events"):
-                event_hash = hasher.hash_list(
-                    [
-                        event.get("timestamp"),
-                        event.get("message"),
-                        event.get("ingestionTime"),
-                    ]
+            streams = _get_needed_streams(
+                log_streams_rv.get("logStreams"), _previous_refresh_time
+            )
+
+            for stream in streams:
+                response = cloud_watch_client.get_log_events(
+                    logGroupName=group_name,
+                    logStreamName=stream,
+                    startTime=_previous_refresh_time,
+                    startFromHead=True,
                 )
 
-                if event_hash not in events_hash:
-                    stdout.write(
-                        f"{datetime.datetime.fromtimestamp(event.get('timestamp')/1000).strftime('%Y-%m-%d %H:%M:%S')} - {event.get('message')}"
+                for event in response.get("events"):
+                    event_hash = hasher.hash_list(
+                        [
+                            event.get("timestamp"),
+                            event.get("message"),
+                            event.get("ingestionTime"),
+                        ]
                     )
 
-                events_hash.add(event_hash)
+                    if not event_hash in events_hash:
+                        stdout.write(
+                            f"{datetime.datetime.fromtimestamp(event.get('timestamp')/1000).strftime('%Y-%m-%d %H:%M:%S')} - {event.get('message')}"
+                        )
 
-        time.sleep(0.2)
-        return True
-    except KeyboardInterrupt:
-        stdout.write("Interrupted")
+                    events_hash.add(event_hash)
 
-    return False
+                _previous_refresh_time = int(
+                    (time.mktime(datetime.datetime.now().timetuple()) - 60) * 1000
+                )
+
+                time.sleep(0.2)
+        except KeyboardInterrupt:
+            return
 
 
 def _get_needed_streams(streams: List[Dict], start_time: float = None) -> List[str]:
     stream_names = [x.get("logStreamName") for x in streams]
+
     return stream_names

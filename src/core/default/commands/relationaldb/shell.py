@@ -1,7 +1,6 @@
-import cmd
-
 from argparse import ArgumentParser
-from typing import List, Tuple
+import cmd
+from typing import List
 
 import aurora_data_api
 from rich.console import Console
@@ -26,7 +25,10 @@ class shell(BaseCommand):
 
     def command(self, *args, **kwargs) -> None:
 
-        component_name, database_name = self.get_component_and_resource_from_qualified_name(kwargs.get("resource"))
+        full_database_name: str = kwargs.get("resource")
+        component_name = full_database_name.split(".")[0]
+        database_name = full_database_name.split(".")[1]
+
         cluster_arn, secret_arn, db_name = get_db_info_from_cdev_name(
             component_name, database_name
         )
@@ -45,30 +47,47 @@ class db_connection:
         self._cluster_arn = cluster_arn
         self._secret_arn = secret_arn
 
-    def execute(self, line: str) -> Tuple:
-        with self.conn.cursor() as cursor:
-            cursor.execute(line)
+    def execute(self, line: str) -> None:
+        try:
+            with self.conn.cursor() as cursor:
+                cursor.execute(line)
 
-            return (
-                cursor.description,
-                cursor.fetchall(),
-                cursor._current_response.get("numberOfRecordsUpdated"),
-            )
+                return (
+                    cursor.description,
+                    cursor.fetchall(),
+                    cursor._current_response.get("numberOfRecordsUpdated"),
+                )
+
+        except Exception as e:
+            raise e
 
     def begin(self) -> None:
-        res = self.conn._client.begin_transaction(
-            database=self._db_name,
-            resourceArn=self._cluster_arn,
-            secretArn=self._secret_arn,
-        )
+        try:
+            res = self.conn._client.begin_transaction(
+                database=self._db_name,
+                resourceArn=self._cluster_arn,
+                secretArn=self._secret_arn,
+            )
 
-        self.conn._transaction_id = res["transactionId"]
+            self.conn._transaction_id = res["transactionId"]
+
+        except Exception as e:
+            raise e
 
     def commit(self) -> None:
-        self.conn.commit()
+        try:
+
+            self.conn.commit()
+
+        except Exception as e:
+            raise e
 
     def rollback(self) -> None:
-        self.conn.rollback()
+        try:
+            self.conn.rollback()
+
+        except Exception as e:
+            raise e
 
 
 class fmt:
