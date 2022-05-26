@@ -19,7 +19,7 @@ class cp(BaseCommand):
     Command to mirror s3 `cp` command.
 
     """
-    def add_arguments(self, parser: ArgumentParser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "source",
             type=str,
@@ -37,7 +37,7 @@ class cp(BaseCommand):
             help="The destination of the file. Must either be a local path or bucket location (bucket://<component>.<name>/<path>)",
         )
 
-    def command(self, *args, **kwargs):
+    def command(self, *args, **kwargs) -> None:
 
         source_raw = kwargs.get("source")
         destination_raw = kwargs.get("destination")

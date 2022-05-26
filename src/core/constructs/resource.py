@@ -2,15 +2,14 @@
 
 """
 from functools import wraps
-from typing import Dict, TypeVar, Union, List, Optional, Set, Callable, Any
+from typing import List, Optional, Any
 
 from enum import Enum
 
 from core.constructs.models import ImmutableModel
 from core.constructs.cloud_output import OutputType, Cloud_Output_Str
 from core.constructs.types import F
-
-from ..utils.hasher import hash_list
+from core.utils.hasher import hash_list
 
 
 ##################

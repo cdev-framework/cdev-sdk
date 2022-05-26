@@ -5,8 +5,7 @@ import boto3
 import os
 import mimetypes
 
-from core.constructs.commands import BaseCommand, OutputWrapper
-from core.default.resources.simple.object_store import Bucket, bucket_model
+from core.constructs.commands import BaseCommand
 from core.utils.paths import get_full_path_from_workspace_base
 
 from . import utils
@@ -17,7 +16,7 @@ class sync_files(BaseCommand):
     Command to sync a folder of content to a bucket
     """
 
-    def add_arguments(self, parser: ArgumentParser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "resource_name", type=str, help="The bucket resource you want to sync."
         )
@@ -32,7 +31,7 @@ class sync_files(BaseCommand):
             help="Clear the existing content of the bucket before syncing the new data.",
         )
 
-    def command(self, *args, **kwargs):
+    def command(self, *args, **kwargs) -> None:
         full_resource_name: str = kwargs.get("resource_name")
         component_name = full_resource_name.split(".")[0]
         bucket_cdev_name = full_resource_name.split(".")[1]

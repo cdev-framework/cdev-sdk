@@ -2,7 +2,7 @@
 
 """
 
-from typing import Dict, Union, List, Optional, Set, Callable
+from typing import Dict, List, Set, Callable
 
 from .resource import Resource_Difference
 

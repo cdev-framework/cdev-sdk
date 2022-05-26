@@ -1,21 +1,11 @@
 import json
 import os
-<<<<<<< Updated upstream
 
 from argparse import ArgumentParser
 from typing import Dict
-
-from boto3 import client
-
-from core.constructs.commands import BaseCommand, OutputWrapper
-=======
-
 from boto3 import client
 
 from core.constructs.commands import BaseCommand
-
-
->>>>>>> Stashed changes
 from core.default.commands.function.utils import get_cloud_id_from_cdev_name
 
 RUUID = "cdev::simple::function"

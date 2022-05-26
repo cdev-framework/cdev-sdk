@@ -5,7 +5,7 @@ Properties of a component:
 """
 
 from enum import Enum
-from typing import Dict, Union, List, Optional, Set
+from typing import Dict, List, Optional
 
 
 from pydantic import BaseModel
