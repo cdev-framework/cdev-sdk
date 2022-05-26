@@ -71,6 +71,14 @@ def _remove_simple_bucket(
 ) -> None:
 
     previous_bucket_name = previous_output.get("bucket_name")
+    files = raw_aws_client.run_client_function(
+        "s3", "list_objects_v2", {"Bucket": previous_bucket_name}
+    )
+    if 'Contents' in files:
+        for file in files['Contents']:
+            raw_aws_client.run_client_function(
+                "s3", "delete_object", {"Bucket": previous_bucket_name,"Key": file['Key']}
+            )
 
     output_task.update(advance=1, comment=f"Deleting Bucket {previous_bucket_name}")
 
