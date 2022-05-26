@@ -146,7 +146,7 @@ def evaluate_dynamic_output(
                 ]
             )
 
-            if not func_name in object_methods:
+            if func_name not in object_methods:
                 print(object_methods)
                 raise Exception(
                     f"'{func_name}' not in available methods for {intermediate_value} ({type(intermediate_value)})"
@@ -160,7 +160,8 @@ def evaluate_dynamic_output(
                 new_rv = getattr(intermediate_value, func_name)(*xargs)
             elif (not xargs) and (not kwargs):
                 new_rv = getattr(intermediate_value, func_name)()
-
+            else:
+                pass
         intermediate_value = new_rv
 
     return intermediate_value
@@ -191,6 +192,7 @@ class Cloud_Output:
 
     def hash(self) -> str:
         return hasher.hash_list([self._name, self._ruuid, self._key, self._type])
+
 
 
 class Cloud_Output_Dynamic(Cloud_Output):
@@ -224,7 +226,6 @@ class Cloud_Output_Dynamic(Cloud_Output):
                 self.render().output_operations if self._operations else "",
             ]
         )
-
 
 ########################
 ##### Types of Output

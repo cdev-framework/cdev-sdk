@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional
 
 from core.constructs.resource import ResourceModel
 from core.constructs.workspace import Workspace
@@ -6,7 +6,7 @@ from core.constructs.workspace import Workspace
 RUUID = "cdev::simple::table"
 
 
-def get_cloud_output_from_cdev_name(component_name: str, cdev_name: str) -> str:
+def get_cloud_output_from_cdev_name(component_name: str, cdev_name: str) -> Optional[Dict]:
     try:
         ws = Workspace.instance()
 
@@ -21,7 +21,7 @@ def get_cloud_output_from_cdev_name(component_name: str, cdev_name: str) -> str:
         return None
 
 
-def get_resource_from_cdev_name(component_name: str, cdev_name: str) -> ResourceModel:
+def get_resource_from_cdev_name(component_name: str, cdev_name: str) -> Optional[ResourceModel]:
     try:
         ws = Workspace.instance()
 

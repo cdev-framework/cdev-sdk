@@ -23,45 +23,23 @@ from core.constructs.resource import (
 
 
 class OutputManager:
-
     def __init__(self, console: Console = None, progress: Progress = None) -> None:
 
-        if console:
-            self._console = console
-        else:
-            self._console = Console()
-
-        if progress:
-            self._progress = progress
-        else:
-            self._progress = None
+        self._console = console or Console()
+        self._progress = progress
 
     def print_header(self, resource_state_uuid: str) -> None:
         print(f"Resource State: {resource_state_uuid}")
-
         print("")
 
     def print_local_state(self, rendered_components: List[ComponentModel]) -> None:
-
         rendered_components.sort(key=lambda x: x.name)
 
         self._console.print(f"Current State:")
         for component in rendered_components:
             self._console.print(f"Component: [bold blue]{component.name}[/bold blue]")
-
-            if component.resources:
-                self._console.print(f"    Resources:")
-                for resource in component.resources:
-                    self._console.print(
-                        f"        [bold blue]{resource.name} ({resource.ruuid})[/bold blue]"
-                    )
-
-            if component.references:
-                self._console.print(f"    References:")
-                for reference in component.references:
-                    self._console.print(
-                        f"        [bold blue]From {reference.component_name} reference {reference.name} ({reference.ruuid})[/bold blue]"
-                    )
+            self._print_component_resources(component)
+            self._print_component_references(component)
 
         self._console.print("")
 
@@ -81,6 +59,10 @@ class OutputManager:
             List[Resource_Reference_Difference],
         ],
     ) -> None:
+
+        if not any(differences):
+            return
+
         component_differences = differences[0]
         resource_differences = differences[1]
         reference_differences = differences[2]
@@ -88,82 +70,9 @@ class OutputManager:
         self._console.print(f"[bold white]Differences in State:[/bold white]")
 
         for component_diff in component_differences:
-            if component_diff.action_type == Component_Change_Type.UPDATE_NAME:
-                self._console.print(
-                    f"    [bold yellow]Update Name: [/bold yellow][bold blue]{component_diff.previous_name} to {component_diff.new_name} (component)[/bold blue]"
-                )
-                continue
-
-            elif component_diff.action_type == Component_Change_Type.UPDATE_IDENTITY:
-                self._console.print(
-                    f"    [bold yellow]Update Identity: [/bold yellow][bold blue]{component_diff.new_name} (component)[/bold blue]"
-                )
-
-            elif component_diff.action_type == Component_Change_Type.CREATE:
-                self._console.print(
-                    f"    [bold green]Create: [/bold green][bold blue]{component_diff.new_name} (component)[/bold blue]"
-                )
-
-            elif component_diff.action_type == Component_Change_Type.DELETE:
-                self._console.print(
-                    f"    [bold red]Delete: [/bold red] [bold blue]{component_diff.previous_name} (component)[/bold blue]"
-                )
-
-            resource_changes = [
-                x
-                for x in resource_differences
-                if x.component_name == component_diff.new_name
-                or x.component_name == component_diff.previous_name
-            ]
-
-            if resource_changes:
-                for resource_diff in resource_changes:
-                    if resource_diff.action_type == Resource_Change_Type.CREATE:
-                        self._console.print(
-                            f"        [bold green]Create:[/bold green][bold blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
-                        )
-
-                    elif resource_diff.action_type == Resource_Change_Type.DELETE:
-                        self._console.print(
-                            f"        [bold red]Delete:[/bold red][bold blue] {resource_diff.previous_resource.name} ({resource_diff.previous_resource.ruuid})[/bold blue]"
-                        )
-
-                    elif (
-                        resource_diff.action_type
-                        == Resource_Change_Type.UPDATE_IDENTITY
-                    ):
-                        self._console.print(
-                            f"        [bold yellow]Update:[/bold yellow][bold blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
-                        )
-
-                    elif resource_diff.action_type == Resource_Change_Type.UPDATE_NAME:
-                        self._console.print(
-                            f"        [bold yellow]Update Name:[/bold yellow][bold blue] from {resource_diff.previous_resource.name} to {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
-                        )
-
-            reference_changes = [
-                x
-                for x in reference_differences
-                if x.originating_component_name == component_diff.new_name
-            ]
-
-            if reference_changes:
-                for reference_diff in reference_changes:
-                    if (
-                        reference_diff.action_type
-                        == Resource_Reference_Change_Type.CREATE
-                    ):
-                        self._console.print(
-                            f"        [bold green]Create reference:[/bold green][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]"
-                        )
-
-                    elif (
-                        reference_diff.action_type
-                        == Resource_Reference_Change_Type.DELETE
-                    ):
-                        self._console.print(
-                            f"        [bold red]Delete reference:[/bold red][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]"
-                        )
+            self._print_component_differences(component_diff)
+            self._print_component_resource_differences(component_diff, resource_differences)
+            self._print_component_reference_differences(component_diff, reference_differences)
 
     def create_task(
         self,
@@ -203,6 +112,7 @@ class OutputManager:
             Resource_Difference, Resource_Reference_Difference, Component_Difference
         ],
     ) -> str:
+
         if isinstance(node, Resource_Difference):
             if node.action_type == Resource_Change_Type.CREATE:
                 return f"[bold green]Creating:[/bold green][bold blue] {node.new_resource.name} ({node.new_resource.ruuid})[/bold blue]"
@@ -241,6 +151,105 @@ class OutputManager:
                 f"Trying to deploy node {node} but it is not a correct type "
             )
 
+    def _print_component_resources(self, component) -> None:
+        if component.resources is None or any(component.resources):
+            return
+
+        self._console.print(f"    Resources:")
+        for resource in component.resources:
+            self._console.print(
+                f"        [bold blue]{resource.name} ({resource.ruuid})[/bold blue]"
+            )
+
+    def _print_component_references(self, component) -> None:
+        if component.references is None or any(component.references):
+            return
+
+        self._console.print(f"    References:")
+        for reference in component.references:
+            self._console.print(
+                f"        [bold blue]From {reference.component_name} reference {reference.name} ({reference.ruuid})[/bold blue]"
+            )
+
+    def _print_component_differences(self, component_diff: Component_Difference) -> None:
+        if component_diff.action_type == Component_Change_Type.UPDATE_NAME:
+            self._console.print(
+                f"    [bold yellow]Update Name: [/bold yellow][bold blue]{component_diff.previous_name} to {component_diff.new_name} (component)[/bold blue]"
+            )
+            return
+
+        if component_diff.action_type == Component_Change_Type.UPDATE_IDENTITY:
+            self._console.print(
+                f"    [bold yellow]Update Identity: [/bold yellow][bold blue]{component_diff.new_name} (component)[/bold blue]"
+            )
+            return
+
+        if component_diff.action_type == Component_Change_Type.CREATE:
+            self._console.print(
+                f"    [bold green]Create: [/bold green][bold blue]{component_diff.new_name} (component)[/bold blue]"
+            )
+            return
+
+        if component_diff.action_type == Component_Change_Type.DELETE:
+            self._console.print(
+                f"    [bold red]Delete: [/bold red] [bold blue]{component_diff.previous_name} (component)[/bold blue]"
+            )
+        return
+
+    def _print_component_resource_differences(self, component_diff: Component_Difference, resource_differences: List[Resource_Difference]) -> None:
+        resource_changes = [
+            x
+            for x in resource_differences
+            if x.component_name == component_diff.new_name
+               or x.component_name == component_diff.previous_name
+        ]
+
+        for resource_diff in resource_changes:
+            if resource_diff.action_type == Resource_Change_Type.CREATE:
+                self._console.print(
+                    f"        [bold green]Create:[/bold green][bold blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
+                )
+
+            elif resource_diff.action_type == Resource_Change_Type.DELETE:
+                self._console.print(
+                    f"        [bold red]Delete:[/bold red][bold blue] {resource_diff.previous_resource.name} ({resource_diff.previous_resource.ruuid})[/bold blue]"
+                )
+
+            elif (
+                    resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY
+                ):
+                self._console.print(
+                    f"        [bold yellow]Update:[/bold yellow][bold blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
+                )
+
+            elif resource_diff.action_type == Resource_Change_Type.UPDATE_NAME:
+                self._console.print(
+                    f"        [bold yellow]Update Name:[/bold yellow][bold blue] from {resource_diff.previous_resource.name} to {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
+                )
+
+    def _print_component_reference_differences(self, component_diff: Component_Difference, reference_differences: List[Resource_Reference_Difference]) -> None:
+        reference_changes = [
+            x
+            for x in reference_differences
+            if x.originating_component_name == component_diff.new_name
+        ]
+
+        for reference_diff in reference_changes:
+            if (
+                    reference_diff.action_type
+                    == Resource_Reference_Change_Type.CREATE
+            ):
+                self._console.print(
+                    f"        [bold green]Create reference:[/bold green][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]"
+                )
+
+            elif (
+                    reference_diff.action_type
+                    == Resource_Reference_Change_Type.DELETE
+            ):
+                self._console.print(
+                    f"        [bold red]Delete reference:[/bold red][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]"
+                )
 
 class OutputTask:
     """

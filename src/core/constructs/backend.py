@@ -15,7 +15,7 @@ passed as configuration into the dynamicall loaded class.
 
 """
 import inspect
-from typing import Dict, Tuple, Any, List
+from typing import Dict, Tuple, Any, List, Callable, Optional
 from pydantic import BaseModel
 
 from .components import Component_Difference, ComponentModel
@@ -23,7 +23,7 @@ from .components import Component_Difference, ComponentModel
 from .resource import Resource_Reference_Difference, ResourceModel, Resource_Difference
 from .resource_state import Resource_State
 
-from ..utils.module_loader import import_module
+from core.utils.module_loader import import_module
 
 
 class Backend_Configuration(BaseModel):
@@ -136,7 +136,7 @@ class Backend:
     def update_component(
         self, resource_state_uuid: str, component_difference: Component_Difference
     ) -> None:
-        """Make an update to the component.
+        """Make an update to the component. 
 
         Args:
             resource_state_uuid (str): The resource state that the change is in.
@@ -498,7 +498,7 @@ def load_backend(config: Backend_Configuration) -> Backend:
 
         raise e
 
-    backend_class = None
+    backend_class: Optional[Callable] = None
     for item in dir(backend_module):
         potential_obj = getattr(backend_module, item)
         if (
@@ -515,9 +515,9 @@ def load_backend(config: Backend_Configuration) -> Backend:
 
     try:
         # initialize the backend obj with the provided configuration values
-        initialized_obj = potential_obj(**config.config)
+        initialized_obj = backend_class(**config.config)
     except Exception as e:
-        print(f"Could not initialize {potential_obj} Class from config {config.config}")
+        print(f"Could not initialize {backend_class} Class from config {config.config}")
         raise e
 
     return initialized_obj

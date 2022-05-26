@@ -16,6 +16,8 @@ import os
 from argparse import ArgumentParser, HelpFormatter
 import sys
 from io import TextIOBase
+from typing import Tuple
+
 from rich.console import Console
 
 
@@ -220,6 +222,20 @@ class BaseCommand:
             "subclasses of BaseCommand must provide a command() method"
         )
 
+    def get_component_and_resource_from_qualified_name(self,
+                                                       full_name: str,
+                                                       ) -> Tuple[str, str]:
+        if full_name is None:
+            raise Exception("Invalid arguments provided to get resource detail")
+
+        component_and_function = full_name.split(".")
+        if len(component_and_function) != 2:
+            raise Exception(f"Could not get resource detail from {full_name}")
+
+        component_name = full_name.split(".")[0]
+        resource_name = full_name.split(".")[1]
+        return component_name, resource_name
+
 
 class BaseCommandContainer:
     """
@@ -247,5 +263,5 @@ class BaseCommandContainer:
             ConsoleOutputWrapper(stderr) if stderr else OutputWrapper(sys.stderr)
         )
 
-    def display_help_message(self) -> str:
+    def display_help_message(self) -> None:
         self.stdout.write(self.help)
