@@ -98,7 +98,7 @@ def _delete_empy_bucket(bucket_name: str) -> None:
     raw_aws_client.run_client_function("s3", "delete_bucket", {"Bucket": bucket_name})
 
 
-def _get_bucket_files(bucket_name: str) -> list:
+def _get_bucket_files(bucket_name: str) -> List:
     files = raw_aws_client.run_client_function(
         "s3", "list_objects_v2", {"Bucket": bucket_name}
     )
