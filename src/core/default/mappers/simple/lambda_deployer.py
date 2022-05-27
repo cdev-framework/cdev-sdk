@@ -233,11 +233,11 @@ def _update_simple_lambda(
 
     output_task.update(comment=f"Updating lambda function {new_resource.name}")
 
-    cloud_id = previous_output["cloud_id"]
+    function_name = previous_output["cloud_id"]
 
     mutable_previous_output = dict(previous_output)
 
-    _update_configuration(output_task, cloud_id, previous_resource, new_resource)
+    _update_configuration(output_task, function_name, previous_resource, new_resource)
 
     did_update_permission = _update_permissions(
         output_task,
@@ -249,7 +249,7 @@ def _update_simple_lambda(
 
     did_update_src_code = _update_source_code(
         output_task,
-        cloud_id,
+        function_name,
         mutable_previous_output,
         previous_output,
         previous_resource,
@@ -258,7 +258,7 @@ def _update_simple_lambda(
 
     _update_dependencies(
         output_task,
-        cloud_id,
+        function_name,
         mutable_previous_output,
         did_update_src_code,
         previous_resource,
@@ -267,7 +267,7 @@ def _update_simple_lambda(
 
     _update_events(
         output_task,
-        cloud_id,
+        function_name,
         mutable_previous_output,
         did_update_permission,
         previous_resource,
@@ -279,7 +279,7 @@ def _update_simple_lambda(
 
 def _update_configuration(
     output_task: OutputTask,
-    cloud_id: Any,
+    function_name: str,
     previous_resource: simple_xlambda.simple_function_model,
     new_resource: simple_xlambda.simple_function_model,
 ) -> bool:
@@ -301,7 +301,7 @@ def _update_configuration(
         log.debug("Simple lambda, configuration didn't change")
         return False
 
-    updated_configuration["FunctionName"] = cloud_id
+    updated_configuration["FunctionName"] = function_name
     output_task.update(comment=f"Updating configuration")
     aws_client.run_client_function(
         "lambda", "update_function_configuration", updated_configuration
@@ -435,7 +435,7 @@ def __update_permissions_remove(
 
 def _update_source_code(
     output_task: OutputTask,
-    cloud_id: Any,
+    function_name: str,
     mutable_previous_output: Dict,
     previous_output: Dict,
     previous_resource: simple_xlambda.simple_function_model,
@@ -457,7 +457,7 @@ def _update_source_code(
         "lambda",
         "update_function_code",
         {
-            "FunctionName": cloud_id,
+            "FunctionName": function_name,
             "S3Key": keyname,
             "S3Bucket": BUCKET,
             "Publish": True,
@@ -471,7 +471,7 @@ def _update_source_code(
 
 def _update_dependencies(
     output_task: OutputTask,
-    cloud_id: Any,
+    function_name: str,
     mutable_previous_output: Dict,
     did_update_src_code: bool,
     previous_resource: simple_xlambda.simple_function_model,
@@ -510,7 +510,7 @@ def _update_dependencies(
     aws_client.run_client_function(
         "lambda",
         "update_function_configuration",
-        {"FunctionName": cloud_id, "Layers": previous_dependency_output},
+        {"FunctionName": function_name, "Layers": previous_dependency_output},
     )
 
     mutable_previous_output["layers"] = previous_dependency_output
@@ -522,7 +522,7 @@ def _update_dependencies(
 
 def _update_events(
     output_task: OutputTask,
-    cloud_id: Any,
+    function_name: str,
     mutable_previous_output: Dict,
     did_update_permission: bool,
     previous_resource: simple_xlambda.simple_function_model,
@@ -553,7 +553,7 @@ def _update_events(
     )
 
     for _event in create_events:
-        if not _event.originating_resource_type in available_event_handlers:
+        if _event.originating_resource_type not in available_event_handlers:
             raise Exception(
                 f"No handlers for {_event.originating_resource_type} to {simple_xlambda.RUUID} events"
             )
@@ -563,7 +563,7 @@ def _update_events(
         output = (
             EVENT_TO_HANDLERS.get(simple_xlambda.RUUID)
             .get(_event.originating_resource_type)
-            .get("CREATE")(_event, cloud_id)
+            .get("CREATE")(_event, function_name)
         )
 
         previous_event_output[_event.hash] = output
@@ -590,7 +590,7 @@ def _update_events(
 
         EVENT_TO_HANDLERS.get(simple_xlambda.RUUID).get(originating_resource_type).get(
             "REMOVE"
-        )(event_output, cloud_id)
+        )(event_output, function_name)
 
         previous_event_output.pop(event_id)
 
