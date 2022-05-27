@@ -7,9 +7,7 @@ from core.default.resources.simple import object_store as simple_object_store
 from core.constructs.output_manager import OutputTask
 from core.utils import hasher
 
-
 from .. import aws_client as raw_aws_client
-
 
 RUUID = "cdev::simple::bucket"
 
@@ -26,7 +24,6 @@ def _create_simple_bucket(
     resource: simple_object_store.bucket_model,
     output_task: OutputTask,
 ) -> Dict:
-
     full_namespace_suffix = hasher.hash_list([namespace_token, str(uuid4())])
 
     cloud_bucket_name = f"cdev-bucket-{full_namespace_suffix}"
@@ -57,7 +54,6 @@ def _update_simple_bucket(
     previous_output: Dict,
     output_task: OutputTask,
 ) -> Dict:
-
     _remove_simple_bucket(transaction_token, previous_output, output_task)
     new_info = _create_simple_bucket(
         transaction_token, namespace_token, new_resource, output_task
@@ -69,16 +65,47 @@ def _update_simple_bucket(
 def _remove_simple_bucket(
     transaction_token: str, previous_output: Dict, output_task: OutputTask
 ) -> None:
-
     previous_bucket_name = previous_output.get("bucket_name")
+
+    files = _get_bucket_files(previous_bucket_name)
+    if files:
+        total_files = len(files)
+        i = 1
+        for file in files:
+            output_task.update(
+                advance=1,
+                comment=f"Deleting File {i} from {total_files} from bucket {previous_bucket_name}",
+            )
+            _delete_simple_s3_file(previous_bucket_name, file["Key"])
+            i += 1
 
     output_task.update(advance=1, comment=f"Deleting Bucket {previous_bucket_name}")
 
-    raw_aws_client.run_client_function(
-        "s3", "delete_bucket", {"Bucket": previous_bucket_name}
-    )
+    _delete_empy_bucket(previous_bucket_name)
 
     output_task.update(advance=1, comment=f"Deleted Bucket {previous_bucket_name}")
+
+
+def _delete_simple_s3_file(bucket_name: str, file_name: str) -> None:
+    raw_aws_client.run_client_function(
+        "s3",
+        "delete_object",
+        {"Bucket": bucket_name, "Key": file_name},
+    )
+
+
+def _delete_empy_bucket(bucket_name: str) -> None:
+    raw_aws_client.run_client_function("s3", "delete_bucket", {"Bucket": bucket_name})
+
+
+def _get_bucket_files(bucket_name: str) -> List:
+    files = raw_aws_client.run_client_function(
+        "s3", "list_objects_v2", {"Bucket": bucket_name}
+    )
+    if "Contents" in files:
+        return files["Contents"]
+    else:
+        return []
 
 
 def add_eventsource(
@@ -212,7 +239,6 @@ def handle_simple_bucket_deployment(
     previous_output: Dict[str, Any],
     output_task: OutputTask,
 ) -> Dict:
-
     if resource_diff.action_type == Resource_Change_Type.CREATE:
         return _create_simple_bucket(
             transaction_token, namespace_token, resource_diff.new_resource, output_task
