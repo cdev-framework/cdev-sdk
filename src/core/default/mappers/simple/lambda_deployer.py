@@ -374,10 +374,10 @@ def _update_permissions(
 def __update_permissions_create(
     output_task: OutputTask,
     role_name_output: str,
-    permission_output: frozenset[dict],
+    permission_output: "frozenset[Dict]",
     previous_resource: simple_xlambda.simple_function_model,
     new_resource: simple_xlambda.simple_function_model,
-) -> frozenset[Dict]:
+) -> "frozenset[Dict]":
 
     create_permissions = new_resource.permissions.difference(
         previous_resource.permissions
@@ -400,10 +400,10 @@ def __update_permissions_create(
 def __update_permissions_remove(
     output_task: OutputTask,
     role_name_output: str,
-    permission_output: frozenset[dict],
+    permission_output: "frozenset[Dict]",
     previous_resource: simple_xlambda.simple_function_model,
     new_resource: simple_xlambda.simple_function_model,
-) -> frozenset[Dict]:
+) -> "frozenset[Dict]":
 
     remove_permissions = previous_resource.permissions.difference(
         new_resource.permissions
@@ -440,7 +440,7 @@ def _update_source_code(
     previous_output: Dict,
     previous_resource: simple_xlambda.simple_function_model,
     new_resource: simple_xlambda.simple_function_model,
-):
+) -> bool:
 
     if previous_resource.src_code_hash == new_resource.src_code_hash:
         log.debug("Simple lambda, source code didn't change")
