@@ -50,7 +50,7 @@ class execute(BaseCommand):
             Payload=json.dumps(event_data),
         )
 
-        print(response)
+        self.stdout(response)
 
     def _get_event_data(self, *args, **kwargs) -> Dict:
         event_file_location: str = kwargs.get("event")
