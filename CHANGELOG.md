@@ -15,6 +15,7 @@ All release will have a corresponding git tag.
 - Add type hint to functions
 - Updated imports to be absolute when possible
 - Added function to parse qualified resources into its parts
+- Added support for lambda functions to update the handler
 
 
 ## [0.0.8] - 2022-04-05
