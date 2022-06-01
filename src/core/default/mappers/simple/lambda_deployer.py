@@ -6,6 +6,7 @@ from uuid import uuid4
 from core.constructs.resource import Resource_Difference, Resource_Change_Type
 from core.constructs.output_manager import OutputTask
 from core.constructs.models import frozendict
+from core.constructs.workspace import Workspace
 
 from core.default.resources.simple import xlambda as simple_xlambda
 
@@ -687,10 +688,11 @@ def handle_simple_lambda_function_deployment(
     previous_output: Dict[str, Any],
     output_task: OutputTask,
 ) -> Optional[Dict]:
+
+    artifact_bucket = _get_artifact_bucket_name()
+
     try:
         log.debug("Calling lambda mapper")
-
-        artifact_bucket = "cdev-working-artifacts"
 
         if resource_diff.action_type == Resource_Change_Type.CREATE:
             return _create_simple_lambda(
@@ -799,9 +801,10 @@ def handle_simple_layer_deployment(
     previous_output: Dict[str, Any],
     output_task: OutputTask,
 ) -> Optional[Dict]:
-    try:
-        artifact_bucket = "cdev-working-artifacts"
 
+    artifact_bucket = _get_artifact_bucket_name()
+
+    try:
         if resource_diff.action_type == Resource_Change_Type.CREATE:
             return _create_simple_layer(
                 transaction_token,
@@ -835,3 +838,22 @@ def handle_simple_layer_deployment(
     except Exception as e:
         print(e)
         raise Exception("COULD NOT DEPLOY")
+
+
+def _get_artifact_bucket_name() -> str:
+    """Get the artifact bucket name from the Workspace
+
+    Raises:
+        Exception
+
+    Returns:
+        str: Bucket Name
+    """
+    ws = Workspace.instance()
+
+    if not ws.settings.S3_ARTIFACTS_BUCKET:
+        raise Exception(
+            "No artifact bucket provided by the Workspace. Need to set the `S3_ARTIFACTS_BUCKET` setting in your workspace."
+        )
+
+    return ws.settings.S3_ARTIFACTS_BUCKET
