@@ -55,9 +55,6 @@ AssumeRolePolicyDocumentJSON = """{
   ]
 }"""
 
-
-BUCKET = "cdev-demo-project-artifacts"
-
 ###########################
 ###### Main Handlers
 ###########################
@@ -68,6 +65,7 @@ def _create_simple_lambda(
     namespace_token: str,
     resource: simple_xlambda.simple_function_model,
     output_task: OutputTask,
+    artifact_bucket: str,
 ) -> Dict:
     # Steps for creating a deployed lambda function
     # 1. Create IAM Role with needed permissions (note this is first to give aws more time to create the role in all regions and be available for use)
@@ -103,9 +101,9 @@ def _create_simple_lambda(
     # Step 2
     output_task.update(comment=f"Uploading code for lambda function {resource.name}")
 
-    keyname = _upload_s3_code_artifact(function_name, resource)
+    keyname = _upload_s3_code_artifact(function_name, resource, artifact_bucket)
 
-    final_info["artifact_bucket"] = BUCKET
+    final_info["artifact_bucket"] = artifact_bucket
     final_info["artifact_key"] = keyname
 
     # Step 4
@@ -126,7 +124,7 @@ def _create_simple_lambda(
         "Architectures": [arch],
         "Role": role_arn,
         "Handler": resource.configuration.handler,
-        "Code": {"S3Bucket": BUCKET, "S3Key": keyname},
+        "Code": {"S3Bucket": artifact_bucket, "S3Key": keyname},
         "Environment": {"Variables": resource.configuration.environment_variables._d}
         if resource.configuration.environment_variables
         else {},
@@ -221,6 +219,7 @@ def _update_simple_lambda(
     new_resource: simple_xlambda.simple_function_model,
     previous_output: Dict,
     output_task: OutputTask,
+    artifact_bucket: str,
 ) -> Dict:
     """
     Updates can be of:
@@ -254,6 +253,7 @@ def _update_simple_lambda(
         previous_output,
         previous_resource,
         new_resource,
+        artifact_bucket,
     )
 
     _update_dependencies(
@@ -440,6 +440,7 @@ def _update_source_code(
     previous_output: Dict,
     previous_resource: simple_xlambda.simple_function_model,
     new_resource: simple_xlambda.simple_function_model,
+    artifact_bucket: str,
 ) -> bool:
 
     if previous_resource.src_code_hash == new_resource.src_code_hash:
@@ -450,7 +451,7 @@ def _update_source_code(
     output_task.update(comment=f"Update Source Code")
 
     keyname = _upload_s3_code_artifact(
-        previous_output.get("function_name"), new_resource
+        previous_output.get("function_name"), new_resource, artifact_bucket
     )
 
     aws_client.run_client_function(
@@ -459,7 +460,7 @@ def _update_source_code(
         {
             "FunctionName": function_name,
             "S3Key": keyname,
-            "S3Bucket": BUCKET,
+            "S3Bucket": artifact_bucket,
             "Publish": True,
         },
     )
@@ -605,7 +606,9 @@ def _update_events(
 
 
 def _upload_s3_code_artifact(
-    function_name: str, resource: simple_xlambda.simple_function_model,
+    function_name: str,
+    resource: simple_xlambda.simple_function_model,
+    artifact_bucket: str,
 ) -> str:
     # Takes in a resource and create an s3 artifact that can be use as src code for lambda deployment
     keyname = function_name + f"-{resource.hash}" + ".zip"
@@ -618,7 +621,7 @@ def _upload_s3_code_artifact(
 
     with open(zip_location, "rb") as fh:
         object_args = {
-            "Bucket": BUCKET,
+            "Bucket": artifact_bucket,
             "Key": keyname,
             "Body": fh.read(),
         }
@@ -628,7 +631,9 @@ def _upload_s3_code_artifact(
 
 
 def _upload_s3_dependency(
-    dependency: simple_xlambda.dependency_layer_model, output_task: OutputTask
+    dependency: simple_xlambda.dependency_layer_model,
+    output_task: OutputTask,
+    artifact_bucket: str,
 ) -> str:
     # Takes in a resource and create an s3 artifact that can be use as src code for lambda deployment
     keyname = f"{dependency.name}-{dependency.hash}.zip"
@@ -657,7 +662,7 @@ def _upload_s3_dependency(
         )
 
     object_args = {
-        "Bucket": BUCKET,
+        "Bucket": artifact_bucket,
         "Key": keyname,
         "Filename": zip_location,
         "Callback": update_progress_bar,
@@ -684,12 +689,16 @@ def handle_simple_lambda_function_deployment(
 ) -> Optional[Dict]:
     try:
         log.debug("Calling lambda mapper")
+
+        artifact_bucket = "cdev-working-artifacts"
+
         if resource_diff.action_type == Resource_Change_Type.CREATE:
             return _create_simple_lambda(
                 transaction_token,
                 namespace_token,
                 resource_diff.new_resource,
                 output_task,
+                artifact_bucket,
             )
         elif resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY:
 
@@ -702,6 +711,7 @@ def handle_simple_lambda_function_deployment(
                 resource_diff.new_resource,
                 previous_output,
                 output_task,
+                artifact_bucket,
             )
         elif resource_diff.action_type == Resource_Change_Type.DELETE:
 
@@ -727,13 +737,14 @@ def _create_simple_layer(
     namespace_token: str,
     resource: simple_xlambda.dependency_layer_model,
     output_task: OutputTask,
+    artifact_bucket: str,
 ) -> Dict:
 
     output_task.update(
         comment=f"Creating dependencies for lambda function {resource.name}"
     )
 
-    key_name = _upload_s3_dependency(resource, output_task)
+    key_name = _upload_s3_dependency(resource, output_task, artifact_bucket)
 
     # key name will always include .zip so remove that part and change '-' into '_'
     layer_name = key_name.replace("-", "_")[:-4].replace(".", "")
@@ -741,7 +752,7 @@ def _create_simple_layer(
         "lambda",
         "publish_layer_version",
         {
-            "Content": {"S3Bucket": BUCKET, "S3Key": key_name},
+            "Content": {"S3Bucket": artifact_bucket, "S3Key": key_name},
             "LayerName": f"{layer_name}_{namespace_token[:10]}",
             "CompatibleRuntimes": ["python3.7", "python3.8", "python3.9"],
         },
@@ -761,9 +772,10 @@ def _update_simple_layer(
     new_resource: simple_xlambda.dependency_layer_model,
     previous_output: Dict,
     output_task: OutputTask,
+    artifact_bucket: str,
 ) -> Dict:
     return _create_simple_layer(
-        transaction_token, namespace_token, new_resource, output_task
+        transaction_token, namespace_token, new_resource, output_task, artifact_bucket
     )
 
 
@@ -788,12 +800,15 @@ def handle_simple_layer_deployment(
     output_task: OutputTask,
 ) -> Optional[Dict]:
     try:
+        artifact_bucket = "cdev-working-artifacts"
+
         if resource_diff.action_type == Resource_Change_Type.CREATE:
             return _create_simple_layer(
                 transaction_token,
                 namespace_token,
                 resource_diff.new_resource,
                 output_task,
+                artifact_bucket,
             )
         elif resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY:
 
@@ -806,6 +821,7 @@ def handle_simple_layer_deployment(
                 resource_diff.new_resource,
                 previous_output,
                 output_task,
+                artifact_bucket,
             )
 
         elif resource_diff.action_type == Resource_Change_Type.DELETE:
