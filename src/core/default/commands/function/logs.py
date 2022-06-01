@@ -40,7 +40,6 @@ class show_logs(BaseCommand):
         )
 
     def command(self, *args, **kwargs) -> None:
-        print("entrou")
         (
             component_name,
             function_name,
@@ -50,11 +49,7 @@ class show_logs(BaseCommand):
 
         tail_val = kwargs.get("tail")
         number_val = kwargs.get("number")
-        print(str(number_val))
 
-        print("teste")
-        print(component_name)
-        print(function_name)
         cloud_name = get_cloud_id_from_cdev_name(component_name, function_name).split(
             ":"
         )[-1]
