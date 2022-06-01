@@ -10,7 +10,6 @@ from core.constructs.commands import BaseCommand, OutputWrapper
 from core.utils import hasher
 
 from core.default.commands.function.utils import get_cloud_id_from_cdev_name
-from urllib3.connectionpool import xrange
 
 
 class show_logs(BaseCommand):
@@ -34,8 +33,10 @@ class show_logs(BaseCommand):
             "--tail", action="store_true", help="show the tail of the logs"
         )
         parser.add_argument(
-            "--number",
+            "--limit",
             type=int,
+            nargs='?',
+            default=10000,
             help="number of events to show. Must be used with --tail.",
         )
 
@@ -48,12 +49,11 @@ class show_logs(BaseCommand):
         )
 
         tail_val = kwargs.get("tail")
-        number_val = kwargs.get("number")
+        limit_val = kwargs.get("limit")
 
         cloud_name = get_cloud_id_from_cdev_name(component_name, function_name).split(
             ":"
         )[-1]
-        print(cloud_name)
         if not cloud_name:
             self.stdout.write(
                 f"Could not find function {function_name} in component {component_name}"
@@ -68,7 +68,6 @@ class show_logs(BaseCommand):
             return
 
         cloud_watch_client = client("logs")
-        print(cloud_watch_group_name)
         log_streams_rv = cloud_watch_client.describe_log_streams(
             logGroupName=cloud_watch_group_name,
             orderBy="LastEventTime",
@@ -80,7 +79,7 @@ class show_logs(BaseCommand):
             response = cloud_watch_client.get_log_events(
                 logGroupName=cloud_watch_group_name,
                 logStreamName=stream,
-                limit=number_val if number_val else 10000,
+                limit=limit_val,
                 startFromHead=False if tail_val else True,
             )
             if tail_val:
@@ -96,7 +95,8 @@ class show_logs(BaseCommand):
                 response = cloud_watch_client.get_log_events(
                     logGroupName=cloud_watch_group_name,
                     logStreamName=stream,
-                    limit=number_val if number_val else 10000,
+                    limit=limit_val,
+                    # limit=limit_val if limit_val else 10000,
                     startFromHead=False if tail_val else True,
                     nextToken=next_token
                 )
