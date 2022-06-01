@@ -48,6 +48,8 @@ def create_project_cli(args) -> None:
     config = args
     set_global_logger_from_cli(config.loglevel)
 
+    create_project(args.name)
+
     if args.template:
         template_name = args.template
 
@@ -57,12 +59,6 @@ def create_project_cli(args) -> None:
             )
             return
 
-    else:
-        template_name = None
-
-    create_project(args.name)
-
-    if template_name:
         print(f"Loading Template {template_name}")
         _load_template(template_name)
         print(f"Created Project From Template: {template_name}")
@@ -75,9 +71,6 @@ def _load_template(template_name: str, base_directory: DirectoryPath = None) -> 
         template_name (str): Name of the template
         base_directory (DirectoryPath): directory to copy to. defaults to os.cwd().
     """
-    if not template_name:
-        return
-
     if not base_directory:
         base_directory = os.getcwd()
 
@@ -185,10 +178,9 @@ def _default_new_project_input_questions() -> Dict[str, str]:
     """
     rv = {}
 
-    _artifact_bucket = Prompt.ask(prompt="Name of bucket to store artifacts")
-
-    if not _artifact_bucket:
-        print(f"Must provide a bucket for artifacts")
+    _artifact_bucket = Prompt.ask(
+        prompt="Name of bucket to store artifacts", default=""
+    )
 
     rv = {"S3_ARTIFACTS_BUCKET": _artifact_bucket}
 
@@ -226,7 +218,9 @@ def _create_folder_structure(
         _mkdir(os.path.join(settings_folder, f"{environment}_secrets"))
 
 
-def _create_base_settings(file_path: FilePath, base_settings: Dict[str, str] = None):
+def _create_base_settings(
+    file_path: FilePath, base_settings: Dict[str, str] = None
+) -> None:
     """Create the base settings for the project at the provide path. This creates a python module at the provided directory, creates
     a base settings file, and applies any base settings to the generate file.
 
@@ -243,7 +237,7 @@ def _create_base_settings(file_path: FilePath, base_settings: Dict[str, str] = N
         _render_settings_file(file_path, base_settings)
 
 
-def _render_settings_file(file_path: FilePath, base_settings: Dict[str, str]):
+def _render_settings_file(file_path: FilePath, base_settings: Dict[str, str]) -> None:
     """Apply the base settings to the given file
 
     Args:
@@ -255,7 +249,7 @@ def _render_settings_file(file_path: FilePath, base_settings: Dict[str, str]):
             fh.write(f'{key} = "{value}"')
 
 
-def _touch_file(file_path: FilePath):
+def _touch_file(file_path: FilePath) -> None:
     """Helper function to touch a file
 
     Args:
@@ -273,7 +267,7 @@ def _touch_file(file_path: FilePath):
         pass
 
 
-def _mkdir(directory_path: DirectoryPath):
+def _mkdir(directory_path: DirectoryPath) -> None:
     """Create a directory if it does not already exist.
 
     Args:
@@ -285,7 +279,6 @@ def _mkdir(directory_path: DirectoryPath):
 
 def load_project(initialize: bool = False) -> None:
     """Create the global instance of the `Project` object. If provided, also initialize the `Project`.
-
 
     Args:
         initialize (bool, optional): Defaults to False.
