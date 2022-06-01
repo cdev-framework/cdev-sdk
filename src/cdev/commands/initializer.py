@@ -1,5 +1,6 @@
 import json
 import os
+from pydantic import FilePath
 from pydantic.types import DirectoryPath
 import shutil
 from typing import Dict, Tuple, List
@@ -58,8 +59,10 @@ def create_project_cli(args) -> None:
         template_name = None
 
     create_project(args.name)
-    print(f"Loading Template {template_name}")
-    _load_template(template_name)
+
+    if template_name:
+        print(f"Loading Template {template_name}")
+        _load_template(template_name)
 
 
 def _load_template(template_name: str) -> None:
@@ -92,7 +95,12 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
     if check_if_project_exists(base_directory):
         raise Exception("Project Already Created")
 
-    _create_folder_structure(base_directory, DEFAULT_ENVIRONMENTS)
+    base_settings_values = _default_new_project_input_questions()
+    _create_folder_structure(
+        base_directory,
+        base_settings=base_settings_values,
+        extra_environments=DEFAULT_ENVIRONMENTS,
+    )
 
     base_settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
 
@@ -149,43 +157,79 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
     new_project.set_current_environment(DEFAULT_ENVIRONMENTS[-1])
 
 
-def _create_folder_structure(base_directory: DirectoryPath, extra_settings: List[str]) -> None:
+def _default_new_project_input_questions() -> Dict[str, str]:
+    rv = {}
+
+    _artifact_bucket = Prompt.ask(prompt="Name of bucket to store artifacts")
+
+    if not _artifact_bucket:
+        print(f"Must provide a bucket for artifacts")
+
+    rv = {"S3_ARTIFACTS_BUCKET": _artifact_bucket}
+
+    return rv
+
+
+def _create_folder_structure(
+    base_directory: DirectoryPath,
+    base_settings: Dict[str, str] = None,
+    extra_environments: List[str] = None,
+) -> None:
     """Create a skeleton file structure needed to make a project.
 
     Args:
         base_directory (DirectoryPath): [description]
-        extra_settings (List[str]): [description]
+        extra_environments (List[str]): [description]
     """
+    cdev_folder = os.path.join(base_directory, CDEV_FOLDER)
+    state_folder = os.path.join(cdev_folder, STATE_FOLDER)
+    intermediate_folder = os.path.join(cdev_folder, INTERMEDIATE_FOLDER)
+    settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
+    base_settings_file = os.path.join(settings_folder, f"base_settings.py")
 
-    if not os.path.isdir(os.path.join(base_directory, CDEV_FOLDER)):
-        os.mkdir(os.path.join(base_directory, CDEV_FOLDER))
+    _mkdir(cdev_folder)
 
-    if not os.path.isdir(os.path.join(base_directory, CDEV_FOLDER, STATE_FOLDER)):
-        os.mkdir(os.path.join(base_directory, CDEV_FOLDER, STATE_FOLDER))
+    _mkdir(state_folder)
+    _mkdir(intermediate_folder)
 
-    if not os.path.isdir(
-        os.path.join(base_directory, CDEV_FOLDER, INTERMEDIATE_FOLDER)
-    ):
-        os.mkdir(os.path.join(base_directory, CDEV_FOLDER, INTERMEDIATE_FOLDER))
+    _mkdir(settings_folder)
 
-    base_settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
+    _create_base_settings(base_settings_file, base_settings)
 
-    if not os.path.isdir(base_settings_folder):
-        os.mkdir(base_settings_folder)
+    for environment in extra_environments:
+        _touch_file(os.path.join(settings_folder, f"{environment}_settings.py"))
+        _mkdir(os.path.join(settings_folder, f"{environment}_secrets"))
 
-    with open(os.path.join(base_settings_folder, f"base_settings.py"), "w"):
+
+def _create_base_settings(file_path: FilePath, base_settings: Dict[str, str] = None):
+    # The settings are dynamically importable python modules, so the folder needs to be a python module
+    _touch_file(os.path.join(os.path.dirname(file_path), f"__init__.py"))
+
+    _touch_file(file_path)
+
+    if base_settings:
+        _render_settings_file(file_path, base_settings)
+
+
+def _render_settings_file(file_path: FilePath, base_settings: Dict[str, str]):
+    with open(file_path, "w") as fh:
+        for key, value in base_settings.items():
+            fh.write(f'{key} = "{value}"')
+
+
+def _touch_file(file_path: FilePath):
+    if not os.path.isdir(os.path.dirname(file_path)):
+        raise Exception(
+            f"Can not create {file_path} because {os.path.dirname(file_path)} is not a directory."
+        )
+
+    with open(file_path, "w"):
         pass
 
-    with open(os.path.join(base_settings_folder, f"__init__.py"), "w"):
-        pass
 
-    for environment in extra_settings:
-        with open(
-            os.path.join(base_settings_folder, f"{environment}_settings.py"), "w"
-        ):
-            pass
-
-        os.mkdir(os.path.join(base_settings_folder, f"{environment}_secrets"))
+def _mkdir(directory_path: DirectoryPath):
+    if not os.path.isdir(directory_path):
+        os.mkdir(directory_path)
 
 
 def load_project(args) -> None:
