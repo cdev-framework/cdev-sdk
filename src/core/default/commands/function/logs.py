@@ -10,6 +10,7 @@ from core.constructs.commands import BaseCommand, OutputWrapper
 from core.utils import hasher
 
 from core.default.commands.function.utils import get_cloud_id_from_cdev_name
+from urllib3.connectionpool import xrange
 
 
 class show_logs(BaseCommand):
@@ -34,21 +35,30 @@ class show_logs(BaseCommand):
         )
         parser.add_argument(
             "--number",
-            action="store_true",
+            type=int,
             help="number of events to show. Must be used with --tail.",
         )
 
     def command(self, *args, **kwargs) -> None:
+        print("entrou")
+        (
+            component_name,
+            function_name,
+        ) = self.get_component_and_resource_from_qualified_name(
+            kwargs.get("function_name")
+        )
 
-        component_name, function_name = self.get_component_and_resource_from_qualified_name(kwargs.get("function_name"))
+        tail_val = kwargs.get("tail")
+        number_val = kwargs.get("number")
+        print(str(number_val))
 
-        # tail_val = kwargs.get("tail")
-        # number_val = kwargs.get("number")
-
+        print("teste")
+        print(component_name)
+        print(function_name)
         cloud_name = get_cloud_id_from_cdev_name(component_name, function_name).split(
             ":"
         )[-1]
-
+        print(cloud_name)
         if not cloud_name:
             self.stdout.write(
                 f"Could not find function {function_name} in component {component_name}"
@@ -75,13 +85,24 @@ class show_logs(BaseCommand):
             response = cloud_watch_client.get_log_events(
                 logGroupName=cloud_watch_group_name,
                 logStreamName=stream,
-                startFromHead=True,
+                limit=number_val if number_val else 10000,
+                startFromHead=False if tail_val else True,
             )
-
-            for event in response.get("events"):
-                self.stdout.write(
-                    f"{datetime.datetime.fromtimestamp(event.get('timestamp')/1000).strftime('%Y-%m-%d %H:%M:%S')} - {event.get('message')}"
+            next_token = response.get("nextForwardToken")
+            prev_token = ""
+            while next_token != prev_token:
+                for event in response.get("events"):
+                    self.stdout.write(
+                        f"{datetime.datetime.fromtimestamp(event.get('timestamp') / 1000).strftime('%Y-%m-%d %H:%M:%S')} - {event.get('message')}"
+                    )
+                response = cloud_watch_client.get_log_events(
+                    logGroupName=cloud_watch_group_name,
+                    logStreamName=stream,
+                    limit=number_val if number_val else 10000,
+                    startFromHead=False if tail_val else True,
                 )
+                prev_token = next_token
+                next_token = response.get("nextForwardToken")
 
 
 def _watch_log_group(group_name: str, stdout: OutputWrapper, args=None) -> None:
@@ -93,10 +114,18 @@ def _watch_log_group(group_name: str, stdout: OutputWrapper, args=None) -> None:
         _previous_refresh_time = int(
             (time.mktime(datetime.datetime.now().timetuple()) - 60) * 1000
         )
-        keep_watching = _read_from_streams(cloud_watch_client, group_name, stdout, events_hash, _previous_refresh_time)
+        keep_watching = _read_from_streams(
+            cloud_watch_client, group_name, stdout, events_hash, _previous_refresh_time
+        )
 
 
-def _read_from_streams(cloud_watch_client, group_name: str, stdout: OutputWrapper, events_hash, _previous_refresh_time) -> bool:
+def _read_from_streams(
+    cloud_watch_client,
+    group_name: str,
+    stdout: OutputWrapper,
+    events_hash,
+    _previous_refresh_time,
+) -> bool:
     try:
         log_streams_rv = cloud_watch_client.describe_log_streams(
             logGroupName=group_name,
