@@ -83,7 +83,10 @@ class show_logs(BaseCommand):
                 limit=number_val if number_val else 10000,
                 startFromHead=False if tail_val else True,
             )
-            next_token = response.get("nextForwardToken")
+            if tail_val:
+                next_token = response.get("nextForwardToken")
+            else:
+                next_token = response.get("nextBackwardToken")
             prev_token = ""
             while next_token != prev_token:
                 for event in response.get("events"):
@@ -95,9 +98,13 @@ class show_logs(BaseCommand):
                     logStreamName=stream,
                     limit=number_val if number_val else 10000,
                     startFromHead=False if tail_val else True,
+                    nextToken=next_token
                 )
                 prev_token = next_token
-                next_token = response.get("nextForwardToken")
+                if tail_val:
+                    next_token = response.get("nextForwardToken")
+                else:
+                    next_token = response.get("nextBackwardToken")
 
 
 def _watch_log_group(group_name: str, stdout: OutputWrapper, args=None) -> None:
