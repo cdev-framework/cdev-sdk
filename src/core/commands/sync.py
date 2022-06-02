@@ -1,6 +1,4 @@
-"""Utilities for running custom scripts
 
-"""
 from core.constructs.workspace import Workspace
 from core.constructs.output_manager import OutputManager
 from core.constructs.workspace_watcher import WorkspaceWatcher

@@ -1,7 +1,3 @@
-"""Construct that represents the collection of other primitives
-
-
-"""
 import time
 from watchdog.tricks import Trick
 
