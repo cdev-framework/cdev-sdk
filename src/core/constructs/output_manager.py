@@ -251,6 +251,7 @@ class OutputManager:
                     f"        [bold red]Delete reference:[/bold red][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]"
                 )
 
+
 class OutputTask:
     """
     Wrapper around an output that can be used to track long running events. The implementation is as a wrapper around a 'progress task' from the

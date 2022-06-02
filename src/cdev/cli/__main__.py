@@ -1,18 +1,18 @@
 import argparse
-from ast import parse
 import logging
 import traceback
 from typing import Callable, Any
 
 from ..commands import (
-    initializer,
-    environment,
-    plan,
-    deploy,
-    run,
     cloud_output,
-    local_development,
+    deploy,
     destroy,
+    environment,
+    initializer,
+    local_development,
+    plan,
+    run,
+    sync
 )
 
 parser = argparse.ArgumentParser(description="cdev cli")
@@ -192,6 +192,11 @@ CDEV_COMMANDS = [
             {"dest": "subcommand", "help": "the user defined command to call"},
             {"dest": "args", "nargs": argparse.REMAINDER},
         ],
+    },
+    {
+        "name": "sync",
+        "help": "Watch for changes in the filesystem",
+        "default": wrap_load_and_initialize_project(sync.sync_command_cli),
     },
 ]
 

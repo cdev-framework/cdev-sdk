@@ -16,6 +16,7 @@ All release will have a corresponding git tag.
 - Updated imports to be absolute when possible
 - Added function to parse qualified resources into its parts
 - Added support for lambda functions to update the handler
+- Added sync to watch for filesystem changes
 
 
 ## [0.0.8] - 2022-04-05
