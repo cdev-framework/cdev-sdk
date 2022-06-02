@@ -22,7 +22,7 @@ subparsers = parser.add_subparsers(title="sub_command", description="valid subco
 def wrap_load_project(command: Callable) -> Callable[[Any], Any]:
     def wrapped_caller(*args, **kwargs):
         try:
-            initializer.load_project(args)
+            initializer.load_project()
         except Exception as e:
             print(f"Could not load the project to call {command}")
             print(e)
@@ -38,7 +38,7 @@ def wrap_load_project(command: Callable) -> Callable[[Any], Any]:
 def wrap_load_and_initialize_project(command: Callable) -> Callable[[Any], Any]:
     def wrapped_caller(*args, **kwargs):
         try:
-            initializer.load_and_initialize_project(args)
+            initializer.load_project(initialize=True)
         except Exception as e:
             print(f"Could not load and initialize the project to call {command}")
             print(e)
