@@ -39,6 +39,21 @@ class show_logs(BaseCommand):
             default=10000,
             help="number of events to show. Must be used with --tail.",
         )
+        parser.add_argument(
+            "--query",
+            nargs='+',
+            help="retrieve information base on a cloudWatch query",
+        )
+        parser.add_argument(
+            "--start_time",
+            type=lambda d: datetime.datetime.strptime(d, '%Y-%m-%d-%H:%M:%S'),
+            help="set the start_time when use the query option, must be on the %Y-%m-%d-%H:%M%S format",
+        )
+        parser.add_argument(
+            "--end_time",
+            type=lambda d: datetime.datetime.strptime(d, '%Y-%m-%d-%H:%M:%S'),
+            help="set the end_time when use the query option, must be on the %Y-%m-%d-%H:%M:%S format",
+        )
 
     def command(self, *args, **kwargs) -> None:
         (
@@ -50,6 +65,9 @@ class show_logs(BaseCommand):
 
         tail_val = kwargs.get("tail")
         limit_val = kwargs.get("limit")
+        query_val = kwargs.get("query")
+        start_time_val = kwargs.get("start_time")
+        end_time_val = kwargs.get("end_time")
 
         cloud_name = get_cloud_id_from_cdev_name(component_name, function_name).split(
             ":"
@@ -74,38 +92,71 @@ class show_logs(BaseCommand):
         )
 
         streams = _get_needed_streams(log_streams_rv.get("logStreams"))
-
-        for stream in streams:
-            response = cloud_watch_client.get_log_events(
-                logGroupName=cloud_watch_group_name,
-                logStreamName=stream,
-                limit=limit_val,
-                startFromHead=False if tail_val else True,
-            )
-            if tail_val:
-                next_token = response.get("nextForwardToken")
-            else:
-                next_token = response.get("nextBackwardToken")
-            prev_token = ""
-            while next_token != prev_token:
-                for event in response.get("events"):
-                    self.stdout.write(
-                        f"{datetime.datetime.fromtimestamp(event.get('timestamp') / 1000).strftime('%Y-%m-%d %H:%M:%S')} - {event.get('message')}"
-                    )
+        if query_val is None:
+            for stream in streams:
                 response = cloud_watch_client.get_log_events(
                     logGroupName=cloud_watch_group_name,
                     logStreamName=stream,
                     limit=limit_val,
-                    # limit=limit_val if limit_val else 10000,
                     startFromHead=False if tail_val else True,
-                    nextToken=next_token
                 )
-                prev_token = next_token
                 if tail_val:
                     next_token = response.get("nextForwardToken")
                 else:
                     next_token = response.get("nextBackwardToken")
+                prev_token = ""
+                while next_token != prev_token:
+                    for event in response.get("events"):
+                        self.stdout.write(
+                            f"{datetime.datetime.fromtimestamp(event.get('timestamp') / 1000).strftime('%Y-%m-%d %H:%M:%S')} - {event.get('message')}"
+                        )
+                    response = cloud_watch_client.get_log_events(
+                        logGroupName=cloud_watch_group_name,
+                        logStreamName=stream,
+                        limit=limit_val,
+                        startFromHead=False if tail_val else True,
+                        nextToken=next_token
+                    )
+                    prev_token = next_token
+                    if tail_val:
+                        next_token = response.get("nextForwardToken")
+                    else:
+                        next_token = response.get("nextBackwardToken")
+        else:
+            if start_time_val is None:
+                self.stdout.write('--start_time value is needed when using the query option')
+            elif end_time_val is None:
+                self.stdout.write('--end_time value is needed when using the query option')
+            query = ''
+            for item in query_val:
+                query = query + ' ' + str(item)
+            #query = "fields @timestamp, @message | sort @timestamp desc | limit 25"
+            start_query_response = cloud_watch_client.start_query(
+                logGroupName=cloud_watch_group_name,
+                startTime=int(start_time_val.timestamp()),
+                endTime=int(end_time_val.timestamp()),
+                queryString=query,
+            )
 
+            # startTime = int(datetime.datetime.strptime(start_time_val, '%Y-%m-%d-%H:%M:%S').timestamp()),
+            # endTime = int(datetime.datetime.strptime(end_time_val, '%Y-%m-%d-%H:%M:%S').timestamp()),
+
+            # startTime = int((datetime.datetime.today() - datetime.timedelta(hours=48)).timestamp()),
+            # endTime = int(datetime.datetime.now().timestamp()),
+
+            query_id = start_query_response['queryId']
+            response = None
+
+            while response == None or response['status'] == 'Running':
+                self.stdout.write('Waiting for query to complete ...')
+                time.sleep(1)
+                response = cloud_watch_client.get_query_results(
+                    queryId=query_id
+                )
+
+            for item in response['results']:
+                for item2 in item:
+                    self.stdout.write(item2['field'] + ': ' + item2['value'])
 
 def _watch_log_group(group_name: str, stdout: OutputWrapper, args=None) -> None:
     cloud_watch_client = client("logs")
