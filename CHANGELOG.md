@@ -16,7 +16,10 @@ All release will have a corresponding git tag.
 - Updated imports to be absolute when possible
 - Added function to parse qualified resources into its parts
 - Added support for lambda functions to update the handler
+- Added more query and more args to logging function
 
+### Fixed
+- Fixed issues with a bucket when it is not empty and we need to delete it
 
 ## [0.0.8] - 2022-04-05
 ### Added
