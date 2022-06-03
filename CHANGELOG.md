@@ -13,9 +13,10 @@ All release will have a corresponding git tag.
 - Add `tox` to help with testing multiple `python` versions
 - Add CONTRIBUTING.md
 - Add type hint to functions
-- Updated imports to be absolute when possible
-- Added function to parse qualified resources into its parts
-- Added support for lambda functions to update the handler
+- Update imports to be absolute when possible
+- Add function to parse qualified resources into its parts
+- Add support for lambda functions to update the handler
+- Add user input for setting artifact bucket when creating a new project
 
 
 ## [0.0.8] - 2022-04-05
