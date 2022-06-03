@@ -1,5 +1,6 @@
 import json
 import os
+from pydantic import FilePath
 from pydantic.types import DirectoryPath
 import shutil
 from typing import Dict, Tuple, List
@@ -27,9 +28,6 @@ TEMPLATE_LOCATIONS = os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "project_templates"
 )
 
-
-BASE_PROJECT_LOCATION = os.getcwd()
-
 AVAILABLE_TEMPLATES = [
     "quick-start",
     "quick-start-twilio",
@@ -42,8 +40,15 @@ AVAILABLE_TEMPLATES = [
 
 
 def create_project_cli(args) -> None:
+    """CLI version of the create project command.
+
+    Args:
+        args (_type_): cli arguments
+    """
     config = args
     set_global_logger_from_cli(config.loglevel)
+
+    create_project(args.name)
 
     if args.template:
         template_name = args.template
@@ -54,17 +59,20 @@ def create_project_cli(args) -> None:
             )
             return
 
-    else:
-        template_name = None
-
-    create_project(args.name)
-    print(f"Loading Template {template_name}")
-    _load_template(template_name)
+        print(f"Loading Template {template_name}")
+        _load_template(template_name)
+        print(f"Created Project From Template: {template_name}")
 
 
-def _load_template(template_name: str) -> None:
-    if not template_name:
-        return
+def _load_template(template_name: str, base_directory: DirectoryPath = None) -> None:
+    """Copy the given template name into the provided directory.
+
+    Args:
+        template_name (str): Name of the template
+        base_directory (DirectoryPath): directory to copy to. defaults to os.cwd().
+    """
+    if not base_directory:
+        base_directory = os.getcwd()
 
     template_folder_name = template_name.replace("-", "_")
 
@@ -77,14 +85,22 @@ def _load_template(template_name: str) -> None:
 
         full_location = os.path.join(template_location, x)
         if os.path.isdir(full_location):
-            shutil.copytree(full_location, os.path.join(BASE_PROJECT_LOCATION, x))
+            shutil.copytree(full_location, os.path.join(base_directory, x))
         elif os.path.isfile(full_location):
-            shutil.copyfile(full_location, os.path.join(BASE_PROJECT_LOCATION, x))
-
-    print(f"Created Project From Template: {template_name}")
+            shutil.copyfile(full_location, os.path.join(base_directory, x))
 
 
 def create_project(project_name: str, base_directory: DirectoryPath = None) -> None:
+    """Create a new `Project` at the given base_directory (or cwd). This initializes all the files needed
+    to create a basic Cdev Project.
+
+    Args:
+        project_name (str): name of the project
+        base_directory (DirectoryPath, optional): directory to store information. Defaults to cwd().
+
+    Raises:
+        Exception: If a Cdev project already exists at the given location.
+    """
 
     if not base_directory:
         base_directory = os.getcwd()
@@ -92,7 +108,12 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
     if check_if_project_exists(base_directory):
         raise Exception("Project Already Created")
 
-    _create_folder_structure(base_directory, DEFAULT_ENVIRONMENTS)
+    base_settings_values = _default_new_project_input_questions()
+    _create_folder_structure(
+        base_directory,
+        base_settings=base_settings_values,
+        extra_environments=DEFAULT_ENVIRONMENTS,
+    )
 
     base_settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
 
@@ -149,56 +170,123 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
     new_project.set_current_environment(DEFAULT_ENVIRONMENTS[-1])
 
 
-def _create_folder_structure(base_directory: DirectoryPath, extra_settings: List[str]) -> None:
-    """Create a skeleton file structure needed to make a project.
+def _default_new_project_input_questions() -> Dict[str, str]:
+    """Run through the sequence of input questions for a user to properly initialize a project.
+
+    Returns:
+        Dict[str, str]: Settings completed by the user
+    """
+    rv = {}
+
+    _artifact_bucket = Prompt.ask(
+        prompt="Name of bucket to store artifacts", default=""
+    )
+
+    rv = {"S3_ARTIFACTS_BUCKET": _artifact_bucket}
+
+    return rv
+
+
+def _create_folder_structure(
+    base_directory: DirectoryPath,
+    base_settings: Dict[str, str] = None,
+    extra_environments: List[str] = None,
+) -> None:
+    """Create a skeleton file structure needed to make a project and additional environments. Apply the Dict of base settings to the generated
+    base settings file.
 
     Args:
-        base_directory (DirectoryPath): [description]
-        extra_settings (List[str]): [description]
+        base_directory (DirectoryPath)
+        base_settings (Dict[str, str], optional): Settings for base environment. Defaults to None.
+        extra_environments (List[str], optional): List of environments to generate. Defaults to None.
     """
+    cdev_folder = os.path.join(base_directory, CDEV_FOLDER)
+    state_folder = os.path.join(cdev_folder, STATE_FOLDER)
+    intermediate_folder = os.path.join(cdev_folder, INTERMEDIATE_FOLDER)
+    settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
+    base_settings_file = os.path.join(settings_folder, f"base_settings.py")
 
-    if not os.path.isdir(os.path.join(base_directory, CDEV_FOLDER)):
-        os.mkdir(os.path.join(base_directory, CDEV_FOLDER))
+    _mkdir(cdev_folder)
+    _mkdir(state_folder)
+    _mkdir(intermediate_folder)
+    _mkdir(settings_folder)
 
-    if not os.path.isdir(os.path.join(base_directory, CDEV_FOLDER, STATE_FOLDER)):
-        os.mkdir(os.path.join(base_directory, CDEV_FOLDER, STATE_FOLDER))
+    _create_base_settings(base_settings_file, base_settings)
 
-    if not os.path.isdir(
-        os.path.join(base_directory, CDEV_FOLDER, INTERMEDIATE_FOLDER)
-    ):
-        os.mkdir(os.path.join(base_directory, CDEV_FOLDER, INTERMEDIATE_FOLDER))
+    for environment in extra_environments:
+        _touch_file(os.path.join(settings_folder, f"{environment}_settings.py"))
+        _mkdir(os.path.join(settings_folder, f"{environment}_secrets"))
 
-    base_settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
 
-    if not os.path.isdir(base_settings_folder):
-        os.mkdir(base_settings_folder)
+def _create_base_settings(
+    file_path: FilePath, base_settings: Dict[str, str] = None
+) -> None:
+    """Create the base settings for the project at the provide path. This creates a python module at the provided directory, creates
+    a base settings file, and applies any base settings to the generate file.
 
-    with open(os.path.join(base_settings_folder, f"base_settings.py"), "w"):
+    Args:
+        file_path (FilePath): path of the file
+        base_settings (Dict[str, str], optional): Settings for base environment. Defaults to None.
+    """
+    # The settings are dynamically importable python modules, so the folder needs to be a python module
+    _touch_file(os.path.join(os.path.dirname(file_path), f"__init__.py"))
+
+    _touch_file(file_path)
+
+    if base_settings:
+        _render_settings_file(file_path, base_settings)
+
+
+def _render_settings_file(file_path: FilePath, base_settings: Dict[str, str]) -> None:
+    """Apply the base settings to the given file
+
+    Args:
+        file_path (FilePath): path of the file
+        base_settings (Dict[str, str]): settings to apply
+    """
+    with open(file_path, "w") as fh:
+        for key, value in base_settings.items():
+            fh.write(f'{key} = "{value}"')
+
+
+def _touch_file(file_path: FilePath) -> None:
+    """Helper function to touch a file
+
+    Args:
+        file_path (FilePath)
+
+    Raises:
+        Exception: Directory does not exist
+    """
+    if not os.path.isdir(os.path.dirname(file_path)):
+        raise Exception(
+            f"Can not create {file_path} because {os.path.dirname(file_path)} is not a directory."
+        )
+
+    with open(file_path, "w"):
         pass
 
-    with open(os.path.join(base_settings_folder, f"__init__.py"), "w"):
-        pass
 
-    for environment in extra_settings:
-        with open(
-            os.path.join(base_settings_folder, f"{environment}_settings.py"), "w"
-        ):
-            pass
+def _mkdir(directory_path: DirectoryPath) -> None:
+    """Create a directory if it does not already exist.
 
-        os.mkdir(os.path.join(base_settings_folder, f"{environment}_secrets"))
+    Args:
+        directory_path (DirectoryPath)
+    """
+    if not os.path.isdir(directory_path):
+        os.mkdir(directory_path)
 
 
-def load_project(args) -> None:
+def load_project(initialize: bool = False) -> None:
+    """Create the global instance of the `Project` object. If provided, also initialize the `Project`.
+
+    Args:
+        initialize (bool, optional): Defaults to False.
+    """
     base_directory = os.getcwd()
 
     project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)
 
-    local_project(project_info_location)
-
-
-def load_and_initialize_project(args) -> None:
-    base_directory = os.getcwd()
-
-    project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)
-
-    local_project(project_info_location).initialize_project()
+    local_project(project_info_location) if not initialize else local_project(
+        project_info_location
+    ).initialize_project()

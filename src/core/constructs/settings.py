@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     )
 
     # Bucket to use as a place to store resource artifacts in the cloud
-    S3_ARTIFACTS_BUCKET: str = "cdev-demo-project-artifacts"
+    S3_ARTIFACTS_BUCKET: str = None
 
     # AWS account information
     AWS_REGION: str = "us-east-1"
