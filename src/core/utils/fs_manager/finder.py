@@ -1,9 +1,9 @@
-from logging import raiseExceptions
 import os
 from pydantic import DirectoryPath
 from pydantic.types import FilePath
 from sortedcontainers.sortedlist import SortedKeyList
 from typing import Dict, List, Tuple
+from functools import partial
 
 from core.constructs.resource import (
     Resource,
@@ -20,15 +20,21 @@ from core.default.resources.simple.xlambda import (
     SimpleFunctionConfiguration,
 )
 
-from core.utils import hasher, module_loader, paths
+from core.utils import module_loader, paths
 from core.utils.logger import log
 
 from serverless_parser import parser as serverless_parser
 
+import pkg_resources
 
-from . import writer
-from . import package_mananger
+from core.utils.fs_manager import (
+    package_manager,
+    handler_optimizer,
+    package_optimizer,
+    serverless_function_optimizer,
+)
 
+from .utils import _compress_lines
 
 LAMBDA_LAYER_RUUID = "cdev::simple::lambda_layer"
 
@@ -226,7 +232,10 @@ def _parse_serverless_functions(
         global_includes (List, optional): List of global lines to include. Defaults to [].
 
     Returns:
-        Tuple[List[simple_function_model], List[DependencyLayer]]: Functions and Dependencies parsed
+        Tuple[
+            List[simple_function_model],
+            List[DependencyLayer]
+        ]: Functions and Dependencies parsed
 
     Use the `serverless_parser` library to get information about each desired function and its dependencies.
     Then use that information to create the needed archives for the functions and return the information as
@@ -247,84 +256,94 @@ def _parse_serverless_functions(
     if not os.path.isdir(base_archive_path):
         os.mkdir(base_archive_path)
 
-    if Workspace.instance().settings.USE_DOCKER:
-        # IF the user has denoted that they want to use Docker to build dependencies for
-        # other architectures, then make sure a downloads cache is set up
-        download_cache = os.path.join(
-            Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION,
-            ".download_cache",
-        )
+    rv_functions = []
+    std_lib = package_manager.get_standard_library_modules()
+    modules_name_to_location = package_manager.get_packaged_modules_name_location_tag(
+        pkg_resources.working_set
+    )
+    pkg_module_dependency_info = package_manager.create_packaged_module_dependencies(
+        pkg_resources.working_set
+    )
 
-        if not os.path.isdir(download_cache):
-            os.mkdir(download_cache)
+    intermediate_dir = os.path.join(os.getcwd(), ".cdev", "intermediate")
+    excludes = {"__pycache__"}
 
-    else:
-        download_cache = None
+    full_path = paths.get_full_path_from_workspace_base(filepath)
+    print(full_path)
+    print(">>>>>>>>>>>>>>>>>>>>>")
+    print(modules_name_to_location.keys())
+    print("<<<<<<<<<<<<<<<<<<<<<")
+    print(pkg_module_dependency_info)
 
-    rv = []
-    seen_layers = {}
+    mod_creator = partial(
+        package_manager.create_all_module_info,
+        start_location=full_path,
+        standard_library=std_lib,
+        pkg_dependencies_data=pkg_module_dependency_info,
+        pkg_locations=modules_name_to_location,
+    )
 
     for parsed_function in parsed_file_info.parsed_functions:
 
         previous_info = handler_name_to_info.get(parsed_function.name)
-        needed_module_information = package_mananger.get_top_level_module_info(
-            parsed_function.imported_packages,
-            filepath,
-            previous_info.platform,
-            download_cache,
+        print("-----------------------")
+
+        print(previous_info.name)
+        print(parsed_function.imported_packages)
+        print(parsed_function.needed_line_numbers)
+        flattened_needed_lines = _compress_lines(parsed_function.needed_line_numbers)
+        print(flattened_needed_lines)
+        # First handle getting all the module information for this function
+        all_needed_modules = mod_creator(parsed_function.imported_packages)
+
+        handler_packager = partial(
+            handler_optimizer.create_optimized_handler_artifact,
+            base_packaging_path=os.getcwd(),
+            intermediate_path=intermediate_dir,
+            needed_lines=flattened_needed_lines,
+            suffix="_tmpy",
+            excludes=excludes,
         )
 
-        log.debug(
-            "Needed modules (%s) for %s",
-            needed_module_information,
-            parsed_function.name,
+        packaged_module_packager = partial(
+            package_optimizer.create_packaged_module_artifacts,
+            pkged_module_dependencies_data=pkg_module_dependency_info,
+            base_output_directory=intermediate_dir,
+            exclude_subdirectories=excludes,
         )
 
-        (
-            handler_archive_path,
-            handler_archive_hash,
-            base_handler_path,
-            dependencies_info,
-        ) = writer.create_full_deployment_package(
-            filepath,
-            parsed_function.get_line_numbers_serializeable(),
-            parsed_function.name,
-            base_archive_path,
-            pkgs=needed_module_information,
+        rv = serverless_function_optimizer.create_optimized_serverless_function_artifacts(
+            original_file_location=full_path,
+            imported_modules=parsed_function.imported_packages,
+            module_creator=mod_creator,
+            handler_packager=handler_packager,
+            packaged_module_optimizer=packaged_module_packager,
+            additional_handler_files_directories=[],
         )
+        print(rv)
 
-        # Update the seen packages
-        if dependencies_info:
-            # Helps return only one copy of each layer for the file
-            # change the path of the artifact to a relative path to the workspace
-            for dependency in dependencies_info:
-                dependency.artifact_path = paths.get_relative_to_workspace_path(
-                    dependency.artifact_path
-                )
-
-            seen_layers.update({x.hash: x.render() for x in dependencies_info})
-
-        handler_path = base_handler_path + "." + parsed_function.name
-
-        new_configuration = SimpleFunctionConfiguration(
-            handler=handler_path,
-            description=previous_info.configuration.description,
-            environment_variables=previous_info.configuration.environment_variables,
-        )
-
-        new_function = SimpleFunction(
-            cdev_name=previous_info.name,
-            filepath=paths.get_relative_to_workspace_path(handler_archive_path),
-            events=previous_info.events,
-            configuration=new_configuration,
-            function_permissions=previous_info.granted_permissions,
-            external_dependencies=dependencies_info if dependencies_info else [],
-            src_code_hash=handler_archive_hash,
-            nonce=previous_info.nonce,
-            preserve_function=previous_info._preserved_function,
-            platform=previous_info.platform,
-        )
-
-        rv.append(new_function.render())
-
-    return rv, [layer for _, layer in seen_layers.items()]
+        # new_configuration = SimpleFunctionConfiguration(
+        #    handler=handler_path,
+        #    description=previous_info.configuration.description,
+        #    environment_variables=previous_info.configuration.environment_variables,
+        # )
+    #
+    # new_function = SimpleFunction(
+    #    cdev_name=previous_info.name,
+    #    filepath=paths.get_relative_to_workspace_path(""),
+    #    events=previous_info.events,
+    #    configuration=new_configuration,
+    #    function_permissions=previous_info.granted_permissions,
+    #    #external_dependencies=dependencies_info if dependencies_info else [],
+    #    external_dependencies= [],
+    #    #src_code_hash=handler_archive_hash,
+    #    src_code_hash="123",
+    #    nonce=previous_info.nonce,
+    #    preserve_function=previous_info._preserved_function,
+    #    platform=previous_info.platform,
+    # )
+    #
+    # rv.append(new_function.render())
+    #
+    # return rv, [layer for _, layer in seen_layers.items()]
+    return [], []
