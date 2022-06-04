@@ -604,19 +604,22 @@ def _get_individual_files_imported_symbols(file_location) -> Set:
                     else pkg_name.name
                 )
 
-                rv.add((asname, None))
+                rv.add(asname)
 
         elif isinstance(node, ast.ImportFrom):
-            # if the import has levels > 0 and no module it is a local referenced package and will already be included
-            # if not then it is a package on the PYTHONPATH and we need to add it as a dependency
+            # IF the import has a named module then it can either be a relative or absolute import
+            # If the import does not have a named module, it must be a relative import
 
-            asname = (
-                node.module.split(".")[0]
-                if not node.module.startswith(".")
-                else node.module
-            )
+            if node.module:
+                asname = (
+                    node.module.split(".")[0]
+                    if node.level == 0
+                    else f"{node.level * '.'}{node.module}"
+                )
+                rv.add(asname)
 
-            rv.add((asname, None))
+            else:
+                [rv.add(f"{node.level * '.'}{x.name}") for x in node.names]
 
     _individual_file_cache[file_location] = rv
 
