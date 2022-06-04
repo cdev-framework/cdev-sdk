@@ -52,10 +52,9 @@ class SetEncoder(json.JSONEncoder):
 
 class Local_Backend_Configuration(Backend_Configuration):
     def __init__(self, config: Dict) -> None:
-        """
-        Represents the data needed to create a new cdev workspace:
+        """Represents the data needed to create a new cdev workspace:
 
-        Parameters:
+        Args:
             python_module: The name of the python module to load as the backend
             config: configuration option for the backend
 
@@ -96,14 +95,10 @@ class LocalBackend(Backend):
     def __init__(
         self, base_folder: DirectoryPath, central_state_file: FilePath = None
     ) -> None:
-        """
-        Implementation of a Backend using locally stored json files as the peristent storage medium. This backend should only be used for small project as it does not provide any mechanisms
+        """Implementation of a Backend using locally stored json files as the persistent storage medium. This backend should only be used for small project as it does not provide any mechanisms
         to work well when multiple people edit the state. Also this is a single threaded implementation.
 
-        *** For now, we will not use any kind of WAL for make changes to underlying state files, so it can be bad if you kill the process unexpectedly. In the future, it will use some mechanism
-        to prevent this. ***
-
-        Arguments:
+        Args:
             base_folder (DirectoryPath): Path to a folder to use for storing local json files. Defaults to cdev setting if not provided.
             central_state_file (FilePath): Path to the central state file. Defaults to cdev setting if not provided.
         """
@@ -127,11 +122,18 @@ class LocalBackend(Backend):
                 self._central_state = LocalCentralFile(**json.load(fh))
 
     def _write_central_file(self):
+        """Save the central state to disk"""
         file_manager.safe_json_write(
             self._central_state.dict(), self.central_state_file
         )
 
     def _write_resource_state_file(self, resource_state: Resource_State, fp: FilePath):
+        """Save the resource state to disk
+
+        Args:
+            resource_state (Resource_State)
+            fp (FilePath)
+        """
         file_manager.safe_json_write(resource_state.dict(), fp)
 
     # Api for working with Resource States
@@ -220,7 +222,7 @@ class LocalBackend(Backend):
 
         except Exception as e:
             raise InvalidResourceStateData(
-                f"Ivalid data for Resource State from file {file_location} for resource state {resource_state_uuid}; {e}"
+                f"Invalid data for Resource State from file {file_location} for resource state {resource_state_uuid}; {e}"
             )
 
     def get_top_level_resource_states(self) -> List[Resource_State]:
@@ -234,7 +236,15 @@ class LocalBackend(Backend):
 
     # Components
     def _create_component(self, resource_state_uuid: str, component_name: str) -> None:
+        """Create a component with the provide name in provided the resource state
 
+        Args:
+            resource_state_uuid (str)
+            component_name (str)
+
+        Raises:
+            ComponentAlreadyExists
+        """
         resource_state = self.get_resource_state(resource_state_uuid)
         resource_state_file_location = self._get_resource_state_file_location(
             resource_state_uuid
@@ -257,7 +267,16 @@ class LocalBackend(Backend):
         self._write_resource_state_file(resource_state, resource_state_file_location)
 
     def _delete_component(self, resource_state_uuid: str, component_name: str) -> None:
+        """Delete the component by name in a provided resource state
 
+        Args:
+            resource_state_uuid (str)
+            component_name (str)
+
+        Raises:
+            ComponentDoesNotExist
+            ComponentNotEmpty
+        """
         resource_state = self.get_resource_state(resource_state_uuid)
         resource_state_file_location = self._get_resource_state_file_location(
             resource_state_uuid
@@ -292,6 +311,17 @@ class LocalBackend(Backend):
         previous_component_name: str,
         new_component_name: str,
     ) -> None:
+        """Update the component by name
+
+        Args:
+            resource_state_uuid (str)
+            previous_component_name (str)
+            new_component_name (str)
+
+        Raises:
+            ComponentDoesNotExist
+            ComponentAlreadyExists
+        """
         resource_state = self.get_resource_state(resource_state_uuid)
         resource_state_file_location = self._get_resource_state_file_location(
             resource_state_uuid
@@ -346,7 +376,6 @@ class LocalBackend(Backend):
     def get_component(
         self, resource_state_uuid: str, component_name: str
     ) -> ComponentModel:
-
         resource_state = self.get_resource_state(resource_state_uuid)
 
         if not component_name in set(x.name for x in resource_state.components):
@@ -854,18 +883,16 @@ class LocalBackend(Backend):
         new_cloud_output: Dict = {},
         resolved_cloud_information: Dict = {},
     ) -> ComponentModel:
-        """
-        Apply a resource difference over a component model and return the updated component model
+        """Apply a resource difference over a component model and return the updated component model
 
-        Arguments:
+        Args:
             component(ComponentModel): The component to update
             diff (Resource_Difference): The difference to apply
             new_cloud_output (Dict): The updated output if needed
             resolved_cloud_information (Dict): cloud output information used to deploy resource
 
         Returns:
-            new_component(ComponentModel): The update component model
-
+            new_component(ComponentModel)
         """
         if diff.action_type == Resource_Change_Type.DELETE:
 
@@ -947,10 +974,9 @@ class LocalBackend(Backend):
         return component
 
     def _get_cloud_output_id(self, resource: ResourceModel) -> str:
-        """
-        Uniform way of generating cloud mapping id's
+        """Uniform way of generating cloud mapping id's
 
-        Arguments:
+        Args:
             resource (ResourceModel): resource to get id of
 
         Returns:
@@ -964,10 +990,9 @@ class LocalBackend(Backend):
 
 # Helper functions
 def _compute_component_hash(component: ComponentModel) -> str:
-    """
-    Uniform way of computing a component's identity hash
+    """Uniform way of computing a component's identity hash
 
-    Argument:
+    Args:
         component (ComponentModel): The component to compute the hash of
 
     Returns:
@@ -1001,7 +1026,16 @@ def _create_resource_diffs(
     new_resources: List[ResourceModel],
     old_resource: List[ResourceModel],
 ) -> List[Resource_Difference]:
+    """Create the differences between differences in the resources
 
+    Args:
+        component_name (str)
+        new_resources (List[ResourceModel]
+        old_resource (List[ResourceModel])
+
+    Returns:
+        List[Resource_Difference]
+    """
     if old_resource:
         # build map<hash,resource>
         old_hash_to_resource: Dict[str, ResourceModel] = {
@@ -1100,7 +1134,16 @@ def _create_reference_diffs(
     old_references: List[ResourceReferenceModel],
     originating_component_name: str,
 ) -> List[Resource_Reference_Difference]:
+    """Create the differences between components
 
+    Args:
+        new_references (List[ResourceReferenceModel])
+        old_references (List[ResourceReferenceModel])
+        originating_component_name (str)
+
+    Returns:
+        List[Resource_Reference_Difference]
+    """
     if old_references:
         # build map<name,resource>
         old_name_to_references: Dict[str, ResourceReferenceModel] = {
@@ -1145,7 +1188,18 @@ def _create_differences(
     List[Resource_Difference],
     List[Resource_Reference_Difference],
 ]:
+    """Create the differences between components
 
+    Args:
+        new_components (List[ComponentModel])
+        previous_components (List[ComponentModel])
+
+    Raises:
+        Exception
+
+    Returns:
+        Tuple[ List[Component_Difference], List[Resource_Difference], List[Resource_Reference_Difference], ]
+    """
     component_diffs = []
     resource_diffs = []
     reference_diffs = []

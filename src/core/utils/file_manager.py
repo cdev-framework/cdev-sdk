@@ -55,7 +55,6 @@ def safe_json_write(obj: Dict, fp: FilePath) -> None:
     Args:
         obj (Dict): The dictionary that should be written
         fp (FilePath): The path the file should be written at
-
     """
 
     tmp_fp = f"{fp}.tmp"
@@ -96,7 +95,7 @@ def load_resource_state(fp: FilePath) -> Resource_State:
 
     for the `cloud_output`, all the structures in the list container should be loaded as immutable objects
     because they are `cloud_output`models`. They have a special structure that needs to be preserved so that
-    the exectution order of the operations are preserved.
+    the execution order of the operations are preserved.
 
     Args:
         fp (FilePath): Path to the file storing the resource state
@@ -164,7 +163,7 @@ def _recursive_make_immutable(o):
 
     This is a cdev core specific transformation that is used to convert Dict and List and other native python
     types into frozendict, frozenset, etc. The purpose is that the later set of objects are immutable in python
-    and therefor can be used to directly compare against eachother and be used as __hash__ able objects in
+    and therefor can be used to directly compare against each other and be used as __hash__ able objects in
     things like dicts and `networkx` DAGs.
 
     Note the special case of handling Cloud Output Dict. These are identified as a dict with the key `id` that has
