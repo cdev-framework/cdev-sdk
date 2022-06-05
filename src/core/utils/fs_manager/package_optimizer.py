@@ -1,9 +1,17 @@
 from pydantic import BaseModel, DirectoryPath, FilePath
 from typing import Dict, List, Set, Tuple
 import os
+import json
+
+from core.utils.cache import Cache, FileLoadableCache
+from core.utils.file_manager import safe_json_write
+
 
 from . import writer
 from .module_types import ModuleInfo, PackagedModuleInfo
+
+CACHE_NAME = "packaged_module_artifacts"
+CACHE_FILENAME = "packaged_module_artifacts.json"
 
 
 class LayerDependency(BaseModel):
@@ -15,6 +23,33 @@ class SingleLayerDependency(LayerDependency):
     dependencies: List[ModuleInfo]
 
 
+class PackagedArtifactCache(FileLoadableCache):
+    def dump_to_file(self) -> None:
+        safe_json_write(self._cache_data, self.fp)
+
+    def _load_from_file(self, fp: FilePath) -> Dict:
+        if not os.path.isfile(fp):
+            return {}
+
+        try:
+            with open(fp) as fh:
+                raw_cache_data: Dict[str, Tuple[FilePath, str]] = json.load(fh)
+        except Exception as e:
+            # Could not load the file so just return an empty cache
+            return {}
+
+        validated_data = {}
+
+        for key, val in raw_cache_data.items():
+            artifact_fp, _ = val
+
+            if os.path.isfile(artifact_fp):
+                # Only actually load cache values where the artifact is present on the current filesystem
+                validated_data[key] = val
+
+        return validated_data
+
+
 def create_packaged_module_artifacts(
     pkged_mods: List[PackagedModuleInfo],
     pkged_module_dependencies_data: Dict[str, List[str]],
@@ -22,6 +57,7 @@ def create_packaged_module_artifacts(
     platform_filter: Set[str] = {},
     exclude_subdirectories: Set[str] = {},
     layers_available: int = 5,
+    created_artifact_cache: Cache = None,
 ) -> List[Tuple[FilePath, str]]:
     """Full function that can be turned into a 'packaged_module_packager_type' to be used in the
     serverless function optimizer.
@@ -48,10 +84,26 @@ def create_packaged_module_artifacts(
                 [x.top_module, *x.dependencies],
                 os.path.join(base_output_directory, _create_single_layer_name(x)),
                 exclude_subdirectories=exclude_subdirectories,
+                cache=created_artifact_cache,
             ),
         )
         for x in optimized_packages
     ]
+
+
+def load_packaged_artifact_cache(
+    base_cache_location: DirectoryPath,
+) -> PackagedArtifactCache:
+    if not os.path.isdir(base_cache_location):
+        raise Exception(
+            f"Can not load PackagedArtifactCache because the provided directory does not exist: {base_cache_location} "
+        )
+
+    cache_location = os.path.join(base_cache_location, CACHE_FILENAME)
+
+    cache = PackagedArtifactCache(cache_location)
+
+    return cache
 
 
 def _create_single_layer_name(layer: SingleLayerDependency) -> str:

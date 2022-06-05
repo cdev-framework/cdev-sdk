@@ -6,7 +6,11 @@ import itertools
 from pathlib import Path
 
 from core.utils.hasher import hash_file, hash_list
+from core.utils.cache import Cache
+from core.utils import hasher
 from .module_types import PackagedModuleInfo, RelativeModuleInfo
+
+deliminator = "-"
 
 
 def create_handler_archive(
@@ -30,13 +34,46 @@ def create_layer_archive(
     modules: List[PackagedModuleInfo],
     output_fp: FilePath,
     exclude_subdirectories: Set[set] = {},
+    cache: Cache = None,
 ) -> str:
-    return _create_archive_and_hash(
-        file_information=concatenate(
-            [_make_file_archive_information(x, exclude_subdirectories) for x in modules]
-        ),
-        output_fp=output_fp,
-    )
+
+    if cache:
+        cache_key = _create_cache_key(modules)
+        if cache.in_cache(cache_key):
+            return cache.get_from_cache(cache_key)[1]
+
+        artifact_hash = _create_archive_and_hash(
+            file_information=concatenate(
+                [
+                    _make_file_archive_information(x, exclude_subdirectories)
+                    for x in modules
+                ]
+            ),
+            output_fp=output_fp,
+        )
+
+        cache.update_cache(cache_key, (output_fp, artifact_hash))
+
+        return artifact_hash
+
+    else:
+        return _create_archive_and_hash(
+            file_information=concatenate(
+                [
+                    _make_file_archive_information(x, exclude_subdirectories)
+                    for x in modules
+                ]
+            ),
+            output_fp=output_fp,
+        )
+
+
+def _create_cache_key(modules: List[PackagedModuleInfo]) -> str:
+
+    _ids = [f"{x.module_name}{deliminator}{x.tag}" for x in modules]
+    _ids.sort()
+
+    return hasher.hash_list(_ids)
 
 
 def _make_file_archive_information(

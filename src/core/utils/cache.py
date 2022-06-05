@@ -1,5 +1,7 @@
 from typing import Any, Dict
 
+from pydantic import FilePath
+
 
 _ALL_CACHES = {}
 
@@ -26,7 +28,7 @@ class Cache:
     def get_from_cache(self, key: str) -> str:
         raise NotImplementedError
 
-    def update_cache(self, key: str, val: str):
+    def update_cache(self, key: str, val: Any):
         raise NotImplementedError
 
 
@@ -43,3 +45,20 @@ class InMemoryCache(Cache):
 
     def update_cache(self, key: str, val: Any):
         self._cache_data[key] = val
+
+
+class FileLoadableCache(InMemoryCache):
+    def __init__(self, fp: FilePath = None) -> None:
+        if not fp:
+            super().__init__()
+            return
+
+        data = self._load_from_file(fp)
+        super().__init__(data)
+        self.fp = fp
+
+    def dump_to_file(self) -> None:
+        raise NotImplementedError
+
+    def _load_from_file(self, fp: FilePath) -> Dict:
+        raise NotImplementedError

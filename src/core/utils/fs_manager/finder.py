@@ -245,15 +245,17 @@ def _parse_serverless_functions(
     Resources.
     """
     full_file_path = paths.get_full_path_from_workspace_base(filepath)
+    excludes = {"__pycache__"}
+
+    (
+        std_lib,
+        modules_name_to_location,
+        pkg_module_dependency_info,
+    ) = _load_environment_information()
+
+    # Return Values
     rv_functions: List[SimpleFunction] = []
     rv_layers: List[DependencyLayer] = []
-
-    # Get all the info about a set of functions from the original file
-    parsed_file_info = serverless_parser.parse_functions_from_file(
-        full_file_path,
-        include_functions=functions_names_to_parse,
-        remove_top_annotation=True,
-    )
 
     # Base path that the all the archives will go
     base_archive_path = os.path.join(
@@ -264,13 +266,17 @@ def _parse_serverless_functions(
     if not os.path.isdir(base_archive_path):
         os.mkdir(base_archive_path)
 
-    excludes = {"__pycache__"}
+    # Caches
+    packaged_module_cache = package_optimizer.load_packaged_artifact_cache(
+        Workspace.instance().settings.CACHE_DIRECTORY
+    )
 
-    (
-        std_lib,
-        modules_name_to_location,
-        pkg_module_dependency_info,
-    ) = _load_environment_information()
+    # Get all the info about a set of functions from the original file
+    parsed_file_info = serverless_parser.parse_functions_from_file(
+        full_file_path,
+        include_functions=functions_names_to_parse,
+        remove_top_annotation=True,
+    )
 
     mod_creator = partial(
         package_manager.create_all_module_info,
@@ -302,6 +308,7 @@ def _parse_serverless_functions(
             pkged_module_dependencies_data=pkg_module_dependency_info,
             base_output_directory=base_archive_path,
             exclude_subdirectories=excludes,
+            created_artifact_cache=packaged_module_cache,
         )
 
         (
@@ -328,6 +335,9 @@ def _parse_serverless_functions(
 
         rv_functions.append(function_resource)
         rv_layers.extend(dependencies_resources)
+
+    # dump cache
+    packaged_module_cache.dump_to_file()
 
     return [x.render() for x in rv_functions], [x.render() for x in rv_layers]
 
