@@ -30,6 +30,8 @@ class SingleLayerDependency(LayerDependency):
 
 
 class OptimalModulesCache(FileLoadableCache):
+    """Implementation of FileLoadableCache designed to cache the results of the optimal packaged module computation."""
+
     def dump_to_file(self) -> None:
 
         json_safe_data = {
@@ -38,11 +40,11 @@ class OptimalModulesCache(FileLoadableCache):
         safe_json_write(json_safe_data, self.fp)
 
     def _load_from_file(self, fp: FilePath) -> Dict:
-        if not os.path.isfile(fp):
+        if not os.path.isfile(self.fp):
             return {}
 
         try:
-            with open(fp) as fh:
+            with open(self.fp) as fh:
                 raw_cache_data: Dict[str, Dict] = json.load(fh)
         except Exception as e:
             # Could not load the file so just return an empty cache
@@ -62,6 +64,8 @@ class OptimalModulesCache(FileLoadableCache):
 
 
 class PackagedArtifactCache(FileLoadableCache):
+    """Implementation of FileLoadableCache designed to cache the results of the create packaged module archive action"""
+
     def dump_to_file(self) -> None:
         safe_json_write(self._cache_data, self.fp)
 
@@ -91,6 +95,17 @@ class PackagedArtifactCache(FileLoadableCache):
 def load_optimal_modules_cache(
     base_cache_location: DirectoryPath,
 ) -> OptimalModulesCache:
+    """Load the optimal module cache from data in the provided directory
+
+    Args:
+        base_cache_location (DirectoryPath): base directory to look for already generated cache data
+
+    Raises:
+        Exception: invalid directory
+
+    Returns:
+        OptimalModulesCache
+    """
     if not os.path.isdir(base_cache_location):
         raise Exception(
             f"Can not load OptimalModulesCache because the provided directory does not exist: {base_cache_location} "
@@ -99,6 +114,32 @@ def load_optimal_modules_cache(
     cache_location = os.path.join(base_cache_location, OPTIMIZED_MODULES_CACHE_FILENAME)
 
     cache = OptimalModulesCache(cache_location)
+
+    return cache
+
+
+def load_packaged_artifact_cache(
+    base_cache_location: DirectoryPath,
+) -> PackagedArtifactCache:
+    """Load the packaged module artifacts cache from data in the provided directory
+
+    Args:
+        base_cache_location (DirectoryPath): base directory to look for already generated cache data
+
+    Raises:
+        Exception: invalid directory
+
+    Returns:
+        PackagedArtifactCache: _description_
+    """
+    if not os.path.isdir(base_cache_location):
+        raise Exception(
+            f"Can not load PackagedArtifactCache because the provided directory does not exist: {base_cache_location} "
+        )
+
+    cache_location = os.path.join(base_cache_location, ARTIFACT_CACHE_FILENAME)
+
+    cache = PackagedArtifactCache(cache_location)
 
     return cache
 
@@ -125,7 +166,7 @@ def create_packaged_module_artifacts(
         layers_available (int, optional): Max number of layers to create. Defaults to 5.
 
     Returns:
-        List[Tuple[FilePath, str]]: _description_
+        List[Tuple[FilePath, str]]: List of Tuples of (artifact_path, artifact_hash)
     """
     optimized_packages = _create_optimal_packaged_modules(
         pkged_mods,
@@ -149,28 +190,31 @@ def create_packaged_module_artifacts(
     ]
 
 
-def load_packaged_artifact_cache(
-    base_cache_location: DirectoryPath,
-) -> PackagedArtifactCache:
-    if not os.path.isdir(base_cache_location):
-        raise Exception(
-            f"Can not load PackagedArtifactCache because the provided directory does not exist: {base_cache_location} "
-        )
-
-    cache_location = os.path.join(base_cache_location, ARTIFACT_CACHE_FILENAME)
-
-    cache = PackagedArtifactCache(cache_location)
-
-    return cache
-
-
 def _create_single_layer_name(layer: SingleLayerDependency) -> str:
+    """Helper function for defining the name of a SingleLayerDependency
+
+    Args:
+        layer (SingleLayerDependency): provided layer
+
+    Returns:
+        str: name
+    """
     return f"{layer.top_module.module_name}-{layer.top_module.tag}.zip"
 
 
 def _create_cache_key(
     modules: List[PackagedModuleInfo], platform_filter: Set[str], available_slots: int
 ) -> str:
+    """Helper function for creating the hash key from the input to `_create_optimal_packaged_modules`
+
+    Args:
+        modules (List[PackagedModuleInfo]): all available modules
+        platform_filter (Set[str]): packages that are by default available on a platform
+        available_slots (int): amount of slots available
+
+    Returns:
+        str: cache key
+    """
     _ids = [
         *[f"{x.module_name}{deliminator}{x.tag}" for x in modules],
         *platform_filter,
@@ -192,15 +236,17 @@ def _create_optimal_packaged_modules(
     representing the optimal way to package the modules.
 
     Args:
-        modules (List[PackagedModuleInfo]): _description_
-        pkged_module_dependencies_data (Dict[str, List[str]]): _description_
-        available_slots (int, optional): _description_. Defaults to 5.
+        modules (List[PackagedModuleInfo]): all available modules
+        pkged_module_dependencies_data (Dict[str, List[str]]): data encoding dependencies between modules.
+        platform_filter (Set[str]): packages that are by default available on a platform
+        available_slots (int): amount of slots available
+        cache (Optional[Cache]): a Cache to speed up operation
 
     Raises:
-        Exception: _description_
+        Exception: Too many top level modules
 
     Returns:
-        List: _description_
+        List[SingleLayerDependency]
     """
     if cache:
         cache_key = _create_cache_key(modules, platform_filter, available_slots)
@@ -248,6 +294,7 @@ def _find_all_top_modules(
     that must explicitly be packaged if used by a function.
 
     Args:
+        used_modules (Set[str]): modules directly imported
         pkged_module_dependencies_data (Dict[str, List[str]])
 
     Returns:

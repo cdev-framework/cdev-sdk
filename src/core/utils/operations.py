@@ -37,7 +37,7 @@ def combine_dictionaries(dicts: List[Dict]) -> Dict:
     Returns:
         Dict
     """
-    if not input:
+    if not dicts:
         return {}
 
     return reduce(lambda a, b: {**a, **b}, dicts)

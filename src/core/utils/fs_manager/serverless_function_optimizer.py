@@ -49,12 +49,12 @@ def create_optimized_serverless_function_artifacts(
     Also create the needed packaged modules artifacts. All artifacts should include a hash.
 
     Args:
-        original_file_location (FilePath): _description_
-        module_creator (module_creator_type): _description_
-        handler_packager (handler_packager_type): _description_
-        packaged_module_optimizer (packaged_module_packager_type): _description_
-        imported_modules (List[str], optional): _description_. Defaults to [].
-        additional_handler_files_directories (List[Union[FilePath, DirectoryPath]], optional): _description_. Defaults to [].
+        original_file_location (FilePath): original file
+        imported_modules (List[str], optional): modules imported by this parsed function. Defaults to [].
+        module_creator (module_creator_type): function to create modules
+        handler_packager (handler_packager_type): function to create artifacts of packaged modules
+        packaged_module_optimizer (packaged_module_packager_type): function to optimize linked packaged modules.
+        additional_handler_files_directories (List[Union[FilePath, DirectoryPath]], optional): additional files to add to handler artifact. Defaults to [].
 
     Returns:
         Tuple[

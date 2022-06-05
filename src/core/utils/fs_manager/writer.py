@@ -1,6 +1,6 @@
 import os
-from pydantic import FilePath, DirectoryPath
-from typing import Dict, List, Tuple, Set, Any
+from pydantic import FilePath
+from typing import List, Tuple, Set, Any
 from zipfile import ZipFile
 import itertools
 from pathlib import Path
@@ -36,7 +36,18 @@ def create_layer_archive(
     exclude_subdirectories: Set[set] = {},
     cache: Cache = None,
 ) -> str:
+    """Given a list of packaged module info objects, create an archive that includes all needed files for those modules. If a cache is provide,
+    use it to avoid duplicating work.
 
+    Args:
+        modules (List[PackagedModuleInfo]): modules.
+        output_fp (FilePath): archive output location.
+        exclude_subdirectories (Set[set], optional): directories to ignore. Defaults to {}.
+        cache (Cache, optional): _description_. Defaults to None.
+
+    Returns:
+        str: hash of the created archive
+    """
     if cache:
         cache_key = _create_cache_key(modules)
         if cache.in_cache(cache_key):
@@ -69,6 +80,14 @@ def create_layer_archive(
 
 
 def _create_cache_key(modules: List[PackagedModuleInfo]) -> str:
+    """Create cache key for a given list of package module info objects
+
+    Args:
+        modules (List[PackagedModuleInfo])
+
+    Returns:
+        str: cache key
+    """
 
     _ids = [f"{x.module_name}{deliminator}{x.tag}" for x in modules]
     _ids.sort()
@@ -158,11 +177,11 @@ def _create_archive_and_hash(
     within the zip.
 
     Args:
-        file_information (List[Tuple[FilePath, FilePath]]): _description_
-        output_fp (FilePath): _description_
+        file_information (List[Tuple[FilePath, FilePath]]): List of Filepath and Destinations in the archive
+        output_fp (FilePath): destination of the archive
 
     Returns:
-        str: _description_
+        str: hash of the archive
     """
     hash_val = _create_hash([x[0] for x in file_information])
 
@@ -178,7 +197,7 @@ def _create_hash(files: List[FilePath]) -> str:
         files (List[FilePath]): file locations
 
     Returns:
-        _type_: _description_
+        str: hash
     """
     tmp_file_hashes = [hash_file(x) for x in files]
     tmp_file_hashes.sort()
@@ -189,13 +208,13 @@ def _create_hash(files: List[FilePath]) -> str:
 def _create_archive(
     file_information: List[Tuple[FilePath, FilePath]],
     output_fp: FilePath,
-):
+) -> None:
     """Create a zip archive at the given file path. The list of file inputs should be a tuple of the current file location
     and the final location within the zip file.
 
     Args:
         file_information (List[Tuple(FilePath, FilePath)]): Original Path to File and Path within Zip archive
-        output_fp (FilePath): _description_
+        output_fp (FilePath): destination of the archive
     """
     if os.path.isfile(output_fp):
         os.remove(output_fp)

@@ -17,20 +17,20 @@ def create_optimized_handler_artifact(
     needed_lines: List[int],
     suffix: str = "",
     excludes: Set[str] = set(),
-):
+) -> Tuple[FilePath, str]:
     """Create the handler archive and hash based on the given information.
 
     Args:
-        original_file_location (FilePath): _description_
-        base_packaging_path (DirectoryPath): _description_
-        intermediate_path (DirectoryPath): _description_
-        needed_lines (List[int]): _description_
-        additional_files (List[Union[FilePath, DirectoryPath]], optional): _description_. Defaults to [].
-        suffix (str, optional): _description_. Defaults to "".
-        excludes (Set[str], optional): _description_. Defaults to set().
+        original_file_location (FilePath): location of file
+        base_packaging_path (DirectoryPath): directory to write artifact
+        intermediate_path (DirectoryPath): intermediate path for parsed functions
+        needed_lines (List[int]): lines needed for the handler file
+        additional_files (List[Union[FilePath, DirectoryPath]], optional): additional files for the artifact. Defaults to [].
+        suffix (str, optional): suffix for final artifact. Defaults to "".
+        excludes (Set[str], optional): folders to exclude from the artifact. Defaults to set().
 
     Returns:
-        Tuple[FilePath,str]: FilePath of archive and hash
+        Tuple[FilePath,str]: Tuple of archive filepath and hash
     """
     relative_handler_path = _get_relative_path(
         original_file_location, base_packaging_path
@@ -66,7 +66,7 @@ def create_optimized_handler_artifact(
 
 def _create_intermediate_handler_file(
     original_path: FilePath, needed_lines: List[int], output_fp: FilePath
-):
+) -> None:
     """
     Make the actual file that will be deployed onto a serverless platform by parsing out the needed lines from the original file
     and writing them to provide FilePath
@@ -107,7 +107,7 @@ def _make_additional_file_information(
         exclude_directories (Set[str], optional): any sub directory to exclude. Defaults to set().
 
     Raises:
-        Exception
+        Exception: module is not either a file or directory
 
     Returns:
         List[Tuple[FilePath, FilePath]]: All information to package the module.
@@ -134,10 +134,20 @@ def _make_additional_file_information(
         raise Exception(f"{module} is not either a file or directory")
 
 
-def _get_file_as_list(path):
-    # Returns the file as a list of lines
+def _get_file_as_list(path: FilePath) -> List[str]:
+    """Return a file as a list of strings
+
+    Args:
+        path (FilePath)
+
+    Raises:
+        Exception: path is not a file
+
+    Returns:
+        List[str]: lines from the file
+    """
     if not os.path.isfile:
-        raise Exception
+        raise Exception(f"{path} is not a file")
 
     with open(path) as fh:
         rv = fh.read().splitlines()
@@ -157,7 +167,6 @@ def _clean_lines(lines: List[str]) -> List[str]:
 
     Returns:
         clean_lines (List[str]): Lines with endings trimmed of whitespace and comments
-
     """
 
     # final line should be an offset from the end of the list the represents the final real line of python code
@@ -205,26 +214,7 @@ def _get_lines_from_file_list(file_list: List[str], line_nos: List[int]) -> List
     return actual_lines
 
 
-def _compress_lines(original_lines):
-    # Takes input SORTED([(l1,l2), (l3,l4), ...])
-    # returns [l1,...,l2,l3,...,l4]
-    rv = []
-
-    for pair in original_lines:
-        for i in range(pair[0], pair[1] + 1):
-            if rv and rv[-1] == i:
-                # if the last element already equals the current value continue... helps eleminate touching boundaries
-                continue
-
-            rv.append(i)
-
-        if sys.version_info > (3, 8):
-            rv.append(-1)
-
-    return rv
-
-
-def _write_intermediate_function(path: FilePath, lines: List[str]):
+def _write_intermediate_function(path: FilePath, lines: List[str]) -> None:
     """
     Write a set of lines for the intermediate handler into the actual file on the system
 
@@ -240,11 +230,19 @@ def _write_intermediate_function(path: FilePath, lines: List[str]):
 
 
 def _get_relative_path(original_path: FilePath, base_path: DirectoryPath) -> FilePath:
+    """Get the relative path of a file from a given base directory
 
+    Args:
+        original_path (FilePath): absolute file path
+        base_path (DirectoryPath): base directory
+
+    Returns:
+        FilePath: relative file path
+    """
+    pass
     if Path(base_path) not in Path(original_path).parents:
         raise Exception(
-            f"""Can not make relative path for {original_path} from {base_path}
-            because it is not a child path"""
+            f"""Can not make relative path for {original_path} from {base_path} because it is not a child path"""
         )
 
     return os.path.relpath(original_path, base_path)

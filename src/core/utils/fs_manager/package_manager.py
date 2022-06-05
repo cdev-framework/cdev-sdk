@@ -15,7 +15,7 @@ from .module_types import (
     StdLibModuleInfo,
     PackagedModuleInfo,
 )
-from core.utils.operations import concatenate_to_set
+from core.utils.operations import concatenate_to_set, combine_dictionaries
 
 #######################
 ##### Types
@@ -32,12 +32,24 @@ module_segmenter = Callable[[List[str]], Tuple[List[str], List[str], List[str]]]
 
 
 def create_all_module_info(
-    module_names: str,
+    module_names: List[str],
     start_location: FilePath,
     standard_library: Set[str],
     pkg_dependencies_data: Dict[str, Set[str]],
     pkg_locations: Dict[str, Tuple[FilePath, str]],
 ) -> List[ModuleInfo]:
+    """Create a Module Info from the provided data about the environment.
+
+    Args:
+        module_names (List[str]): All the names of modules.
+        start_location (FilePath): Base location to resolve local imports against.
+        standard_library (Set[str]): Modules available in the std library
+        pkg_dependencies_data (Dict[str, Set[str]]): Dependency information for the packaged modules
+        pkg_locations (Dict[str, Tuple[FilePath, str]]): Location of all packaged modules
+
+    Returns:
+        List[ModuleInfo]
+    """
     module_creator = partial(
         _create_module_info,
         start_location=start_location,
@@ -78,7 +90,7 @@ def get_standard_library_modules(version="3_7") -> Set[str]:
         FileNotFoundError
 
     Returns:
-        Set[str]: _description_
+        Set[str]: std library module names
     """
     FILE_LOC = os.path.join(
         os.path.dirname(__file__), "standard_library_names", f"python_{version}"
@@ -98,7 +110,7 @@ def create_packaged_module_dependencies(ws: WorkingSet) -> Dict[str, Set[str]]:
         ws (WorkingSet)
 
     Returns:
-        Dict[str, List[str]]: module_name -> all modules it depends on
+        Dict[str, List[str]]: <module_name, all modules it depends on>
     """
     pkgs_to_top_mods = _create_pkg_to_top_modules(ws)
 
@@ -119,9 +131,16 @@ def _get_all_module_info(
     """Given a list of modules, compute all dependent module information using the given helper functions and information.
 
     Args:
-        module_name (str): _description_
-        determine_module_type (Callable[[str], str])
-        pkg_module_dep_info (Dict[str, Set[str]]): _description_
+        module_names (List[str]): module names
+        pkg_module_dep_info (Dict[str, Set[str]]): dependency information for modules
+        module_segmenter (module_segmenter): segment modules into different classes
+        module_creator (module_info_creator): create the Module Info
+
+    Raises:
+        Exception: _description_
+
+    Returns:
+        List[Union[RelativeModuleInfo, StdLibModuleInfo, PackagedModuleInfo]]: All Module information
     """
 
     cache = {}
@@ -191,7 +210,7 @@ def _create_module_info(
     standard_library: Set[str],
     packaged_module_locations_tags: Dict[str, FilePath],
 ) -> ModuleInfo:
-    """Given a module_name, create a ModuleInfo object based on the current environment expressed by the paramters.
+    """Given a module_name, create a ModuleInfo object based on the current environment expressed by the parameters.
 
     This process needs the set of standard library modules, set of packaged modules, and the base path to
     resolve relative imports against. It is recommended to create a partial function encoding this information then you have a 'module_info_creator' compatible function
@@ -204,7 +223,7 @@ def _create_module_info(
         packaged_modules (Dict[str, FilePath]): Dict containing information needed to create a packaged module info. This is the base folder location.
 
     Returns:
-        module_info (List[ModuleInfo]): ModuleInfo Objects
+        ModuleInfo
     """
 
     if module_name[0] == ".":
@@ -232,15 +251,15 @@ def _segment_module_names(
     library and packaged modules.
 
     Args:
-        module_names (List[str]): _description_
-        standard_library (Set[str]): _description_
-        packaged_modules (Set[str]): _description_
+        module_names (List[str]): modules to segment
+        standard_library (Set[str]): std library module names
+        packaged_modules (Set[str]): packaged module names
 
     Raises:
-        Exception: _description_
+        Exception: Can not Segment
 
     Returns:
-        Tuple[List[str], List[str], List[str]]: _description_
+        Tuple[List[str], List[str], List[str]]: Relative Modules, Packaged Modules, Std Library Modules
     """
     rv_relative_modules = []
     rv_packaged_modules = []
@@ -276,9 +295,9 @@ def _recursive_find_relative_module_dependencies(
     to use to recursively create any additional RelativeModuleInfo objects.
 
     Args:
-        module (RelativeModuleInfo): _description_
-        module_identifier (Callable): _description_
-        module_creator (module_info_creator): _description_
+        module (RelativeModuleInfo): provided relative module
+        module_segmenter (Callable): function to segment found modules
+        module_creator (module_info_creator): function to create ModuleInfo Objects
 
     Returns:
         Tuple[List[RelativeModuleInfo], List[str]]: Needed RelativeModuleInfos and packages module names
@@ -358,7 +377,7 @@ def _create_relative_module_info(
         original_file_location (FilePath): where the relative import is called from
 
     Raises:
-        Exception: _description_
+        Exception: Can nto resolve relative module
 
     Returns:
         RelativeModuleInfo: information about the module
@@ -398,6 +417,16 @@ def _create_relative_module_info(
 def _create_packaged_module_info(
     module_symbol: str, filepath: FilePath, tag: str
 ) -> PackagedModuleInfo:
+    """Create a PackagedModuleInfo object
+
+    Args:
+        module_symbol (str): symbol used to import module
+        filepath (FilePath): Filesystem location of the module
+        tag (str): tags from the package
+
+    Returns:
+        PackagedModuleInfo
+    """
 
     if os.path.isfile(filepath):
         is_dir = False
@@ -410,6 +439,14 @@ def _create_packaged_module_info(
 
 
 def _create_std_library_module_info(module_symbol: str) -> StdLibModuleInfo:
+    """Create a StdLibModuleInfo object
+
+    Args:
+        module_symbol (str): std library module name
+
+    Returns:
+        StdLibModuleInfo
+    """
     return StdLibModuleInfo(module_name=module_symbol)
 
 
@@ -423,7 +460,7 @@ def _create_pkg_to_top_modules(ws: WorkingSet) -> Dict[str, List[str]]:
         ws (WorkingSet):
 
     Returns:
-        Dict[str, List[str]]: package_name -> top_level_module_names
+        Dict[str, List[str]]: <package_name, top_level_module_names>
     """
     return combine_dictionaries(
         [{x.project_name: _create_packages_direct_modules(x)} for x in ws]
@@ -464,12 +501,12 @@ def _get_module_dependencies_info(
     """Given a package, return a dict containing the top level modules as keys and all dependant modules as the value.
 
     Args:
-        pkg (Distribution)
+        pkg (Distribution): Distribution object
         pkg_to_top_mods (Dict[str, List[str]]): Information about a packages top level modules
-        ws (WorkingSet): Worksing set to find the requirements for this package
+        ws (WorkingSet): Working set to find the requirements for this package
 
     Returns:
-        Dict[str, List[str]]:
+        Dict[str, List[str]]: <module_name, dependant_module_names>
     """
 
     keys = pkg_to_top_mods.get(pkg.project_name)
@@ -554,7 +591,7 @@ def _get_metadata_files_for_package(
     """Return the needed metadata about a package.
 
     Args:
-        package (Distribution): _description_
+        package (Distribution)
 
     Returns:
         Tuple[str,str,str, FilePath]: Distinfo_folder, TopLevel_fileloc, Wheel_fileloc, base_dir
@@ -588,10 +625,10 @@ def _count_relative_level(module_symbol: str) -> int:
     """Given a relative package name return the nested levels based on the number of leading '.' chars
 
     Args:
-        module_symbol (str): _description_
+        module_symbol (str): relative module symbol
 
     Returns:
-        _type_: _description_
+        int: relative import level
     """
     module_symbol_cp = str(module_symbol)
 
@@ -610,6 +647,14 @@ def _count_relative_level(module_symbol: str) -> int:
 
 
 def _get_tags_from_wheel(wheel_info_location: FilePath) -> List[str]:
+    """Get the tags information from a wheels file
+
+    Args:
+        wheel_info_location (FilePath)
+
+    Returns:
+        List[str]: tags
+    """
     with open(wheel_info_location) as fh:
         lines = fh.readlines()
 
@@ -629,11 +674,11 @@ def _get_module_abs_path(module_name: str, base_path: FilePath) -> FilePath:
     """Given a module and base directory to search, return either the folder or file of the module
 
     Args:
-        module_name (str): _description_
-        base_path (FilePath): _description_
+        module_name (str): name of imported module
+        base_path (FilePath): directory to search
 
     Raises:
-        Exception: _description_
+        Exception: Could not find either <module_name>.py file or folder
 
     Returns:
         FilePath: absolute location
@@ -647,7 +692,9 @@ def _get_module_abs_path(module_name: str, base_path: FilePath) -> FilePath:
     elif os.path.isfile(potential_file):
         return potential_file
     else:
-        raise Exception
+        raise Exception(
+            f"Could not find either {module_name}.py or {module_name} directory in {base_path}"
+        )
 
 
 def _get_relative_package_dependencies(fp: Union[FilePath, DirectoryPath]) -> List[str]:
@@ -689,6 +736,15 @@ def _get_relative_package_dependencies(fp: Union[FilePath, DirectoryPath]) -> Li
 def get_from_relative_modules_cache(
     module: RelativeModuleInfo, cache: Dict
 ) -> Union[None, List[str]]:
+    """Look for a relative module in a given cache
+
+    Args:
+        module (RelativeModuleInfo): module to look for
+        cache (Dict): data cache
+
+    Returns:
+        Union[None, List[str]]: cached value
+    """
     return cache.get(module.to_key())
 
 
@@ -697,23 +753,18 @@ def put_relative_modules_cache(
     val: Tuple[Set[RelativeModuleInfo], Set[str], Set[StdLibModuleInfo]],
     cache: Dict,
 ) -> Dict:
+    """Put the value in the cache for a given module
+
+    Args:
+        module (RelativeModuleInfo): module to use as key
+        val (Tuple[Set[RelativeModuleInfo], Set[str], Set[StdLibModuleInfo]]): cache value
+        cache (Dict): cache
+
+    Returns:
+        Dict: new cache
+    """
     new_cache = copy(cache)
 
     new_cache[module.to_key()] = val
 
     return new_cache
-
-
-def combine_dictionaries(input: List[Dict]) -> Dict:
-    """Helper function to combine a list of Dict into a single Dict
-
-    Args:
-        input (List[Dict])
-
-    Returns:
-        Dict
-    """
-    if not input:
-        return {}
-
-    return reduce(lambda a, b: {**a, **b}, input)
