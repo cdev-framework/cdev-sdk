@@ -271,6 +271,9 @@ def _parse_serverless_functions(
     packaged_module_cache = package_optimizer.load_packaged_artifact_cache(
         Workspace.instance().settings.CACHE_DIRECTORY
     )
+    optimal_modules_cache = package_optimizer.load_optimal_modules_cache(
+        Workspace.instance().settings.CACHE_DIRECTORY
+    )
 
     # Get all the info about a set of functions from the original file
     parsed_file_info = serverless_parser.parse_functions_from_file(
@@ -310,7 +313,8 @@ def _parse_serverless_functions(
             base_output_directory=base_archive_path,
             platform_filter=aws_platform_exclude,
             exclude_subdirectories=excludes,
-            created_artifact_cache=packaged_module_cache,
+            packaged_artifact_cache=packaged_module_cache,
+            optimal_module_cache=optimal_modules_cache,
         )
 
         (
@@ -340,6 +344,7 @@ def _parse_serverless_functions(
 
     # dump cache
     packaged_module_cache.dump_to_file()
+    optimal_modules_cache.dump_to_file()
 
     return [x.render() for x in rv_functions], [x.render() for x in rv_layers]
 

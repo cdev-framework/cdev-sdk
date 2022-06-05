@@ -5,13 +5,19 @@ import json
 
 from core.utils.cache import Cache, FileLoadableCache
 from core.utils.file_manager import safe_json_write
+from core.utils.hasher import hash_list
 
 
 from . import writer
 from .module_types import ModuleInfo, PackagedModuleInfo
 
-CACHE_NAME = "packaged_module_artifacts"
-CACHE_FILENAME = "packaged_module_artifacts.json"
+ARTIFACT_CACHE_NAME = "packaged_module_artifacts"
+ARTIFACT_CACHE_FILENAME = "packaged_module_artifacts.json"
+
+OPTIMIZED_MODULES_CACHE_NAME = "optimized_modules"
+OPTIMIZED_MODULES_CACHE_FILENAME = "optimized_modules.json"
+
+deliminator = "-"
 
 
 class LayerDependency(BaseModel):
@@ -19,8 +25,40 @@ class LayerDependency(BaseModel):
 
 
 class SingleLayerDependency(LayerDependency):
-    top_module: ModuleInfo
-    dependencies: List[ModuleInfo]
+    top_module: PackagedModuleInfo
+    dependencies: List[PackagedModuleInfo]
+
+
+class OptimalModulesCache(FileLoadableCache):
+    def dump_to_file(self) -> None:
+
+        json_safe_data = {
+            k: [vv.dict() for vv in v] for k, v in self._cache_data.items()
+        }
+        safe_json_write(json_safe_data, self.fp)
+
+    def _load_from_file(self, fp: FilePath) -> Dict:
+        if not os.path.isfile(fp):
+            return {}
+
+        try:
+            with open(fp) as fh:
+                raw_cache_data: Dict[str, Dict] = json.load(fh)
+        except Exception as e:
+            # Could not load the file so just return an empty cache
+            return {}
+
+        validated_data = {}
+
+        for key, val in raw_cache_data.items():
+            try:
+                serialized_data = [SingleLayerDependency(**x) for x in val]
+            except Exception as e:
+                continue
+
+            validated_data[key] = serialized_data
+
+        return validated_data
 
 
 class PackagedArtifactCache(FileLoadableCache):
@@ -50,6 +88,21 @@ class PackagedArtifactCache(FileLoadableCache):
         return validated_data
 
 
+def load_optimal_modules_cache(
+    base_cache_location: DirectoryPath,
+) -> OptimalModulesCache:
+    if not os.path.isdir(base_cache_location):
+        raise Exception(
+            f"Can not load OptimalModulesCache because the provided directory does not exist: {base_cache_location} "
+        )
+
+    cache_location = os.path.join(base_cache_location, OPTIMIZED_MODULES_CACHE_FILENAME)
+
+    cache = OptimalModulesCache(cache_location)
+
+    return cache
+
+
 def create_packaged_module_artifacts(
     pkged_mods: List[PackagedModuleInfo],
     pkged_module_dependencies_data: Dict[str, List[str]],
@@ -57,7 +110,8 @@ def create_packaged_module_artifacts(
     platform_filter: Set[str] = {},
     exclude_subdirectories: Set[str] = {},
     layers_available: int = 5,
-    created_artifact_cache: Cache = None,
+    optimal_module_cache: Cache = None,
+    packaged_artifact_cache: Cache = None,
 ) -> List[Tuple[FilePath, str]]:
     """Full function that can be turned into a 'packaged_module_packager_type' to be used in the
     serverless function optimizer.
@@ -74,7 +128,11 @@ def create_packaged_module_artifacts(
         List[Tuple[FilePath, str]]: _description_
     """
     optimized_packages = _create_optimal_packaged_modules(
-        pkged_mods, pkged_module_dependencies_data, platform_filter, layers_available
+        pkged_mods,
+        pkged_module_dependencies_data,
+        platform_filter,
+        layers_available,
+        optimal_module_cache,
     )
 
     return [
@@ -84,7 +142,7 @@ def create_packaged_module_artifacts(
                 [x.top_module, *x.dependencies],
                 os.path.join(base_output_directory, _create_single_layer_name(x)),
                 exclude_subdirectories=exclude_subdirectories,
-                cache=created_artifact_cache,
+                cache=packaged_artifact_cache,
             ),
         )
         for x in optimized_packages
@@ -99,7 +157,7 @@ def load_packaged_artifact_cache(
             f"Can not load PackagedArtifactCache because the provided directory does not exist: {base_cache_location} "
         )
 
-    cache_location = os.path.join(base_cache_location, CACHE_FILENAME)
+    cache_location = os.path.join(base_cache_location, ARTIFACT_CACHE_FILENAME)
 
     cache = PackagedArtifactCache(cache_location)
 
@@ -110,11 +168,25 @@ def _create_single_layer_name(layer: SingleLayerDependency) -> str:
     return f"{layer.top_module.module_name}-{layer.top_module.tag}.zip"
 
 
+def _create_cache_key(
+    modules: List[PackagedModuleInfo], platform_filter: Set[str], available_slots: int
+) -> str:
+    _ids = [
+        *[f"{x.module_name}{deliminator}{x.tag}" for x in modules],
+        *platform_filter,
+    ]
+    _ids.sort()
+    _ids.append(str(available_slots))
+
+    return hash_list(_ids)
+
+
 def _create_optimal_packaged_modules(
     modules: List[PackagedModuleInfo],
     pkged_module_dependencies_data: Dict[str, List[str]],
     platform_filter: Set[str] = {},
     available_slots: int = 5,
+    cache: Cache = None,
 ) -> List[SingleLayerDependency]:
     """Given the list of all packaged modules needed for a serverless function, return a List of LayerDependencies
     representing the optimal way to package the modules.
@@ -130,6 +202,12 @@ def _create_optimal_packaged_modules(
     Returns:
         List: _description_
     """
+    if cache:
+        cache_key = _create_cache_key(modules, platform_filter, available_slots)
+
+        if cache.in_cache(cache_key):
+            return cache.get_from_cache(cache_key)
+
     _module_name_to_info = {x.module_name: x for x in modules}
     _used_module_names = set([x.module_name for x in modules])
 
@@ -142,7 +220,7 @@ def _create_optimal_packaged_modules(
     ).difference(platform_filter)
 
     if len(needed_top_level_names) <= available_slots:
-        return [
+        rv = [
             SingleLayerDependency(
                 top_module=_module_name_to_info.get(x),
                 dependencies=[
@@ -155,6 +233,11 @@ def _create_optimal_packaged_modules(
 
     else:
         raise Exception(f"Too many modules and no composite layer optimizer is present")
+
+    if cache:
+        cache.update_cache(cache_key, rv)
+
+    return rv
 
 
 def _find_all_top_modules(
