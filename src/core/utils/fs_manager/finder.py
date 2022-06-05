@@ -246,6 +246,7 @@ def _parse_serverless_functions(
     """
     full_file_path = paths.get_full_path_from_workspace_base(filepath)
     excludes = {"__pycache__"}
+    aws_platform_exclude = {"boto3"}
 
     (
         std_lib,
@@ -307,6 +308,7 @@ def _parse_serverless_functions(
             package_optimizer.create_packaged_module_artifacts,
             pkged_module_dependencies_data=pkg_module_dependency_info,
             base_output_directory=base_archive_path,
+            platform_filter=aws_platform_exclude,
             exclude_subdirectories=excludes,
             created_artifact_cache=packaged_module_cache,
         )
