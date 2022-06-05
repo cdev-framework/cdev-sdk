@@ -2,7 +2,7 @@ import os
 from pydantic import DirectoryPath
 from pydantic.types import FilePath
 from sortedcontainers.sortedlist import SortedKeyList
-from typing import Dict, List, Tuple
+from typing import Dict, List, Set, Tuple, Union
 from functools import partial
 
 from core.constructs.resource import (
@@ -15,9 +15,10 @@ from core.constructs.workspace import Workspace
 
 from core.default.resources.simple.xlambda import (
     DependencyLayer,
+    DeployedLayer,
     SimpleFunction,
+    dependency_layer_model,
     simple_function_model,
-    SimpleFunctionConfiguration,
 )
 
 from core.utils import module_loader, paths
@@ -37,6 +38,8 @@ from core.utils.fs_manager import (
 from .utils import _compress_lines
 
 LAMBDA_LAYER_RUUID = "cdev::simple::lambda_layer"
+
+COMPUTED_ENVIRONMENT_INFORMATION = None
 
 
 def parse_folder(
@@ -221,7 +224,7 @@ def _parse_serverless_functions(
     handler_name_to_info: Dict[str, SimpleFunction],
     manual_includes: Dict = {},
     global_includes: List = [],
-) -> Tuple[List[simple_function_model], List[DependencyLayer]]:
+) -> Tuple[List[simple_function_model], List[dependency_layer_model]]:
     """Parse a given set of function names from a given file
 
     Args:
@@ -241,10 +244,15 @@ def _parse_serverless_functions(
     Then use that information to create the needed archives for the functions and return the information as
     Resources.
     """
+    full_file_path = paths.get_full_path_from_workspace_base(filepath)
+    rv_functions: List[SimpleFunction] = []
+    rv_layers: List[DependencyLayer] = []
 
     # Get all the info about a set of functions from the original file
     parsed_file_info = serverless_parser.parse_functions_from_file(
-        filepath, include_functions=functions_names_to_parse, remove_top_annotation=True
+        full_file_path,
+        include_functions=functions_names_to_parse,
+        remove_top_annotation=True,
     )
 
     # Base path that the all the archives will go
@@ -256,28 +264,17 @@ def _parse_serverless_functions(
     if not os.path.isdir(base_archive_path):
         os.mkdir(base_archive_path)
 
-    rv_functions = []
-    std_lib = package_manager.get_standard_library_modules()
-    modules_name_to_location = package_manager.get_packaged_modules_name_location_tag(
-        pkg_resources.working_set
-    )
-    pkg_module_dependency_info = package_manager.create_packaged_module_dependencies(
-        pkg_resources.working_set
-    )
-
-    intermediate_dir = os.path.join(os.getcwd(), ".cdev", "intermediate")
     excludes = {"__pycache__"}
 
-    full_path = paths.get_full_path_from_workspace_base(filepath)
-    print(full_path)
-    print(">>>>>>>>>>>>>>>>>>>>>")
-    print(modules_name_to_location.keys())
-    print("<<<<<<<<<<<<<<<<<<<<<")
-    print(pkg_module_dependency_info)
+    (
+        std_lib,
+        modules_name_to_location,
+        pkg_module_dependency_info,
+    ) = _load_environment_information()
 
     mod_creator = partial(
         package_manager.create_all_module_info,
-        start_location=full_path,
+        start_location=full_file_path,
         standard_library=std_lib,
         pkg_dependencies_data=pkg_module_dependency_info,
         pkg_locations=modules_name_to_location,
@@ -286,64 +283,111 @@ def _parse_serverless_functions(
     for parsed_function in parsed_file_info.parsed_functions:
 
         previous_info = handler_name_to_info.get(parsed_function.name)
-        print("-----------------------")
 
-        print(previous_info.name)
-        print(parsed_function.imported_packages)
-        print(parsed_function.needed_line_numbers)
         flattened_needed_lines = _compress_lines(parsed_function.needed_line_numbers)
-        print(flattened_needed_lines)
+
         # First handle getting all the module information for this function
-        all_needed_modules = mod_creator(parsed_function.imported_packages)
 
         handler_packager = partial(
             handler_optimizer.create_optimized_handler_artifact,
             base_packaging_path=os.getcwd(),
-            intermediate_path=intermediate_dir,
+            intermediate_path=base_archive_path,
             needed_lines=flattened_needed_lines,
-            suffix="_tmpy",
+            suffix=f"_{previous_info.name}",
             excludes=excludes,
         )
 
         packaged_module_packager = partial(
             package_optimizer.create_packaged_module_artifacts,
             pkged_module_dependencies_data=pkg_module_dependency_info,
-            base_output_directory=intermediate_dir,
+            base_output_directory=base_archive_path,
             exclude_subdirectories=excludes,
         )
 
-        rv = serverless_function_optimizer.create_optimized_serverless_function_artifacts(
-            original_file_location=full_path,
+        (
+            source_artifact_path,
+            source_hash,
+            dependencies_info,
+        ) = serverless_function_optimizer.create_optimized_serverless_function_artifacts(
+            original_file_location=full_file_path,
             imported_modules=parsed_function.imported_packages,
             module_creator=mod_creator,
             handler_packager=handler_packager,
             packaged_module_optimizer=packaged_module_packager,
             additional_handler_files_directories=[],
         )
-        print(rv)
 
-        # new_configuration = SimpleFunctionConfiguration(
-        #    handler=handler_path,
-        #    description=previous_info.configuration.description,
-        #    environment_variables=previous_info.configuration.environment_variables,
-        # )
-    #
-    # new_function = SimpleFunction(
-    #    cdev_name=previous_info.name,
-    #    filepath=paths.get_relative_to_workspace_path(""),
-    #    events=previous_info.events,
-    #    configuration=new_configuration,
-    #    function_permissions=previous_info.granted_permissions,
-    #    #external_dependencies=dependencies_info if dependencies_info else [],
-    #    external_dependencies= [],
-    #    #src_code_hash=handler_archive_hash,
-    #    src_code_hash="123",
-    #    nonce=previous_info.nonce,
-    #    preserve_function=previous_info._preserved_function,
-    #    platform=previous_info.platform,
-    # )
-    #
-    # rv.append(new_function.render())
-    #
-    # return rv, [layer for _, layer in seen_layers.items()]
-    return [], []
+        dependencies_resources = [
+            _create_layer(_create_layer_name_from_artifact_path(x[0]), x[0], x[1])
+            for x in dependencies_info
+        ]
+
+        function_resource = _create_new_function(
+            previous_info, source_artifact_path, source_hash, dependencies_resources
+        )
+
+        rv_functions.append(function_resource)
+        rv_layers.extend(dependencies_resources)
+
+    return [x.render() for x in rv_functions], [x.render() for x in rv_layers]
+
+
+def _load_environment_information() -> Tuple[
+    Set[str], Dict[str, Tuple[FilePath, str]], Dict[str, Set[str]]
+]:
+    """Load information about the current packages and std library available in the environment
+
+    Returns:
+        Tuple[Set[str], Dict[str, Tuple[FilePath, str]], Dict[str, Set[str]]]: std_lib, modules_name_to_location, pkg_module_dependency_info
+    """
+    global COMPUTED_ENVIRONMENT_INFORMATION
+
+    if COMPUTED_ENVIRONMENT_INFORMATION:
+        return COMPUTED_ENVIRONMENT_INFORMATION
+
+    std_lib = package_manager.get_standard_library_modules()
+    modules_name_to_location = package_manager.get_packaged_modules_name_location_tag(
+        pkg_resources.working_set
+    )
+    pkg_module_dependency_info = package_manager.create_packaged_module_dependencies(
+        pkg_resources.working_set
+    )
+
+    COMPUTED_ENVIRONMENT_INFORMATION = (
+        std_lib,
+        modules_name_to_location,
+        pkg_module_dependency_info,
+    )
+    return COMPUTED_ENVIRONMENT_INFORMATION
+
+
+def _create_layer_name_from_artifact_path(artifact_path: FilePath) -> str:
+    return str(artifact_path).split("/")[-1][:-4]
+
+
+def _create_layer(
+    name: str, artifact_path: FilePath, artifact_hash: str
+) -> DependencyLayer:
+    return DependencyLayer(
+        cdev_name=name, artifact_path=artifact_path, artifact_hash=artifact_hash
+    )
+
+
+def _create_new_function(
+    previous_info: SimpleFunction,
+    new_source_artifact: FilePath,
+    new_source_hash: str,
+    new_dependencies: List[Union[DeployedLayer, DependencyLayer]],
+) -> SimpleFunction:
+    return SimpleFunction(
+        cdev_name=previous_info.name,
+        filepath=new_source_artifact,
+        events=previous_info.events,
+        configuration=previous_info.configuration,
+        function_permissions=previous_info.granted_permissions,
+        external_dependencies=new_dependencies,
+        src_code_hash=new_source_hash,
+        nonce=previous_info.nonce,
+        preserve_function=previous_info._preserved_function,
+        platform=previous_info.platform,
+    )
