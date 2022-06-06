@@ -2,6 +2,7 @@ import os
 from pydantic import DirectoryPath
 from pydantic.types import FilePath
 from sortedcontainers.sortedlist import SortedKeyList
+import sys
 from typing import Dict, List, Set, Tuple, Union
 from functools import partial
 
@@ -35,7 +36,6 @@ from core.utils.fs_manager import (
     serverless_function_optimizer,
 )
 
-from .utils import _compress_lines
 
 LAMBDA_LAYER_RUUID = "cdev::simple::lambda_layer"
 
@@ -408,3 +408,22 @@ def _create_new_function(
         preserve_function=previous_info._preserved_function,
         platform=previous_info.platform,
     )
+
+
+def _compress_lines(original_lines):
+    # Takes input SORTED([(l1,l2), (l3,l4), ...])
+    # returns [l1,...,l2,l3,...,l4]
+    rv = []
+
+    for pair in original_lines:
+        for i in range(pair[0], pair[1] + 1):
+            if rv and rv[-1] == i:
+                # if the last element already equals the current value continue... helps eleminate touching boundaries
+                continue
+
+            rv.append(i)
+
+        if sys.version_info > (3, 8):
+            rv.append(-1)
+
+    return rv
