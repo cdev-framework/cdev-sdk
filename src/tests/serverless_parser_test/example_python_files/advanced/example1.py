@@ -16,7 +16,7 @@ def f1():
     def u():
         print("wowow")
 
-    return os.path.join(glob)
+    return glob
 
 
 def t_function():
