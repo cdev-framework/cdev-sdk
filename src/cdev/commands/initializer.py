@@ -19,6 +19,7 @@ from ..constructs.project import Project_State, check_if_project_exists, project
 
 STATE_FOLDER = "state"
 INTERMEDIATE_FOLDER = "intermediate"
+CACHE_FOLDER = "cache"
 CDEV_FOLDER = ".cdev"
 CDEV_PROJECT_FILE = "cdev_project.json"
 CENTRAL_STATE_FILE = "central_state.json"
@@ -203,12 +204,14 @@ def _create_folder_structure(
     cdev_folder = os.path.join(base_directory, CDEV_FOLDER)
     state_folder = os.path.join(cdev_folder, STATE_FOLDER)
     intermediate_folder = os.path.join(cdev_folder, INTERMEDIATE_FOLDER)
+    cache_folder = os.path.join(intermediate_folder, CACHE_FOLDER)
     settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
     base_settings_file = os.path.join(settings_folder, f"base_settings.py")
 
     _mkdir(cdev_folder)
     _mkdir(state_folder)
     _mkdir(intermediate_folder)
+    _mkdir(cache_folder)
     _mkdir(settings_folder)
 
     _create_base_settings(base_settings_file, base_settings)
