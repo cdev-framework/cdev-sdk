@@ -1,5 +1,18 @@
 import os
 from core.utils.fs_manager import handler_optimizer
+from core.constructs.settings import Settings
+from core.constructs.workspace import Workspace
+
+tmp_dir = os.path.join(os.path.dirname(__file__), "tmp")
+
+
+settings = Settings()
+settings.BASE_PATH = tmp_dir
+settings.INTERMEDIATE_FOLDER_LOCATION = tmp_dir
+
+
+ws = Workspace()
+ws.settings = settings
 
 
 DATA_BASEPATH = os.path.join(os.path.dirname(__file__), "test_data")

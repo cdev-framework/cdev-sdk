@@ -10,6 +10,20 @@ from core.utils.fs_manager.module_types import (
     StdLibModuleInfo,
 )
 from core.utils.fs_manager import package_manager
+from core.constructs.settings import Settings
+from core.constructs.workspace import Workspace
+
+tmp_dir = os.path.join(os.path.dirname(__file__), "tmp")
+
+
+settings = Settings()
+settings.BASE_PATH = tmp_dir
+settings.INTERMEDIATE_FOLDER_LOCATION = tmp_dir
+
+
+ws = Workspace()
+ws.settings = settings
+
 
 DATA_BASEPATH = os.path.join(os.path.dirname(__file__), "test_data")
 PICKLED_FILED_BASE = os.path.join(DATA_BASEPATH, "pickled_envs")
