@@ -8,6 +8,10 @@ EXAMPLE_PATH = os.path.join(os.path.dirname(__file__), "example_python_files")
 ADVANCED_PATH = os.path.join(EXAMPLE_PATH, "advanced")
 SIMPLE_PATH = os.path.join(EXAMPLE_PATH, "simple")
 
+# Note that in Python3.8 the AST module changed how it associated whitespace lines to <stmts>
+# therefor, the parser will return slightly different values for python3.7 compared to any version
+# after python3.8
+
 
 def test_example1_all_functions():
     fp = os.path.join(ADVANCED_PATH, "example1.py")
