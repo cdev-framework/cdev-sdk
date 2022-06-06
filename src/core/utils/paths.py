@@ -116,7 +116,8 @@ def is_in_intermediate(full_path: str) -> bool:
         bool: [description]
     """
     intermediate_path = Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION
-    return os.path.commonprefix([full_path, intermediate_path]) == intermediate_path
+    t = os.path.commonprefix([full_path, intermediate_path])
+    return t == str(intermediate_path)
 
 
 def get_workspace_path() -> DirectoryPath:
