@@ -7,6 +7,6 @@ python -m venv .venv
 
 . ./scripts/activate
 
-pip install -r requirements.txt
+pip install -r dev-requirements.txt
 
 pre-commit install

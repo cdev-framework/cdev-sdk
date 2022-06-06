@@ -1,4 +1,4 @@
-# import dill
+import dill
 from pkg_resources import Distribution, WorkingSet
 from pydantic import FilePath
 import os
