@@ -39,14 +39,16 @@ def test_get_file_as_list():
             os.path.join(test_files_path, "tmp.py"),
             [
                 "import os",
+                "",
                 'x = "hello"',
                 "print(x)",
+                "",
                 "",
                 "def y():",
                 '    print("here")',
                 "",
                 "",
-                "#Some comment",
+                "# Some comment",
             ],
         )
     ]
