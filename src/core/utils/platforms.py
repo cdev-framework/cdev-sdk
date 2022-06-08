@@ -19,6 +19,11 @@ class lambda_python_environment(str, Enum):
 
 
 def get_current_closest_platform() -> lambda_python_environment:
+    """Check the current running version of python and determine the most compatible available AWS platform
+
+    Returns:
+        lambda_python_environment
+    """
     python_version = f"{sys.version_info[0]}_{sys.version_info[1]}"
 
     if python_version == "3_7":

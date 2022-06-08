@@ -9,7 +9,8 @@ from core.constructs.settings import Settings_Info
 from core.default.workspace import local_workspace_manager
 
 
-def create_workspace(args) -> None:
+def create_workspace() -> None:
+    """Create a workspace initialization info at the current working directory."""
     base_project_dir = os.getcwd()
     manager = local_workspace_manager(base_project_dir)
 

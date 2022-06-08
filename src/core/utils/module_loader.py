@@ -20,7 +20,7 @@ def import_module(
     For more information about python modules see https://docs.python.org/3/tutorial/modules.html. Any changes
     to the PYTHONPATH needed to find the module should be done before this function is called.
 
-    Arguments:
+    Args:
         module_name (str): The python module to be loaded. Note that this is not a file path. It is the name of a module that can be loaded.
 
     Raises:

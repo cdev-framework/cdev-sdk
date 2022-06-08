@@ -16,6 +16,13 @@ def execute_deployment_cli(args) -> None:
 
 
 def execute_deployment(workspace: Workspace, output: OutputManager, no_prompt: Optional[bool] = False) -> None:
+    """Execute the process for a deployment. This includes generating the current frontend representation of the desired resources.
+    Then after confirmation, deploy any needed changes.
+
+    Args:
+        workspace (Workspace): Workspace to execute the process within.
+        output (OutputManager): Output manager for sending messages to the console.
+    """
     unsorted_differences = execute_frontend(workspace, output)
 
     if not unsorted_differences:
