@@ -21,10 +21,12 @@ def core_sync_command(workspace: Workspace, output: OutputManager, cli_args) -> 
     ignore_args = cli_args[0].ignore
     watch_args = cli_args[0].watch
     no_default_args = cli_args[0].no_default
+    no_prompt_args = cli_args[0].disable_prompt
     try:
         workspace_watcher = WorkspaceWatcher(
             workspace,
             output,
+            no_prompt=no_prompt_args,
             no_default=no_default_args,
             patterns_to_watch=watch_args,
             patterns_to_ignore=ignore_args,

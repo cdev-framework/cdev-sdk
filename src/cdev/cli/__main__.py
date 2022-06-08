@@ -204,6 +204,11 @@ CDEV_COMMANDS = [
                 "help": "by default we ignore certain files and watch for some of them. If you want complete control on what is considered a change, turn this on and set your custom filters using --watch and --ignore",
             },
             {
+                "dest": "--disable-prompt",
+                "action": "store_true",
+                "help": "by default we ask for confirmation before deploying changes. Turn this on and perform deployments w/o requiring confirmation",
+            },
+            {
                 "dest": "--watch",
                 "type": str,
                 "help": "watch any file that matches the following pattern [src/**/*.py,settings/*]",

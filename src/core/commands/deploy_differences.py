@@ -1,6 +1,7 @@
 """Utilities for creating a deploying a set of changes
 
 """
+from typing import Optional
 
 from core.constructs.output_manager import OutputManager
 from core.constructs.workspace import Workspace, Workspace_State
@@ -14,7 +15,7 @@ def execute_deployment_cli(args) -> None:
     execute_deployment(workspace, OutputManager())
 
 
-def execute_deployment(workspace: Workspace, output: OutputManager) -> None:
+def execute_deployment(workspace: Workspace, output: OutputManager, no_prompt: Optional[bool] = False) -> None:
     unsorted_differences = execute_frontend(workspace, output)
 
     if not unsorted_differences:
@@ -22,11 +23,12 @@ def execute_deployment(workspace: Workspace, output: OutputManager) -> None:
 
     differences_structured = workspace.sort_differences(unsorted_differences)
 
-    print("")
-    do_deployment = Confirm.ask("Do you want to deploy differences?")
+    if not no_prompt:
+        print("")
+        do_deployment = Confirm.ask("Do you want to deploy differences?")
 
-    if not do_deployment:
-        return
+        if not do_deployment:
+            return
 
     workspace.set_state(Workspace_State.EXECUTING_BACKEND)
     workspace.deploy_differences(differences_structured)
