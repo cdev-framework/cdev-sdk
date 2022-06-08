@@ -189,20 +189,22 @@ class OutputManager:
                 f"Trying to deploy node {node} but it is not a correct type "
             )
 
+
     def _print_component_resources(self, component: ComponentModel) -> None:
         """Print the resources in a component
 
         Args:
             component (ComponentModel)
         """
-        if component.resources is None or any(component.resources):
+        if component.resources is None or not any(component.resources):
+            self._console.print(f"        [bold blue] No Resources")
             return
 
-        self._console.print(f"    Resources:")
         for resource in component.resources:
             self._console.print(
                 f"        [bold blue]{resource.name} ({resource.ruuid})[/bold blue]"
             )
+
 
     def _print_component_references(self, component: ComponentModel) -> None:
         """Print the references in a component
@@ -210,10 +212,11 @@ class OutputManager:
         Args:
             component (ComponentModel)
         """
-        if component.references is None or any(component.references):
+
+        if component.references is None or not any(component.references):
+            self._console.print(f"        [bold blue] No References")
             return
 
-        self._console.print(f"    References:")
         for reference in component.references:
             self._console.print(
                 f"        [bold blue]From {reference.component_name} reference {reference.name} ({reference.ruuid})[/bold blue]"

@@ -17,7 +17,10 @@ All release will have a corresponding git tag.
 - Add function to parse qualified resources into its parts
 - Add support for lambda functions to update the handler
 - Add user input for setting artifact bucket when creating a new project
+- Added query, tail and limit args to logging function
 
+### Fixed
+- Fixed issues with a bucket when it is not empty and we need to delete it
 
 ## [0.0.8] - 2022-04-05
 ### Added
