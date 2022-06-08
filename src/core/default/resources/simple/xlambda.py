@@ -121,9 +121,6 @@ class simple_function_configuration_model(ImmutableModel):
     handler: str
     description: Optional[cdev_str_model]
     environment_variables: frozendict
-    memory_size: int
-    timeout: int
-    storage: int
 
     class Config:
         use_enum_values = True
@@ -137,11 +134,8 @@ class SimpleFunctionConfiguration:
     def __init__(
         self,
         handler: cdev_str,
-        memory_size: cdev_str,
-        timeout: cdev_str,
-        storage: cdev_str,
         description: cdev_str = "",
-        environment_variables: Dict[str, cdev_str] = {}
+        environment_variables: Dict[str, cdev_str] = {},
     ) -> None:
         """
         Args:
@@ -150,9 +144,6 @@ class SimpleFunctionConfiguration:
             environment_variables (Dict[str, cdev_str], optional): A dict of overriding variabled for the Environment. Defaults to {}.
         """
         self.handler = handler
-        self.memory_size = memory_size
-        self.timeout = timeout
-        self.storage = storage
         self.description = description
         self.environment_variables = environment_variables
 
@@ -161,15 +152,6 @@ class SimpleFunctionConfiguration:
             handler=self.handler.render()
             if isinstance(self.handler, Cloud_Output_Dynamic)
             else self.handler,
-            memory_size=self.memory_size.render()
-            if isinstance(self.memory_size, Cloud_Output_Dynamic)
-            else self.memory_size,
-            timeout=self.timeout.render()
-            if isinstance(self.timeout, Cloud_Output_Dynamic)
-            else self.timeout,
-            storage=self.storage.render()
-            if isinstance(self.storage, Cloud_Output_Dynamic)
-            else self.storage,
             description=self.description.render()
             if isinstance(self.description, Cloud_Output_Dynamic)
             else self.description,
@@ -194,9 +176,6 @@ class SimpleFunctionConfiguration:
         return hasher.hash_list(
             [
                 self.handler,
-                self.memory_size,
-                self.timeout,
-                self.storage,
                 self.description,
                 hasher.hash_list(sorted(env_hashable.items())),
             ]
@@ -366,9 +345,6 @@ def simple_function_annotation(
     name: str,
     events: List[Event] = [],
     environment={},
-    memory_size: int = 128,
-    timeout: int = 3,
-    storage: int = 512,
     permissions: List[Union[Permission, PermissionArn]] = [],
     override_platform: lambda_python_environment = None,
     includes: List[str] = [],
@@ -380,9 +356,6 @@ def simple_function_annotation(
         name (str): Cdev Name for the function
         events (List[Event], optional): List of event triggers for the function. Defaults to [].
         environment (dict, optional): Dictionary to apply to the Environment Variables of the deployed function. Defaults to {}.
-        memory_size (int, optional): Memory Size of you lambda in MB. Default is 128.
-        timeout (int, optional): Timeout of your lambda in seconds. Default is 3 sec and up to 900.
-        storage (int, optional): Storage of your lambda in MB. Default is 512 MB and can be up to 10240.
         permissions (List[Union[Permission, PermissionArn]], optional): List of Permissions to grant to the Function. Defaults to [].
         override_platform (lambda_python_environment, optional): Option to override the deployment platform in the Cloud. Defaults to None.
         includes (List[str], optional): Set of identifiers to extra global statements to include in parsed artifacts. Defaults to [].
@@ -403,14 +376,13 @@ def simple_function_annotation(
                     description = item[1] if item[1] else ""
                 elif item[0] == "__module__":
                     mod_name = item[1]
+
         final_config = SimpleFunctionConfiguration(
             handler=handler_name,
-            memory_size=memory_size,
-            timeout=timeout,
-            storage=storage,
             description=description,
-            environment_variables=environment
+            environment_variables=environment,
         )
+
         mod = importlib.import_module(mod_name)
 
         full_filepath = os.path.abspath(mod.__file__)

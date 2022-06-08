@@ -308,9 +308,6 @@ def _parse_serverless_functions(
 
         new_configuration = SimpleFunctionConfiguration(
             handler=handler_path,
-            memory_size=previous_info.configuration.memory_size,
-            timeout=previous_info.configuration.timeout,
-            storage=previous_info.configuration.storage,
             description=previous_info.configuration.description,
             environment_variables=previous_info.configuration.environment_variables,
         )
