@@ -71,8 +71,12 @@ class OutputManager:
 
         for component_diff in component_differences:
             self._print_component_differences(component_diff)
-            self._print_component_resource_differences(component_diff, resource_differences)
-            self._print_component_reference_differences(component_diff, reference_differences)
+            self._print_component_resource_differences(
+                component_diff, resource_differences
+            )
+            self._print_component_reference_differences(
+                component_diff, reference_differences
+            )
 
     def create_task(
         self,
@@ -152,26 +156,32 @@ class OutputManager:
             )
 
     def _print_component_resources(self, component) -> None:
-        if component.resources is None or any(component.resources):
+        self._console.print(f"    Resources:")
+
+        if component.resources is None or not any(component.resources):
+            self._console.print(f"        [bold blue] No Resources")
             return
 
-        self._console.print(f"    Resources:")
         for resource in component.resources:
             self._console.print(
                 f"        [bold blue]{resource.name} ({resource.ruuid})[/bold blue]"
             )
 
     def _print_component_references(self, component) -> None:
-        if component.references is None or any(component.references):
+        self._console.print(f"    References:")
+
+        if component.references is None or not any(component.references):
+            self._console.print(f"        [bold blue] No References")
             return
 
-        self._console.print(f"    References:")
         for reference in component.references:
             self._console.print(
                 f"        [bold blue]From {reference.component_name} reference {reference.name} ({reference.ruuid})[/bold blue]"
             )
 
-    def _print_component_differences(self, component_diff: Component_Difference) -> None:
+    def _print_component_differences(
+        self, component_diff: Component_Difference
+    ) -> None:
         if component_diff.action_type == Component_Change_Type.UPDATE_NAME:
             self._console.print(
                 f"    [bold yellow]Update Name: [/bold yellow][bold blue]{component_diff.previous_name} to {component_diff.new_name} (component)[/bold blue]"
@@ -196,12 +206,16 @@ class OutputManager:
             )
         return
 
-    def _print_component_resource_differences(self, component_diff: Component_Difference, resource_differences: List[Resource_Difference]) -> None:
+    def _print_component_resource_differences(
+        self,
+        component_diff: Component_Difference,
+        resource_differences: List[Resource_Difference],
+    ) -> None:
         resource_changes = [
             x
             for x in resource_differences
             if x.component_name == component_diff.new_name
-               or x.component_name == component_diff.previous_name
+            or x.component_name == component_diff.previous_name
         ]
 
         for resource_diff in resource_changes:
@@ -215,9 +229,7 @@ class OutputManager:
                     f"        [bold red]Delete:[/bold red][bold blue] {resource_diff.previous_resource.name} ({resource_diff.previous_resource.ruuid})[/bold blue]"
                 )
 
-            elif (
-                    resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY
-                ):
+            elif resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY:
                 self._console.print(
                     f"        [bold yellow]Update:[/bold yellow][bold blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
                 )
@@ -227,7 +239,11 @@ class OutputManager:
                     f"        [bold yellow]Update Name:[/bold yellow][bold blue] from {resource_diff.previous_resource.name} to {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
                 )
 
-    def _print_component_reference_differences(self, component_diff: Component_Difference, reference_differences: List[Resource_Reference_Difference]) -> None:
+    def _print_component_reference_differences(
+        self,
+        component_diff: Component_Difference,
+        reference_differences: List[Resource_Reference_Difference],
+    ) -> None:
         reference_changes = [
             x
             for x in reference_differences
@@ -235,18 +251,12 @@ class OutputManager:
         ]
 
         for reference_diff in reference_changes:
-            if (
-                    reference_diff.action_type
-                    == Resource_Reference_Change_Type.CREATE
-            ):
+            if reference_diff.action_type == Resource_Reference_Change_Type.CREATE:
                 self._console.print(
                     f"        [bold green]Create reference:[/bold green][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]"
                 )
 
-            elif (
-                    reference_diff.action_type
-                    == Resource_Reference_Change_Type.DELETE
-            ):
+            elif reference_diff.action_type == Resource_Reference_Change_Type.DELETE:
                 self._console.print(
                     f"        [bold red]Delete reference:[/bold red][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]"
                 )
