@@ -94,26 +94,26 @@ def get_full_path_from_intermediate_base(relative_path: str) -> FilePath:
 
 
 def is_in_workspace(full_path: str) -> bool:
-    """Check if a given file is within the workspace filespace
+    """Check if a given file is within the workspace file space
 
     Args:
-        full_path (str): [description]
+        full_path (str): The full path to check
 
     Returns:
-        bool: [description]
+        bool
     """
     base_path = Workspace.instance().settings.BASE_PATH
     return os.path.commonprefix([full_path, base_path]) == base_path
 
 
 def is_in_intermediate(full_path: str) -> bool:
-    """Check if a given file is within the intermediate filespace
+    """Check if a given file is within the intermediate file space
 
     Args:
-        full_path (str): [description]
+        full_path (str): The full path to check
 
     Returns:
-        bool: [description]
+        bool
     """
     intermediate_path = Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION
     t = os.path.commonprefix([full_path, intermediate_path])

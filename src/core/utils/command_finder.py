@@ -28,6 +28,18 @@ class TooManyCommandClasses(Exception):
 def find_specified_command(
     command_list: List[str], all_search_locations_list: List[str]
 ) -> Tuple[Union[BaseCommand, BaseCommandContainer], str, str, bool]:
+    """Search the provided locations for the given command.
+
+    Args:
+        command_list (List[str]): _description_
+        all_search_locations_list (List[str]): _description_
+
+    Raises:
+        NoCommandFound
+
+    Returns:
+        Tuple[Union[BaseCommand, BaseCommandContainer], str, str, bool]: _description_
+    """
 
     command_list_copy = command_list.copy()
 
@@ -76,6 +88,18 @@ def find_specified_command(
 
 
 def initialize_command_module(mod_path: str) -> BaseCommand:
+    """Given a path to a command, initialize the given command.
+
+    Args:
+        mod_path (str): path to the command module
+
+    Raises:
+        TooManyCommandClasses: The module contained more than one command
+        NoCommandFound: No command was found in the module
+
+    Returns:
+        BaseCommand
+    """
 
     mod = import_module(mod_path)
     # Check for the class that derives from BaseCommand... if there is more then one class then throw error (note this is a current implementation detail)
@@ -104,6 +128,18 @@ def initialize_command_module(mod_path: str) -> BaseCommand:
 
 
 def initialize_command_container_module(mod_path: str) -> BaseCommandContainer:
+    """Given a path to a command, initialize the given command container.
+
+    Args:
+        mod_path (str): path to the command module
+
+    Raises:
+        TooManyCommandClasses: The module contained more than one command
+        NoCommandFound: No command was found in the module
+
+    Returns:
+        BaseCommandContainer
+    """
     mod = import_module(mod_path)
 
     # Check for the class that derives from BaseCommandContainer... if there is more then one class then throw error (note this is a current implementation detail)
@@ -119,7 +155,7 @@ def initialize_command_container_module(mod_path: str) -> BaseCommandContainer:
         ):
             if _has_found_a_valid_command_container:
                 # TODO better exception
-                return
+                raise TooManyCommandClasses
 
             _has_found_a_valid_command_container = True
 

@@ -3,6 +3,7 @@
 """
 
 
+from argparse import Namespace
 from core.constructs.workspace import Workspace
 from core.constructs.output_manager import OutputManager
 
@@ -15,12 +16,18 @@ def execute_run_cli(args) -> None:
     run_command(ws, output_manager, args)
 
 
-def run_command(workspace: Workspace, output: OutputManager, cli_args) -> None:
-    """
-    Attempts to find and run a user defined command
+def run_command(
+    workspace: Workspace, output: OutputManager, cli_args: Namespace
+) -> None:
+    """Attempts to find and run a user defined command.
 
     format:
     cdev run <sub_command> <args>
+
+    Args:
+        workspace (Workspace): Workspace to execute the process within.
+        output (OutputManager): Output manager for sending messages to the console.
+        cli_args (Namespace): Arguments for the command.
     """
     # Convert namespace into dict
     params = vars(cli_args)

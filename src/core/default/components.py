@@ -1,4 +1,3 @@
-
 from core.utils.fs_manager import finder
 
 
@@ -19,8 +18,10 @@ class Cdev_FileSystem_Component(Component):
         self.fp = fp
 
     def render(self) -> ComponentModel:
-        """
-        Render this component based on the information in the files at the provided folder path
+        """Render this component based on the information in the files at the provided folder path
+
+        Returns:
+            ComponentModel
         """
         resources_sorted, references_sorted = finder.parse_folder(self.fp)
         total_component_hash = hasher.hash_list(
