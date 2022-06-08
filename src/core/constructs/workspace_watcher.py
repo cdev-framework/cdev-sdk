@@ -33,19 +33,24 @@ class WorkspaceWatcher(Trick):
         self._perform_deployment = False
 
         all_patterns_to_watch = None
-        all_patterns_to_ignore = None
-
         if patterns_to_watch:
             all_patterns_to_watch = patterns_to_watch.split(",")
 
         if not no_default:
-            all_patterns_to_watch += self._default_patterns_to_watch
+            if all_patterns_to_watch:
+                all_patterns_to_watch += self._default_patterns_to_watch
+            else:
+                all_patterns_to_watch = self._default_patterns_to_watch
 
+        all_patterns_to_ignore = None
         if patterns_to_ignore:
             all_patterns_to_ignore = patterns_to_ignore.split(",")
 
         if not no_default:
-            all_patterns_to_ignore += self._default_patterns_to_ignore
+            if all_patterns_to_ignore:
+                all_patterns_to_ignore += self._default_patterns_to_ignore
+            else:
+                all_patterns_to_ignore = self._default_patterns_to_ignore
 
         super().__init__(
             patterns=all_patterns_to_watch,
