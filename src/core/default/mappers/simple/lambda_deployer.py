@@ -320,8 +320,6 @@ def __update_configuration_basic(
     previous_configuration: simple_xlambda.simple_function_configuration_model,
     new_configuration: simple_xlambda.simple_function_configuration_model,
 ) -> None:
-    print(previous_configuration)
-    print(new_configuration)
     if previous_configuration == new_configuration:
         log.debug("Simple lambda, basic configuration didn't change")
     else:
