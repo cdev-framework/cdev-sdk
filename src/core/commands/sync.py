@@ -33,5 +33,5 @@ def core_sync_command(workspace: Workspace, output: OutputManager, cli_args) -> 
         )
         workspace_watcher.watch()
     except Exception as e:
-        print(e)
+        output._console.print(e)
         return
