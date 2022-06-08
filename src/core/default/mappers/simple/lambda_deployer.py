@@ -320,11 +320,16 @@ def __update_configuration_basic(
     previous_configuration: simple_xlambda.simple_function_configuration_model,
     new_configuration: simple_xlambda.simple_function_configuration_model,
 ) -> None:
+    print(previous_configuration)
+    print(new_configuration)
     if previous_configuration == new_configuration:
         log.debug("Simple lambda, basic configuration didn't change")
     else:
         log.debug("Simple lambda, basic configuration modified")
         updated_configuration["Handler"] = new_configuration.handler
+        updated_configuration["MemorySize"] = new_configuration.memory_size
+        updated_configuration["Timeout"] = new_configuration.timeout
+        updated_configuration["EphemeralStorage"] = {"Size": new_configuration.storage}
 
 
 def __update_configuration_environment_variables(

@@ -11,6 +11,7 @@ from core.constructs.cloud_output import (
 
 
 cdev_str = TypeVar("cdev_str", str, Cloud_Output_Str)
+cdev_int = TypeVar("cdev_int", int, Cloud_Output_Int)
 cdev_str_model = TypeVar("cdev_str_model", str, cloud_output_dynamic_model)
 
 F = TypeVar("F", bound=Callable[..., Any])

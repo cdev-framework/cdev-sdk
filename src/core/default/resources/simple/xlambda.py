@@ -21,7 +21,7 @@ from core.constructs.resource import (
     PermissionsGrantableMixin,
 )
 from core.constructs.models import frozendict, ImmutableModel
-from core.constructs.types import cdev_str_model, cdev_str
+from core.constructs.types import cdev_str_model, cdev_str, cdev_int
 
 from core.utils import hasher
 from core.utils.platforms import lambda_python_environment, get_current_closest_platform
@@ -137,9 +137,9 @@ class SimpleFunctionConfiguration:
     def __init__(
         self,
         handler: cdev_str,
-        memory_size: cdev_str,
-        timeout: cdev_str,
-        storage: cdev_str,
+        memory_size: cdev_int,
+        timeout: cdev_int,
+        storage: cdev_int,
         description: cdev_str = "",
         environment_variables: Dict[str, cdev_str] = {}
     ) -> None:
@@ -367,7 +367,7 @@ def simple_function_annotation(
     events: List[Event] = [],
     environment={},
     memory_size: int = 128,
-    timeout: int = 3,
+    timeout: int = 30,
     storage: int = 512,
     permissions: List[Union[Permission, PermissionArn]] = [],
     override_platform: lambda_python_environment = None,
@@ -381,7 +381,7 @@ def simple_function_annotation(
         events (List[Event], optional): List of event triggers for the function. Defaults to [].
         environment (dict, optional): Dictionary to apply to the Environment Variables of the deployed function. Defaults to {}.
         memory_size (int, optional): Memory Size of you lambda in MB. Default is 128.
-        timeout (int, optional): Timeout of your lambda in seconds. Default is 3 sec and up to 900.
+        timeout (int, optional): Timeout of your lambda in seconds. Default is 30 sec and up to 900.
         storage (int, optional): Storage of your lambda in MB. Default is 512 MB and can be up to 10240.
         permissions (List[Union[Permission, PermissionArn]], optional): List of Permissions to grant to the Function. Defaults to [].
         override_platform (lambda_python_environment, optional): Option to override the deployment platform in the Cloud. Defaults to None.
