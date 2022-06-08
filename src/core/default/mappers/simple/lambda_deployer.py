@@ -125,6 +125,9 @@ def _create_simple_lambda(
         "Architectures": [arch],
         "Role": role_arn,
         "Handler": resource.configuration.handler,
+        "MemorySize": resource.configuration.memory_size,
+        "EphemeralStorage": {"Size": resource.configuration.storage},
+        "Timeout": resource.configuration.timeout,
         "Code": {"S3Bucket": artifact_bucket, "S3Key": keyname},
         "Environment": {"Variables": resource.configuration.environment_variables._d}
         if resource.configuration.environment_variables
@@ -322,6 +325,9 @@ def __update_configuration_basic(
     else:
         log.debug("Simple lambda, basic configuration modified")
         updated_configuration["Handler"] = new_configuration.handler
+        updated_configuration["MemorySize"] = new_configuration.memory_size
+        updated_configuration["Timeout"] = new_configuration.timeout
+        updated_configuration["EphemeralStorage"] = {"Size": new_configuration.storage}
 
 
 def __update_configuration_environment_variables(

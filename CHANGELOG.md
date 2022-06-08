@@ -16,6 +16,7 @@ All release will have a corresponding git tag.
 - Update imports to be absolute when possible
 - Add function to parse qualified resources into its parts
 - Add support for lambda functions to update the handler
+- Add option to set your memory, storage and timeout on serverless functions
 - Add user input for setting artifact bucket when creating a new project
 - Added query, tail and limit args to logging function
 
