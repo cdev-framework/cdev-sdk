@@ -59,7 +59,7 @@ class WorkspaceWatcher(Trick):
         )
 
     def watch(self) -> None:
-        print("Watching for changes in the workspace...")
+        self._output._console.print("Watching for changes in the workspace...")
         # Prevent multiples observers
         self._stop()
 
@@ -69,9 +69,9 @@ class WorkspaceWatcher(Trick):
         try:
             while True:
                 if self._perform_deployment:
-                    print('Ignoring future changes until deployment is finished')
+                    self._output._console.print('Ignoring future changes until deployment is finished')
                     execute_deployment(self._workspace, self._output, no_prompt=self._no_prompt)
-                    print('Enabling watch again')
+                    self._output._console.print('Enabling watch again')
                     self._perform_deployment = False
                 else:
                     time.sleep(1)
