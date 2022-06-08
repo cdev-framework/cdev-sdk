@@ -10,8 +10,22 @@ def cloud_output_command_cli(args) -> None:
 
 
 def cloud_output_command(
-    workspace: Workspace, output: OutputManager, cloud_output_id: str, only_value: bool
+    workspace: Workspace,
+    output: OutputManager,
+    cloud_output_id: str,
+    only_value: bool = False,
 ) -> None:
+    """Command to get the Cloud Output values from a given id.
+
+    Args:
+        workspace (Workspace): The Workspace that the command is executed within.
+        output (OutputManager): object to pass all output to.
+        cloud_output_id (str): Id of the output to get <component>.<ruuid>.<cdev_name>.<output_key>
+        only_value (bool): Output only the value. Helpful for shell scripting.
+
+    Raises:
+        Exception
+    """
     log.debug("Executing Frontend")
 
     split_names = cloud_output_id.split(".")

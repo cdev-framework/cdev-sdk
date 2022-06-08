@@ -24,15 +24,30 @@ from core.constructs.resource import (
 
 class OutputManager:
     def __init__(self, console: Console = None, progress: Progress = None) -> None:
+        """Initialize the Output Manager
 
+        Args:
+            console (Console, optional): Defaults to None.
+            progress (Progress, optional): Defaults to None.
+        """
         self._console = console or Console()
         self._progress = progress
 
     def print_header(self, resource_state_uuid: str) -> None:
+        """Print the header of the output
+
+        Args:
+            resource_state_uuid (str)
+        """
         print(f"Resource State: {resource_state_uuid}")
         print("")
 
     def print_local_state(self, rendered_components: List[ComponentModel]) -> None:
+        """Print the current state
+
+        Args:
+            rendered_components (List[ComponentModel])
+        """
         rendered_components.sort(key=lambda x: x.name)
 
         self._console.print(f"Current State:")
@@ -44,6 +59,11 @@ class OutputManager:
         self._console.print("")
 
     def print_components_to_diff_against(self, old_component_names: List[str]) -> None:
+        """Print the component names we are diffing against
+
+        Args:
+            old_component_names (List[str])
+        """
 
         self._console.print("Components to diff against:")
         for component_name in old_component_names:
@@ -59,7 +79,11 @@ class OutputManager:
             List[Resource_Reference_Difference],
         ],
     ) -> None:
+        """Print the differences in a state
 
+        Args:
+            differences (Tuple[ List[Component_Difference], List[Resource_Difference], List[Resource_Reference_Difference], ])
+        """
         if not any(differences):
             return
 
@@ -90,7 +114,7 @@ class OutputManager:
         """Create a task for the progress object in this output manager.
 
         Raises:
-            Exception: [description]
+            Exception
 
         Returns:
             OutputTask: Object to use to track the progress of the event
@@ -116,7 +140,17 @@ class OutputManager:
             Resource_Difference, Resource_Reference_Difference, Component_Difference
         ],
     ) -> str:
+        """Create a label for a given difference
 
+        Args:
+            node (Union[ Resource_Difference, Resource_Reference_Difference, Component_Difference ])
+
+        Raises:
+            Exception
+
+        Returns:
+            str
+        """
         if isinstance(node, Resource_Difference):
             if node.action_type == Resource_Change_Type.CREATE:
                 return f"[bold green]Creating:[/bold green][bold blue] {node.new_resource.name} ({node.new_resource.ruuid})[/bold blue]"
@@ -155,9 +189,13 @@ class OutputManager:
                 f"Trying to deploy node {node} but it is not a correct type "
             )
 
-    def _print_component_resources(self, component) -> None:
-        self._console.print(f"    Resources:")
 
+    def _print_component_resources(self, component: ComponentModel) -> None:
+        """Print the resources in a component
+
+        Args:
+            component (ComponentModel)
+        """
         if component.resources is None or not any(component.resources):
             self._console.print(f"        [bold blue] No Resources")
             return
@@ -167,8 +205,13 @@ class OutputManager:
                 f"        [bold blue]{resource.name} ({resource.ruuid})[/bold blue]"
             )
 
-    def _print_component_references(self, component) -> None:
-        self._console.print(f"    References:")
+
+    def _print_component_references(self, component: ComponentModel) -> None:
+        """Print the references in a component
+
+        Args:
+            component (ComponentModel)
+        """
 
         if component.references is None or not any(component.references):
             self._console.print(f"        [bold blue] No References")
@@ -182,6 +225,11 @@ class OutputManager:
     def _print_component_differences(
         self, component_diff: Component_Difference
     ) -> None:
+        """Print the details in a component difference
+
+        Args:
+            component_diff (Component_Difference)
+        """
         if component_diff.action_type == Component_Change_Type.UPDATE_NAME:
             self._console.print(
                 f"    [bold yellow]Update Name: [/bold yellow][bold blue]{component_diff.previous_name} to {component_diff.new_name} (component)[/bold blue]"
@@ -211,6 +259,12 @@ class OutputManager:
         component_diff: Component_Difference,
         resource_differences: List[Resource_Difference],
     ) -> None:
+        """Print details of the resource differences in the component
+
+        Args:
+            component_diff (Component_Difference)
+            resource_differences (List[Resource_Difference])
+        """
         resource_changes = [
             x
             for x in resource_differences
@@ -244,6 +298,12 @@ class OutputManager:
         component_diff: Component_Difference,
         reference_differences: List[Resource_Reference_Difference],
     ) -> None:
+        """Print the details in the reference differences
+
+        Args:
+            component_diff (Component_Difference)
+            reference_differences (List[Resource_Reference_Difference])
+        """
         reference_changes = [
             x
             for x in reference_differences
@@ -301,6 +361,16 @@ class OutputTask:
         refresh: bool = False,
         **fields: Any,
     ) -> None:
+        """Update the output tasks
+
+        Args:
+            total (float, optional): Defaults to None.
+            completed (float, optional): Defaults to None.
+            advance (None, optional): Defaults to None.
+            description (str, optional): Defaults to None.
+            visible (bool, optional): Defaults to None.
+            refresh (bool, optional): Defaults to False.
+        """
         # self._output_manager._console.print(fields.get('comment'))
         self._output_manager._progress.update(
             self._task_id,
@@ -315,4 +385,5 @@ class OutputTask:
         )
 
     def start_task(self) -> None:
+        """Start the given task progress bar"""
         self._output_manager._progress.start_task(self._task_id)

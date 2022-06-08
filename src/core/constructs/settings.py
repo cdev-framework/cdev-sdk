@@ -53,6 +53,14 @@ class Settings(BaseSettings):
 
 
 def initialize_settings(info: Settings_Info) -> Settings:
+    """Initialize the Settings object from a given Setting Info
+
+    Args:
+        info (Settings_Info)
+
+    Returns:
+        Settings
+    """
     class_name = info.base_class.split(".")[-1]
     module_name = ".".join(info.base_class.split(".")[:-1])
 
