@@ -1,4 +1,3 @@
-
 from core.constructs.workspace import Workspace
 from core.constructs.output_manager import OutputManager
 from core.constructs.workspace_watcher import WorkspaceWatcher
@@ -19,9 +18,17 @@ def core_sync_command(workspace: Workspace, output: OutputManager, cli_args) -> 
     format:
     cdev sync <sub_command> <args>
     """
-    # Convert namespace into dict
+    ignore_args = cli_args[0].ignore
+    watch_args = cli_args[0].watch
+    no_default_args = cli_args[0].no_default
     try:
-        workspace_watcher = WorkspaceWatcher(workspace, output)
+        workspace_watcher = WorkspaceWatcher(
+            workspace,
+            output,
+            no_default=no_default_args,
+            patterns_to_watch=watch_args,
+            patterns_to_ignore=ignore_args,
+        )
         workspace_watcher.watch()
     except Exception as e:
         print(e)
