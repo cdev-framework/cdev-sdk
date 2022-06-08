@@ -69,9 +69,9 @@ class WorkspaceWatcher(Trick):
         try:
             while True:
                 if self._perform_deployment:
-                    # print('Ignoring future changes until deployment is finished')
+                    print('Ignoring future changes until deployment is finished')
                     execute_deployment(self._workspace, self._output, no_prompt=self._no_prompt)
-                    # print('Enabling watch again')
+                    print('Enabling watch again')
                     self._perform_deployment = False
                 else:
                     time.sleep(1)
