@@ -125,6 +125,9 @@ def _create_simple_lambda(
         "Architectures": [arch],
         "Role": role_arn,
         "Handler": resource.configuration.handler,
+        "MemorySize": resource.configuration.memory_size,
+        "EphemeralStorage": {"Size": resource.configuration.storage},
+        "Timeout": resource.configuration.timeout,
         "Code": {"S3Bucket": artifact_bucket, "S3Key": keyname},
         "Environment": {"Variables": resource.configuration.environment_variables._d}
         if resource.configuration.environment_variables
