@@ -304,9 +304,10 @@ def _recursive_find_relative_module_dependencies(
     """
     cache_copy = copy(cache)
 
-    if get_from_relative_modules_cache(module, cache_copy):
-        # Return cached value if available
-        return get_from_relative_modules_cache(module, cache_copy)
+    # if get_from_relative_modules_cache(module, cache_copy):
+    #    # Return cached value if available
+    #    print(get_from_relative_modules_cache(module, cache_copy))
+    #    return get_from_relative_modules_cache(module, cache_copy)
 
     # Get all the directly referenced modules in the provided relative module
     direct_dependencies: List[str] = list(
