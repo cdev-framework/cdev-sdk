@@ -23,16 +23,52 @@ class shell(BaseCommand):
             type=str,
             help="The database to execute on. Name must include component name. ex: comp1.myDb",
         )
+        parser.add_argument(
+            "--c",
+            nargs='+',
+            help="sql command to execute"
+        )
 
     def command(self, *args, **kwargs) -> None:
 
         component_name, database_name = self.get_component_and_resource_from_qualified_name(kwargs.get("resource"))
+        c_command = kwargs.get("c")
+        print(c_command)
         cluster_arn, secret_arn, db_name = get_db_info_from_cdev_name(
             component_name, database_name
         )
+        if c_command != None:
+            print('entrou')
+            c_command = self.concatenate_arg_command(c_command)
+            print(c_command)
+            self.run_sql_command(c_command, cluster_arn, secret_arn, db_name)
+            print('passou')
+        else:
+            interactive_shell(fmt(Console()), cluster_arn, secret_arn, db_name).cmdloop()
 
-        interactive_shell(fmt(Console()), cluster_arn, secret_arn, db_name).cmdloop()
+    def concatenate_arg_command(self, command):
+        res=''
+        for item in command:
+            res = res + ' ' + str(item)
+        return res
 
+    def run_sql_command(self, query_string, cluster_arn, secret_arn, db_name):
+        connection = db_connection(cluster_arn, secret_arn, db_name)
+        col_descriptions, rows, updated_row_cnt = connection.execute(query_string)
+        if updated_row_cnt > 0:
+            print(str(updated_row_cnt) + 'rows updated')
+        else:
+            col_str = ''
+            for item in col_descriptions:
+                col_str = item[0] + '|' + col_str
+            print(col_str)
+
+            row_str =''
+            for item in rows:
+                for item2 in item:
+                    row_str = str(item2) + '|' + row_str
+                row_str = row_str + '\n'
+            print(row_str)
 
 class db_connection:
     def __init__(self, cluster_arn: str, secret_arn: str, database_name: str) -> None:
