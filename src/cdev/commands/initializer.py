@@ -118,7 +118,7 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
 
     base_settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
 
-    backend_directory = os.path.join(base_directory, CDEV_FOLDER, STATE_FOLDER)
+    backend_directory = os.path.join(CDEV_FOLDER, STATE_FOLDER)
     backend_configuration = Local_Backend_Configuration(
         {
             "base_folder": backend_directory,
@@ -141,9 +141,6 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
 
     new_project.initialize_project()
 
-    # TODO restructure entire creating process so that this is more explicit
-    base_dir = os.getcwd()
-
     for environment in DEFAULT_ENVIRONMENTS:
 
         environment_settings = {
@@ -151,16 +148,16 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
                 # set the settings modules as python modules
                 os.path.relpath(
                     os.path.join(base_settings_folder, f"base_settings.py"),
-                    start=base_dir,
+                    start=base_directory,
                 )[:-3].replace("/", "."),
                 os.path.relpath(
                     os.path.join(base_settings_folder, f"{environment}_settings.py"),
-                    start=base_dir,
+                    start=base_directory,
                 )[:-3].replace("/", "."),
             ],
             "secret_dir": os.path.relpath(
                 os.path.join(base_settings_folder, f"{environment}_secrets"),
-                start=base_dir,
+                start=base_directory,
             ),
         }
 
