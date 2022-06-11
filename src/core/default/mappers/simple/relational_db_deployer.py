@@ -39,7 +39,7 @@ def _create_simple_relational_db(
             "ScalingConfiguration": {
                 "MinCapacity": resource.MinCapacity,
                 "MaxCapacity": resource.MinCapacity,
-                "AutoPause": not resource.SecondsToPause == 0,
+                "AutoPause": resource.SecondsToPause != 0,
                 "SecondsUntilAutoPause": resource.SecondsToPause
                 if not resource.SecondsToPause == 0
                 else 300,
