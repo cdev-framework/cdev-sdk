@@ -31,8 +31,6 @@ class local_environment(Environment):
 
         ws.add_mapper(DefaultMapper())
 
-        initialize_workspace(
-            ws, self.workspace_info.settings_info, self.workspace_info.config
-        )
+        initialize_workspace(ws, self.workspace_info)
 
         ws.set_state(Workspace_State.INITIALIZED)

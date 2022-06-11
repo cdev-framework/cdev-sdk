@@ -5,12 +5,26 @@ from core.constructs.workspace import Workspace, Workspace_State, Workspace_Info
 from core.constructs.resource import ResourceModel
 from core.constructs.components import ComponentModel
 
+from core.constructs.backend import Backend_Configuration
+from core.constructs.settings import Settings_Info
+
 from .. import sample_data
 
 
-def simple_initialize_workspace(workspace: Workspace, config: Dict):
+def simple_initialize_workspace(
+    workspace: Workspace,
+    settings_info: Settings_Info,
+    backend_info: Backend_Configuration,
+    resource_state_uuid: str,
+    configuration: Dict,
+):
     workspace.set_state(Workspace_State.INITIALIZING)
-    workspace.initialize_workspace(config)
+    workspace.initialize_workspace(
+        settings_info=settings_info,
+        backend_info=backend_info,
+        resource_state_uuid=resource_state_uuid,
+        configuration=configuration,
+    )
 
 
 def simple_execute_frontend_workspace(workspace: Workspace, config: Workspace_Info):

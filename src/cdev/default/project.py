@@ -1,17 +1,16 @@
 import json
 from pydantic.types import FilePath
-from typing import Dict, List, Callable, Any, TypeVar, Tuple
+import os
+from typing import Dict, List, Any, Tuple
 
 
-from cdev.constructs.project import Project, Project_State, project_info, wrap_phases
+from cdev.constructs.project import Project, Project_State, Project_Info, wrap_phases
 from cdev.default.environment import local_environment
-from core.constructs.backend import Backend, load_backend
 
+from core.constructs.backend import load_backend, Backend_Configuration
 from core.constructs.mapper import CloudMapper
 from core.constructs.components import Component
-from core.constructs.workspace import Workspace_State
-
-from core.constructs.workspace import Workspace_Info
+from core.constructs.workspace import Workspace_State, Workspace_Info
 from core.constructs.settings import Settings_Info, Settings
 from core.constructs.cloud_output import Cloud_Output
 
@@ -20,10 +19,18 @@ from core.utils import file_manager
 from ..constructs.environment import environment_info, Environment
 
 WORKSPACE_STATE_TO_PROJECT_STATE = {
-    Workspace_State.UNINITIALIZED: Project_State.UNINITIALIZED,
     Workspace_State.INITIALIZING: Project_State.INITIALIZING,
     Workspace_State.INITIALIZED: Project_State.INITIALIZED,
 }
+
+
+class local_project_info(Project_Info):
+    settings_directory: str
+    initialization_module: str
+
+    def __init__(__pydantic_self__, **data: Any) -> None:
+        """"""
+        super().__init__(**data)
 
 
 class local_project(Project):
@@ -31,38 +38,25 @@ class local_project(Project):
     An implementation of the Project API that works for simple local development.
 
     Arguments:
-        project_info_location (FilePath): Path the configuration json file
+        project_info (local_project_info): Info of the project
+        project_info_file (FilePath): Path to save configuration file
 
     """
 
     _instance = None
 
-    _current_environment: Environment = None
     _project_info_location: FilePath = None
+    _project_info: local_project_info = None
+    _current_state: Project_State = None
 
-    _central_state: project_info
-    _backend: Backend = None
-    _project_state: Project_State = None
-    _project_name: str = None
-
-    def __new__(cls, project_info_location: FilePath):
+    def __new__(cls, project_info: local_project_info, project_info_file: FilePath):
         if cls._instance is None:
             cls._instance = super(Project, cls).__new__(cls)
-            # Put any initialization here.
-            cls._instance._project_info_location = project_info_location
 
-            cls._instance._load_state()
+            cls._instance._project_info_location = project_info_file
+            cls._instance._project_info = project_info
 
-            cls._instance.set_name(cls._instance._central_state.project_name)
-
-            cls._instance._backend = load_backend(
-                cls._instance._central_state.backend_info
-            )
-
-            # Load the backend
-            cls._instance._current_environment = None
-
-            cls._instance.set_state(Project_State.UNINITIALIZED)
+            cls._instance.set_state(Project_State.INFO_LOADED)
 
             Project.set_global_instance(cls._instance)
 
@@ -73,8 +67,8 @@ class local_project(Project):
         cls._instance = None
 
     def initialize_project(self) -> None:
-        self.set_state(Project_State.INITIALIZING)
         current_env = self.get_current_environment()
+        self.set_state(Project_State.INITIALIZING)
 
         if current_env:
             current_env.initialize_environment()
@@ -102,103 +96,130 @@ class local_project(Project):
         return self._project_name
 
     def get_state(self) -> Project_State:
-        return self._project_state
+        return self._current_state
 
     def set_state(self, new_state: Project_State) -> None:
-        self._project_state = new_state
+        self._current_state = new_state
 
     # Note that the class methods should not include doc strings so that they inherit the doc string of the
     # parent class.
 
-    @wrap_phases([Project_State.INITIALIZED, Project_State.UNINITIALIZED])
+    @wrap_phases([Project_State.INFO_LOADED])
     def create_environment(
-        self, environment_name: str, settings_files: Dict[str, str] = None
+        self, environment_name: str, backend_configuration: Backend_Configuration = None
     ) -> None:
-        self._load_state()
-        resource_state_id = self._backend.create_resource_state(environment_name)
+        self._load_info()
 
-        workspace_config = {"backend_configuration": self._central_state.backend_info}
+        if not backend_configuration:
+            backend_configuration = self._create_default_backend_configuration()
 
-        workspace_config["resource_state_uuid"] = resource_state_id
-        workspace_config["initialization_module"] = "src.cdev_project"
+        try:
+            resource_state_id = load_backend(
+                backend_configuration
+            ).create_resource_state(environment_name)
+        except Exception as e:
+            raise e
 
-        settings = (
-            Settings_Info(base_class="core.constructs.settings.Settings")
-            if not settings_files
-            else Settings_Info(
-                base_class="core.constructs.settings.Settings",
-                user_setting_module=settings_files.get("user_setting_module"),
-                secret_dir=settings_files.get("secret_dir"),
-            )
+        base_directory = os.path.dirname(self._project_info.settings_directory)
+        user_setting_module = [
+            # set the settings modules as python modules
+            os.path.relpath(
+                os.path.join(
+                    self._project_info.settings_directory, f"base_settings.py"
+                ),
+                start=base_directory,
+            )[:-3].replace("/", "."),
+            os.path.relpath(
+                os.path.join(
+                    self._project_info.settings_directory,
+                    f"{environment_name}_settings.py",
+                ),
+                start=base_directory,
+            )[:-3].replace("/", "."),
+        ]
+
+        secret_dir = os.path.relpath(
+            os.path.join(
+                self._project_info.settings_directory, f"{environment_name}_secrets"
+            ),
+            start=base_directory,
         )
 
-        self._central_state.environments.append(
+        settings = Settings_Info(
+            base_class="core.constructs.settings.Settings",
+            user_setting_module=user_setting_module,
+            secret_dir=secret_dir,
+        )
+
+        self._project_info.environments.append(
             environment_info(
-                environment_name,
-                Workspace_Info(
-                    "core.default.workspace",
-                    "local_workspace",
-                    settings,
-                    workspace_config,
+                name=environment_name,
+                workspace_info=Workspace_Info(
+                    python_module="core.default.workspace",
+                    python_class="local_workspace",
+                    settings_info=settings,
+                    backend_info=backend_configuration,
+                    resource_state_uuid=resource_state_id,
+                    initialization_modules=[self._project_info.initialization_module],
                 ),
             )
         )
 
-        self._write_state()
+        self._write_info()
 
-    @wrap_phases([Project_State.INITIALIZED, Project_State.UNINITIALIZED])
+    @wrap_phases([Project_State.INITIALIZED])
     def destroy_environment(self, environment_name: str) -> None:
-        self._load_state()
+        self._load_info()
 
-        self._central_state.environments = [
-            x for x in self._central_state.environments if x.name != environment_name
+        self._project_info.environments = [
+            x for x in self._project_info.environments if x.name != environment_name
         ]
 
-        self._write_state()
+        self._write_info()
 
-    @wrap_phases([Project_State.INITIALIZED, Project_State.UNINITIALIZED])
+    @wrap_phases([Project_State.INFO_LOADED])
     def get_all_environment_names(self) -> List[str]:
-        self._load_state()
+        self._load_info()
 
-        return [x.name for x in self._central_state.environments]
+        return [x.name for x in self._project_info.environments]
 
-    @wrap_phases([Project_State.INITIALIZED, Project_State.UNINITIALIZED])
+    @wrap_phases([Project_State.INFO_LOADED])
     def set_current_environment(self, environment_name: str) -> None:
-        self._load_state()
+        self._load_info()
 
         if not environment_name in self.get_all_environment_names():
             raise Exception
 
-        self._central_state.current_environment = environment_name
+        self._project_info.current_environment = environment_name
 
-        self._write_state()
+        self._write_info()
 
     def get_environment(self, environment_name: str) -> Environment:
-        self._load_state()
+        self._load_info()
 
         environment_info = next(
-            x for x in self._central_state.environments if x.name == environment_name
+            x for x in self._project_info.environments if x.name == environment_name
         )
 
         return local_environment(environment_info)
 
     def get_current_environment_name(self) -> str:
-        self._load_state()
+        self._load_info()
 
-        return self._central_state.current_environment
+        return self._project_info.current_environment
 
     def get_current_environment(self) -> Environment:
-        self._load_state()
+        self._load_info()
 
-        if not self._central_state.current_environment:
+        if not self._project_info.current_environment:
             return None
 
-        return self.get_environment(self._central_state.current_environment)
+        return self.get_environment(self._project_info.current_environment)
 
     def _get_environment_info(self, name: str) -> environment_info:
-        self._load_state()
+        self._load_info()
 
-        lookup_dict = {x.name: x for x in self._central_state.environments}
+        lookup_dict = {x.name: x for x in self._project_info.environments}
 
         if not name in lookup_dict:
             raise Exception(f"No environment with name {name}")
@@ -220,13 +241,13 @@ class local_project(Project):
         if not environment_name:
             environment_name = self.get_current_environment_name()
 
-        self._load_state()
+        self._load_info()
 
-        if not environment_name in [x.name for x in self._central_state.environments]:
+        if not environment_name in [x.name for x in self._project_info.environments]:
             raise Exception(f"No environment named {environment_name}")
 
         return [
-            x for x in self._central_state.environments if x.name == environment_name
+            x for x in self._project_info.environments if x.name == environment_name
         ][0].workspace_info.settings_info
 
     def update_settings_info(
@@ -235,23 +256,21 @@ class local_project(Project):
         if not environment_name:
             environment_name = self.get_current_environment_name()
 
-        self._load_state()
+        self._load_info()
 
         # Remove the old environment
         previous_environment_var = [
-            x for x in self._central_state.environments if x.name == environment_name
+            x for x in self._project_info.environments if x.name == environment_name
         ][0]
         previous_environment_var.workspace_info.settings_info = new_value
 
-        self._central_state.environments = [
-            x
-            for x in self._central_state.environments
-            if not x.name == environment_name
+        self._project_info.environments = [
+            x for x in self._project_info.environments if not x.name == environment_name
         ]
 
-        self._central_state.environments.append(previous_environment_var)
+        self._project_info.environments.append(previous_environment_var)
 
-        self._write_state()
+        self._write_info()
 
     #######################
     ##### Display Output
@@ -333,11 +352,16 @@ class local_project(Project):
         ws = self.get_current_environment().get_workspace()
         return ws.get_components()
 
-    def _write_state(self) -> None:
+    def _write_info(self) -> None:
         file_manager.safe_json_write(
-            self._central_state.dict(), self._project_info_location
+            self._project_info.dict(), self._project_info_location
         )
 
-    def _load_state(self) -> project_info:
+    def _load_info(self):
         with open(self._project_info_location, "r") as fh:
-            self._central_state = project_info(**json.load(fh))
+            self._project_info = local_project_info(**json.load(fh))
+
+    def _create_default_backend_configuration(self) -> Backend_Configuration:
+        self._load_info()
+
+        return self._project_info.default_backend_configuration

@@ -6,7 +6,7 @@ import shutil
 from typing import Dict, Tuple, List
 
 from rich.prompt import Prompt
-from cdev.default.project import local_project
+from cdev.default.project import local_project, local_project_info
 from cdev.cli.logger import set_global_logger_from_cli
 
 from core.constructs.backend import Backend, Backend_Configuration
@@ -14,7 +14,7 @@ from core.constructs.workspace import Workspace_Info
 from core.default.backend import Local_Backend_Configuration, LocalBackend
 
 
-from ..constructs.project import Project_State, check_if_project_exists, project_info
+from ..constructs.project import Project_State, check_if_project_exists, Project_Info
 
 
 STATE_FOLDER = "state"
@@ -116,8 +116,6 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
         extra_environments=DEFAULT_ENVIRONMENTS,
     )
 
-    base_settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
-
     backend_directory = os.path.join(CDEV_FOLDER, STATE_FOLDER)
     backend_configuration = Local_Backend_Configuration(
         {
@@ -126,44 +124,27 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
         }
     )
 
-    new_project_info = project_info(
-        project_name,
+    base_settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
+
+    new_project_info = local_project_info(
+        project_name=project_name,
         environments=[],
-        backend_info=backend_configuration,
         current_environment="",
+        default_backend_configuration=backend_configuration,
+        settings_directory=base_settings_folder,
+        initialization_module="src.cdev_project",
     )
 
     project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)
     with open(project_info_location, "w") as fh:
         json.dump(new_project_info.dict(), fh, indent=4)
 
-    new_project = local_project(project_info_location)
-
-    new_project.initialize_project()
+    new_project = local_project(new_project_info, project_info_location)
 
     for environment in DEFAULT_ENVIRONMENTS:
-
-        environment_settings = {
-            "user_setting_module": [
-                # set the settings modules as python modules
-                os.path.relpath(
-                    os.path.join(base_settings_folder, f"base_settings.py"),
-                    start=base_directory,
-                )[:-3].replace("/", "."),
-                os.path.relpath(
-                    os.path.join(base_settings_folder, f"{environment}_settings.py"),
-                    start=base_directory,
-                )[:-3].replace("/", "."),
-            ],
-            "secret_dir": os.path.relpath(
-                os.path.join(base_settings_folder, f"{environment}_secrets"),
-                start=base_directory,
-            ),
-        }
-
-        new_project.create_environment(environment, environment_settings)
-
-    new_project.set_state(Project_State.UNINITIALIZED)
+        new_project.create_environment(
+            environment, backend_configuration=backend_configuration
+        )
 
     new_project.set_current_environment(DEFAULT_ENVIRONMENTS[-1])
 
@@ -286,7 +267,17 @@ def load_project(initialize: bool = False) -> None:
     base_directory = os.getcwd()
 
     project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)
+    project_info = _load_local_project_information(project_info_location)
 
-    local_project(project_info_location) if not initialize else local_project(
-        project_info_location
+    local_project(
+        project_info, project_info_location
+    ) if not initialize else local_project(
+        project_info, project_info_location
     ).initialize_project()
+
+
+def _load_local_project_information(
+    project_info_location: FilePath,
+) -> local_project_info:
+    with open(project_info_location, "r") as fh:
+        return local_project_info(**json.load(fh))

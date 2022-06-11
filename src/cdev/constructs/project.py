@@ -18,41 +18,15 @@ from .environment import environment_info, Environment
 _GLOBAL_PROJECT = None
 
 
-class project_info(BaseModel):
+class Project_Info(BaseModel):
     project_name: str
     environments: List[environment_info]
-    backend_info: Backend_Configuration
+    default_backend_configuration: Backend_Configuration
     current_environment: Optional[str]
-
-    def __init__(
-        __pydantic_self__,
-        project_name: str,
-        environments: List[environment_info],
-        backend_info: Backend_Configuration,
-        current_environment: str = None,
-    ) -> None:
-        """
-        Represents the data about a cdev project object:
-
-        Parameters:
-            project_name (str): Name of the project
-            environments (List[environment_info]): The environments that are currently part of the project
-            current_environment (str): The current environment
-
-        """
-
-        super().__init__(
-            **{
-                "project_name": project_name,
-                "environments": environments,
-                "backend_info": backend_info,
-                "current_environment": current_environment,
-            }
-        )
 
 
 class Project_State(str, Enum):
-    UNINITIALIZED = "UNINITIALIZED"
+    INFO_LOADED = "INFO_LOADED"
     INITIALIZING = "INITIALIZING"
     INITIALIZED = "INITIALIZED"
 
@@ -168,7 +142,9 @@ class Project:
         """
         raise NotImplementedError
 
-    def create_environment(self, environment_name: str, settings_files: List[str]) -> None:
+    def create_environment(
+        self, environment_name: str, backend_configuration: Backend_Configuration = None
+    ) -> None:
         """
         Create a new environment for this project.
         """
@@ -432,7 +408,7 @@ def check_if_project_exists(base_directory: DirectoryPath) -> bool:
         with open(
             os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE), "r"
         ) as fh:
-            project_info(**json.load(fh))
+            Project_Info(**json.load(fh))
 
         return True
 
