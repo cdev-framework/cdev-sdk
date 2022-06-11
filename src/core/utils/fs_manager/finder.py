@@ -331,12 +331,19 @@ def _parse_serverless_functions(
         )
 
         dependencies_resources = [
-            _create_layer(_create_layer_name_from_artifact_path(x[0]), x[0], x[1])
-            for x in dependencies_info
+            _create_layer(
+                _create_layer_name_from_artifact_path(absolute_archive_path),
+                paths.get_relative_to_workspace_path(absolute_archive_path),
+                archive_hash,
+            )
+            for absolute_archive_path, archive_hash in dependencies_info
         ]
 
         function_resource = _create_new_function(
-            previous_info, source_artifact_path, source_hash, dependencies_resources
+            previous_info,
+            paths.get_relative_to_workspace_path(source_artifact_path),
+            source_hash,
+            dependencies_resources,
         )
 
         rv_functions.append(function_resource)
