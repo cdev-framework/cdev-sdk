@@ -18,7 +18,8 @@ All release will have a corresponding git tag.
 - Add support for lambda functions to update the handler
 - Add option to set your memory, storage and timeout on serverless functions
 - Add user input for setting artifact bucket when creating a new project
-- Added query, tail and limit args to logging function
+- Add query, tail and limit args to logging function
+- Add sync to watch for filesystem changes
 
 ### Fixed
 - Fixed issues with a bucket when it is not empty and we need to delete it
