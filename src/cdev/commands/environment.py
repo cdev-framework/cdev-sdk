@@ -1,7 +1,10 @@
 from rich.prompt import Confirm
 from typing import List, Tuple
 
+from core.constructs.output_manager import OutputManager
+
 from cdev.constructs.project import Project
+from cdev.default.output_manager import CdevOutputManager
 from cdev.cli.logger import set_global_logger_from_cli
 
 
@@ -10,26 +13,30 @@ def environment_cli(args) -> None:
     parsed_args = vars(args[1])
 
     set_global_logger_from_cli(parsed_args.get("loglevel"))
+    output_manager = CdevOutputManager()
 
     if command == "":
-        print(
+        output_manager._console.print(
             "You must provide a sub-command. run `cdev environment --help` for more information on available subcommands"
         )
     elif command == "ls":
-        list_environments()
+        list_environments(output_manager)
     elif command == "get":
         pass
     elif command == "set":
-        set_current_environment(parsed_args.get("env"))
+        set_current_environment(parsed_args.get("env"), output_manager)
     elif command == "create":
-        create_environment(parsed_args.get("env"))
+        create_environment(parsed_args.get("env"), output_manager)
     elif command == "settings_information":
         settings_information(
-            parsed_args.get("key"), parsed_args.get("new_value"), parsed_args.get("all")
+            output_manager,
+            parsed_args.get("key"),
+            parsed_args.get("new_value"),
+            parsed_args.get("all"),
         )
 
 
-def list_environments() -> None:
+def list_environments(output: OutputManager) -> None:
     """
     Get the current list of environments and the current environment from the Project object.
     Must be called when the Project is in the UNINITIALIZED phase.
@@ -42,33 +49,40 @@ def list_environments() -> None:
 
     for environment_name in all_environment_names:
         if current_environment_name == environment_name:
-            print(f"> {environment_name}")
+            output._console.print(f"> {environment_name}")
         else:
-            print(environment_name)
+            output._console.print(environment_name)
 
 
-def set_current_environment(new_current_environment: str) -> None:
+def set_current_environment(
+    new_current_environment: str, output: OutputManager
+) -> None:
     myProject = Project.instance()
 
     try:
         myProject.set_current_environment(new_current_environment)
     except Exception as e:
-        print(f"Could not set {new_current_environment} as the environment")
+        output._console.print(
+            f"Could not set {new_current_environment} as the environment"
+        )
         return
 
-    print(f"Set Current Environment -> {new_current_environment}")
+    output._console.print(f"Set Current Environment -> {new_current_environment}")
 
 
-def create_environment(new_environment_name: str) -> None:
+def create_environment(new_environment_name: str, output: OutputManager) -> None:
     myProject = Project.instance()
 
     myProject.create_environment(new_environment_name)
 
-    print(f"Created Environment -> {new_environment_name}")
+    output._console.print(f"Created Environment -> {new_environment_name}")
 
 
 def settings_information(
-    key: str = None, new_value: str = None, all: bool = False
+    output: OutputManager,
+    key: str = None,
+    new_value: str = None,
+    all: bool = False,
 ) -> None:
     myProject = Project.instance()
 
@@ -78,7 +92,7 @@ def settings_information(
     if not new_value:
         settings_info = myProject.get_environment_settings_info()
         settings_dict = settings_info.dict()
-        print(
+        output._console.print(
             f"Settings info for Environment {myProject.get_current_environment_name()}:"
         )
         if key:
@@ -88,11 +102,11 @@ def settings_information(
                     f"Key {key} not in settings information {settings_info}"
                 )
 
-            print(f"    {key} -> {settings_dict.get(key)}")
+            output._console.print(f"    {key} -> {settings_dict.get(key)}")
         else:
             # Print all values
             for key, value in settings_dict.items():
-                print(f"    {key} -> {value}")
+                output._console.print(f"    {key} -> {value}")
 
     else:
         if not key:
@@ -108,7 +122,7 @@ def settings_information(
             setattr(settings_info, key, new_value)
 
             myProject.update_environment_settings_info(settings_info)
-            print(f"Updated {key} -> {new_value}")
+            output._console.print(f"Updated {key} -> {new_value}")
 
         else:
             Confirm.ask(
@@ -124,4 +138,6 @@ def settings_information(
                 myProject.update_environment_settings_info(
                     settings_info, environment_name
                 )
-                print(f"Updated ({environment_name}) {key} -> {new_value}")
+                output._console.print(
+                    f"Updated ({environment_name}) {key} -> {new_value}"
+                )
