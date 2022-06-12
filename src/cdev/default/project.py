@@ -164,7 +164,7 @@ class local_project(Project):
 
         self._write_info()
 
-    @wrap_phases([Project_State.INITIALIZED])
+    @wrap_phases([Project_State.INFO_LOADED])
     def destroy_environment(self, environment_name: str) -> None:
         self._load_info()
 
@@ -188,6 +188,40 @@ class local_project(Project):
             raise Exception
 
         self._project_info.current_environment_name = environment_name
+
+        self._write_info()
+
+    @wrap_phases([Project_State.INFO_LOADED])
+    def get_environment_settings_info(
+        self, environment_name: str = None
+    ) -> Settings_Info:
+        if not environment_name:
+            environment_name = self.get_current_environment_name()
+
+        self._load_info()
+
+        environment_info = self._get_environment_info(environment_name)
+
+        return environment_info.workspace_info.settings_info
+
+    @wrap_phases([Project_State.INFO_LOADED])
+    def update_environment_settings_info(
+        self, new_value: Settings_Info, environment_name: str = None
+    ) -> None:
+        if not environment_name:
+            environment_name = self.get_current_environment_name()
+
+        self._load_info()
+
+        # Remove the old environment
+        previous_environment_var = self._get_environment_info(environment_name)
+        previous_environment_var.workspace_info.settings_info = new_value
+
+        self._project_info.environments = [
+            x for x in self._project_info.environments if not x.name == environment_name
+        ]
+
+        self._project_info.environments.append(previous_environment_var)
 
         self._write_info()
 
@@ -222,7 +256,7 @@ class local_project(Project):
         return lookup_dict.get(name)
 
     ############################
-    ##### Settings
+    ##### Runtime Settings
     ############################
     @property
     def settings(self) -> Settings:
@@ -231,36 +265,6 @@ class local_project(Project):
     @settings.setter
     def settings(self, value: Settings) -> None:
         self.get_current_environment().get_workspace().settings = value
-
-    def get_settings_info(self, environment_name: str = None) -> Settings_Info:
-        if not environment_name:
-            environment_name = self.get_current_environment_name()
-
-        self._load_info()
-
-        environment_info = self._get_environment_info(environment_name)
-
-        return environment_info.workspace_info.settings_info
-
-    def update_settings_info(
-        self, new_value: Settings_Info, environment_name: str = None
-    ) -> None:
-        if not environment_name:
-            environment_name = self.get_current_environment_name()
-
-        self._load_info()
-
-        # Remove the old environment
-        previous_environment_var = self._get_environment_info(environment_name)
-        previous_environment_var.workspace_info.settings_info = new_value
-
-        self._project_info.environments = [
-            x for x in self._project_info.environments if not x.name == environment_name
-        ]
-
-        self._project_info.environments.append(previous_environment_var)
-
-        self._write_info()
 
     #######################
     ##### Display Output
@@ -342,6 +346,9 @@ class local_project(Project):
         ws = self.get_current_environment().get_workspace()
         return ws.get_components()
 
+    ##########################
+    ##### Internal Helpers
+    ##########################
     def _write_info(self) -> None:
         file_manager.safe_json_write(
             self._project_info.dict(), self._project_info_location

@@ -31,6 +31,25 @@ class Project_State(str, Enum):
     INITIALIZED = "INITIALIZED"
 
 
+###############################
+##### Exceptions
+###############################
+class ProjectError(Exception):
+    pass
+
+
+class EnvironmentDoesNotExist(ProjectError):
+    pass
+
+
+class BackendError(ProjectError):
+    pass
+
+
+class FilesystemError(ProjectError):
+    pass
+
+
 def wrap_phases(phases: List[Project_State]) -> Callable[[F], F]:
     """
     Annotation that denotes when a function can be executed within the life cycle of a workspace. Throws excpetion if the workspace is not in the correct
@@ -222,10 +241,12 @@ class Project:
     def settings(self, value: Settings):
         raise NotImplementedError
 
-    def get_settings_info(self, environment_name: str = None) -> Settings_Info:
+    def get_environment_settings_info(
+        self, environment_name: str = None
+    ) -> Settings_Info:
         raise NotImplementedError
 
-    def update_settings_info(
+    def update_environment_settings_info(
         self, new_value: Settings_Info, environment_name: str = None
     ):
         raise NotImplementedError

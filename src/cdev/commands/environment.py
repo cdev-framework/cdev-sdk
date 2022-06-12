@@ -67,14 +67,16 @@ def create_environment(new_environment_name: str) -> None:
     print(f"Created Environment -> {new_environment_name}")
 
 
-def settings_information(key: str = None, new_value: str = None, all: bool = False) -> None:
+def settings_information(
+    key: str = None, new_value: str = None, all: bool = False
+) -> None:
     myProject = Project.instance()
 
     if all and not new_value:
         raise Exception("Must use --all with --new-value")
 
     if not new_value:
-        settings_info = myProject.get_settings_info()
+        settings_info = myProject.get_environment_settings_info()
         settings_dict = settings_info.dict()
         print(
             f"Settings info for Environment {myProject.get_current_environment_name()}:"
@@ -97,7 +99,7 @@ def settings_information(key: str = None, new_value: str = None, all: bool = Fal
             raise Exception("Must use --new-value with --key")
 
         if not all:
-            settings_info = myProject.get_settings_info()
+            settings_info = myProject.get_environment_settings_info()
 
             Confirm.ask(
                 f"Are you sure you want to update {key} to {new_value} for the current environment ({myProject.get_current_environment_name()})?"
@@ -105,7 +107,7 @@ def settings_information(key: str = None, new_value: str = None, all: bool = Fal
 
             setattr(settings_info, key, new_value)
 
-            myProject.update_settings_info(settings_info)
+            myProject.update_environment_settings_info(settings_info)
             print(f"Updated {key} -> {new_value}")
 
         else:
@@ -113,9 +115,13 @@ def settings_information(key: str = None, new_value: str = None, all: bool = Fal
                 f"Are you sure you want to update {key} to {new_value} for all environments?"
             )
             for environment_name in myProject.get_all_environment_names():
-                settings_info = myProject.get_settings_info(environment_name)
+                settings_info = myProject.get_environment_settings_info(
+                    environment_name
+                )
 
                 setattr(settings_info, key, new_value)
 
-                myProject.update_settings_info(settings_info, environment_name)
+                myProject.update_environment_settings_info(
+                    settings_info, environment_name
+                )
                 print(f"Updated ({environment_name}) {key} -> {new_value}")
