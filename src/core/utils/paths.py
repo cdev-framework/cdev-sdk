@@ -169,3 +169,31 @@ def create_path(startingpath, fullpath) -> DirectoryPath:
         intermediate_path = os.path.join(intermediate_path, p)
 
     return intermediate_path
+
+
+def touch_file(file_path: FilePath) -> None:
+    """Helper function to touch a file
+
+    Args:
+        file_path (FilePath)
+
+    Raises:
+        Exception: Directory does not exist
+    """
+    if not os.path.isdir(os.path.dirname(file_path)):
+        raise Exception(
+            f"Can not create {file_path} because {os.path.dirname(file_path)} is not a directory."
+        )
+
+    with open(file_path, "a"):
+        pass
+
+
+def mkdir(directory_path: DirectoryPath) -> None:
+    """Create a directory if it does not already exist.
+
+    Args:
+        directory_path (DirectoryPath)
+    """
+    if not os.path.isdir(directory_path):
+        os.mkdir(directory_path)

@@ -12,9 +12,10 @@ from cdev.cli.logger import set_global_logger_from_cli
 from core.constructs.backend import Backend, Backend_Configuration
 from core.constructs.workspace import Workspace_Info
 from core.default.backend import Local_Backend_Configuration, LocalBackend
+from core.utils import paths as paths_util
 
 
-from ..constructs.project import Project_State, check_if_project_exists, Project_Info
+from cdev.constructs.project import Project_State, check_if_project_exists, Project_Info
 
 
 STATE_FOLDER = "state"
@@ -186,17 +187,19 @@ def _create_folder_structure(
     settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
     base_settings_file = os.path.join(settings_folder, f"base_settings.py")
 
-    _mkdir(cdev_folder)
-    _mkdir(state_folder)
-    _mkdir(intermediate_folder)
-    _mkdir(cache_folder)
-    _mkdir(settings_folder)
+    paths_util.mkdir(cdev_folder)
+    paths_util.mkdir(state_folder)
+    paths_util.mkdir(intermediate_folder)
+    paths_util.mkdir(cache_folder)
+    paths_util.mkdir(settings_folder)
 
     _create_base_settings(base_settings_file, base_settings)
 
     for environment in extra_environments:
-        _touch_file(os.path.join(settings_folder, f"{environment}_settings.py"))
-        _mkdir(os.path.join(settings_folder, f"{environment}_secrets"))
+        paths_util.touch_file(
+            os.path.join(settings_folder, f"{environment}_settings.py")
+        )
+        paths_util.mkdir(os.path.join(settings_folder, f"{environment}_secrets"))
 
 
 def _create_base_settings(
@@ -210,9 +213,9 @@ def _create_base_settings(
         base_settings (Dict[str, str], optional): Settings for base environment. Defaults to None.
     """
     # The settings are dynamically importable python modules, so the folder needs to be a python module
-    _touch_file(os.path.join(os.path.dirname(file_path), f"__init__.py"))
+    paths_util.touch_file(os.path.join(os.path.dirname(file_path), f"__init__.py"))
 
-    _touch_file(file_path)
+    paths_util.touch_file(file_path)
 
     if base_settings:
         _render_settings_file(file_path, base_settings)
@@ -228,34 +231,6 @@ def _render_settings_file(file_path: FilePath, base_settings: Dict[str, str]) ->
     with open(file_path, "w") as fh:
         for key, value in base_settings.items():
             fh.write(f'{key} = "{value}"')
-
-
-def _touch_file(file_path: FilePath) -> None:
-    """Helper function to touch a file
-
-    Args:
-        file_path (FilePath)
-
-    Raises:
-        Exception: Directory does not exist
-    """
-    if not os.path.isdir(os.path.dirname(file_path)):
-        raise Exception(
-            f"Can not create {file_path} because {os.path.dirname(file_path)} is not a directory."
-        )
-
-    with open(file_path, "w"):
-        pass
-
-
-def _mkdir(directory_path: DirectoryPath) -> None:
-    """Create a directory if it does not already exist.
-
-    Args:
-        directory_path (DirectoryPath)
-    """
-    if not os.path.isdir(directory_path):
-        os.mkdir(directory_path)
 
 
 def load_project(initialize: bool = False) -> None:

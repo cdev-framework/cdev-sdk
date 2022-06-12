@@ -14,7 +14,7 @@ from core.constructs.workspace import Workspace_State, Workspace_Info
 from core.constructs.settings import Settings_Info, Settings
 from core.constructs.cloud_output import Cloud_Output
 
-from core.utils import file_manager
+from core.utils import file_manager, paths as paths_utils
 
 from ..constructs.environment import environment_info, Environment
 
@@ -121,34 +121,36 @@ class local_project(Project):
             raise e
 
         base_directory = os.path.dirname(self._project_info.settings_directory)
-        user_setting_module = [
+
+        _base_settings_file = os.path.join(
+            self._project_info.settings_directory, f"base_settings.py"
+        )
+        _environment_settings_file = os.path.join(
+            self._project_info.settings_directory, f"{environment_name}_settings.py"
+        )
+
+        settings_files = [_base_settings_file, _environment_settings_file]
+
+        [paths_utils.touch_file(x) for x in settings_files]
+
+        user_setting_modules = [
             # set the settings modules as python modules
-            os.path.relpath(
-                os.path.join(
-                    self._project_info.settings_directory, f"base_settings.py"
-                ),
-                start=base_directory,
-            )[:-3].replace("/", "."),
-            os.path.relpath(
-                os.path.join(
-                    self._project_info.settings_directory,
-                    f"{environment_name}_settings.py",
-                ),
-                start=base_directory,
-            )[:-3].replace("/", "."),
+            os.path.relpath(x, start=base_directory,)[
+                :-3
+            ].replace("/", ".")
+            for x in settings_files
         ]
 
-        secret_dir = os.path.relpath(
-            os.path.join(
-                self._project_info.settings_directory, f"{environment_name}_secrets"
-            ),
-            start=base_directory,
+        _abs_secrets_dir = os.path.join(
+            self._project_info.settings_directory, f"{environment_name}_secrets"
         )
+        paths_utils.mkdir(_abs_secrets_dir)
+        relative_secret_dir = os.path.relpath(_abs_secrets_dir, start=base_directory)
 
         settings = Settings_Info(
             base_class="core.constructs.settings.Settings",
-            user_setting_module=user_setting_module,
-            secret_dir=secret_dir,
+            user_setting_module=user_setting_modules,
+            secret_dir=relative_secret_dir,
         )
 
         self._project_info.environments.append(
