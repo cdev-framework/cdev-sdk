@@ -23,6 +23,7 @@ class shell(BaseCommand):
             help="The database to execute on. Name must include component name. ex: comp1.myDb",
         )
         parser.add_argument("--c", nargs="+", type=str, help="sql command to execute")
+        parser.add_argument("--command", nargs="+", type=str, help="sql command to execute")
         parser.add_argument("--f", nargs="+", help="execute sql commands from a file")
 
     def command(self, *args, **kwargs) -> None:
