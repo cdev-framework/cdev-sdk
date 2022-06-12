@@ -129,7 +129,7 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
     new_project_info = local_project_info(
         project_name=project_name,
         environments=[],
-        current_environment="",
+        current_environment_name="",
         default_backend_configuration=backend_configuration,
         settings_directory=base_settings_folder,
         initialization_module="src.cdev_project",
@@ -269,11 +269,11 @@ def load_project(initialize: bool = False) -> None:
     project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)
     project_info = _load_local_project_information(project_info_location)
 
-    local_project(
-        project_info, project_info_location
-    ) if not initialize else local_project(
-        project_info, project_info_location
-    ).initialize_project()
+    project = local_project(
+        project_info=project_info, project_info_location=project_info_location
+    )
+    if initialize:
+        project.initialize_project()
 
 
 def _load_local_project_information(

@@ -187,34 +187,32 @@ class local_project(Project):
     def set_current_environment(self, environment_name: str) -> None:
         self._load_info()
 
-        if not environment_name in self.get_all_environment_names():
+        if environment_name not in self.get_all_environment_names():
             raise Exception
 
-        self._project_info.current_environment = environment_name
+        self._project_info.current_environment_name = environment_name
 
         self._write_info()
 
     def get_environment(self, environment_name: str) -> Environment:
         self._load_info()
 
-        environment_info = next(
-            x for x in self._project_info.environments if x.name == environment_name
-        )
+        environment_info = self._get_environment_info(environment_name)
 
         return local_environment(environment_info)
 
     def get_current_environment_name(self) -> str:
         self._load_info()
 
-        return self._project_info.current_environment
+        return self._project_info.current_environment_name
 
     def get_current_environment(self) -> Environment:
         self._load_info()
 
-        if not self._project_info.current_environment:
+        if not self._project_info.current_environment_name:
             return None
 
-        return self.get_environment(self._project_info.current_environment)
+        return self.get_environment(self._project_info.current_environment_name)
 
     def _get_environment_info(self, name: str) -> environment_info:
         self._load_info()
@@ -243,12 +241,9 @@ class local_project(Project):
 
         self._load_info()
 
-        if not environment_name in [x.name for x in self._project_info.environments]:
-            raise Exception(f"No environment named {environment_name}")
+        environment_info = self._get_environment_info(environment_name)
 
-        return [
-            x for x in self._project_info.environments if x.name == environment_name
-        ][0].workspace_info.settings_info
+        return environment_info.workspace_info.settings_info
 
     def update_settings_info(
         self, new_value: Settings_Info, environment_name: str = None
@@ -259,9 +254,7 @@ class local_project(Project):
         self._load_info()
 
         # Remove the old environment
-        previous_environment_var = [
-            x for x in self._project_info.environments if x.name == environment_name
-        ][0]
+        previous_environment_var = self._get_environment_info(environment_name)
         previous_environment_var.workspace_info.settings_info = new_value
 
         self._project_info.environments = [
@@ -365,3 +358,14 @@ class local_project(Project):
         self._load_info()
 
         return self._project_info.default_backend_configuration
+
+    def _get_environment_info(self, environment_name: str) -> environment_info:
+        rv = next(
+            [x for x in self._project_info.environments if x.name == environment_name],
+            None,
+        )
+
+        if not rv:
+            raise Exception
+
+        return rv

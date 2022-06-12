@@ -216,7 +216,7 @@ class Workspace:
         except Exception as e:
             raise e
 
-        if not resource_state_uuid in set([x.uuid for x in top_level_resource_states]):
+        if resource_state_uuid not in set([x.uuid for x in top_level_resource_states]):
             raise Exception(
                 f"{resource_state_uuid} not in loaded backend resource states: ({top_level_resource_states})"
             )
@@ -259,12 +259,8 @@ class Workspace:
         return self._settings
 
     @settings.setter
-    def settings(self, value: Settings):
-        """Set settings object
-
-        Returns:
-            Settings
-        """
+    def settings(self, value: Settings) -> None:
+        """Set settings object"""
         self._settings = value
 
     ############################
@@ -1051,9 +1047,11 @@ def initialize_workspace(workspace: Workspace, workspace_info: Workspace_Info) -
     """Initialize the given workspace
 
     Args:
-        workspace (Workspace)
-        settings (Settings_Info)
-        config (Dict)
+        workspace (Workspace): _description_
+        workspace_info (Workspace_Info): _description_
+
+    Raises:
+        e: _description_
     """
     try:
 

@@ -22,7 +22,7 @@ class Project_Info(BaseModel):
     project_name: str
     environments: List[environment_info]
     default_backend_configuration: Backend_Configuration
-    current_environment: Optional[str]
+    current_environment_name: Optional[str]
 
 
 class Project_State(str, Enum):
