@@ -206,9 +206,6 @@ class Project:
         Get the environment object for the currently active Environment. Note that the Environment will be in a state
         based on when this function is called within the Cdev lifecycle.
 
-        Arguments:
-            environment_name (str): The environment name to switch to
-
         Raises:
             EnvironmentDoesNotExist
         """

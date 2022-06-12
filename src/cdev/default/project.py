@@ -18,11 +18,6 @@ from core.utils import file_manager, paths as paths_utils
 
 from ..constructs.environment import environment_info, Environment
 
-WORKSPACE_STATE_TO_PROJECT_STATE = {
-    Workspace_State.INITIALIZING: Project_State.INITIALIZING,
-    Workspace_State.INITIALIZED: Project_State.INITIALIZED,
-}
-
 
 class local_project_info(Project_Info):
     settings_directory: str
@@ -291,22 +286,22 @@ class local_project(Project):
     #################
     ##### Mappers
     #################
-    @wrap_phases([Workspace_State.INITIALIZING])
+    @wrap_phases([Project_State.INITIALIZING])
     def add_mapper(self, mapper: CloudMapper) -> None:
         ws = self.get_current_environment().get_workspace()
         ws.add_mapper(mapper)
 
-    @wrap_phases([Workspace_State.INITIALIZING])
+    @wrap_phases([Project_State.INITIALIZING])
     def add_mappers(self, mappers: List[CloudMapper]) -> None:
         ws = self.get_current_environment().get_workspace()
         ws.add_mappers(mappers)
 
-    @wrap_phases([Workspace_State.INITIALIZED])
+    @wrap_phases([Project_State.INITIALIZED])
     def get_mappers(self) -> List[CloudMapper]:
         ws = self.get_current_environment().get_workspace()
         return ws.get_mappers()
 
-    @wrap_phases([Workspace_State.INITIALIZED])
+    @wrap_phases([Project_State.INITIALIZED])
     def get_mapper_namespace(self) -> Dict:
         ws = self.get_current_environment().get_workspace()
         return ws.get_mapper_namespace()
@@ -314,17 +309,17 @@ class local_project(Project):
     #################
     ##### Commands
     #################
-    @wrap_phases([Workspace_State.INITIALIZING])
+    @wrap_phases([Project_State.INITIALIZING])
     def add_command(self, command_location: str) -> None:
         ws = self.get_current_environment().get_workspace()
         ws.add_command(command_location)
 
-    @wrap_phases([Workspace_State.INITIALIZING])
+    @wrap_phases([Project_State.INITIALIZING])
     def add_commands(self, command_locations: List[str]) -> None:
         ws = self.get_current_environment().get_workspace()
         ws.add_commands(command_locations)
 
-    @wrap_phases([Workspace_State.INITIALIZED])
+    @wrap_phases([Project_State.INITIALIZED])
     def get_commands(self) -> List[str]:
         ws = self.get_current_environment().get_workspace()
         return ws.get_commands()
@@ -332,17 +327,17 @@ class local_project(Project):
     #################
     ##### Components
     #################
-    @wrap_phases([Workspace_State.INITIALIZING])
+    @wrap_phases([Project_State.INITIALIZING])
     def add_component(self, component: Component) -> None:
         ws = self.get_current_environment().get_workspace()
         ws.add_component(component)
 
-    @wrap_phases([Workspace_State.INITIALIZING])
+    @wrap_phases([Project_State.INITIALIZING])
     def add_components(self, components: List[Component]) -> None:
         ws = self.get_current_environment().get_workspace()
         ws.add_components(components)
 
-    @wrap_phases([Workspace_State.INITIALIZED])
+    @wrap_phases([Project_State.INITIALIZED])
     def get_components(self) -> List[Component]:
         ws = self.get_current_environment().get_workspace()
         return ws.get_components()
