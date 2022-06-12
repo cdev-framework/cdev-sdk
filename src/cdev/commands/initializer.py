@@ -270,7 +270,7 @@ def load_project(initialize: bool = False) -> None:
     project_info = _load_local_project_information(project_info_location)
 
     project = local_project(
-        project_info=project_info, project_info_location=project_info_location
+        project_info=project_info, project_info_filepath=project_info_location
     )
     if initialize:
         project.initialize_project()

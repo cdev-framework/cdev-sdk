@@ -20,28 +20,16 @@ parser = argparse.ArgumentParser(description="cdev cli")
 subparsers = parser.add_subparsers(title="sub_command", description="valid subcommands")
 
 
-def wrap_load_project(command: Callable) -> Callable[[Any], Any]:
+def wrap_load_and_initialize_project(
+    command: Callable, initialize: bool = True
+) -> Callable[[Any], Any]:
     def wrapped_caller(*args, **kwargs):
         try:
-            initializer.load_project()
+            initializer.load_project(initialize=initialize)
         except Exception as e:
-            print(f"Could not load the project to call {command}")
-            print(e)
-            print(traceback.format_exc())
-
-            return
-
-        command(args)
-
-    return wrapped_caller
-
-
-def wrap_load_and_initialize_project(command: Callable) -> Callable[[Any], Any]:
-    def wrapped_caller(*args, **kwargs):
-        try:
-            initializer.load_project(initialize=True)
-        except Exception as e:
-            print(f"Could not load and initialize the project to call {command}")
+            print(
+                f"Could not load (initialize={initialize}) the project to call {command}"
+            )
             print(e)
             print(traceback.format_exc())
             return
@@ -52,11 +40,6 @@ def wrap_load_and_initialize_project(command: Callable) -> Callable[[Any], Any]:
 
 
 CDEV_COMMANDS = [
-    {
-        "name": "plan",
-        "help": "See the differences that have been made since the last deployment",
-        "default": wrap_load_and_initialize_project(plan.plan_command_cli),
-    },
     {
         "name": "init",
         "help": "Create a new project",
@@ -71,47 +54,11 @@ CDEV_COMMANDS = [
         ],
     },
     {
-        "name": "develop",
-        "help": "Open an interactive development environment",
-        "default": wrap_load_and_initialize_project(
-            local_development.develop_command_cli
-        ),
-        "args": [
-            {
-                "dest": "--complex",
-                "help": "run a simple follower instead of full development environment",
-                "action": "store_true",
-            }
-        ],
-    },
-    {
-        "name": "destroy",
-        "help": "Destroy all the resources in the current environment",
-        "default": wrap_load_and_initialize_project(destroy.destroy_command_cli),
-    },
-    {
-        "name": "output",
-        "help": "See the generated cloud output",
-        "default": wrap_load_and_initialize_project(
-            cloud_output.cloud_output_command_cli
-        ),
-        "args": [
-            {
-                "dest": "cloud_output_id",
-                "type": str,
-                "help": "Id of the cloud output to display. ex: <component>.<ruuid>.<cdev_name>.<output_key>",
-            },
-            {
-                "dest": "--value",
-                "help": "display only the value. Helpful for exporting values.",
-                "action": "store_true",
-            },
-        ],
-    },
-    {
         "name": "environment",
         "help": "Change and create environments for deployment",
-        "default": wrap_load_and_initialize_project(environment.environment_cli),
+        "default": wrap_load_and_initialize_project(
+            environment.environment_cli, initialize=False
+        ),
         "subcommands": [
             {
                 "command": "ls",
@@ -177,6 +124,49 @@ CDEV_COMMANDS = [
                         "help": "Set the value for all environments. Must be used with --new-value.",
                     },
                 ],
+            },
+        ],
+    },
+    {
+        "name": "plan",
+        "help": "See the differences that have been made since the last deployment",
+        "default": wrap_load_and_initialize_project(plan.plan_command_cli),
+    },
+    {
+        "name": "develop",
+        "help": "Open an interactive development environment",
+        "default": wrap_load_and_initialize_project(
+            local_development.develop_command_cli
+        ),
+        "args": [
+            {
+                "dest": "--complex",
+                "help": "run a simple follower instead of full development environment",
+                "action": "store_true",
+            }
+        ],
+    },
+    {
+        "name": "destroy",
+        "help": "Destroy all the resources in the current environment",
+        "default": wrap_load_and_initialize_project(destroy.destroy_command_cli),
+    },
+    {
+        "name": "output",
+        "help": "See the generated cloud output",
+        "default": wrap_load_and_initialize_project(
+            cloud_output.cloud_output_command_cli
+        ),
+        "args": [
+            {
+                "dest": "cloud_output_id",
+                "type": str,
+                "help": "Id of the cloud output to display. ex: <component>.<ruuid>.<cdev_name>.<output_key>",
+            },
+            {
+                "dest": "--value",
+                "help": "display only the value. Helpful for exporting values.",
+                "action": "store_true",
             },
         ],
     },

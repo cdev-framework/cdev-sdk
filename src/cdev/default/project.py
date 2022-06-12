@@ -49,11 +49,11 @@ class local_project(Project):
     _project_info: local_project_info = None
     _current_state: Project_State = None
 
-    def __new__(cls, project_info: local_project_info, project_info_file: FilePath):
+    def __new__(cls, project_info: local_project_info, project_info_filepath: FilePath):
         if cls._instance is None:
             cls._instance = super(Project, cls).__new__(cls)
 
-            cls._instance._project_info_location = project_info_file
+            cls._instance._project_info_location = project_info_filepath
             cls._instance._project_info = project_info
 
             cls._instance.set_state(Project_State.INFO_LOADED)
