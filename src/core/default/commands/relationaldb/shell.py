@@ -12,7 +12,6 @@ from core.default.commands.relationaldb.utils import get_db_info_from_cdev_name
 
 
 class shell(BaseCommand):
-
     help = """
         Open an interactive shell to a relational db.
     """
@@ -23,52 +22,67 @@ class shell(BaseCommand):
             type=str,
             help="The database to execute on. Name must include component name. ex: comp1.myDb",
         )
-        parser.add_argument(
-            "--c",
-            nargs='+',
-            help="sql command to execute"
-        )
+        parser.add_argument("--c", nargs="+", type=str, help="sql command to execute")
+        parser.add_argument("--f", nargs="+", help="execute sql commands from a file")
 
     def command(self, *args, **kwargs) -> None:
 
-        component_name, database_name = self.get_component_and_resource_from_qualified_name(kwargs.get("resource"))
+        (
+            component_name,
+            database_name,
+        ) = self.get_component_and_resource_from_qualified_name(kwargs.get("resource"))
         c_command = kwargs.get("c")
-        print(c_command)
+        f_command = kwargs.get("f")
         cluster_arn, secret_arn, db_name = get_db_info_from_cdev_name(
             component_name, database_name
         )
-        if c_command != None:
-            print('entrou')
+        if c_command is not None:
             c_command = self.concatenate_arg_command(c_command)
-            print(c_command)
             self.run_sql_command(c_command, cluster_arn, secret_arn, db_name)
-            print('passou')
+        elif f_command is not None:
+            try:
+                fd = open(f_command[0], "r")
+            except Exception as e:
+                raise e
+            sql_file = fd.read()
+            fd.close()
+            sql_commands = sql_file.split(";")
+            self.run_multiple_sql_commands(
+                sql_commands, cluster_arn, secret_arn, db_name
+            )
         else:
-            interactive_shell(fmt(Console()), cluster_arn, secret_arn, db_name).cmdloop()
+            interactive_shell(
+                fmt(Console()), cluster_arn, secret_arn, db_name
+            ).cmdloop()
 
     def concatenate_arg_command(self, command):
-        res=''
-        for item in command:
-            res = res + ' ' + str(item)
+        res = " ".join([str(it) for it in command])
         return res
 
-    def run_sql_command(self, query_string, cluster_arn, secret_arn, db_name):
+    def run_sql_command(
+        self, query_string: str, cluster_arn: str, secret_arn: str, db_name: str
+    ):
         connection = db_connection(cluster_arn, secret_arn, db_name)
         col_descriptions, rows, updated_row_cnt = connection.execute(query_string)
-        if updated_row_cnt > 0:
-            print(str(updated_row_cnt) + 'rows updated')
-        else:
-            col_str = ''
-            for item in col_descriptions:
-                col_str = item[0] + '|' + col_str
-            print(col_str)
+        fmt(Console()).print_results(col_descriptions, rows, updated_row_cnt)
 
-            row_str =''
-            for item in rows:
-                for item2 in item:
-                    row_str = str(item2) + '|' + row_str
-                row_str = row_str + '\n'
-            print(row_str)
+    def run_multiple_sql_commands(
+        self, query_list: List, cluster_arn: str, secret_arn: str, db_name: str
+    ):
+        connection = db_connection(cluster_arn, secret_arn, db_name)
+        connection.begin()
+        for query in query_list:
+            if query != "":
+                self.stdout.write(query)
+                try:
+                    col_descriptions, rows, updated_row_cnt = connection.execute(query)
+                except Exception as e:
+                    self.stdout.write("FAIL")
+                    connection.rollback()
+                    raise e
+                fmt(Console()).print_results(col_descriptions, rows, updated_row_cnt)
+        connection.commit()
+
 
 class db_connection:
     def __init__(self, cluster_arn: str, secret_arn: str, database_name: str) -> None:
@@ -111,7 +125,9 @@ class fmt:
     def __init__(self, console: Console) -> None:
         self._console = console
 
-    def print_results(self, column_descriptions: List, rows: List, updated_rows: int) -> None:
+    def print_results(
+        self, column_descriptions: List, rows: List, updated_rows: int
+    ) -> None:
         if rows:
             display = Table()
 
@@ -129,7 +145,9 @@ class fmt:
 
 
 class interactive_shell(cmd.Cmd):
-    def __init__(self, fmt: fmt, cluster_arn: str, secret_arn: str, database_name: str) -> None:
+    def __init__(
+        self, fmt: fmt, cluster_arn: str, secret_arn: str, database_name: str
+    ) -> None:
         super().__init__()
         self.prompt = f"{database_name}=> "
         self._db_connection = db_connection(cluster_arn, secret_arn, database_name)
