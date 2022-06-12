@@ -115,9 +115,13 @@ def settings_information(
         if not all:
             settings_info = myProject.get_environment_settings_info()
 
-            Confirm.ask(
-                f"Are you sure you want to update {key} to {new_value} for the current environment ({myProject.get_current_environment_name()})?"
+            did_confirm = output._console.input(
+                f"Are you sure you want to update {key} to {new_value} for the current environment ({myProject.get_current_environment_name()}) \[y/n]?: "
             )
+
+            if did_confirm != "y":
+                output._console.print("Did not confirm. Aborting operation.")
+                return
 
             setattr(settings_info, key, new_value)
 
@@ -125,9 +129,13 @@ def settings_information(
             output._console.print(f"Updated {key} -> {new_value}")
 
         else:
-            Confirm.ask(
-                f"Are you sure you want to update {key} to {new_value} for all environments?"
+            did_confirm = output._console.input(
+                f"Are you sure you want to update {key} to {new_value} for all environments \[y/n]?: "
             )
+            if did_confirm != "y":
+                output._console.print("Did not confirm. Aborting operation.")
+                return
+
             for environment_name in myProject.get_all_environment_names():
                 settings_info = myProject.get_environment_settings_info(
                     environment_name

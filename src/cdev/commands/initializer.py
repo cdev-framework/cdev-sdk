@@ -129,7 +129,7 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
 
     new_project_info = local_project_info(
         project_name=project_name,
-        environments=[],
+        environment_infos=[],
         current_environment_name="",
         default_backend_configuration=backend_configuration,
         settings_directory=base_settings_folder,

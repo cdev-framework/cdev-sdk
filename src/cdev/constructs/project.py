@@ -20,7 +20,7 @@ _GLOBAL_PROJECT = None
 
 class Project_Info(BaseModel):
     project_name: str
-    environments: List[environment_info]
+    environment_infos: List[environment_info]
     default_backend_configuration: Backend_Configuration
     current_environment_name: Optional[str]
 

@@ -148,7 +148,7 @@ class local_project(Project):
             secret_dir=relative_secret_dir,
         )
 
-        self._project_info.environments.append(
+        self._project_info.environment_infos.append(
             environment_info(
                 name=environment_name,
                 workspace_info=Workspace_Info(
@@ -168,8 +168,10 @@ class local_project(Project):
     def destroy_environment(self, environment_name: str) -> None:
         self._load_info()
 
-        self._project_info.environments = [
-            x for x in self._project_info.environments if x.name != environment_name
+        self._project_info.environment_infos = [
+            x
+            for x in self._project_info.environment_infos
+            if x.name != environment_name
         ]
 
         self._write_info()
@@ -178,7 +180,7 @@ class local_project(Project):
     def get_all_environment_names(self) -> List[str]:
         self._load_info()
 
-        return [x.name for x in self._project_info.environments]
+        return [x.name for x in self._project_info.environment_infos]
 
     @wrap_phases([Project_State.INFO_LOADED])
     def set_current_environment(self, environment_name: str) -> None:
@@ -217,11 +219,13 @@ class local_project(Project):
         previous_environment_var = self._get_environment_info(environment_name)
         previous_environment_var.workspace_info.settings_info = new_value
 
-        self._project_info.environments = [
-            x for x in self._project_info.environments if not x.name == environment_name
+        self._project_info.environment_infos = [
+            x
+            for x in self._project_info.environment_infos
+            if not x.name == environment_name
         ]
 
-        self._project_info.environments.append(previous_environment_var)
+        self._project_info.environment_infos.append(previous_environment_var)
 
         self._write_info()
 
@@ -244,16 +248,6 @@ class local_project(Project):
             return None
 
         return self.get_environment(self._project_info.current_environment_name)
-
-    def _get_environment_info(self, name: str) -> environment_info:
-        self._load_info()
-
-        lookup_dict = {x.name: x for x in self._project_info.environments}
-
-        if not name in lookup_dict:
-            raise Exception(f"No environment with name {name}")
-
-        return lookup_dict.get(name)
 
     ############################
     ##### Runtime Settings
@@ -364,9 +358,14 @@ class local_project(Project):
         return self._project_info.default_backend_configuration
 
     def _get_environment_info(self, environment_name: str) -> environment_info:
+        self._load_info()
+
         rv = next(
-            [x for x in self._project_info.environments if x.name == environment_name],
-            None,
+            (
+                x
+                for x in self._project_info.environment_infos
+                if x.name == environment_name
+            )
         )
 
         if not rv:
