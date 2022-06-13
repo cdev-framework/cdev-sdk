@@ -22,24 +22,21 @@ class shell(BaseCommand):
             type=str,
             help="The database to execute on. Name must include component name. ex: comp1.myDb",
         )
-        parser.add_argument("--c", nargs="+", type=str, help="sql command to execute")
-        parser.add_argument("--command", nargs="+", type=str, help="sql command to execute")
-        parser.add_argument("--f", nargs="+", help="execute sql commands from a file")
+        parser.add_argument('-c', '--command', nargs="+", type=str, help="sql command to execute")
+        parser.add_argument("-f", "--file", nargs="+", help="execute sql commands from a file")
 
     def command(self, *args, **kwargs) -> None:
-
         (
             component_name,
             database_name,
         ) = self.get_component_and_resource_from_qualified_name(kwargs.get("resource"))
-        c_command = kwargs.get("c")
-        f_command = kwargs.get("f")
+        c_command = kwargs.get("command")
+        f_command = kwargs.get("file")
         cluster_arn, secret_arn, db_name = get_db_info_from_cdev_name(
             component_name, database_name
         )
         if c_command is not None:
-            c_command = self.concatenate_arg_command(c_command)
-            self.run_sql_command(c_command, cluster_arn, secret_arn, db_name)
+            self.run_sql_command(c_command[0], cluster_arn, secret_arn, db_name)
         elif f_command is not None:
             try:
                 fd = open(f_command[0], "r")
@@ -55,10 +52,6 @@ class shell(BaseCommand):
             interactive_shell(
                 fmt(Console()), cluster_arn, secret_arn, db_name
             ).cmdloop()
-
-    def concatenate_arg_command(self, command):
-        res = " ".join([str(it) for it in command])
-        return res
 
     def run_sql_command(
         self, query_string: str, cluster_arn: str, secret_arn: str, db_name: str
