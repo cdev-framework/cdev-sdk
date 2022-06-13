@@ -18,6 +18,7 @@ from core.default.resources.simple.xlambda import (
     DependencyLayer,
     DeployedLayer,
     SimpleFunction,
+    SimpleFunctionConfiguration,
     dependency_layer_model,
     simple_function_model,
 )
@@ -317,6 +318,8 @@ def _parse_serverless_functions(
             optimal_module_cache=optimal_modules_cache,
         )
 
+        new_handler = _create_new_handler(full_file_path, parsed_function.name)
+
         (
             source_artifact_path,
             source_hash,
@@ -339,11 +342,12 @@ def _parse_serverless_functions(
             for absolute_archive_path, archive_hash in dependencies_info
         ]
 
-        function_resource = _create_new_function(
+        function_resource = _create_new_function_resource(
             previous_info,
             paths.get_relative_to_workspace_path(source_artifact_path),
             source_hash,
             dependencies_resources,
+            new_handler,
         )
 
         rv_functions.append(function_resource)
@@ -354,6 +358,20 @@ def _parse_serverless_functions(
     optimal_modules_cache.dump_to_file()
 
     return [x.render() for x in rv_functions], [x.render() for x in rv_layers]
+
+
+def _create_new_handler(
+    previous_absolute_location: FilePath, function_name: str
+) -> str:
+
+    relative_to_ws_path = paths.get_relative_to_workspace_path(
+        previous_absolute_location
+    )
+    base_python_module_path = relative_to_ws_path[:-3].replace("/", ".")
+
+    final_module_path = base_python_module_path + "." + function_name
+
+    return final_module_path
 
 
 def _load_environment_information() -> Tuple[
@@ -397,23 +415,39 @@ def _create_layer(
     )
 
 
-def _create_new_function(
+def _create_new_function_resource(
     previous_info: SimpleFunction,
     new_source_artifact: FilePath,
     new_source_hash: str,
     new_dependencies: List[Union[DeployedLayer, DependencyLayer]],
+    new_handler: str,
 ) -> SimpleFunction:
     return SimpleFunction(
         cdev_name=previous_info.name,
         filepath=new_source_artifact,
         events=previous_info.events,
-        configuration=previous_info.configuration,
+        configuration=_create_new_configuration(
+            previous_info.configuration, new_handler
+        ),
         function_permissions=previous_info.granted_permissions,
         external_dependencies=new_dependencies,
         src_code_hash=new_source_hash,
         nonce=previous_info.nonce,
         preserve_function=previous_info._preserved_function,
         platform=previous_info.platform,
+    )
+
+
+def _create_new_configuration(
+    previous_configuration: SimpleFunctionConfiguration, new_handler: str
+) -> SimpleFunctionConfiguration:
+    return SimpleFunctionConfiguration(
+        handler=new_handler,
+        memory_size=previous_configuration.memory_size,
+        timeout=previous_configuration.timeout,
+        storage=previous_configuration.storage,
+        description=previous_configuration.description,
+        environment_variables=previous_configuration.environment_variables,
     )
 
 
