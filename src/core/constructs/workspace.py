@@ -998,7 +998,7 @@ def load_and_initialize_workspace(config: Workspace_Info) -> None:
 
 
 def load_workspace(config: Workspace_Info) -> Workspace:
-    """Load and initialize the workspace from the given configuration
+    """Load the workspace from the given configuration
 
     Args:
         config (Workspace_Info)
@@ -1033,7 +1033,6 @@ def load_workspace(config: Workspace_Info) -> Workspace:
         raise Exception
 
     try:
-        # initialize the backend obj with the provided configuration values
         return workspace_class()
 
     except Exception as e:
@@ -1054,7 +1053,7 @@ def initialize_workspace(workspace: Workspace, workspace_info: Workspace_Info) -
         e: _description_
     """
     try:
-
+        workspace.set_state(Workspace_State.INITIALIZING)
         # initialize the backend obj with the provided configuration values
         workspace.initialize_workspace(
             settings_info=workspace_info.settings_info,
@@ -1063,6 +1062,7 @@ def initialize_workspace(workspace: Workspace, workspace_info: Workspace_Info) -
             initialization_modules=workspace_info.initialization_modules,
             configuration=workspace_info.config,
         )
+        workspace.set_state(Workspace_State.INITIALIZED)
 
     except Exception as e:
         print(

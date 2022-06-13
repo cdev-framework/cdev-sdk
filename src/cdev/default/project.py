@@ -1,8 +1,7 @@
 import json
 from pydantic.types import FilePath
 import os
-from typing import Dict, List, Any, Tuple
-
+from typing import Dict, List, Any
 
 from cdev.constructs.project import (
     BackendError,
@@ -18,7 +17,7 @@ from cdev.default.environment import local_environment
 from core.constructs.backend import load_backend, Backend_Configuration
 from core.constructs.mapper import CloudMapper
 from core.constructs.components import Component
-from core.constructs.workspace import Workspace_State, Workspace_Info
+from core.constructs.workspace import Workspace_Info
 from core.constructs.settings import Settings_Info, Settings
 from core.constructs.cloud_output import Cloud_Output
 
@@ -44,11 +43,15 @@ class local_project(Project):
 
     """
 
+    # Note that the class methods should not include doc strings so that they inherit the doc string of the
+    # parent class.
+
     _instance = None
 
     _project_info_location: FilePath = None
     _project_info: local_project_info = None
     _current_state: Project_State = None
+    _loaded_environment: Environment = None
 
     def __new__(cls, project_info: local_project_info, project_info_filepath: FilePath):
         if cls._instance is None:
@@ -63,48 +66,21 @@ class local_project(Project):
 
         return cls._instance
 
-    @classmethod
-    def terminate_singleton(cls) -> None:
-        cls._instance = None
-
     @wrap_phases([Project_State.INFO_LOADED])
     def initialize_project(self) -> None:
-
         self.set_state(Project_State.INITIALIZING)
         current_env = self.get_current_environment()
-        if current_env:
-            current_env.initialize_environment()
+        current_env.initialize_environment()
         self.set_state(Project_State.INITIALIZED)
 
-    def terminate_project(self) -> None:
-        Project.remove_global_instance(self)
-
-    def set_name(self, name: str) -> None:
-        """
-        Set the name of this Project
-
-        Args:
-            name (str): name of the Project
-        """
-        self._project_name = name
-
     def get_name(self) -> str:
-        """
-        Get the name of this Project
-
-        Returns:
-            name (str)
-        """
-        return self._project_name
+        return self._project_info.project_name
 
     def get_state(self) -> Project_State:
         return self._current_state
 
     def set_state(self, new_state: Project_State) -> None:
         self._current_state = new_state
-
-    # Note that the class methods should not include doc strings so that they inherit the doc string of the
-    # parent class.
 
     @wrap_phases([Project_State.INFO_LOADED])
     def create_environment(
@@ -239,57 +215,54 @@ class local_project(Project):
 
         self._write_info()
 
-    def get_environment(self, environment_name: str) -> Environment:
-        self._load_info()
-
-        environment_info = self._get_environment_info(environment_name)
-
-        return local_environment(environment_info)
-
+    @wrap_phases(
+        [
+            Project_State.INFO_LOADED,
+            Project_State.INITIALIZING,
+            Project_State.INITIALIZED,
+        ]
+    )
     def get_current_environment_name(self) -> str:
         self._load_info()
 
         return self._project_info.current_environment_name
 
+    @wrap_phases([Project_State.INITIALIZING, Project_State.INITIALIZED])
     def get_current_environment(self) -> Environment:
         self._load_info()
 
-        if not self._project_info.current_environment_name:
-            return None
+        current_environment_name = self.get_current_environment_name()
 
-        return self.get_environment(self._project_info.current_environment_name)
+        if (
+            not self._loaded_environment
+            or self._loaded_environment.get_name() != current_environment_name
+        ):
+            # If there is not a currently loaded environment or the currently loaded environment is not
+            # the current environment
+            environment_info = self._get_environment_info(current_environment_name)
+            self._loaded_environment = local_environment(environment_info)
+
+        return self._loaded_environment
 
     ############################
     ##### Runtime Settings
     ############################
     @property
+    @wrap_phases([Project_State.INITIALIZED])
     def settings(self) -> Settings:
         return self.get_current_environment().get_workspace().settings
 
     @settings.setter
+    @wrap_phases([Project_State.INITIALIZING])
     def settings(self, value: Settings) -> None:
         self.get_current_environment().get_workspace().settings = value
 
     #######################
     ##### Display Output
     #######################
+    @wrap_phases([Project_State.INITIALIZED])
     def display_output(self, tag: str, output: Cloud_Output) -> None:
-        """Display the output from a Resource or Reference after a process has completed
-
-        Args:
-            tag: A key value to display with the output
-            output: The Cloud Output to render
-        """
         self.get_current_environment().get_workspace().display_output(tag, output)
-
-    def render_outputs(self) -> List[Tuple[str, Any]]:
-        """Render the output associated with the Workspace
-
-        Returns:
-            List[Tuple[str, Any]]: The List of outputs with their associated tag
-
-        """
-        return self.get_current_environment().get_workspace().render_outputs()
 
     #################
     ##### Mappers

@@ -175,6 +175,7 @@ class local_workspace(Workspace):
             )
 
             if isinstance(cloud_output, cloud_output_dynamic_model):
+                # If the cloud output object contains computations than evaluate the computations over the cloud output
                 resolved_value = evaluate_dynamic_output(resolved_value, cloud_output)
 
             rv.append((tag, resolved_value))

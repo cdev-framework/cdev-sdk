@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel
 
 from core.constructs.workspace import Workspace, Workspace_Info
@@ -28,6 +27,9 @@ class Environment:
 
     def __init__(self, info: environment_info) -> None:
         pass
+
+    def get_name(self) -> str:
+        raise NotImplementedError
 
     def get_workspace(self) -> Workspace:
         raise NotImplementedError

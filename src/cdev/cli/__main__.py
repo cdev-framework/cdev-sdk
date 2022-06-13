@@ -28,6 +28,16 @@ subparsers = parser.add_subparsers(title="sub_command", description="valid subco
 def wrap_load_and_initialize_project(
     command: Callable, initialize: bool = True
 ) -> Callable[[Any], Any]:
+    """Helper annotation that makes sure that the global Project object is in the correct state before running a given command.
+
+    Args:
+        command (Callable): command to run
+        initialize (bool, optional): Initialize the Project. Defaults to True.
+
+    Returns:
+        Callable[[Any], Any]: Wrapped function
+    """
+
     def wrapped_caller(*args, **kwargs):
         try:
             load_and_initialize_project(initialize=initialize)
@@ -65,6 +75,14 @@ def load_and_initialize_project(initialize: bool = True) -> None:
 def _load_local_project_information(
     project_info_location: FilePath,
 ) -> local_project_info:
+    """Help function to load the project info json file
+
+    Args:
+        project_info_location (FilePath): location of project info json
+
+    Returns:
+        local_project_info
+    """
     with open(project_info_location, "r") as fh:
         return local_project_info(**json.load(fh))
 
