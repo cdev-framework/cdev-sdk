@@ -17,6 +17,10 @@ from .environment import environment_info, Environment
 
 _GLOBAL_PROJECT = None
 
+# Global definition that defines a cdev project as having a folder called `.cdev` with a valid `cdev_project.json`
+CDEV_FOLDER = ".cdev"
+CDEV_PROJECT_FILE = "cdev_project.json"
+
 
 class Project_Info(BaseModel):
     project_name: str
@@ -39,6 +43,10 @@ class ProjectError(Exception):
 
 
 class EnvironmentDoesNotExist(ProjectError):
+    pass
+
+
+class NoCurrentEnvironment(ProjectError):
     pass
 
 
@@ -100,7 +108,11 @@ class Project:
     @classmethod
     def set_global_instance(cls, project: "Project") -> None:
         """
-        Method to set the global Project object. Should only be used to as defined in the lifecycle of the Cdev process. (documentation)
+        Method to set the global Project object. Should only be used by sub-classes to register themselves as the global `Project` within the
+        cdev execution steps.
+
+        Args:
+            project (Project): Object to register as global Project
         """
         global _GLOBAL_PROJECT
         _GLOBAL_PROJECT = project
@@ -126,6 +138,9 @@ class Project:
 
         Args:
             name (str): name of the Project
+
+        Raises:
+            ProjectError
         """
         raise NotImplementedError
 
@@ -135,6 +150,9 @@ class Project:
 
         Returns:
             name (str)
+
+        Raises:
+            ProjectError
         """
         raise NotImplementedError
 
@@ -144,13 +162,16 @@ class Project:
 
         Returns:
             state (Project_State)
+
+        Raises:
+            ProjectError
         """
         raise NotImplementedError
 
     def initialize_project(self) -> None:
         """
-        Initialize the Project object so that it is ready to perform a given operation. Note that any configuration needed for the initialization
-        process should be defined during the creation of the object, and set such that this function needs no input.
+        Initialize the Project object. This function can only be called when in the `LOAD_INFO` state. It will transition into the `INITIALIZING` phase
+        while the function is executing. Then it will transition to the `INITIALIZED` phase as the final action.
         """
         raise NotImplementedError
 
@@ -166,13 +187,20 @@ class Project:
     ) -> None:
         """
         Create a new environment for this project.
+
+        Raises:
+            ProjectError
         """
         raise NotImplementedError
 
     def destroy_environment(self, environment_name: str) -> None:
         """
-        Destroy an environment. This function should only be called when the project is in the Initialized state, so that
-        any cloud resources in the environment will be destroyed.
+        Destroy an environment. This function should only be used to delete the information about an environment. To delete actual cloud resources in an,
+        an environment you should use the `cdev destroy` command.
+
+        Raises:
+            ProjectError
+            EnvironmentDoesNotExist
         """
         raise NotImplementedError
 
@@ -182,6 +210,9 @@ class Project:
 
         Returns:
             environment_names (List[str]): environments
+
+        Raises:
+            ProjectError
         """
         raise NotImplementedError
 
@@ -191,6 +222,10 @@ class Project:
 
         Returns:
             environment_name (str)
+
+        Raises:
+            EnvironmentDoesNotExist
+            NoCurrentEnvironment
         """
         raise NotImplementedError
 
@@ -199,7 +234,7 @@ class Project:
         Change the currently active environment for this Project. This should only be called when the Project is
         in the Uninitialized state to prevent it from being called during operations that modify an environment.
 
-        Arguments:
+        Args:
             environment_name (str): The environment name to switch to
 
         Raises:
@@ -212,7 +247,7 @@ class Project:
         Get the environment object for a specified environment name. Note that the environment will be in a state
         based on when this function is called within the Cdev lifecycle.
 
-        Arguments:
+        Args:
             environment_name (str): The environment name to switch to
 
         Raises:
@@ -227,6 +262,7 @@ class Project:
 
         Raises:
             EnvironmentDoesNotExist
+            NoCurrentEnvironment
         """
         raise NotImplementedError
 
@@ -283,7 +319,7 @@ class Project:
 
         Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
 
-        Arguments:
+        Args:
             mapper (CloudMapper): The mapper to add
         """
         raise NotImplementedError
@@ -295,7 +331,7 @@ class Project:
 
         Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
 
-        Arguments:
+        Args:
             mappers (List[CloudMapper]): The mapper to add
         """
         raise NotImplementedError
@@ -333,7 +369,7 @@ class Project:
 
         Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
 
-        Arguments:
+        Args:
             command_location (Command): The command location to add
         """
         raise NotImplementedError
@@ -346,7 +382,7 @@ class Project:
 
         Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
 
-        Arguments:
+        Args:
             command_locations (Command): The command location to add
         """
         raise NotImplementedError
@@ -372,7 +408,7 @@ class Project:
 
         Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
 
-        Arguments:
+        Args:
             component (Component): Component to add
         """
         raise NotImplementedError
@@ -384,7 +420,7 @@ class Project:
 
         Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
 
-        Arguments:
+        Args:
             component (Component): Component to add
         """
         raise NotImplementedError
@@ -406,13 +442,9 @@ def check_if_project_exists(base_directory: DirectoryPath) -> bool:
     This function checks for an existing Cdev project at the given directory. A Cdev project is defined by the existence of a valid
     'cdev_project.json' file (can be loaded as project_info) at the location of <base_directory>/.cdev/.
 
-    Arguments:
+    Args:
         base_directory: Directory to start search from
     """
-
-    CDEV_FOLDER = ".cdev"
-    CDEV_PROJECT_FILE = "cdev_project.json"
-
     if not os.path.isdir(base_directory):
         raise Exception(f"Given base directory is not a directory {base_directory}")
 

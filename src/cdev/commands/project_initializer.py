@@ -15,14 +15,18 @@ from core.default.backend import Local_Backend_Configuration, LocalBackend
 from core.utils import paths as paths_util
 
 
-from cdev.constructs.project import Project_State, check_if_project_exists, Project_Info
+from cdev.constructs.project import (
+    Project_State,
+    check_if_project_exists,
+    Project_Info,
+    CDEV_FOLDER,
+    CDEV_PROJECT_FILE,
+)
 
 
 STATE_FOLDER = "state"
 INTERMEDIATE_FOLDER = "intermediate"
 CACHE_FOLDER = "cache"
-CDEV_FOLDER = ".cdev"
-CDEV_PROJECT_FILE = "cdev_project.json"
 CENTRAL_STATE_FILE = "central_state.json"
 SETTINGS_FOLDER_NAME = "settings"
 DEFAULT_ENVIRONMENTS = ["prod", "stage", "dev"]
@@ -231,28 +235,3 @@ def _render_settings_file(file_path: FilePath, base_settings: Dict[str, str]) ->
     with open(file_path, "w") as fh:
         for key, value in base_settings.items():
             fh.write(f'{key} = "{value}"')
-
-
-def load_project(initialize: bool = False) -> None:
-    """Create the global instance of the `Project` object. If provided, also initialize the `Project`.
-
-    Args:
-        initialize (bool, optional): Defaults to False.
-    """
-    base_directory = os.getcwd()
-
-    project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)
-    project_info = _load_local_project_information(project_info_location)
-
-    project = local_project(
-        project_info=project_info, project_info_filepath=project_info_location
-    )
-    if initialize:
-        project.initialize_project()
-
-
-def _load_local_project_information(
-    project_info_location: FilePath,
-) -> local_project_info:
-    with open(project_info_location, "r") as fh:
-        return local_project_info(**json.load(fh))

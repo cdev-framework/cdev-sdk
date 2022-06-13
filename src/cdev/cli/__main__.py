@@ -1,20 +1,25 @@
 import argparse
+import json
 import logging
 import os
 import traceback
 from typing import Callable, Any
-import sys
+
+from pydantic import FilePath
 
 from ..commands import (
-    initializer,
     environment,
     plan,
     deploy,
+    project_initializer,
     run,
     cloud_output,
     local_development,
     destroy,
 )
+
+from cdev.constructs.project import CDEV_PROJECT_FILE, CDEV_FOLDER
+from cdev.default.project import local_project, local_project_info
 
 parser = argparse.ArgumentParser(description="cdev cli")
 subparsers = parser.add_subparsers(title="sub_command", description="valid subcommands")
@@ -25,10 +30,10 @@ def wrap_load_and_initialize_project(
 ) -> Callable[[Any], Any]:
     def wrapped_caller(*args, **kwargs):
         try:
-            initializer.load_project(initialize=initialize)
+            load_and_initialize_project(initialize=initialize)
         except Exception as e:
             print(
-                f"Could not load (initialize={initialize}) the project to call {command}"
+                f"Could not load (initialize={initialize}) the Cdev Project to call {command}"
             )
             print(e)
             print(traceback.format_exc())
@@ -39,11 +44,36 @@ def wrap_load_and_initialize_project(
     return wrapped_caller
 
 
+def load_and_initialize_project(initialize: bool = True) -> None:
+    """Create the global instance of the `Project` object as a `local_project` instance. If provided, also initialize the `Project`.
+
+    Args:
+        initialize (bool, optional): Initialize the project. Defaults to True.
+    """
+    base_directory = os.getcwd()
+
+    project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)
+    project_info = _load_local_project_information(project_info_location)
+
+    project = local_project(
+        project_info=project_info, project_info_filepath=project_info_location
+    )
+    if initialize:
+        project.initialize_project()
+
+
+def _load_local_project_information(
+    project_info_location: FilePath,
+) -> local_project_info:
+    with open(project_info_location, "r") as fh:
+        return local_project_info(**json.load(fh))
+
+
 CDEV_COMMANDS = [
     {
         "name": "init",
         "help": "Create a new project",
-        "default": initializer.create_project_cli,
+        "default": project_initializer.create_project_cli,
         "args": [
             {"dest": "name", "type": str, "help": "Name of the new project"},
             {

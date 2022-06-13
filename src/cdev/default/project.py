@@ -4,7 +4,15 @@ import os
 from typing import Dict, List, Any, Tuple
 
 
-from cdev.constructs.project import Project, Project_State, Project_Info, wrap_phases
+from cdev.constructs.project import (
+    BackendError,
+    Project,
+    Project_State,
+    Project_Info,
+    wrap_phases,
+    EnvironmentDoesNotExist,
+)
+from cdev.constructs.environment import environment_info, Environment
 from cdev.default.environment import local_environment
 
 from core.constructs.backend import load_backend, Backend_Configuration
@@ -15,8 +23,6 @@ from core.constructs.settings import Settings_Info, Settings
 from core.constructs.cloud_output import Cloud_Output
 
 from core.utils import file_manager, paths as paths_utils
-
-from ..constructs.environment import environment_info, Environment
 
 
 class local_project_info(Project_Info):
@@ -61,10 +67,11 @@ class local_project(Project):
     def terminate_singleton(cls) -> None:
         cls._instance = None
 
+    @wrap_phases([Project_State.INFO_LOADED])
     def initialize_project(self) -> None:
-        current_env = self.get_current_environment()
-        self.set_state(Project_State.INITIALIZING)
 
+        self.set_state(Project_State.INITIALIZING)
+        current_env = self.get_current_environment()
         if current_env:
             current_env.initialize_environment()
         self.set_state(Project_State.INITIALIZED)
@@ -113,7 +120,7 @@ class local_project(Project):
                 backend_configuration
             ).create_resource_state(environment_name)
         except Exception as e:
-            raise e
+            raise BackendError
 
         base_directory = os.path.dirname(self._project_info.settings_directory)
 
@@ -168,6 +175,9 @@ class local_project(Project):
     def destroy_environment(self, environment_name: str) -> None:
         self._load_info()
 
+        if environment_name not in self.get_all_environment_names():
+            raise EnvironmentDoesNotExist
+
         self._project_info.environment_infos = [
             x
             for x in self._project_info.environment_infos
@@ -187,7 +197,7 @@ class local_project(Project):
         self._load_info()
 
         if environment_name not in self.get_all_environment_names():
-            raise Exception
+            raise EnvironmentDoesNotExist
 
         self._project_info.current_environment_name = environment_name
 
@@ -369,6 +379,6 @@ class local_project(Project):
         )
 
         if not rv:
-            raise Exception
+            raise EnvironmentDoesNotExist
 
         return rv
