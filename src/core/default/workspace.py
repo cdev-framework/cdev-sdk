@@ -44,13 +44,12 @@ class local_workspace(Workspace):
     _COMMANDS = DEFAULT_COMMAND_LOCATIONS
     _MAPPERS = []
     _COMPONENTS = []
+    _OUTPUT: List[Tuple[str, str, cloud_output_model]] = []
 
     _resource_state_uuid: str = None
     _backend: Backend = None
 
     _state: Workspace_State = Workspace_State.UNINITIALIZED
-
-    _output: List[Tuple[str, str, cloud_output_model]] = []
 
     _current_component: str = None
 
@@ -68,6 +67,7 @@ class local_workspace(Workspace):
             cls._instance._COMMANDS = DEFAULT_COMMAND_LOCATIONS
             cls._instance._MAPPERS = []
             cls._instance._COMPONENTS = []
+            cls._instance._OUTPUT = []
 
             Workspace.set_global_instance(cls._instance)
 
@@ -156,7 +156,7 @@ class local_workspace(Workspace):
         ]
     )
     def display_output(self, tag: str, output: Cloud_Output) -> None:
-        self._output.append((tag, self._current_component, output.render()))
+        self._OUTPUT.append((tag, self._current_component, output.render()))
 
     @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_BACKEND])
     def render_outputs(self) -> List[Tuple[str, Any]]:
@@ -165,7 +165,7 @@ class local_workspace(Workspace):
         if not self._current_component:
             raise Exception
 
-        for tag, component, cloud_output in self._output:
+        for tag, component, cloud_output in self._OUTPUT:
             resolved_value = self.get_backend().get_cloud_output_value_by_name(
                 self.get_resource_state_uuid(),
                 component,
@@ -181,6 +181,9 @@ class local_workspace(Workspace):
             rv.append((tag, resolved_value))
 
         return rv
+
+    def clear_output(self) -> None:
+        self._OUTPUT = []
 
     #################
     ##### Mappers

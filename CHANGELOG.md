@@ -19,6 +19,10 @@ All release will have a corresponding git tag.
 - Add option to set your memory, storage and timeout on serverless functions
 - Add user input for setting artifact bucket when creating a new project
 - Add query, tail and limit args to logging function
+<<<<<<< HEAD
+=======
+- Add sync to watch for filesystem changes
+>>>>>>> 494c005dd322edd2702adf6a2d7bdb4f0a0908e6
 
 ### Fixed
 - Fix issues with a bucket when it is not empty and we need to delete it

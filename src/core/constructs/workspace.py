@@ -385,6 +385,9 @@ class Workspace:
         """
         raise NotImplementedError
 
+    def clear_output(self) -> None:
+        raise NotImplementedError
+
     #######################
     ##### Components
     #######################

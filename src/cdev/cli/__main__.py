@@ -8,14 +8,14 @@ from typing import Callable, Any
 from pydantic import FilePath
 
 from ..commands import (
+    cloud_output,
     environment,
     plan,
     deploy,
+    destroy,
     project_initializer,
     run,
-    cloud_output,
-    local_development,
-    destroy,
+    sync,
 )
 
 from cdev.constructs.project import CDEV_PROJECT_FILE, CDEV_FOLDER
@@ -181,18 +181,9 @@ CDEV_COMMANDS = [
         "default": wrap_load_and_initialize_project(plan.plan_command_cli),
     },
     {
-        "name": "develop",
-        "help": "Open an interactive development environment",
-        "default": wrap_load_and_initialize_project(
-            local_development.develop_command_cli
-        ),
-        "args": [
-            {
-                "dest": "--complex",
-                "help": "run a simple follower instead of full development environment",
-                "action": "store_true",
-            }
-        ],
+        "name": "deploy",
+        "help": "Deploy a set of changes",
+        "default": wrap_load_and_initialize_project(deploy.deploy_command_cli),
     },
     {
         "name": "destroy",
@@ -219,17 +210,39 @@ CDEV_COMMANDS = [
         ],
     },
     {
-        "name": "deploy",
-        "help": "Deploy a set of changes",
-        "default": wrap_load_and_initialize_project(deploy.deploy_command_cli),
-    },
-    {
         "name": "run",
         "help": "This command is used to run user defined and resource functions.",
         "default": wrap_load_and_initialize_project(run.run_command_cli),
         "args": [
             {"dest": "subcommand", "help": "the user defined command to call"},
             {"dest": "args", "nargs": argparse.REMAINDER},
+        ],
+    },
+    {
+        "name": "sync",
+        "help": "Watch for changes in the filesystem and perform a deploy automatically",
+        "default": wrap_load_and_initialize_project(sync.sync_command_cli),
+        "args": [
+            {
+                "dest": "--no-default",
+                "action": "store_true",
+                "help": "by default we ignore certain files and watch for some of them. If you want complete control on what is considered a change, turn this on and set your custom filters using --watch and --ignore",
+            },
+            {
+                "dest": "--disable-prompt",
+                "action": "store_true",
+                "help": "by default we ask for confirmation before deploying changes. Turn this on and perform deployments w/o requiring confirmation",
+            },
+            {
+                "dest": "--watch",
+                "type": str,
+                "help": "watch any file that matches the following pattern [src/**/*.py,settings/*]",
+            },
+            {
+                "dest": "--ignore",
+                "type": str,
+                "help": "do not watch for any file that matches the following pattern [.cdev/**,__pycache__/*]",
+            },
         ],
     },
 ]
@@ -298,8 +311,7 @@ for command in CDEV_COMMANDS:
     else:
         if command.get("args"):
             for arg in command.get("args"):
-                dest = arg.get("dest")
-                arg.pop("dest")
+                dest = arg.pop("dest")
                 tmp.add_argument(dest, **arg)
 
         tmp.set_defaults(func=command.get("default"))
