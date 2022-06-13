@@ -29,10 +29,21 @@ class Environment:
         pass
 
     def get_name(self) -> str:
+        """Return the name of the Environment
+
+        Returns:
+            str: name of the Environment
+        """
         raise NotImplementedError
 
     def get_workspace(self) -> Workspace:
+        """Get the Workspace associated with this Environment
+
+        Returns:
+            Workspace
+        """
         raise NotImplementedError
 
     def initialize_environment(self) -> None:
+        """Initialize the Environment"""
         raise NotImplementedError

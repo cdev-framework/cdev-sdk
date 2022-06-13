@@ -131,11 +131,11 @@ CDEV_COMMANDS = [
                 ],
             },
             {
-                "command": "get",
+                "command": "info",
                 "help": "Get information about an environment",
                 "args": [
                     {
-                        "dest": "env",
+                        "dest": "--env",
                         "type": str,
                         "help": "environment you want info about",
                     }

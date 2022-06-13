@@ -20,8 +20,8 @@ def environment_cli(args) -> None:
         )
     elif command == "ls":
         list_environments(output_manager)
-    elif command == "get":
-        pass
+    elif command == "info":
+        environment_information(output_manager, parsed_args.get("env"))
     elif command == "set":
         set_current_environment(parsed_args.get("env"), output_manager)
     elif command == "create":
@@ -164,3 +164,22 @@ def settings_information(
                 output._console.print(
                     f"Updated ({environment_name}) {key} -> {new_value}"
                 )
+
+
+def environment_information(
+    output: OutputManager,
+    environment_name: str = None,
+):
+    myProject = Project.instance()
+    _environment_name = (
+        environment_name
+        if environment_name
+        else myProject.get_current_environment_name()
+    )
+
+    environment_info = myProject.get_environment_settings_info(_environment_name)
+
+    output._console.print(f"{_environment_name}:")
+
+    for key, val in environment_info.dict().items():
+        output._console.print(f"    {key} -> {val}")
