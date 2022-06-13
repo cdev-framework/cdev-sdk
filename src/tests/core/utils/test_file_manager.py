@@ -25,7 +25,7 @@ _resource_state = Resource_State(
 )
 
 tmp_dir = os.path.join(os.path.dirname(__file__), "tmp")
-sample_json_dir = os.path.join(os.path.dirname(__file__), "sample_data")
+sample_json_dir = os.path.join(os.path.dirname(__file__), "test_data")
 
 
 def test_safe_json_write():

@@ -21,8 +21,10 @@ All release will have a corresponding git tag.
 - Add query, tail and limit args to logging function
 - Add sync to watch for filesystem changes
 
+
 ### Fixed
-- Fixed issues with a bucket when it is not empty and we need to delete it
+- Fix issues with a bucket when it is not empty and we need to delete it
+- Refactor automated packaging system
 
 ## [0.0.8] - 2022-04-05
 ### Added
