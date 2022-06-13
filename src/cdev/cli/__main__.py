@@ -1,18 +1,18 @@
 import argparse
-from ast import parse
 import logging
 import traceback
 from typing import Callable, Any
 
 from ..commands import (
-    initializer,
-    environment,
-    plan,
-    deploy,
-    run,
     cloud_output,
-    local_development,
+    deploy,
     destroy,
+    environment,
+    initializer,
+    local_development,
+    plan,
+    run,
+    sync
 )
 
 parser = argparse.ArgumentParser(description="cdev cli")
@@ -193,8 +193,34 @@ CDEV_COMMANDS = [
             {"dest": "args", "nargs": argparse.REMAINDER},
         ],
     },
+    {
+        "name": "sync",
+        "help": "Watch for changes in the filesystem and perform a deploy automatically",
+        "default": wrap_load_and_initialize_project(sync.sync_command_cli),
+        "args": [
+            {
+                "dest": "--no-default",
+                "action": "store_true",
+                "help": "by default we ignore certain files and watch for some of them. If you want complete control on what is considered a change, turn this on and set your custom filters using --watch and --ignore",
+            },
+            {
+                "dest": "--disable-prompt",
+                "action": "store_true",
+                "help": "by default we ask for confirmation before deploying changes. Turn this on and perform deployments w/o requiring confirmation",
+            },
+            {
+                "dest": "--watch",
+                "type": str,
+                "help": "watch any file that matches the following pattern [src/**/*.py,settings/*]",
+            },
+            {
+                "dest": "--ignore",
+                "type": str,
+                "help": "do not watch for any file that matches the following pattern [.cdev/**,__pycache__/*]",
+            },
+        ],
+    },
 ]
-
 
 def subcommand_function_wrapper(name, func):
     # This wraps a function so that is can be used for subcommands by basing the subcommand as the first arg to the function
@@ -259,8 +285,7 @@ for command in CDEV_COMMANDS:
     else:
         if command.get("args"):
             for arg in command.get("args"):
-                dest = arg.get("dest")
-                arg.pop("dest")
+                dest = arg.pop("dest")
                 tmp.add_argument(dest, **arg)
 
         tmp.set_defaults(func=command.get("default"))
