@@ -7,6 +7,7 @@ from pathlib import Path
 from . import writer
 
 from core.utils.operations import concatenate
+from core.utils.paths import create_path_from_workspace
 
 
 def create_optimized_handler_artifact(
@@ -32,6 +33,9 @@ def create_optimized_handler_artifact(
     Returns:
         Tuple[FilePath,str]: Tuple of archive filepath and hash
     """
+    # Make sure the path exists
+    create_path_from_workspace(base_packaging_path)
+
     relative_handler_path = _get_relative_path(
         original_file_location, base_packaging_path
     )

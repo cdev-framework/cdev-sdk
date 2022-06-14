@@ -264,8 +264,7 @@ def _parse_serverless_functions(
         Workspace.instance().get_resource_state_uuid(),
     )
 
-    if not os.path.isdir(base_archive_path):
-        os.mkdir(base_archive_path)
+    paths.create_path_from_workspace(base_archive_path)
 
     # Caches
     packaged_module_cache = package_optimizer.load_packaged_artifact_cache(

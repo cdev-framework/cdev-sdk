@@ -140,9 +140,21 @@ def get_intermediate_path() -> DirectoryPath:
     return intermediate_path
 
 
+def create_path_from_workspace(desired_path: DirectoryPath) -> None:
+
+    if not is_in_workspace(desired_path):
+        raise Exception
+
+    if os.path.isdir(desired_path):
+        return
+
+    relative_parts = get_relative_to_workspace_path(desired_path).split("/")
+
+    create_path(get_workspace_path(), relative_parts)
+
+
 def create_path(startingpath, fullpath) -> DirectoryPath:
     """This functions takes a starting path and list of child dir and makes them all
-
 
     Example
 
