@@ -161,7 +161,6 @@ class interactive_shell(cmd.Cmd):
             readline.write_history_file(histfile)
             col_descriptions, rows, updated_row_cnt = self._db_connection.execute(line)
             self.formater.print_results(col_descriptions, rows, updated_row_cnt)
-            print(readline.get_line_buffer())
         except Exception as e:
             self.formater._console.print(e)
 
