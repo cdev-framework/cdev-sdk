@@ -22,7 +22,7 @@ class WorkspaceWatcher(Trick):
         no_prompt: Optional[bool] = False,
         no_default: Optional[bool] = False,
         patterns_to_watch: Optional[str] = None,
-        patterns_to_ignore: Optional[str] = None
+        patterns_to_ignore: Optional[str] = None,
     ) -> None:
 
         self._no_prompt = no_prompt
@@ -69,9 +69,14 @@ class WorkspaceWatcher(Trick):
         try:
             while True:
                 if self._perform_deployment:
-                    self._output._console.print('Ignoring future changes until deployment is finished')
-                    execute_deployment(self._workspace, self._output, no_prompt=self._no_prompt)
-                    self._output._console.print('Enabling watch again')
+                    self._output._console.print(
+                        "Ignoring future changes until deployment is finished"
+                    )
+                    execute_deployment(
+                        self._workspace, self._output, no_prompt=self._no_prompt
+                    )
+                    self._workspace.clear_output()
+                    self._output._console.print("Enabling watch again")
                     self._perform_deployment = False
                 else:
                     time.sleep(1)

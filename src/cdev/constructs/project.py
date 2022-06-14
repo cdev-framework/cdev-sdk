@@ -17,58 +17,66 @@ from .environment import environment_info, Environment
 
 _GLOBAL_PROJECT = None
 
+# Global definition that defines a cdev project as having a folder called `.cdev` with a valid `cdev_project.json`
+CDEV_FOLDER = ".cdev"
+CDEV_PROJECT_FILE = "cdev_project.json"
 
-class project_info(BaseModel):
+
+class Project_Info(BaseModel):
     project_name: str
-    environments: List[environment_info]
-    backend_info: Backend_Configuration
-    current_environment: Optional[str]
-
-    def __init__(
-        __pydantic_self__,
-        project_name: str,
-        environments: List[environment_info],
-        backend_info: Backend_Configuration,
-        current_environment: str = None,
-    ) -> None:
-        """
-        Represents the data about a cdev project object:
-
-        Parameters:
-            project_name (str): Name of the project
-            environments (List[environment_info]): The environments that are currently part of the project
-            current_environment (str): The current environment
-
-        """
-
-        super().__init__(
-            **{
-                "project_name": project_name,
-                "environments": environments,
-                "backend_info": backend_info,
-                "current_environment": current_environment,
-            }
-        )
+    environment_infos: List[environment_info]
+    default_backend_configuration: Backend_Configuration
+    current_environment_name: Optional[str]
 
 
 class Project_State(str, Enum):
-    UNINITIALIZED = "UNINITIALIZED"
+    INFO_LOADED = "INFO_LOADED"
     INITIALIZING = "INITIALIZING"
     INITIALIZED = "INITIALIZED"
 
 
+###############################
+##### Exceptions
+###############################
+class ProjectError(Exception):
+    pass
+
+
+class NoGlobalProject(ProjectError):
+    pass
+
+
+class IncorrectPhase(ProjectError):
+    pass
+
+
+class EnvironmentDoesNotExist(ProjectError):
+    pass
+
+
+class NoCurrentEnvironment(ProjectError):
+    pass
+
+
+class BackendError(ProjectError):
+    pass
+
+
+class FilesystemError(ProjectError):
+    pass
+
+
 def wrap_phases(phases: List[Project_State]) -> Callable[[F], F]:
     """
-    Annotation that denotes when a function can be executed within the life cycle of a workspace. Throws excpetion if the workspace is not in the correct
+    Annotation that denotes when a function can be executed within the life cycle of a Project. Throws exception if the Project is not in the correct
     phase.
     """
 
     def inner_wrap(func: F) -> F:
         def wrapper_func(project: "Project", *func_posargs, **func_kwargs):
-
             current_state = project.get_state()
             if not current_state in phases:
-                raise Exception(
+                raise IncorrectPhase(
                     f"Trying to call {func} while in project state {current_state} but need to be in {phases}"
                 )
 
@@ -95,116 +103,122 @@ class Project:
     _settings: Settings
 
     @classmethod
-    def instance(cls):
-        """
-        Method to retrieve the global instance of the Project object.
+    def instance(cls) -> "Project":
+        """Method to retrieve the global instance of the Project object.
+
+        Raises:
+            NoGlobalProject
         """
         if not _GLOBAL_PROJECT:
-            raise Exception("Currently No GLOBAL PROJECT OBJECT")
+            raise NoGlobalProject
 
         return _GLOBAL_PROJECT
 
     @classmethod
     def set_global_instance(cls, project: "Project") -> None:
-        """
-        Method to set the global Project object. Should only be used to as defined in the lifecycle of the Cdev process. (documentation)
+        """Method to set the global Project object. Should only be used by sub-classes to register themselves as the global `Project` within the
+        cdev execution steps.
+
+        Args:
+            project (Project): Object to register as global Project
         """
         global _GLOBAL_PROJECT
         _GLOBAL_PROJECT = project
 
-    @classmethod
-    def remove_global_instance(cls, caller: "Project") -> None:
-        """
-        Method to reset the Global Project object. This should be the final cleanup step for a Cdev process.
-        """
-        global _GLOBAL_PROJECT
-
-        if not _GLOBAL_PROJECT:
-            raise Exception("Global Project is not set")
-
-        if not _GLOBAL_PROJECT == caller:
-            raise Exception("Only the current Project object can remove itself")
-
-        _GLOBAL_PROJECT = None
-
-    def set_name(self, name: str) -> None:
-        """
-        Set the name of this Project
-
-        Args:
-            name (str): name of the Project
-        """
-        raise NotImplementedError
-
     def get_name(self) -> str:
-        """
-        Get the name of this Project
+        """Get the name of this Project
 
         Returns:
             name (str)
+
+        Raises:
+            ProjectError
         """
         raise NotImplementedError
 
     def get_state(self) -> Project_State:
-        """
-        Get the current lifecycle state of the Project.
+        """Get the current lifecycle state of the Project.
 
         Returns:
             state (Project_State)
+
+        Raises:
+            ProjectError
+        """
+        raise NotImplementedError
+
+    def set_state(self, new_state: Project_State) -> None:
+        """Set the current lifecycle state of the Project
+
+        Args:
+            new_state (Project_State): new project state
         """
         raise NotImplementedError
 
     def initialize_project(self) -> None:
-        """
-        Initialize the Project object so that it is ready to perform a given operation. Note that any configuration needed for the initialization
-        process should be defined during the creation of the object, and set such that this function needs no input.
+        """Initialize the Project object. This function can only be called when in the `LOAD_INFO` state. It will transition into the `INITIALIZING` phase
+        while the function is executing. Then it will transition to the `INITIALIZED` phase as the final action.
+
+        Raises:
+            ProjectError
         """
         raise NotImplementedError
 
-    def terminate_project(self) -> None:
-        """
-        Terminate the Project object as a cleanup operation after a given operation is complete. This should be the final step in the life cycle
-        of an operation that need to initialize the project.
-        """
-        raise NotImplementedError
+    def create_environment(
+        self, environment_name: str, backend_configuration: Backend_Configuration = None
+    ) -> None:
+        """Create a new environment for this project.
 
-    def create_environment(self, environment_name: str, settings_files: List[str]) -> None:
-        """
-        Create a new environment for this project.
+        Args:
+            environment_name (str): Name of the `Environment` to create
+            backend_configuration (Backend_Configuration, optional): Backend configuration to associate with the created `Environment`. Defaults to None.
+
+        Raises:
+            ProjectError
         """
         raise NotImplementedError
 
     def destroy_environment(self, environment_name: str) -> None:
-        """
-        Destroy an environment. This function should only be called when the project is in the Initialized state, so that
-        any cloud resources in the environment will be destroyed.
+        """Destroy an environment. This function should only be used to delete the information about an environment. To delete actual cloud resources in an,
+        an environment you should use the `cdev destroy` command.
+
+        Args:
+            environment_name (str): Name of the `Environment` to destroy
+
+        Raises:
+            ProjectError
+            EnvironmentDoesNotExist
         """
         raise NotImplementedError
 
     def get_all_environment_names(self) -> List[str]:
-        """
-        Get all the available environments in the Project.
+        """Get all the available environments in the Project.
 
         Returns:
             environment_names (List[str]): environments
+
+        Raises:
+            ProjectError
         """
         raise NotImplementedError
 
     def get_current_environment_name(self) -> str:
-        """
-        Get the environment name that is currently active for this Project.
+        """Get the environment name that is currently active for this Project.
 
         Returns:
             environment_name (str)
+
+        Raises:
+            EnvironmentDoesNotExist
+            NoCurrentEnvironment
         """
         raise NotImplementedError
 
     def set_current_environment(self, environment_name: str) -> None:
-        """
-        Change the currently active environment for this Project. This should only be called when the Project is
+        """Change the currently active environment for this Project. This should only be called when the Project is
         in the Uninitialized state to prevent it from being called during operations that modify an environment.
 
-        Arguments:
+        Args:
             environment_name (str): The environment name to switch to
 
         Raises:
@@ -212,12 +226,43 @@ class Project:
         """
         raise NotImplementedError
 
-    def get_environment(self, environment_name: str) -> Environment:
+    def get_environment_settings_info(
+        self, environment_name: str = None
+    ) -> Settings_Info:
+        """Get the information about an Environments Settings Modules
+
+        Args:
+            environment_name (str, optional): Name of the Environment. Defaults to None.
+
+        Raises:
+            ProjectError
+            EnvironmentDoesNotExist
+
+        Returns:
+            Settings_Info
         """
-        Get the environment object for a specified environment name. Note that the environment will be in a state
+        raise NotImplementedError
+
+    def update_environment_settings_info(
+        self, new_value: Settings_Info, environment_name: str = None
+    ):
+        """Update the information Settings Module Information for a given Environment
+
+        Args:
+            new_value (Settings_Info): New Settings Info for the Environment
+            environment_name (str, optional): Environment name to update. Defaults to None.
+
+        Raises:
+            ProjectError
+            EnvironmentDoesNotExist
+        """
+        raise NotImplementedError
+
+    def get_environment(self, environment_name: str) -> Environment:
+        """Get the environment object for a specified environment name. Note that the environment will be in a state
         based on when this function is called within the Cdev lifecycle.
 
-        Arguments:
+        Args:
             environment_name (str): The environment name to switch to
 
         Raises:
@@ -226,15 +271,12 @@ class Project:
         raise NotImplementedError
 
     def get_current_environment(self) -> Environment:
-        """
-        Get the environment object for the currently active Environment. Note that the Environment will be in a state
+        """Get the environment object for the currently active Environment. Note that the Environment will be in a state
         based on when this function is called within the Cdev lifecycle.
-
-        Arguments:
-            environment_name (str): The environment name to switch to
 
         Raises:
             EnvironmentDoesNotExist
+            NoCurrentEnvironment
         """
         raise NotImplementedError
 
@@ -249,20 +291,12 @@ class Project:
     def settings(self, value: Settings):
         raise NotImplementedError
 
-    def get_settings_info(self, environment_name: str = None) -> Settings_Info:
-        raise NotImplementedError
-
-    def update_settings_info(
-        self, new_value: Settings_Info, environment_name: str = None
-    ):
-        raise NotImplementedError
-
     #######################
     ##### Display Output
     #######################
 
     def display_output(self, tag: str, output: Cloud_Output) -> None:
-        """Display the output from a Resource or Reference after a process has completed
+        """Display the output from a Resource or Reference after a `Deployment` process has completed
 
         Args:
             tag: A key value to display with the output
@@ -270,58 +304,46 @@ class Project:
         """
         raise NotImplementedError
 
-    def render_outputs(self) -> List[Tuple[str, Any]]:
-        """Render the output associated with the Workspace
-
-        Returns:
-            List[Tuple[str, Any]]: The List of outputs with their associated tag
-
-        """
-        raise NotImplementedError
-
     #################
     ##### Mappers
     #################
     def add_mapper(self, mapper: CloudMapper) -> None:
-        """
-        Add a CloudMapper to the project. The order that the Mappers are added to the Project defines the precedence give when
+        """Add a CloudMapper to the project. The order that the Mappers are added to the Project defines the precedence give when
         determining which CloudMapper to use.
 
-        Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
-
-        Arguments:
+        Args:
             mapper (CloudMapper): The mapper to add
+
+        Raises:
+            ProjectError
         """
         raise NotImplementedError
 
     def add_mappers(self, mappers: List[CloudMapper]) -> None:
-        """
-        Add a List of CloudMappers to the project. The order that the Mappers are added to the Project defines the precedence
+        """Add a List of CloudMappers to the project. The order that the Mappers are added to the Project defines the precedence
         give when determining which CloudMapper to use.
 
-        Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
-
-        Arguments:
+        Args:
             mappers (List[CloudMapper]): The mapper to add
+
+        Raises:
+            ProjectError
         """
         raise NotImplementedError
 
     def get_mappers(self) -> List[CloudMapper]:
-        """
-        Return the List of CloudMappers for this Project.
-
-        Note that this function should only be called during the `Project Initialized` part of the Cdev lifecycle.
+        """Return the List of CloudMappers for this Project.
 
         Returns:
             mappers (List[CloudMapper]): mappers for this Project
+
+        Raises:
+            ProjectError
         """
         raise NotImplementedError
 
     def get_mapper_namespace(self) -> Dict[str, CloudMapper]:
-        """
-        Return the Dictionary that maps Resource ID's (ruuid) to the mapper that will be used to deploy the resource into the cloud.
-
-        Note that this function should only be called during the `Project Initialized` part of the Cdev lifecycle.
+        """Return the Dictionary that maps Resource ID's (ruuid) to the mapper that will be used to deploy the resource into the cloud.
 
         Returns:
             ruuid_to_mapper (Dict[str, CloudMapper]): Resource ID to CloudMapper
@@ -332,36 +354,27 @@ class Project:
     ##### Commands
     #################
     def add_command(self, command_location: str):
-        """
-        Add a Command Location to the Project. The order that the Command is added to the Project defines the precedence
+        """Add a Command Location to the Project. The order that the Command is added to the Project defines the precedence
         give when searching for Commands. Command Locations should adhere to the defined form to ensure that they can be
         found within the Project.
 
-        Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
-
-        Arguments:
+        Args:
             command_location (Command): The command location to add
         """
         raise NotImplementedError
 
     def add_commands(self, command_locations: List[str]):
-        """
-        Add a List of Command Locations to the Project. The order that the Commands are added to the Project defines the precedence
+        """Add a List of Command Locations to the Project. The order that the Commands are added to the Project defines the precedence
         give when searching for a Command. Command Locations should adhere to the defined form to ensure that they can be
         found within the Project.
 
-        Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
-
-        Arguments:
-            command_locations (Command): The command location to add
+        Args:
+            command_locations (Command): The command locations to add
         """
         raise NotImplementedError
 
     def get_commands(self) -> List[str]:
-        """
-        Get the Command Locations for this Project.
-
-        Note that this function should only be called during the `Project Initialized` part of the Cdev lifecycle.
+        """Get the Command Locations for this Project.
 
         Returns:
             command_locations (List[str])
@@ -372,34 +385,25 @@ class Project:
     ##### Components
     #################
     def add_component(self, component: Component) -> None:
-        """
-        Add a Component to the Project. Components are used to determine the desired state of the Project. They should represent
+        """Add a Component to the Project. Components are used to determine the desired state of the Project. They should represent
         a logical separation for the Resources in a project.
 
-        Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
-
-        Arguments:
+        Args:
             component (Component): Component to add
         """
         raise NotImplementedError
 
     def add_components(self, components: List[Component]) -> None:
-        """
-        Add a List of Components to the Project. Components are used to determine the desired state of the Project. They
+        """Add a List of Components to the Project. Components are used to determine the desired state of the Project. They
         should represent a logical separation for the Resources in a project.
 
-        Note that this function should only be called during the `Project Initialization` part of the Cdev lifecycle.
-
-        Arguments:
-            component (Component): Component to add
+        Args:
+            components (Component): Components to add
         """
         raise NotImplementedError
 
     def get_components(self) -> List[Component]:
-        """
-        Return the Components for this Project.
-
-        Note that this function should only be called during the `Project Initialized` part of the Cdev lifecycle.
+        """Return the Components for this Project.
 
         Returns:
             components (List[Component])
@@ -412,13 +416,9 @@ def check_if_project_exists(base_directory: DirectoryPath) -> bool:
     This function checks for an existing Cdev project at the given directory. A Cdev project is defined by the existence of a valid
     'cdev_project.json' file (can be loaded as project_info) at the location of <base_directory>/.cdev/.
 
-    Arguments:
+    Args:
         base_directory: Directory to start search from
     """
-
-    CDEV_FOLDER = ".cdev"
-    CDEV_PROJECT_FILE = "cdev_project.json"
-
     if not os.path.isdir(base_directory):
         raise Exception(f"Given base directory is not a directory {base_directory}")
 
@@ -432,7 +432,7 @@ def check_if_project_exists(base_directory: DirectoryPath) -> bool:
         with open(
             os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE), "r"
         ) as fh:
-            project_info(**json.load(fh))
+            Project_Info(**json.load(fh))
 
         return True
 

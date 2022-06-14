@@ -13,7 +13,7 @@ from ..commands import (
 )
 from ..constructs.workspace import Workspace
 
-parser = argparse.ArgumentParser(description="cdev cli")
+parser = argparse.ArgumentParser(description="cdev core cli")
 subparsers = parser.add_subparsers(title="sub_command", description="valid subcommands")
 
 

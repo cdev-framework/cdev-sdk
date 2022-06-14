@@ -1,33 +1,52 @@
 import argparse
+import json
 import logging
+import os
 import traceback
 from typing import Callable, Any
 
+from pydantic import FilePath
+
 from ..commands import (
     cloud_output,
+    environment,
+    plan,
     deploy,
     destroy,
-    environment,
-    initializer,
-    local_development,
-    plan,
+    project_initializer,
     run,
-    sync
+    sync,
 )
+
+from cdev.constructs.project import CDEV_PROJECT_FILE, CDEV_FOLDER
+from cdev.default.project import local_project, local_project_info
 
 parser = argparse.ArgumentParser(description="cdev cli")
 subparsers = parser.add_subparsers(title="sub_command", description="valid subcommands")
 
 
-def wrap_load_project(command: Callable) -> Callable[[Any], Any]:
+def wrap_load_and_initialize_project(
+    command: Callable, initialize: bool = True
+) -> Callable[[Any], Any]:
+    """Helper annotation that makes sure that the global Project object is in the correct state before running a given command.
+
+    Args:
+        command (Callable): command to run
+        initialize (bool, optional): Initialize the Project. Defaults to True.
+
+    Returns:
+        Callable[[Any], Any]: Wrapped function
+    """
+
     def wrapped_caller(*args, **kwargs):
         try:
-            initializer.load_project()
+            load_and_initialize_project(initialize=initialize)
         except Exception as e:
-            print(f"Could not load the project to call {command}")
+            print(
+                f"Could not load (initialize={initialize}) the Cdev Project to call {command}"
+            )
             print(e)
             print(traceback.format_exc())
-
             return
 
         command(args)
@@ -35,31 +54,44 @@ def wrap_load_project(command: Callable) -> Callable[[Any], Any]:
     return wrapped_caller
 
 
-def wrap_load_and_initialize_project(command: Callable) -> Callable[[Any], Any]:
-    def wrapped_caller(*args, **kwargs):
-        try:
-            initializer.load_project(initialize=True)
-        except Exception as e:
-            print(f"Could not load and initialize the project to call {command}")
-            print(e)
-            print(traceback.format_exc())
-            return
+def load_and_initialize_project(initialize: bool = True) -> None:
+    """Create the global instance of the `Project` object as a `local_project` instance. If provided, also initialize the `Project`.
 
-        command(args)
+    Args:
+        initialize (bool, optional): Initialize the project. Defaults to True.
+    """
+    base_directory = os.getcwd()
 
-    return wrapped_caller
+    project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)
+    project_info = _load_local_project_information(project_info_location)
+
+    project = local_project(
+        project_info=project_info, project_info_filepath=project_info_location
+    )
+    if initialize:
+        project.initialize_project()
+
+
+def _load_local_project_information(
+    project_info_location: FilePath,
+) -> local_project_info:
+    """Help function to load the project info json file
+
+    Args:
+        project_info_location (FilePath): location of project info json
+
+    Returns:
+        local_project_info
+    """
+    with open(project_info_location, "r") as fh:
+        return local_project_info(**json.load(fh))
 
 
 CDEV_COMMANDS = [
     {
-        "name": "plan",
-        "help": "See the differences that have been made since the last deployment",
-        "default": wrap_load_and_initialize_project(plan.plan_command_cli),
-    },
-    {
         "name": "init",
         "help": "Create a new project",
-        "default": initializer.create_project_cli,
+        "default": project_initializer.create_project_cli,
         "args": [
             {"dest": "name", "type": str, "help": "Name of the new project"},
             {
@@ -70,47 +102,11 @@ CDEV_COMMANDS = [
         ],
     },
     {
-        "name": "develop",
-        "help": "Open an interactive development environment",
-        "default": wrap_load_and_initialize_project(
-            local_development.develop_command_cli
-        ),
-        "args": [
-            {
-                "dest": "--complex",
-                "help": "run a simple follower instead of full development environment",
-                "action": "store_true",
-            }
-        ],
-    },
-    {
-        "name": "destroy",
-        "help": "Destroy all the resources in the current environment",
-        "default": wrap_load_and_initialize_project(destroy.destroy_command_cli),
-    },
-    {
-        "name": "output",
-        "help": "See the generated cloud output",
-        "default": wrap_load_and_initialize_project(
-            cloud_output.cloud_output_command_cli
-        ),
-        "args": [
-            {
-                "dest": "cloud_output_id",
-                "type": str,
-                "help": "Id of the cloud output to display. ex: <component>.<ruuid>.<cdev_name>.<output_key>",
-            },
-            {
-                "dest": "--value",
-                "help": "display only the value. Helpful for exporting values.",
-                "action": "store_true",
-            },
-        ],
-    },
-    {
         "name": "environment",
         "help": "Change and create environments for deployment",
-        "default": wrap_load_and_initialize_project(environment.environment_cli),
+        "default": wrap_load_and_initialize_project(
+            environment.environment_cli, initialize=False
+        ),
         "subcommands": [
             {
                 "command": "ls",
@@ -135,11 +131,11 @@ CDEV_COMMANDS = [
                 ],
             },
             {
-                "command": "get",
+                "command": "info",
                 "help": "Get information about an environment",
                 "args": [
                     {
-                        "dest": "env",
+                        "dest": "--env",
                         "type": str,
                         "help": "environment you want info about",
                     }
@@ -180,9 +176,38 @@ CDEV_COMMANDS = [
         ],
     },
     {
+        "name": "plan",
+        "help": "See the differences that have been made since the last deployment",
+        "default": wrap_load_and_initialize_project(plan.plan_command_cli),
+    },
+    {
         "name": "deploy",
         "help": "Deploy a set of changes",
         "default": wrap_load_and_initialize_project(deploy.deploy_command_cli),
+    },
+    {
+        "name": "destroy",
+        "help": "Destroy all the resources in the current environment",
+        "default": wrap_load_and_initialize_project(destroy.destroy_command_cli),
+    },
+    {
+        "name": "output",
+        "help": "See the generated cloud output",
+        "default": wrap_load_and_initialize_project(
+            cloud_output.cloud_output_command_cli
+        ),
+        "args": [
+            {
+                "dest": "cloud_output_id",
+                "type": str,
+                "help": "Id of the cloud output to display. ex: <component>.<ruuid>.<cdev_name>.<output_key>",
+            },
+            {
+                "dest": "--value",
+                "help": "display only the value. Helpful for exporting values.",
+                "action": "store_true",
+            },
+        ],
     },
     {
         "name": "run",
@@ -221,6 +246,7 @@ CDEV_COMMANDS = [
         ],
     },
 ]
+
 
 def subcommand_function_wrapper(name, func):
     # This wraps a function so that is can be used for subcommands by basing the subcommand as the first arg to the function
