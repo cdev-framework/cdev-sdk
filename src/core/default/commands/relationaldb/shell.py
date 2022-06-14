@@ -3,6 +3,7 @@ import readline
 import os
 
 from argparse import ArgumentParser
+from core.constructs.workspace import Workspace
 from typing import List, Tuple
 
 import aurora_data_api
@@ -145,9 +146,12 @@ class interactive_shell(cmd.Cmd):
         self, fmt: fmt, cluster_arn: str, secret_arn: str, database_name: str
     ) -> None:
         super().__init__()
-        import os
-        import readline
-        self.histfile = os.path.join(os.environ['HOME'], '.pythonhistory')
+        history_location = os.path.join(Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION, 'dbshell')
+        if not os.path.isfile(history_location):
+            # touch the file
+            with open(history_location, 'a'):
+                pass
+        self.histfile = history_location
         readline.read_history_file(self.histfile)
         self.prompt = f"{database_name}=> "
         self._db_connection = db_connection(cluster_arn, secret_arn, database_name)
@@ -157,8 +161,7 @@ class interactive_shell(cmd.Cmd):
         try:
             readline.add_history(line)
             readline.insert_text(readline.get_line_buffer())
-            histfile = os.path.join(os.environ['HOME'], '.pythonhistory')
-            readline.write_history_file(histfile)
+            readline.write_history_file(self.histfile)
             col_descriptions, rows, updated_row_cnt = self._db_connection.execute(line)
             self.formater.print_results(col_descriptions, rows, updated_row_cnt)
         except Exception as e:
