@@ -38,7 +38,12 @@ class sync_files(BaseCommand):
 
     def command(self, *args, **kwargs) -> None:
 
-        component_name, static_site_name = self.get_component_and_resource_from_qualified_name(kwargs.get("resource_name"))
+        (
+            component_name,
+            static_site_name,
+        ) = self.get_component_and_resource_from_qualified_name(
+            kwargs.get("resource_name")
+        )
 
         resource: simple_static_site_model = utils.get_resource_from_cdev_name(
             component_name, static_site_name
@@ -90,7 +95,7 @@ class sync_files(BaseCommand):
                     key_name = potential_key_name
 
                 if mimetype is None:
-                    raise Exception("Failed to guess mimetype")
+                    mimetype = "text"
                 print(f"{full_path} -> {key_name} ({mimetype})")
                 bucket.upload_file(
                     full_path, key_name, ExtraArgs={"ContentType": mimetype}
