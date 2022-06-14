@@ -1,8 +1,6 @@
 import cmd
 import readline
 import os
-import rlcompleter
-import atexit
 
 from argparse import ArgumentParser
 from typing import List, Tuple
