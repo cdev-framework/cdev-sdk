@@ -243,7 +243,6 @@ def _get_relative_path(original_path: FilePath, base_path: DirectoryPath) -> Fil
     Returns:
         FilePath: relative file path
     """
-    pass
     if Path(base_path) not in Path(original_path).parents:
         raise Exception(
             f"""Can not make relative path for {original_path} from {base_path} because it is not a child path"""
