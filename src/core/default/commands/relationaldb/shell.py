@@ -1,4 +1,8 @@
 import cmd
+import readline
+import os
+import rlcompleter
+import atexit
 
 from argparse import ArgumentParser
 from typing import List, Tuple
@@ -143,14 +147,23 @@ class interactive_shell(cmd.Cmd):
         self, fmt: fmt, cluster_arn: str, secret_arn: str, database_name: str
     ) -> None:
         super().__init__()
+        import os
+        import readline
+        self.histfile = os.path.join(os.environ['HOME'], '.pythonhistory')
+        readline.read_history_file(self.histfile)
         self.prompt = f"{database_name}=> "
         self._db_connection = db_connection(cluster_arn, secret_arn, database_name)
         self.formater = fmt
 
     def default(self, line) -> None:
         try:
+            readline.add_history(line)
+            readline.insert_text(readline.get_line_buffer())
+            histfile = os.path.join(os.environ['HOME'], '.pythonhistory')
+            readline.write_history_file(histfile)
             col_descriptions, rows, updated_row_cnt = self._db_connection.execute(line)
             self.formater.print_results(col_descriptions, rows, updated_row_cnt)
+            print(readline.get_line_buffer())
         except Exception as e:
             self.formater._console.print(e)
 
