@@ -37,7 +37,10 @@ class execute(BaseCommand):
         event_data = self._get_event_data(*args, **kwargs)
 
         full_function_name = kwargs.get("function_id")
-        component_name, function_name = self.get_component_and_resource_from_qualified_name(full_function_name)
+        (
+            component_name,
+            function_name,
+        ) = self.get_component_and_resource_from_qualified_name(full_function_name)
 
         cloud_name = get_cloud_id_from_cdev_name(component_name, function_name)
 
@@ -50,7 +53,7 @@ class execute(BaseCommand):
             Payload=json.dumps(event_data),
         )
 
-        self.stdout(response)
+        self.stdout.write(str(response))
 
     def _get_event_data(self, *args, **kwargs) -> Dict:
         event_file_location: str = kwargs.get("event")
