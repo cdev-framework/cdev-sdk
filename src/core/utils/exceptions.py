@@ -9,19 +9,16 @@ Error: Something has reached a state that should terminate the process.
 
 """
 import sys
+from dataclasses import dataclass, field
+
+from typing import List
 
 
-class Cdev_Warning(Exception):
-    def __init__(self, msg: str) -> None:
-        self.msg = msg
-        super().__init__(self.msg)
-
-
-class Cdev_Error(Exception):
-    def __init__(self, msg: str, nested_exceptions: Exception = None) -> None:
-        self.msg = msg
-        self.nested_exceptions = nested_exceptions
-        super().__init__(self.msg)
+@dataclass
+class cdev_core_error(Exception):
+    error_message: str
+    help_message: str
+    help_resources: List[str]
 
 
 def end_process():

@@ -2,10 +2,12 @@ import argparse
 import json
 import logging
 import os
-import traceback
 from typing import Callable, Any
 
 from pydantic import FilePath
+
+from core.constructs.output_manager import OutputManager
+from core.utils.exceptions import cdev_core_error, test_error
 
 from ..commands import (
     cloud_output,
@@ -24,6 +26,9 @@ from cdev.default.project import local_project, local_project_info
 parser = argparse.ArgumentParser(description="cdev cli")
 subparsers = parser.add_subparsers(title="sub_command", description="valid subcommands")
 
+LOG_LEVEL_ARG = "loglevel"
+OUTPUT_TYPE_ARG = "output_type"
+
 
 def wrap_load_and_initialize_project(
     command: Callable, initialize: bool = True
@@ -39,19 +44,26 @@ def wrap_load_and_initialize_project(
     """
 
     def wrapped_caller(*args, **kwargs):
+        dict_args = vars(args[0])
+
+        log_level = dict_args.pop(LOG_LEVEL_ARG)
+        output_type = dict_args.pop(OUTPUT_TYPE_ARG)
+
+        _output_manager = _initialize_output_manager(output_type=output_type)
+
         try:
             load_and_initialize_project(initialize=initialize)
         except Exception as e:
-            print(
-                f"Could not load (initialize={initialize}) the Cdev Project to call {command}"
-            )
-            print(e)
-            print(traceback.format_exc())
+            _output_manager.print_exception(e)
             return
 
-        command(args)
+        command(**dict_args, loglevel=log_level, output_manager=_output_manager)
 
     return wrapped_caller
+
+
+def _initialize_output_manager(output_type: str) -> OutputManager:
+    return OutputManager()
 
 
 def load_and_initialize_project(initialize: bool = True) -> None:
@@ -60,6 +72,7 @@ def load_and_initialize_project(initialize: bool = True) -> None:
     Args:
         initialize (bool, optional): Initialize the project. Defaults to True.
     """
+    raise test_error(error_message="default msg")
     base_directory = os.getcwd()
 
     project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)
@@ -263,25 +276,17 @@ def add_general_output_options(parser: argparse.ArgumentParser) -> None:
         "--output",
         type=str,
         choices=["json", "plain-text", "rich"],
-        help="change the type of output generated",
-    )
-
-    parser.add_argument(
-        "-d",
-        "--debug",
-        help="Print debug log statements. This is mostly for development use",
-        action="store_const",
-        dest="loglevel",
-        const=logging.DEBUG,
-        default=logging.WARNING,
+        dest=OUTPUT_TYPE_ARG,
+        default="rich",
+        help="BASE CDEV OPTION -> change the type of output generated",
     )
 
     parser.add_argument(
         "-v",
         "--verbose",
-        help="Print info log message. Use this to get a more detailed understanding of what is executing.",
+        help="BASE CDEV OPTION -> Print info log message. Use this to get a more detailed understanding of what is executing.",
         action="store_const",
-        dest="loglevel",
+        dest=LOG_LEVEL_ARG,
         const=logging.INFO,
     )
 

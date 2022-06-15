@@ -1,7 +1,7 @@
-from ..utils.exceptions import Cdev_Error
+from ..utils.exceptions import cdev_core_error
 
 
-class BackendError(Cdev_Error):
+class BackendError(cdev_core_error):
     pass
 
 
