@@ -264,9 +264,7 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
             src_code_hash if src_code_hash else hasher.hash_file(filepath)
         )
 
-        self._platform = (
-            platform or get_current_closest_platform() or lambda_python_environment.py37
-        )
+        self._platform = platform or get_current_closest_platform()
 
         self._preserved_function = preserve_function
         self.__annotations__ = preserve_function.__annotations__
