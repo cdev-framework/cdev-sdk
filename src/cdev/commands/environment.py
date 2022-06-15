@@ -1,18 +1,18 @@
-from typing import List, Tuple
+from argparse import Namespace
+
+from cdev.constructs.project import EnvironmentDoesNotExist, Project, ProjectError
 
 from core.constructs.output_manager import OutputManager
 
-from cdev.constructs.project import EnvironmentDoesNotExist, Project, ProjectError
-from cdev.default.output_manager import CdevOutputManager
-from cdev.cli.logger import set_global_logger_from_cli
 
+def environment_cli(
+    command: str,
+    parsed_args_namespace: Namespace,
+    output_manager: OutputManager,
+    **kwargs,
+) -> None:
 
-def environment_cli(args) -> None:
-    command = args[0]
-    parsed_args = vars(args[1])
-
-    set_global_logger_from_cli(parsed_args.get("loglevel"))
-    output_manager = CdevOutputManager()
+    parsed_args = vars(parsed_args_namespace)
 
     if command == "":
         output_manager._console.print(

@@ -1,24 +1,17 @@
 from cdev.constructs.project import Project
-from cdev.default.output_manager import CdevOutputManager
-from cdev.cli.logger import set_global_logger_from_cli
 from rich.prompt import Confirm
 
-
+from core.constructs.output_manager import OutputManager
 from core.constructs.workspace import Workspace_State
 
 
-def destroy_command_cli(args) -> None:
-    config = args[0]
-    set_global_logger_from_cli(config.loglevel)
-    destroy_command(args)
+def destroy_command_cli(project: Project, output_manager: OutputManager) -> None:
+    destroy_command(project, output_manager)
 
 
-def destroy_command(args) -> None:
+def destroy_command(project: Project, output_manager: OutputManager) -> None:
 
-    output_manager = CdevOutputManager()
-    myProject = Project.instance()
-
-    ws = myProject.get_current_environment().get_workspace()
+    ws = project.get_current_environment().get_workspace()
 
     ws.set_state(Workspace_State.EXECUTING_FRONTEND)
 

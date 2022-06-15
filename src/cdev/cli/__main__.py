@@ -7,7 +7,7 @@ from typing import Callable, Any
 from pydantic import FilePath
 
 from core.constructs.output_manager import OutputManager
-from core.utils.exceptions import cdev_core_error, test_error
+from core.utils.exceptions import cdev_core_error
 
 from ..commands import (
     cloud_output,
@@ -20,7 +20,7 @@ from ..commands import (
     sync,
 )
 
-from cdev.constructs.project import CDEV_PROJECT_FILE, CDEV_FOLDER
+from cdev.constructs.project import CDEV_PROJECT_FILE, CDEV_FOLDER, Project
 from cdev.default.project import local_project, local_project_info
 
 parser = argparse.ArgumentParser(description="cdev cli")
@@ -44,7 +44,15 @@ def wrap_load_and_initialize_project(
     """
 
     def wrapped_caller(*args, **kwargs):
-        dict_args = vars(args[0])
+        if len(args) == 1:
+            dict_args = vars(args[0])
+
+        elif len(args) == 2:
+            dict_args = vars(args[1])
+
+        else:
+            print("bad")
+            return
 
         log_level = dict_args.pop(LOG_LEVEL_ARG)
         output_type = dict_args.pop(OUTPUT_TYPE_ARG)
@@ -57,7 +65,16 @@ def wrap_load_and_initialize_project(
             _output_manager.print_exception(e)
             return
 
-        command(**dict_args, loglevel=log_level, output_manager=_output_manager)
+        _project = Project.instance()
+        if len(args) == 1:
+            command(
+                **dict_args,
+                loglevel=log_level,
+                output_manager=_output_manager,
+                project=_project
+            )
+        else:
+            command(args[0], args[1], output_manager=_output_manager)
 
     return wrapped_caller
 
@@ -72,7 +89,6 @@ def load_and_initialize_project(initialize: bool = True) -> None:
     Args:
         initialize (bool, optional): Initialize the project. Defaults to True.
     """
-    raise test_error(error_message="default msg")
     base_directory = os.getcwd()
 
     project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)
@@ -228,7 +244,7 @@ CDEV_COMMANDS = [
         "default": wrap_load_and_initialize_project(run.run_command_cli),
         "args": [
             {"dest": "subcommand", "help": "the user defined command to call"},
-            {"dest": "args", "nargs": argparse.REMAINDER},
+            {"dest": "subcommand_args", "nargs": argparse.REMAINDER},
         ],
     },
     {
