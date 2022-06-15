@@ -129,7 +129,7 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
         }
     )
 
-    base_settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
+    base_settings_folder = SETTINGS_FOLDER_NAME
 
     new_project_info = local_project_info(
         project_name=project_name,
