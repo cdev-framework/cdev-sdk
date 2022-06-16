@@ -90,7 +90,6 @@ class OutputManager:
         component_differences = differences[0]
         resource_differences = differences[1]
         reference_differences = differences[2]
-
         self._console.print(f"[bold white]Differences in State:[/bold white]")
 
         for component_diff in component_differences:
@@ -101,6 +100,21 @@ class OutputManager:
             self._print_component_reference_differences(
                 component_diff, reference_differences
             )
+            try:
+                previous_resource = resource_differences[1].previous_resource.__dict__[
+                    "configuration"
+                ]
+                new_resource = resource_differences[1].new_resource.__dict__[
+                    "configuration"
+                ]
+                new_resource = dict(new_resource)
+                for item in new_resource:
+                    if previous_resource[item] != new_resource[item]:
+                        self._print_resource_differences(
+                            str(item), str(previous_resource[item]), new_resource[item]
+                        )
+            except:
+                pass
 
     def create_task(
         self,
@@ -189,7 +203,6 @@ class OutputManager:
                 f"Trying to deploy node {node} but it is not a correct type "
             )
 
-
     def _print_component_resources(self, component: ComponentModel) -> None:
         """Print the resources in a component
 
@@ -204,7 +217,6 @@ class OutputManager:
             self._console.print(
                 f"        [bold blue]{resource.name} ({resource.ruuid})[/bold blue]"
             )
-
 
     def _print_component_references(self, component: ComponentModel) -> None:
         """Print the references in a component
@@ -320,6 +332,13 @@ class OutputManager:
                 self._console.print(
                     f"        [bold red]Delete reference:[/bold red][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]"
                 )
+
+    def _print_resource_differences(
+        self, resource_name: str, previous_value: str, new_value: str
+    ) -> None:
+        self._console.print(
+            f"           [bold black]Diff {resource_name}  :[/bold black][bold blue]: {previous_value} -> {new_value} [/bold blue]"
+        )
 
 
 class OutputTask:
