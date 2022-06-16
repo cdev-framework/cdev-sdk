@@ -7,7 +7,7 @@ from typing import Callable, Any
 from pydantic import FilePath
 
 from core.constructs.output_manager import OutputManager
-from core.utils.exceptions import cdev_core_error
+from core.utils.exceptions import cdev_core_error, wrap_base_exception
 
 from ..commands import (
     cloud_output,
@@ -51,7 +51,6 @@ def wrap_load_and_initialize_project(
             dict_args = vars(args[1])
 
         else:
-            print("bad")
             return
 
         log_level = dict_args.pop(LOG_LEVEL_ARG)
@@ -66,15 +65,21 @@ def wrap_load_and_initialize_project(
             return
 
         _project = Project.instance()
-        if len(args) == 1:
-            command(
-                **dict_args,
-                loglevel=log_level,
-                output_manager=_output_manager,
-                project=_project
-            )
-        else:
-            command(args[0], args[1], output_manager=_output_manager)
+
+        try:
+            if len(args) == 1:
+                command(
+                    **dict_args,
+                    loglevel=log_level,
+                    output_manager=_output_manager,
+                    project=_project
+                )
+            else:
+                command(args[0], args[1], output_manager=_output_manager)
+        except cdev_core_error as e:
+            _output_manager.print_exception(e)
+        except Exception as e:
+            _output_manager.print_exception(wrap_base_exception(e))
 
     return wrapped_caller
 

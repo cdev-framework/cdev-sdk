@@ -21,7 +21,7 @@ from core.constructs.resource import (
     Resource_Reference_Change_Type,
     Resource_Reference_Difference,
 )
-from core.utils.exceptions import cdev_core_error
+from core.utils.exceptions import cdev_core_error, wrapped_base_exception
 
 
 class CdevCoreConsole(Console):
@@ -78,7 +78,10 @@ class OutputManager:
         self._console.print("")
 
         self._console.print("TRACEBACK")
-        self._console.print_exception(exception=exception)
+        if isinstance(exception, wrapped_base_exception):
+            self._console.print_exception(exception=exception.original_exception)
+        else:
+            self._console.print_exception(exception=exception)
         self._console.print("")
 
         self._console.print("GENERAL HELP MESSAGE")

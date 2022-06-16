@@ -9,7 +9,7 @@ Error: Something has reached a state that should terminate the process.
 
 """
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from typing import List
 
@@ -19,6 +19,23 @@ class cdev_core_error(Exception):
     error_message: str
     help_message: str
     help_resources: List[str]
+
+
+@dataclass
+class wrapped_base_exception(cdev_core_error):
+    original_exception: BaseException
+    error_message: str
+    help_message: str
+    help_resources: List[str]
+
+
+def wrap_base_exception(e: Exception) -> cdev_core_error:
+    return wrapped_base_exception(
+        original_exception=e,
+        error_message="uncaught base exception",
+        help_message="This error is unexpected.",
+        help_resources=[],
+    )
 
 
 def end_process():
