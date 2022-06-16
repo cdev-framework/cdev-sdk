@@ -1,3 +1,6 @@
+from dataclasses import dataclass, field
+from typing import List
+
 from ..utils.exceptions import cdev_core_error
 
 
@@ -33,8 +36,12 @@ class ResourceChangeTransactionDoesNotExist(BackendError):
     pass
 
 
+@dataclass
 class ResourceDoesNotExist(BackendError):
-    pass
+    help_message: str = "Make sure you typed the resource name, component name, and resource type correctly."
+    help_resources: List[str] = field(
+        default_factory=lambda: ["https://cdevframework.io"]
+    )
 
 
 class CloudOutputDoesNotExist(BackendError):

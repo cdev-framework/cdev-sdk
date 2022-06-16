@@ -73,10 +73,6 @@ class OutputManager:
         self._progress = progress
 
     def print_exception(self, exception: cdev_core_error):
-        self._console.print("ERROR: ")
-        self._console.print(f"   {exception.error_message}")
-        self._console.print("")
-
         self._console.print("TRACEBACK")
         if isinstance(exception, wrapped_base_exception):
             self._console.print_exception(exception=exception.original_exception)
@@ -84,7 +80,11 @@ class OutputManager:
             self._console.print_exception(exception=exception)
         self._console.print("")
 
-        self._console.print("GENERAL HELP MESSAGE")
+        self._console.print(f"EXCEPTION: ")
+        self._console.print(f"   {exception.error_message}")
+        self._console.print("")
+
+        self._console.print("GENERAL HELP MESSAGE:")
         self._console.print(exception.help_message)
         self._console.print("")
 

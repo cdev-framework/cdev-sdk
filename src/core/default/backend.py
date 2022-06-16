@@ -727,7 +727,7 @@ class LocalBackend(Backend):
 
         if not resource:
             raise ResourceDoesNotExist(
-                f"Resource {resource_type}::{resource_name} does not exist in Component {component_name} in Resource State {resource_state_uuid}"
+                error_message=f"Resource {resource_type}::{resource_name} does not exist in Component {component_name} in Resource State {resource_state_uuid}"
             )
 
         return resource
