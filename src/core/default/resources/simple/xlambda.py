@@ -141,7 +141,7 @@ class SimpleFunctionConfiguration:
         timeout: cdev_int,
         storage: cdev_int,
         description: cdev_str = "",
-        environment_variables: Dict[str, cdev_str] = {}
+        environment_variables: Dict[str, cdev_str] = {},
     ) -> None:
         """
         Args:
@@ -264,7 +264,7 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
             src_code_hash if src_code_hash else hasher.hash_file(filepath)
         )
 
-        self._platform = platform if platform else get_current_closest_platform()
+        self._platform = platform or get_current_closest_platform()
 
         self._preserved_function = preserve_function
         self.__annotations__ = preserve_function.__annotations__
@@ -312,7 +312,9 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
 
     @external_dependencies.setter
     @update_hash
-    def external_dependencies(self, value: List[Union[DeployedLayer, DependencyLayer]]) -> None:
+    def external_dependencies(
+        self, value: List[Union[DeployedLayer, DependencyLayer]]
+    ) -> None:
         self._external_dependencies = value
 
     def compute_hash(self) -> None:
@@ -409,7 +411,7 @@ def simple_function_annotation(
             timeout=timeout,
             storage=storage,
             description=description,
-            environment_variables=environment
+            environment_variables=environment,
         )
         mod = importlib.import_module(mod_name)
 
