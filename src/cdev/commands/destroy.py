@@ -5,7 +5,9 @@ from core.constructs.output_manager import OutputManager
 from core.constructs.workspace import Workspace_State
 
 
-def destroy_command_cli(project: Project, output_manager: OutputManager) -> None:
+def destroy_command_cli(
+    project: Project, output_manager: OutputManager, **kwargs
+) -> None:
     destroy_command(project, output_manager)
 
 

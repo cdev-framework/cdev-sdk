@@ -140,13 +140,6 @@ CDEV_COMMANDS = [
             {
                 "command": "ls",
                 "help": "Show all available environments",
-                "args": [
-                    {
-                        "dest": "--all",
-                        "help": "show more details",
-                        "action": "store_true",
-                    }
-                ],
             },
             {
                 "command": "set",
@@ -309,6 +302,7 @@ def add_general_output_options(parser: argparse.ArgumentParser) -> None:
 
 for command in CDEV_COMMANDS:
     tmp = subparsers.add_parser(command.get("name"), help=command.get("help"))
+    add_general_output_options(tmp)
 
     if command.get("subcommands"):
         tmp.set_defaults(func=subcommand_function_wrapper("", command.get("default")))
@@ -322,7 +316,7 @@ for command in CDEV_COMMANDS:
                 )
             )
 
-            for arg in subcommand.get("args"):
+            for arg in subcommand.get("args", []):
                 dest = arg.get("dest")
                 arg.pop("dest")
                 t2.add_argument(dest, **arg)
@@ -336,8 +330,6 @@ for command in CDEV_COMMANDS:
                 tmp.add_argument(dest, **arg)
 
         tmp.set_defaults(func=command.get("default"))
-
-        add_general_output_options(tmp)
 
 
 args = parser.parse_args()
