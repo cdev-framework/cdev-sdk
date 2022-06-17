@@ -165,6 +165,7 @@ class sync_files(BaseCommand):
         try:
             static_site_watcher = StaticSiteWatcher(
                 final_dir,
+                deployment_function=self._perform_deployment,
                 no_prompt=self._no_prompt,
                 no_default=self._no_default,
                 patterns_to_watch=self._watch_files,

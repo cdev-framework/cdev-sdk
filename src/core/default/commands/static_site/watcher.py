@@ -1,5 +1,5 @@
 import time
-from typing import Optional
+from typing import Optional, Callable
 
 from pydantic import FilePath
 from rich import Console
@@ -18,6 +18,7 @@ class StaticSiteWatcher(Trick):
     def __init__(
         self,
         base_folder: FilePath,
+        deployment_function: Callable,
         no_prompt: Optional[bool] = False,
         no_default: Optional[bool] = False,
         patterns_to_watch: Optional[str] = None,
@@ -25,9 +26,10 @@ class StaticSiteWatcher(Trick):
         output: Console = None,
     ) -> None:
 
+        self._base_folder = base_folder
+        self._deployment_function = deployment_function
         self._no_prompt = no_prompt
         self._output = output
-        self._base_folder = base_folder
         self._observer = None
         self._perform_deployment = False
 
@@ -91,5 +93,5 @@ class StaticSiteWatcher(Trick):
         self._output.print(
             "Ignoring future changes until deployment is finished"
         )
-
+        self._deployment_function()
         self._output.print("Enabling watch again")
