@@ -40,19 +40,13 @@ def cloud_output_command(
     resource_name = split_names[2]
     output_key = split_names[3]
 
-    try:
-        cloud_output = workspace.get_backend().get_cloud_output_by_name(
-            workspace.get_resource_state_uuid(),
-            component_name,
-            resource_ruuid,
-            resource_name,
-        )
-    except Exception as e:
-        print(e)
-        raise e
-
-    if output_key not in cloud_output:
-        raise Exception(f"Key {output_key} not in Cloud Output {cloud_output}")
+    cloud_output = workspace.get_backend().get_cloud_output_value_by_name(
+        workspace.get_resource_state_uuid(),
+        component_name,
+        resource_ruuid,
+        resource_name,
+        output_key,
+    )
 
     if not only_value:
         print(f"{output_key} -> {cloud_output.get(output_key)}")
