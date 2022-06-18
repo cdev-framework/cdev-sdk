@@ -329,7 +329,8 @@ class OutputManager:
             for item in new_resource:
                 if previous_resource.get(item) != new_resource.get(item):
                     self._console.print(
-                        f"           [bold black]{function_name} Diff {item}  :[/bold black][bold blue]: {previous_resource.get(item)} -> {new_resource.get(item)} [/bold blue]"
+                        f"           [bold black]{function_name} Diff {item}  :[/bold black][bold blue]: "
+                        f"{previous_resource.get(item)} -> {new_resource.get(item)} [/bold blue]"
                     )
 
 
