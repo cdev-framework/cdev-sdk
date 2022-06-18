@@ -50,11 +50,6 @@ class sync_files(BaseCommand):
             help="By default we ignore certain files and watch for some others. If you want complete control on what is considered a change, turn this on and set your custom filters using --watch and --ignore",
         )
         parser.add_argument(
-            "--disable-prompt",
-            action="store_true",
-            help="By default we ask for confirmation before deploying changes. Turn this on and perform deployments w/o requiring confirmation",
-        )
-        parser.add_argument(
             "--watch",
             help="Watch any file that matches the following pattern [*.html, *.js, *.jpg, *.png]",
         )
