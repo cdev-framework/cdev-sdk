@@ -47,34 +47,26 @@ class sync_files(BaseCommand):
         parser.add_argument(
             "--no-default",
             action="store_true",
-            help="by default we ignore certain files and watch for some others. If you want complete control on what is considered a change, turn this on and set your custom filters using --watch and --ignore",
-            required='--keep-in-sync' in sys.argv
+            help="By default we ignore certain files and watch for some others. If you want complete control on what is considered a change, turn this on and set your custom filters using --watch and --ignore",
         )
         parser.add_argument(
             "--disable-prompt",
             action="store_true",
-            help="by default we ask for confirmation before deploying changes. Turn this on and perform deployments w/o requiring confirmation",
-            required='--keep-in-sync' in sys.argv
+            help="By default we ask for confirmation before deploying changes. Turn this on and perform deployments w/o requiring confirmation",
         )
         parser.add_argument(
             "--watch",
-            action="store_true",
-            help="watch any file that matches the following pattern ['*.html', '*.js', '*.jpg', '*.png']",
-            required='--keep-in-sync' in sys.argv,
-            type=str,
+            help="Watch any file that matches the following pattern [*.html, *.js, *.jpg, *.png]",
         )
         parser.add_argument(
             "--ignore",
-            action="store_true",
-            help="do not watch for any file that matches the following pattern ['.cdev/**', '__pycache__/*', '*.py']",
-            required='--keep-in-sync' in sys.argv,
-            type=str,
+            help="Do not watch for any file that matches the following pattern [.cdev/**, __pycache__/*, *.py]",
         )
 
     def command(self, *args, **kwargs) -> None:
 
         self._extract_arguments(*args, **kwargs)
-        if kwargs.get("keep-in-sync"):
+        if kwargs.get("keep_in_sync"):
             self._watch_filesystem()
         else:
             self._perform_deployment()

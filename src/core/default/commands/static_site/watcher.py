@@ -2,7 +2,6 @@ import time
 from typing import Optional, Callable
 
 from pydantic import FilePath
-from rich import Console
 from watchdog.tricks import Trick
 
 from core.constructs.output_manager import OutputManager
@@ -23,7 +22,7 @@ class StaticSiteWatcher(Trick):
         no_default: Optional[bool] = False,
         patterns_to_watch: Optional[str] = None,
         patterns_to_ignore: Optional[str] = None,
-        output: Console = None,
+        output: "Console" = None,
     ) -> None:
 
         self._base_folder = base_folder
@@ -60,7 +59,7 @@ class StaticSiteWatcher(Trick):
         )
 
     def watch(self) -> None:
-        self._output._console.print("Watching for changes in the static site...")
+        self._output.print("Watching for changes in the static site...")
         # Prevent multiples observers
         self._stop()
 
