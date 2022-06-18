@@ -100,7 +100,9 @@ class OutputManager:
             self._print_component_reference_differences(
                 component_diff, reference_differences
             )
-            self._print_resource_differences(resource_differences)
+            self._print_resource_differences(
+                resource_differences
+            )
 
     def create_task(
         self,
@@ -320,10 +322,17 @@ class OutputManager:
                 )
 
     def _print_resource_differences(
-        self, resource_differences:list
+            self,
+            resource_differences: List[Resource_Difference],
     ) -> None:
-        try:
-            for i in range(1, len(resource_differences), 1):
+        """Print details of the resource differences in the component
+
+        Args:
+            component_diff (Component_Difference)
+            resource_differences (List[Resource_Difference])
+        """
+        for i in range(0, len(resource_differences), 1):
+            if resource_differences[i].action_type == Resource_Change_Type.UPDATE_IDENTITY:
                 previous_resource = resource_differences[i].previous_resource.dict().get("configuration")
                 function_name = resource_differences[i].previous_resource.dict().get("name")
                 new_resource = resource_differences[i].new_resource.dict().get("configuration")
@@ -333,9 +342,6 @@ class OutputManager:
                             f"           [bold black]{function_name} Diff {item}  :[/bold black][bold blue]: "
                             f"{previous_resource.get(item)} -> {new_resource.get(item)} [/bold blue]"
                         )
-        except:
-            pass
-
 
 class OutputTask:
     """
