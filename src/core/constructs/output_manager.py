@@ -100,9 +100,7 @@ class OutputManager:
             self._print_component_reference_differences(
                 component_diff, reference_differences
             )
-            self._print_resource_differences(
-                resource_differences
-            )
+            self._print_resource_differences(resource_differences)
 
     def create_task(
         self,
@@ -289,8 +287,10 @@ class OutputManager:
                 )
 
                 for item in resource_diff.new_resource.dict().keys():
-                    if resource_diff.previous_resource.dict().get(item) != resource_diff.new_resource.dict().get(item):
-                        # Add additional helper function to pretty print changes in FrozenDict and FrozenSet Output 
+                    if resource_diff.previous_resource.dict().get(
+                        item
+                    ) != resource_diff.new_resource.dict().get(item):
+                        # Add additional helper function to pretty print changes in FrozenDict and FrozenSet Output
                         self._console.print(
                             f"           [bold black]Diff {item}:[/bold black]  {resource_diff.previous_resource.dict().get(item)} -> { resource_diff.new_resource.dict().get(item)} "
                         )
@@ -327,7 +327,7 @@ class OutputManager:
                 self._console.print(
                     f"        [bold red]Delete reference:[/bold red][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]"
                 )
-                
+
 
 class OutputTask:
     """
