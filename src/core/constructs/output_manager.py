@@ -328,7 +328,6 @@ class OutputManager:
         """Print details of the resource differences in the component
 
         Args:
-            component_diff (Component_Difference)
             resource_differences (List[Resource_Difference])
         """
         for i in range(0, len(resource_differences), 1):
