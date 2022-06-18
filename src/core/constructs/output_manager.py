@@ -288,6 +288,13 @@ class OutputManager:
                     f"        [bold yellow]Update:[/bold yellow][bold blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
                 )
 
+                for item in resource_diff.new_resource.dict().keys():
+                    if resource_diff.previous_resource.dict().get(item) != resource_diff.new_resource.dict().get(item):
+                        # Add additional helper function to pretty print changes in FrozenDict and FrozenSet Output 
+                        self._console.print(
+                            f"           [bold black]Diff {item}:[/bold black]  {resource_diff.previous_resource.dict().get(item)} -> { resource_diff.new_resource.dict().get(item)} "
+                        )
+
             elif resource_diff.action_type == Resource_Change_Type.UPDATE_NAME:
                 self._console.print(
                     f"        [bold yellow]Update Name:[/bold yellow][bold blue] from {resource_diff.previous_resource.name} to {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
@@ -320,27 +327,7 @@ class OutputManager:
                 self._console.print(
                     f"        [bold red]Delete reference:[/bold red][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]"
                 )
-
-    def _print_resource_differences(
-            self,
-            resource_differences: List[Resource_Difference],
-    ) -> None:
-        """Print details of the resource differences in the component
-
-        Args:
-            resource_differences (List[Resource_Difference])
-        """
-        for i in range(0, len(resource_differences), 1):
-            if resource_differences[i].action_type == Resource_Change_Type.UPDATE_IDENTITY:
-                previous_resource = resource_differences[i].previous_resource.dict().get("configuration")
-                function_name = resource_differences[i].previous_resource.dict().get("name")
-                new_resource = resource_differences[i].new_resource.dict().get("configuration")
-                for item in new_resource:
-                    if previous_resource.get(item) != new_resource.get(item):
-                        self._console.print(
-                            f"           [bold black]{function_name} Diff {item}  :[/bold black][bold blue]: "
-                            f"{previous_resource.get(item)} -> {new_resource.get(item)} [/bold blue]"
-                        )
+                
 
 class OutputTask:
     """
