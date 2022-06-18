@@ -322,16 +322,19 @@ class OutputManager:
     def _print_resource_differences(
         self, resource_differences:list
     ) -> None:
-        for i in range(1, len(resource_differences), 1):
-            previous_resource = resource_differences[i].previous_resource.dict().get("configuration")
-            function_name = resource_differences[i].previous_resource.dict().get("name")
-            new_resource = resource_differences[i].new_resource.dict().get("configuration")
-            for item in new_resource:
-                if previous_resource.get(item) != new_resource.get(item):
-                    self._console.print(
-                        f"           [bold black]{function_name} Diff {item}  :[/bold black][bold blue]: "
-                        f"{previous_resource.get(item)} -> {new_resource.get(item)} [/bold blue]"
-                    )
+        try:
+            for i in range(1, len(resource_differences), 1):
+                previous_resource = resource_differences[i].previous_resource.dict().get("configuration")
+                function_name = resource_differences[i].previous_resource.dict().get("name")
+                new_resource = resource_differences[i].new_resource.dict().get("configuration")
+                for item in new_resource:
+                    if previous_resource.get(item) != new_resource.get(item):
+                        self._console.print(
+                            f"           [bold black]{function_name} Diff {item}  :[/bold black][bold blue]: "
+                            f"{previous_resource.get(item)} -> {new_resource.get(item)} [/bold blue]"
+                        )
+        except:
+            pass
 
 
 class OutputTask:
