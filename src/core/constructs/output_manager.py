@@ -100,21 +100,7 @@ class OutputManager:
             self._print_component_reference_differences(
                 component_diff, reference_differences
             )
-            try:
-                previous_resource = resource_differences[1].previous_resource.__dict__[
-                    "configuration"
-                ]
-                new_resource = resource_differences[1].new_resource.__dict__[
-                    "configuration"
-                ]
-                new_resource = dict(new_resource)
-                for item in new_resource:
-                    if previous_resource[item] != new_resource[item]:
-                        self._print_resource_differences(
-                            str(item), str(previous_resource[item]), new_resource[item]
-                        )
-            except:
-                pass
+            self._print_resource_differences(resource_differences)
 
     def create_task(
         self,
@@ -334,11 +320,17 @@ class OutputManager:
                 )
 
     def _print_resource_differences(
-        self, resource_name: str, previous_value: str, new_value: str
+        self, resource_differences:list
     ) -> None:
-        self._console.print(
-            f"           [bold black]Diff {resource_name}  :[/bold black][bold blue]: {previous_value} -> {new_value} [/bold blue]"
-        )
+        for i in range(1, len(resource_differences), 1):
+            previous_resource = resource_differences[i].previous_resource.dict().get("configuration")
+            function_name = resource_differences[i].previous_resource.dict().get("name")
+            new_resource = resource_differences[i].new_resource.dict().get("configuration")
+            for item in new_resource:
+                if previous_resource.get(item) != new_resource.get(item):
+                    self._console.print(
+                        f"           [bold black]{function_name} Diff {item}  :[/bold black][bold blue]: {previous_resource.get(item)} -> {new_resource.get(item)} [/bold blue]"
+                    )
 
 
 class OutputTask:
