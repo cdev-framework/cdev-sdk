@@ -20,6 +20,7 @@ All release will have a corresponding git tag.
 - Add user input for setting artifact bucket when creating a new project
 - Add query, tail and limit args to logging function
 - Add sync to watch for filesystem changes
+- Add keep-in-sync argument to _cdev run static_site.sync <resource>_
 
 ### Fixed
 - Fix issues with a bucket when it is not empty and we need to delete it
