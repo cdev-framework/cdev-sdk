@@ -59,7 +59,7 @@ class StaticSiteWatcher(Trick):
         )
 
     def watch(self) -> None:
-        self._output.print("Watching for changes in the static site...")
+        self._output.write("Watching for changes in the static site...")
         # Prevent multiples observers
         self._stop()
 
@@ -89,8 +89,6 @@ class StaticSiteWatcher(Trick):
         observer.join()
 
     def _deploy_static_files(self):
-        self._output.print(
-            "Ignoring future changes until deployment is finished"
-        )
+        self._output.write("Ignoring future changes until deployment is finished")
         self._deployment_function()
-        self._output.print("Enabling watch again")
+        self._output.write("Enabling watch again")
