@@ -8,8 +8,6 @@ from typing import Optional, List
 from pydantic import (
     BaseModel,
     BaseSettings,
-    DirectoryPath,
-    FilePath,
 )
 
 from core.utils.module_loader import import_class, import_module
