@@ -13,7 +13,8 @@ from rich.progress import (
     TimeElapsedColumn,
     SpinnerColumn,
 )
-from typing import Callable, List, Dict, Any, Tuple, TypeVar
+from typing import Callable, List, Dict, Any, Tuple, TypeVar, Optional
+
 
 from networkx.algorithms.dag import topological_sort
 from networkx.classes.digraph import DiGraph
@@ -31,7 +32,7 @@ from core.constructs.resource import (
     Resource_Reference_Change_Type,
     ResourceModel,
 )
-from core.constructs.backend import Backend
+from core.constructs.backend import Backend, Backend_Configuration, load_backend
 from core.constructs.mapper import CloudMapper
 from core.constructs.components import (
     Component,
@@ -62,23 +63,32 @@ class Workspace_Info(BaseModel):
     python_module: str
     python_class: str
     settings_info: Settings_Info
-    config: Dict
+    backend_info: Backend_Configuration
+    resource_state_uuid: str
+    initialization_modules: Optional[List[str]]
+    config: Optional[Dict]
 
     def __init__(
         __pydantic_self__,
         python_module: str,
         python_class: str,
         settings_info: Settings_Info,
-        config: Dict,
+        backend_info: Backend_Configuration,
+        resource_state_uuid: str,
+        initialization_modules: Optional[List[str]] = [],
+        config: Optional[Dict] = {},
     ) -> None:
         """
         Represents the data needed to create a new cdev workspace:
 
         Args:
-            python_module: The name of the python module to load as the workspace
-            python_class: The name of the class in the python module to initialize
-            settings_info: Settings_Info
-            config: configuration option for the workspace
+            python_module (str): The name of the python module to load as the workspace
+            python_class (str): The name of the class in the python module to initialize
+            settings_info (Settings_Info): Information to load settings of the `Workspace`
+            backend_info (Backend_Configuration): Configuration information for the `Backend`
+            resource_state_uuid (str): The `Backend` resource state uuid this `Workspace` will execute against
+            initialization_modules (Optional[List[str]]): List of Python modules to dynamically import to initialize `Workspace`
+            config (Optional[Dict]): configuration option for the workspace
 
         """
 
@@ -87,6 +97,9 @@ class Workspace_Info(BaseModel):
                 "python_module": python_module,
                 "python_class": python_class,
                 "settings_info": settings_info,
+                "backend_info": backend_info,
+                "resource_state_uuid": resource_state_uuid,
+                "initialization_modules": initialization_modules,
                 "config": config,
             }
         )
@@ -130,7 +143,8 @@ class Workspace:
     the object should remain a read only object to prevent components from changing configuration beyond their scope.
     """
 
-    _settings: Settings
+    _settings: Settings = None
+    _resource_state_uuid: str = None
 
     @classmethod
     def instance(cls) -> "Workspace":
@@ -171,14 +185,57 @@ class Workspace:
 
         _GLOBAL_WORKSPACE = None
 
-    def initialize_workspace(self, workspace_configuration: Workspace_Info) -> None:
+    def initialize_workspace(
+        self,
+        settings_info: Settings_Info,
+        backend_info: Backend_Configuration,
+        resource_state_uuid: str,
+        initialization_modules: Optional[List[str]] = [],
+        configuration: Dict = {},
+    ) -> None:
         """Run the configuration needed to initialize a workspace. This should generally only be called by the Core framework itself to ensure that the
         life cycle of a workspace is correctly handled.
 
         Args:
-            workspace_configuration(Workspace_Info)
+            settings_info (Settings_Info): Information to load the `Workspace` settings
+            backend_info (Backend_Configuration): information to connect to the `Backend`
+            resource_state_uuid (str): resource state to execute commands over
+            configuration (Dict): additional configuration
         """
-        raise NotImplementedError
+        try:
+            initialized_backend = load_backend(backend_info)
+            self.set_backend(initialized_backend)
+        except Exception as e:
+            print(f"Could not load the load backend")
+            raise e
+
+        try:
+            top_level_resource_states = (
+                initialized_backend.get_top_level_resource_states()
+            )
+        except Exception as e:
+            raise e
+
+        if resource_state_uuid not in set([x.uuid for x in top_level_resource_states]):
+            raise Exception(
+                f"{resource_state_uuid} not in loaded backend resource states: ({top_level_resource_states})"
+            )
+
+        self.set_resource_state_uuid(resource_state_uuid)
+
+        try:
+            initialized_settings = initialize_settings(settings_info)
+            self.settings = initialized_settings
+        except Exception as e:
+            print(f"Could not load the load backend")
+            raise e
+
+        if initialization_modules:
+            for initialize_module in initialization_modules:
+                try:
+                    module_loader.import_module(initialize_module)
+                except Exception as e:
+                    raise e
 
     def destroy_workspace(self) -> None:
         """Tear down the current Workspace
@@ -193,22 +250,18 @@ class Workspace:
     ############################
 
     @property
-    def settings(cls) -> Settings:
+    def settings(self) -> Settings:
         """Get settings object
 
         Returns:
             Settings
         """
-        return Workspace._settings
+        return self._settings
 
     @settings.setter
-    def settings(cls, value: Settings):
-        """Set settings object
-
-        Returns:
-            Settings
-        """
-        Workspace._settings = value
+    def settings(self, value: Settings) -> None:
+        """Set settings object"""
+        self._settings = value
 
     ############################
     ##### Initialized
@@ -332,6 +385,9 @@ class Workspace:
         """
         raise NotImplementedError
 
+    def clear_output(self) -> None:
+        raise NotImplementedError
+
     #######################
     ##### Components
     #######################
@@ -392,9 +448,7 @@ class Workspace:
 
     def set_resource_state_uuid(self, resource_state_uuid: str) -> None:
         """Set the Resource State UUID to denote the Resource State that this Workspace will execute over.
-
         Note that this function should only be called during the `Workspace Initialization` part of the Cdev lifecycle.
-
         Arguments:
             resource_state_uuid (str): Resource State UUID from the Backend
         """
@@ -402,9 +456,7 @@ class Workspace:
 
     def get_resource_state_uuid(self) -> str:
         """Get the Resource State UUID that this Workspace is executing over.
-
         Note that this function should only be called during the `Workspace Initialized` part of the Cdev lifecycle.
-
         Returns:
             resource_state_uuid (str): Resource State UUID from the Backend
         """
@@ -949,7 +1001,7 @@ def load_and_initialize_workspace(config: Workspace_Info) -> None:
 
 
 def load_workspace(config: Workspace_Info) -> Workspace:
-    """Load and initialize the workspace from the given configuration
+    """Load the workspace from the given configuration
 
     Args:
         config (Workspace_Info)
@@ -984,7 +1036,6 @@ def load_workspace(config: Workspace_Info) -> Workspace:
         raise Exception
 
     try:
-        # initialize the backend obj with the provided configuration values
         return workspace_class()
 
     except Exception as e:
@@ -994,22 +1045,30 @@ def load_workspace(config: Workspace_Info) -> Workspace:
         raise e
 
 
-def initialize_workspace(
-    workspace: Workspace, settings: Settings_Info, config: Dict
-) -> None:
+def initialize_workspace(workspace: Workspace, workspace_info: Workspace_Info) -> None:
     """Initialize the given workspace
 
     Args:
-        workspace (Workspace)
-        settings (Settings_Info)
-        config (Dict)
+        workspace (Workspace): _description_
+        workspace_info (Workspace_Info): _description_
+
+    Raises:
+        e: _description_
     """
     try:
-        Workspace.settings = initialize_settings(settings)
-
+        workspace.set_state(Workspace_State.INITIALIZING)
         # initialize the backend obj with the provided configuration values
-        workspace.initialize_workspace(config)
+        workspace.initialize_workspace(
+            settings_info=workspace_info.settings_info,
+            backend_info=workspace_info.backend_info,
+            resource_state_uuid=workspace_info.resource_state_uuid,
+            initialization_modules=workspace_info.initialization_modules,
+            configuration=workspace_info.config,
+        )
+        workspace.set_state(Workspace_State.INITIALIZED)
 
     except Exception as e:
-        print(f"Could not initialize {workspace} Class from config {config}; {e}")
+        print(
+            f"Could not initialize {workspace} Class from config {workspace_info}; {e}"
+        )
         raise e

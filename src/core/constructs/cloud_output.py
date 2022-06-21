@@ -948,7 +948,6 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
                 {},
             )
         )
-        print(self._operations)
         return self
 
     def ljust(self, width: SupportsIndex, __fillchar: str = "") -> "Cloud_Output_Str":

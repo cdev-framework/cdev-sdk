@@ -8,8 +8,6 @@ from typing import Optional, List
 from pydantic import (
     BaseModel,
     BaseSettings,
-    DirectoryPath,
-    FilePath,
 )
 
 from core.utils.module_loader import import_class, import_module
@@ -39,7 +37,7 @@ class Settings(BaseSettings):
     CACHE_DIRECTORY: str = os.path.join(INTERMEDIATE_FOLDER_LOCATION, "cache")
 
     # Bucket to use as a place to store resource artifacts in the cloud
-    S3_ARTIFACTS_BUCKET: str = None
+    S3_ARTIFACTS_BUCKET: Optional[str] = None
 
     # AWS account information
     AWS_REGION: str = "us-east-1"

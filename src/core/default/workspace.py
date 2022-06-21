@@ -21,8 +21,9 @@ from core.constructs.cloud_output import (
     evaluate_dynamic_output,
     cloud_output_model,
 )
+from core.constructs.settings import Settings_Info
 
-from ..utils import file_manager, module_loader
+from ..utils import file_manager
 
 
 DEFAULT_COMMAND_LOCATIONS = ["core.default.commands"]
@@ -31,16 +32,11 @@ ROOT_FOLDER_NAME = ".cdev"
 WORKSPACE_FILE_NAME = "workspace_info.json"
 
 
-class local_workspace_configuration(BaseModel):
-    initialization_module: str
-    backend_configuration: Backend_Configuration
-    resource_state_uuid: Optional[str]
-
-
 class local_workspace(Workspace):
     """
-    A singleton that encapsulates the configuration of a workspace that is implemented on the local filesystem. The singleton can be accessed during different
-    parts of the lifecycle of a cdev core command execution. When this singleton is created, it is registered as the global workspace for that execution.
+    A singleton that implements a workspace that is on the local filesystem. The singleton can be accessed during different
+    parts of the lifecycle of a cdev core command execution. When this singleton is created, it is registered as the global
+    workspace for that execution.
     """
 
     _instance = None
@@ -48,14 +44,12 @@ class local_workspace(Workspace):
     _COMMANDS = DEFAULT_COMMAND_LOCATIONS
     _MAPPERS = []
     _COMPONENTS = []
+    _OUTPUT: List[Tuple[str, str, cloud_output_model]] = []
 
     _resource_state_uuid: str = None
-
     _backend: Backend = None
 
     _state: Workspace_State = Workspace_State.UNINITIALIZED
-
-    _output: List[Tuple[str, str, cloud_output_model]] = []
 
     _current_component: str = None
 
@@ -68,11 +62,12 @@ class local_workspace(Workspace):
 
             # Load the backend
             cls._instance._backend = None
+            cls._instance._resource_state_uuid = None
 
             cls._instance._COMMANDS = DEFAULT_COMMAND_LOCATIONS
             cls._instance._MAPPERS = []
             cls._instance._COMPONENTS = []
-            cls._instance._resource_state_uuid = None
+            cls._instance._OUTPUT = []
 
             Workspace.set_global_instance(cls._instance)
 
@@ -83,33 +78,20 @@ class local_workspace(Workspace):
         cls._instance = None
 
     def initialize_workspace(
-        self, workspace_configuration_dict: local_workspace_configuration
+        self,
+        settings_info: Settings_Info,
+        backend_info: Backend_Configuration,
+        resource_state_uuid: str,
+        initialization_modules: Optional[List[str]] = [],
+        configuration: Dict = {},
     ) -> None:
-
-        # It is the responsibility of the higher up callers to set the correct states for initialization.
-        # This allows the flexibility of higher up frameworks injecting initialization steps into the process.
-        workspace_configuration = local_workspace_configuration(
-            **workspace_configuration_dict
+        super().initialize_workspace(
+            settings_info=settings_info,
+            backend_info=backend_info,
+            resource_state_uuid=resource_state_uuid,
+            initialization_modules=initialization_modules,
+            configuration=configuration,
         )
-
-        try:
-            backend_config = workspace_configuration.backend_configuration
-            self.set_backend(load_backend(backend_config))
-        except Exception as e:
-            print(f"Could not load the load backend")
-            raise e
-
-        module_loader.import_module(workspace_configuration.initialization_module)
-
-        if workspace_configuration.resource_state_uuid:
-            if not workspace_configuration.resource_state_uuid in set(
-                [x.uuid for x in self._backend.get_top_level_resource_states()]
-            ):
-                raise Exception(
-                    f"{workspace_configuration.resource_state_uuid} not in loaded backend ({self._backend.get_top_level_resource_states()})"
-                )
-
-        self.set_resource_state_uuid(workspace_configuration.resource_state_uuid)
 
     def destroy_workspace(self) -> None:
         Workspace.destroy_workspace(self)
@@ -135,6 +117,34 @@ class local_workspace(Workspace):
 
         return rv
 
+    @wrap_phase([Workspace_State.INITIALIZING])
+    def set_resource_state_uuid(self, resource_state_uuid: str) -> None:
+        """Set the Resource State UUID to denote the Resource State that this Workspace will execute over.
+
+        Note that this function should only be called during the `Workspace Initialization` part of the Cdev lifecycle.
+
+        Arguments:
+            resource_state_uuid (str): Resource State UUID from the Backend
+        """
+        self._resource_state_uuid = resource_state_uuid
+
+    @wrap_phase(
+        [
+            Workspace_State.INITIALIZED,
+            Workspace_State.EXECUTING_FRONTEND,
+            Workspace_State.EXECUTING_BACKEND,
+        ]
+    )
+    def get_resource_state_uuid(self) -> str:
+        """Get the Resource State UUID that this Workspace is executing over.
+
+        Note that this function should only be called during the `Workspace Initialized` part of the Cdev lifecycle.
+
+        Returns:
+            resource_state_uuid (str): Resource State UUID from the Backend
+        """
+        return self._resource_state_uuid
+
     #######################
     ##### Display Output
     #######################
@@ -146,7 +156,7 @@ class local_workspace(Workspace):
         ]
     )
     def display_output(self, tag: str, output: Cloud_Output) -> None:
-        self._output.append((tag, self._current_component, output.render()))
+        self._OUTPUT.append((tag, self._current_component, output.render()))
 
     @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_BACKEND])
     def render_outputs(self) -> List[Tuple[str, Any]]:
@@ -155,7 +165,7 @@ class local_workspace(Workspace):
         if not self._current_component:
             raise Exception
 
-        for tag, component, cloud_output in self._output:
+        for tag, component, cloud_output in self._OUTPUT:
             resolved_value = self.get_backend().get_cloud_output_value_by_name(
                 self.get_resource_state_uuid(),
                 component,
@@ -165,11 +175,15 @@ class local_workspace(Workspace):
             )
 
             if isinstance(cloud_output, cloud_output_dynamic_model):
+                # If the cloud output object contains computations than evaluate the computations over the cloud output
                 resolved_value = evaluate_dynamic_output(resolved_value, cloud_output)
 
             rv.append((tag, resolved_value))
 
         return rv
+
+    def clear_output(self) -> None:
+        self._OUTPUT = []
 
     #################
     ##### Mappers
@@ -256,20 +270,6 @@ class local_workspace(Workspace):
     )
     def get_backend(self) -> Backend:
         return self._backend
-
-    @wrap_phase([Workspace_State.INITIALIZING])
-    def set_resource_state_uuid(self, resource_state_uuid: str) -> None:
-        self._resource_state_uuid = resource_state_uuid
-
-    @wrap_phase(
-        [
-            Workspace_State.INITIALIZED,
-            Workspace_State.EXECUTING_FRONTEND,
-            Workspace_State.EXECUTING_BACKEND,
-        ]
-    )
-    def get_resource_state_uuid(self) -> str:
-        return self._resource_state_uuid
 
 
 class local_workspace_manager(WorkspaceManager):

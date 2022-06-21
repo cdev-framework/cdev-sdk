@@ -1,6 +1,9 @@
 import cmd
+import readline
+import os
 
 from argparse import ArgumentParser
+from core.constructs.workspace import Workspace
 from typing import List, Tuple
 
 import aurora_data_api
@@ -22,8 +25,12 @@ class shell(BaseCommand):
             type=str,
             help="The database to execute on. Name must include component name. ex: comp1.myDb",
         )
-        parser.add_argument('-c', '--command', nargs="+", type=str, help="sql command to execute")
-        parser.add_argument("-f", "--file", nargs="+", help="execute sql commands from a file")
+        parser.add_argument(
+            "-c", "--command", nargs="+", type=str, help="sql command to execute"
+        )
+        parser.add_argument(
+            "-f", "--file", nargs="+", help="execute sql commands from a file"
+        )
 
     def command(self, *args, **kwargs) -> None:
         (
@@ -49,8 +56,15 @@ class shell(BaseCommand):
                 sql_commands, cluster_arn, secret_arn, db_name
             )
         else:
+            history_location = os.path.join(
+                Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION, "dbshell"
+            )
+            if not os.path.isfile(history_location):
+                # touch the file
+                with open(history_location, "a"):
+                    pass
             interactive_shell(
-                fmt(Console()), cluster_arn, secret_arn, db_name
+                fmt(Console()), cluster_arn, secret_arn, db_name, history_location
             ).cmdloop()
 
     def run_sql_command(
@@ -140,15 +154,25 @@ class fmt:
 
 class interactive_shell(cmd.Cmd):
     def __init__(
-        self, fmt: fmt, cluster_arn: str, secret_arn: str, database_name: str
+        self,
+        fmt: fmt,
+        cluster_arn: str,
+        secret_arn: str,
+        database_name: str,
+        history_location: str,
     ) -> None:
         super().__init__()
+        self.histfile = history_location
+        readline.read_history_file(self.histfile)
         self.prompt = f"{database_name}=> "
         self._db_connection = db_connection(cluster_arn, secret_arn, database_name)
         self.formater = fmt
 
     def default(self, line) -> None:
         try:
+            readline.add_history(line)
+            readline.insert_text(readline.get_line_buffer())
+            readline.write_history_file(self.histfile)
             col_descriptions, rows, updated_row_cnt = self._db_connection.execute(line)
             self.formater.print_results(col_descriptions, rows, updated_row_cnt)
         except Exception as e:

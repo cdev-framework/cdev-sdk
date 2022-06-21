@@ -1,34 +1,34 @@
 import time
-from typing import Optional
+from typing import Optional, Callable
 
+from pydantic import FilePath
 from watchdog.tricks import Trick
 
-from core.constructs.workspace import Workspace
 from core.constructs.output_manager import OutputManager
-from core.commands.deploy_differences import execute_deployment
 from watchdog.observers import Observer
 
 
-class WorkspaceWatcher(Trick):
+class StaticSiteWatcher(Trick):
     """Executes some commands in response to modified files."""
 
-    _default_patterns_to_watch = ["src/**/*.py", "settings/*"]
-    _default_patterns_to_ignore = [".cdev/**", "__pycache__/*"]
+    _default_patterns_to_watch = ["*.html", "*.js", "*.jpg", "*.png"]
+    _default_patterns_to_ignore = [".cdev/**", "__pycache__/*", "*.py"]
 
     def __init__(
         self,
-        workspace: Workspace,
-        output: OutputManager,
+        base_folder: FilePath,
+        deployment_function: Callable,
         no_prompt: Optional[bool] = False,
         no_default: Optional[bool] = False,
         patterns_to_watch: Optional[str] = None,
         patterns_to_ignore: Optional[str] = None,
+        output: "Console" = None,
     ) -> None:
 
+        self._base_folder = base_folder
+        self._deployment_function = deployment_function
         self._no_prompt = no_prompt
-        self._workspace = workspace
         self._output = output
-        self._base_folder = self._workspace.settings.BASE_PATH
         self._observer = None
         self._perform_deployment = False
 
@@ -59,7 +59,7 @@ class WorkspaceWatcher(Trick):
         )
 
     def watch(self) -> None:
-        self._output._console.print("Watching for changes in the workspace...")
+        self._output.write("Watching for changes in the static site...")
         # Prevent multiples observers
         self._stop()
 
@@ -69,14 +69,7 @@ class WorkspaceWatcher(Trick):
         try:
             while True:
                 if self._perform_deployment:
-                    self._output._console.print(
-                        "Ignoring future changes until deployment is finished"
-                    )
-                    execute_deployment(
-                        self._workspace, self._output, no_prompt=self._no_prompt
-                    )
-                    self._workspace.clear_output()
-                    self._output._console.print("Enabling watch again")
+                    self._deploy_static_files()
                     self._perform_deployment = False
                 else:
                     time.sleep(1)
@@ -94,3 +87,8 @@ class WorkspaceWatcher(Trick):
         self._observer = None
         observer.stop()
         observer.join()
+
+    def _deploy_static_files(self):
+        self._output.write("Ignoring future changes until deployment is finished")
+        self._deployment_function()
+        self._output.write("Enabling watch again")
