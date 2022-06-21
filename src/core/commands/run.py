@@ -31,8 +31,4 @@ def run_command(
         output (OutputManager): Output manager for sending messages to the console.
         cli_args (Namespace): Arguments for the command.
     """
-    try:
-        workspace.execute_command(subcommand, subcommand_args)
-    except Exception as e:
-        print(e)
-        return
+    workspace.execute_command(subcommand, subcommand_args)
