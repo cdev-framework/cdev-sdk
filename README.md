@@ -30,11 +30,20 @@ $ . ./.venv/bin/activate
 $ pip install cdev
 ```
 
-Create a new project, see the resources in the created project, and create the project
+Create a new project, see the resources in the created project, and create the project.
+
+**When creating a new project, you will be prompted to link to a `S3 Bucket` for your deployment artifacts.**
+
+**You will need to provide a `S3 Bucket` in your Aws Account. If you do not already have one, you can create a bucket with the following command. This bucket can be used for managing the deployment artifacts for multiple projects.**
+```bash
+aws s3 mb s3://<bucket-name>
+```
+
 ```
 $ cdev
 
 $ cdev init demo-project --template quick-start
+Name of bucket to store artifacts (): <bucket-name>
 
 $ cdev plan
 
@@ -95,7 +104,7 @@ $ cdev init demo --template resources-test
 ```
 
 ## Post Alpha Road Map and Limitations
-We are currently in the **very very** early stage of creating a comprehensive framework that helps teams throughout the whole cloud development process. As with any tool, it is important to understand what it is capabale and **not** capable of doing. Here are a list of outstanding things that we are working (or thinking) on.
+We are currently in the **very very** early stage of creating a comprehensive framework that helps teams throughout the whole cloud development process. As with any tool, it is important to understand what it is capable and **not** capable of doing. Here are a list of outstanding things that we are working (or thinking) on.
 
 - Remote Backend
     - The current state of cloud resources are stored in json files. This is extremely limiting as it prevents multiple people from working on the same state at the same time. We are working on creating a DB that can used as a remote backend that will allow teams to collaborate more effectively.
