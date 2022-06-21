@@ -100,7 +100,7 @@ class OutputManager:
             self._print_component_reference_differences(
                 component_diff, reference_differences
             )
-            self._print_resource_differences(resource_differences)
+            # self._print_resource_differences(resource_differences)
 
     def create_task(
         self,
@@ -285,16 +285,41 @@ class OutputManager:
                 self._console.print(
                     f"        [bold yellow]Update:[/bold yellow][bold blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
                 )
-
-                for item in resource_diff.new_resource.dict().keys():
+                for key in resource_diff.new_resource.dict().keys():
                     if resource_diff.previous_resource.dict().get(
-                        item
-                    ) != resource_diff.new_resource.dict().get(item):
-                        # Add additional helper function to pretty print changes in FrozenDict and FrozenSet Output
-                        self._console.print(
-                            f"           [bold black]Diff {item}:[/bold black]  {resource_diff.previous_resource.dict().get(item)} -> { resource_diff.new_resource.dict().get(item)} "
-                        )
-
+                        key
+                    ) != resource_diff.new_resource.dict().get(key):
+                        if type(resource_diff.previous_resource.dict().get(key)) == frozenset:
+                            event = resource_diff.previous_resource.dict().get(key)
+                            event2 = resource_diff.new_resource.dict().get(key)
+                            dict_prev = dict()
+                            dict_new = dict()
+                            for item in event:
+                                for key2 in item:
+                                    dict_new[key2] = item.get(key2)
+                            for item in event2:
+                                for key2 in item:
+                                    dict_prev[key2] = item.get(key2)
+                            for key2 in dict_prev:
+                                if dict_prev[key2] != dict_new[key2]:
+                                    self._console.print(
+                                        f"           [bold black]Diff {key}:[/bold black]  {dict_prev[key2]} -> {dict_new[key2]} "
+                                    )
+                        elif type(resource_diff.previous_resource.dict().get(key)) != str:
+                            for item in resource_diff.previous_resource.dict().get(key):
+                                if resource_diff.previous_resource.dict().get(key).get(item) != \
+                                        resource_diff.new_resource.dict().get(key).get(item):
+                                    self._console.print(
+                                        f"           [bold black]Diff {item}:[/bold black]  "
+                                        f"{resource_diff.previous_resource.dict().get(key).get(item)} ->"
+                                        f" {resource_diff.new_resource.dict().get(key).get(item)} "
+                                    )
+                        else:
+                            self._console.print(
+                                f"           [bold black]Diff {key}:[/bold black]  "
+                                f"{resource_diff.previous_resource.dict().get(key)} -> "
+                                f"{ resource_diff.new_resource.dict().get(key)} "
+                            )
             elif resource_diff.action_type == Resource_Change_Type.UPDATE_NAME:
                 self._console.print(
                     f"        [bold yellow]Update Name:[/bold yellow][bold blue] from {resource_diff.previous_resource.name} to {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
