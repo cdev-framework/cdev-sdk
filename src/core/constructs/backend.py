@@ -11,7 +11,7 @@ a concrete implementation.
 This file also contains the definition of how to configure and dynamically load a backend class. To denote a
 concrete implementation, a python `module` and `class` must be provide. These should both be strings. They are
 used to load a class that inherits from the base `Backend` class. It also takes in a generic dictionary to be
-passed as configuration into the dynamicall loaded class.
+passed as configuration into the dynamically loaded class.
 
 """
 import inspect
@@ -136,7 +136,7 @@ class Backend:
     def update_component(
         self, resource_state_uuid: str, component_difference: Component_Difference
     ) -> None:
-        """Make an update to the component. 
+        """Make an update to the component.
 
         Args:
             resource_state_uuid (str): The resource state that the change is in.

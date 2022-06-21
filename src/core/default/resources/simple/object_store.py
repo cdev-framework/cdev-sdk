@@ -84,38 +84,48 @@ class BucketPermissions:
     RUUID = "cdev::simple::bucket"
 
     def __init__(self, resource_name: str) -> None:
-        self.READ_BUCKET = Permission(
-            actions=["s3:GetObject", "s3:GetObjectVersion", "s3:ListBucket"],
+
+        self.LIST_BUCKET = Permission(
+            actions=["s3:ListBucket"],
             cloud_id=Cloud_Output_Str(
                 resource_name, RUUID, "cloud_id", OutputType.RESOURCE
             ),
+            effect="Allow",
+        )
+        """Permissions to list objects from the `Bucket`"""
+
+        self.READ_BUCKET = Permission(
+            actions=["s3:GetObject", "s3:GetObjectVersion"],
+            cloud_id=Cloud_Output_Str(
+                resource_name, RUUID, "cloud_id", OutputType.RESOURCE
+            ).join(["", "/*"]),
             effect="Allow",
         )
         """Permissions to read objects from the `Bucket`"""
 
         self.WRITE_BUCKET = Permission(
-            actions=["s3:PutObject", "s3:PutObjectAcl", "s3:ListBucket"],
+            actions=["s3:PutObject", "s3:PutObjectAcl"],
             cloud_id=Cloud_Output_Str(
                 resource_name, RUUID, "cloud_id", OutputType.RESOURCE
-            ),
+            ).join(["", "/*"]),
             effect="Allow",
         )
         """Permissions to write objects to the `Bucket`"""
 
         self.READ_AND_WRITE_BUCKET = Permission(
-            actions=["s3:*Object", "s3:ListBucket"],
+            actions=["s3:*Object"],
             cloud_id=Cloud_Output_Str(
                 resource_name, RUUID, "cloud_id", OutputType.RESOURCE
-            ),
+            ).join(["", "/*"]),
             effect="Allow",
         )
         """Permissions to read and write objects to and from the `Bucket`"""
 
         self.READ_EVENTS = Permission(
-            actions=["s3:*Object", "s3:ListBucket"],
+            actions=["s3:*Object"],
             cloud_id=Cloud_Output_Str(
                 resource_name, RUUID, "cloud_id", OutputType.RESOURCE
-            ),
+            ).join(["", "/*"]),
             effect="Allow",
         )
         """Permissions to receive events from the `Bucket`"""
