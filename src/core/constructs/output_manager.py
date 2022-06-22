@@ -336,9 +336,9 @@ class OutputManager:
                                                 f"             [bold green]+[/bold green] {event_old_item.get(item2)} ")
                                     else:
                                         self._console.print(
-                                            f"             [bold red]-[/bold red] {event_new_item}")
+                                            f"             [bold red]-[/bold red] {event_new}")
                                         self._console.print(
-                                            f"             [bold green]+[/bold green] {event_old_item} ")
+                                            f"             [bold green]+[/bold green] {event_old} ")
 
                         else:
                             self._console.print(f"           [bold black]Diff {key}:[/bold black]  ")
