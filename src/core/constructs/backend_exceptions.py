@@ -66,7 +66,7 @@ class CloudOutputDoesNotExist(BackendError):
 
 @dataclass
 class KeyNotInCloudOutput(BackendError):
-    help_message: str = "   Make sure you typed key correctly."
+    help_message: str = "   Make sure you typed the key correctly."
     help_resources: List[str] = field(default_factory=lambda: [])
 
 

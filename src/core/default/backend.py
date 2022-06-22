@@ -784,12 +784,12 @@ class LocalBackend(Backend):
 
         if not cloud_output:
             raise CloudOutputDoesNotExist(
-                f"None value for Cloud Output for {resource_type}::{resource_name} in Component {component_name} in Resource State {resource_state_uuid}"
+                f"No values for Cloud Output for {resource_type}::{resource_name} in Component {component_name} in Resource State {resource_state_uuid}"
             )
 
         if not key in cloud_output:
             raise KeyNotInCloudOutput(
-                f"Can not find Key {key} in Cloud Output for {resource_type}::{resource_name} in Component {component_name} in Resource State {resource_state_uuid}"
+                f"Can not find Key '{key}' in Cloud Output for {resource_type}::{resource_name} in Component {component_name} in Resource State {resource_state_uuid}. Available keys are: {list(cloud_output.keys())}"
             )
 
         return cloud_output.get(key)

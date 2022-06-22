@@ -1,7 +1,16 @@
+from dataclasses import dataclass, field
+from typing import List
+
 from core.constructs.workspace import Workspace
 from core.constructs.output_manager import OutputManager
 
-from core.utils.logger import log
+from core.utils.exceptions import cdev_core_error
+
+
+@dataclass
+class InputError(cdev_core_error):
+    help_message: str = "   The cloud output identifier should be of the form <component>.<ruuid>.<cdev_name>.<output_key>"
+    help_resources: List[str] = field(default_factory=lambda: [])
 
 
 def cloud_output_command_cli(args) -> None:
@@ -26,13 +35,11 @@ def cloud_output_command(
     Raises:
         Exception
     """
-    log.debug("Executing Frontend")
-
     split_names = cloud_output_id.split(".")
 
     if len(split_names) != 4:
-        raise Exception(
-            "Output not provided in correct structure. ex: <component>.<ruuid>.<cdev_name>.<output_key>"
+        raise InputError(
+            f"Cloud Output Identifier '{cloud_output_id}' is not provided in correct structure"
         )
 
     component_name = split_names[0]
@@ -49,6 +56,6 @@ def cloud_output_command(
     )
 
     if not only_value:
-        print(f"{output_key} -> {cloud_output.get(output_key)}")
+        output._console.print(f"{output_key} -> {cloud_output}")
     else:
-        print(cloud_output.get(output_key))
+        output._console.print(cloud_output)
