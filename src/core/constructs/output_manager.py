@@ -20,7 +20,7 @@ from core.constructs.resource import (
     Resource_Reference_Change_Type,
     Resource_Reference_Difference,
 )
-
+from core.constructs.models import frozendict
 
 class OutputManager:
     def __init__(self, console: Console = None, progress: Progress = None) -> None:
@@ -290,36 +290,60 @@ class OutputManager:
                         key
                     ) != resource_diff.new_resource.dict().get(key):
                         if type(resource_diff.previous_resource.dict().get(key)) == frozenset:
-                            event = resource_diff.previous_resource.dict().get(key)
-                            event2 = resource_diff.new_resource.dict().get(key)
-                            dict_prev = dict()
-                            dict_new = dict()
-                            for item in event:
-                                for key2 in item:
-                                    dict_new[key2] = item.get(key2)
-                            for item in event2:
-                                for key2 in item:
-                                    dict_prev[key2] = item.get(key2)
-                            for key2 in dict_prev:
-                                if dict_prev[key2] != dict_new[key2]:
-                                    self._console.print(
-                                        f"           [bold black]Diff {key}:[/bold black]  {dict_prev[key2]} -> {dict_new[key2]} "
-                                    )
-                        elif type(resource_diff.previous_resource.dict().get(key)) != str:
+                            event_new = list(resource_diff.previous_resource.dict().get(key))
+                            event_old = list(resource_diff.new_resource.dict().get(key))
+                            for i in range(0,len(event_new),1):
+                                if event_new[i] != event_old[i]:
+                                    if type(event_new[i]) == frozendict:
+                                        event_new[i] = dict(event_new[i])
+                                        event_old[i] = dict(event_old[i])
+                                    for item in event_new[i]:
+                                        if event_new[i].get(item) != event_old[i].get(item):
+                                            if event_new[i].get(item) == str or event_new[i].get(item) == int:
+                                                self._console.print(
+                                                    f"           [bold black]Diff {item}:[/bold black]  ")
+                                                self._console.print(
+                                                    f"           [bold red]-[/bold red] {event_new[i].get(item)}")
+                                                self._console.print(
+                                                    f"           [bold green]+[/bold green] {event_old[i].get(item)} ")
+                                            else:
+                                                event_new_item= event_new[i].get(item)
+                                                event_old_item = event_old[i].get(item)
+                                                if type(event_new_item) != str:
+                                                    for item2 in event_new_item:
+                                                        if event_new_item.get(item2) != event_old_item.get(item2):
+                                                            self._console.print(
+                                                                f"           [bold black]Diff {item2}:[/bold black]  ")
+                                                            self._console.print(f"           [bold red]-[/bold red] {event_new_item.get(item2)}")
+                                                            self._console.print(f"           [bold green]+[/bold green] {event_old_item.get(item2)} ")
+
+                        elif type(resource_diff.previous_resource.dict().get(key)) == frozendict:
                             for item in resource_diff.previous_resource.dict().get(key):
-                                if resource_diff.previous_resource.dict().get(key).get(item) != \
-                                        resource_diff.new_resource.dict().get(key).get(item):
+                                event_new = resource_diff.new_resource.dict().get(key).get(item)
+                                event_old = resource_diff.previous_resource.dict().get(key).get(item)
+                                if event_old != event_new:
                                     self._console.print(
-                                        f"           [bold black]Diff {item}:[/bold black]  "
-                                        f"{resource_diff.previous_resource.dict().get(key).get(item)} ->"
-                                        f" {resource_diff.new_resource.dict().get(key).get(item)} "
-                                    )
+                                        f"           [bold black]Diff {item}:[/bold black]  ")
+                                    if type(event_new) != str and type(event_new) != int:
+                                        event_new_item = dict(event_new)
+                                        event_old_item = dict(event_old)
+                                        for item2 in event_old_item:
+                                            self._console.print(
+                                                f"             [bold blue]Diff {item2}:[/bold blue]  ")
+                                            self._console.print(
+                                                f"             [bold red]-[/bold red] {event_new_item.get(item2)}")
+                                            self._console.print(
+                                                f"             [bold green]+[/bold green] {event_old_item.get(item2)} ")
+                                    else:
+                                        self._console.print(
+                                            f"             [bold red]-[/bold red] {event_new_item}")
+                                        self._console.print(
+                                            f"             [bold green]+[/bold green] {event_old_item} ")
+
                         else:
-                            self._console.print(
-                                f"           [bold black]Diff {key}:[/bold black]  "
-                                f"{resource_diff.previous_resource.dict().get(key)} -> "
-                                f"{ resource_diff.new_resource.dict().get(key)} "
-                            )
+                            self._console.print(f"           [bold black]Diff {key}:[/bold black]  ")
+                            self._console.print(f"           [bold red]-[/bold red]{resource_diff.previous_resource.dict().get(key)} ")
+                            self._console.print(f"           [bold green]+[/bold green]{ resource_diff.new_resource.dict().get(key)} ")
             elif resource_diff.action_type == Resource_Change_Type.UPDATE_NAME:
                 self._console.print(
                     f"        [bold yellow]Update Name:[/bold yellow][bold blue] from {resource_diff.previous_resource.name} to {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
