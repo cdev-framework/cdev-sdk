@@ -61,7 +61,7 @@ def wrap_load_and_initialize_project(
         try:
             load_and_initialize_project(initialize=initialize)
         except Exception as e:
-            _output_manager.print_exception(e)
+            _output_manager.print_exception(wrap_base_exception(e))
             return
 
         _project = Project.instance()
