@@ -75,7 +75,13 @@ def wrap_load_and_initialize_project(
                     project=_project
                 )
             else:
-                command(args[0], args[1], output_manager=_output_manager)
+                command(
+                    args[0],
+                    args[1],
+                    loglevel=log_level,
+                    output_manager=_output_manager,
+                    project=_project,
+                )
         except cdev_core_error as e:
             _output_manager.print_exception(e)
         except Exception as e:
