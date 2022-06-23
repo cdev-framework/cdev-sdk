@@ -899,11 +899,11 @@ class Workspace:
         return original, resolved_values
 
     @wrap_phase([Workspace_State.INITIALIZED])
-    def execute_command(self, command: str, args: List) -> None:
+    def execute_command(self, command: str, args: List, output: OutputManager) -> None:
         """Find the desired command based on the search path and execute it with the given arguments.
 
         Args:
-            command (str): The full command to search for. can be '.' seperated to denote search path.
+            command (str): The full command to search for. can be '.' separated to denote search path.
             args (List): The command lines arguments to pass to the command.
 
         Raises:
@@ -917,27 +917,21 @@ class Workspace:
         all_search_locations_list = self.get_commands()
 
         obj, program_name, command_name, is_command = find_specified_command(
-            command_list, all_search_locations_list
+            command_list, all_search_locations_list, output=output
         )
 
         if is_command:
             if not isinstance(obj, BaseCommand):
                 raise Exception
 
-            try:
-                args = [program_name, command_name, *args]
-                obj.run_from_command_line(args)
-            except Exception as e:
-                raise e
+            args = [program_name, command_name, *args]
+            obj.run_from_command_line(args)
 
         else:
             if not isinstance(obj, BaseCommandContainer):
                 raise Exception
 
-            try:
-                obj.display_help_message()
-            except Exception as e:
-                raise e
+            obj.display_help_message()
 
 
 class WorkspaceManager:

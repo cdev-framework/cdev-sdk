@@ -72,6 +72,9 @@ class OutputManager:
         self._console = console or CdevCoreConsole()
         self._progress = progress
 
+    def print(self, msg: str) -> None:
+        self._console.print(msg)
+
     def print_exception(self, exception: cdev_core_error):
         # self._console.print("TRACEBACK")
         if isinstance(exception, wrapped_base_exception):

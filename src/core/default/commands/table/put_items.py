@@ -2,20 +2,19 @@ from argparse import ArgumentParser
 import json
 import os
 
-from core.constructs.commands import BaseCommand, OutputWrapper
-from core.default.resources.simple.table import Table, simple_table_model
+from core.constructs.commands import BaseCommand
 
+from core.default.resources.simple.table import simple_table_model
 from core.default.mappers import aws_client
+from core.default.commands import utils as command_utils
 
-
-from . import utils
+from . import utils as table_utils
 
 
 RUUID = "cdev::simple::table"
 
 
 class put_object(BaseCommand):
-
     def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "resource_name", type=str, help="The resource you want to sync data to"
@@ -29,13 +28,18 @@ class put_object(BaseCommand):
 
     def command(self, *args, **kwargs) -> None:
 
-        component_name, table_resource_name = self.get_component_and_resource_from_qualified_name(kwargs.get("resource_name"))
-
-        cloud_output = utils.get_cloud_output_from_cdev_name(
-            component_name, table_resource_name
+        (
+            component_name,
+            table_resource_name,
+        ) = command_utils.get_component_and_resource_from_qualified_name(
+            kwargs.get("resource_name")
         )
-        resource: simple_table_model = utils.get_resource_from_cdev_name(
-            component_name, table_resource_name
+
+        cloud_output = command_utils.get_cloud_output_from_cdev_name(
+            component_name, RUUID, table_resource_name
+        )
+        resource: simple_table_model = command_utils.get_resource_from_cdev_name(
+            component_name, RUUID, table_resource_name
         )
 
         table_cloud_name = cloud_output.get("table_name")
@@ -54,7 +58,7 @@ class put_object(BaseCommand):
                 data = json.loads(data_string)
 
             except Exception as e:
-                self.stderr.write("Data provided was not a valid json string")
+                self.output.print("Data provided was not a valid json string")
                 return
 
         if data_file:
@@ -80,21 +84,21 @@ class put_object(BaseCommand):
         }
 
         for datum in data.get("items"):
-            is_data_valid, msg = utils.validate_data(
+            is_data_valid, msg = table_utils.validate_data(
                 datum, attributes_dict, resource.keys
             )
 
             if not is_data_valid:
-                self.stderr.write(msg)
+                self.output.print(msg)
                 return
 
         try:
 
             translated_data = [
-                utils.recursive_translate_data(x) for x in data.get("items")
+                table_utils.recursive_translate_data(x) for x in data.get("items")
             ]
         except:
-            self.stderr.write("Could not translate data to dynamodb put item form")
+            self.output.print("Could not translate data to dynamodb put item form")
 
         try:
             for datum in translated_data:
@@ -104,7 +108,7 @@ class put_object(BaseCommand):
                     {"TableName": table_cloud_name, "Item": datum},
                 )
 
-                self.stdout.write(f"Wrote {datum} to {table_resource_name}")
+                self.output.print(f"Wrote {datum} to {table_resource_name}")
         except Exception as e:
-            self.stderr.write(f"Could not write data to table {table_resource_name}")
+            self.output.print(f"Could not write data to table {table_resource_name}")
             return

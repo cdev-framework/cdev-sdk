@@ -5,14 +5,14 @@ import boto3
 import os
 import mimetypes
 
-from core.constructs.commands import BaseCommand, OutputWrapper
+from core.constructs.commands import BaseCommand
 from core.default.resources.simple.static_site import (
-    StaticSite,
     simple_static_site_model,
 )
 from core.utils.paths import get_full_path_from_workspace_base
+from core.default.commands import utils as command_utils
 
-from . import utils
+RUUID = "cdev::simple::staticsite"
 
 
 class sync_files(BaseCommand):
@@ -41,15 +41,15 @@ class sync_files(BaseCommand):
         (
             component_name,
             static_site_name,
-        ) = self.get_component_and_resource_from_qualified_name(
+        ) = command_utils.get_component_and_resource_from_qualified_name(
             kwargs.get("resource_name")
         )
 
-        resource: simple_static_site_model = utils.get_resource_from_cdev_name(
-            component_name, static_site_name
+        resource: simple_static_site_model = command_utils.get_resource_from_cdev_name(
+            component_name, RUUID, static_site_name
         )
-        cloud_output = utils.get_cloud_output_from_cdev_name(
-            component_name, static_site_name
+        cloud_output = command_utils.get_cloud_output_from_cdev_name(
+            component_name, RUUID, static_site_name
         )
 
         index_document = resource.index_document
@@ -96,7 +96,7 @@ class sync_files(BaseCommand):
 
                 if mimetype is None:
                     mimetype = "text"
-                print(f"{full_path} -> {key_name} ({mimetype})")
+                self.output.print(f"{full_path} -> {key_name} ({mimetype})")
                 bucket.upload_file(
                     full_path, key_name, ExtraArgs={"ContentType": mimetype}
                 )
