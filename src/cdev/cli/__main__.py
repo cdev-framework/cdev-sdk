@@ -314,12 +314,12 @@ CDEV_COMMANDS = [
             {
                 "dest": "--watch",
                 "type": str,
-                "help": "watch any file that matches the following pattern [src/**/*.py,settings/*]",
+                "help": "watch any file that matches the following pattern ['src/**/*.py','settings/*']",
             },
             {
                 "dest": "--ignore",
                 "type": str,
-                "help": "do not watch for any file that matches the following pattern [.cdev/**,__pycache__/*]",
+                "help": "do not watch for any file that matches the following pattern ['.cdev/**','__pycache__/*']",
             },
         ],
     },

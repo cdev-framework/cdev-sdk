@@ -8,6 +8,11 @@ All release will have a corresponding git tag.
 
 ## [Unreleased]
 ### Added
+
+### Fixed
+
+## [0.0.8] - 2022-06-20
+### Added
 - Add support for Serverless Function Resource to preserve original callable object
 - Add `pre-commit` to the code base to be used for styling
 - Add `tox` to help with testing multiple `python` versions
@@ -20,6 +25,7 @@ All release will have a corresponding git tag.
 - Add user input for setting artifact bucket when creating a new project
 - Add query, tail and limit args to logging function
 - Add sync to watch for filesystem changes
+- Add keep-in-sync argument to _cdev run static_site.sync <resource>_
 
 ### Fixed
 - Fix issues with a bucket when it is not empty and we need to delete it
