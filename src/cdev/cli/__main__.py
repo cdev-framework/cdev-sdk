@@ -1,10 +1,11 @@
 import argparse
+from dataclasses import dataclass, field
 import json
 import logging
 import os
-from typing import Callable, Any
+from typing import Any, Callable, List
 
-from pydantic import FilePath
+from pydantic import FilePath, ValidationError
 
 from core.constructs.output_manager import OutputManager
 from core.utils.exceptions import cdev_core_error, wrap_base_exception
@@ -28,6 +29,32 @@ subparsers = parser.add_subparsers(title="sub_command", description="valid subco
 
 LOG_LEVEL_ARG = "loglevel"
 OUTPUT_TYPE_ARG = "output_type"
+
+
+###############################
+##### Exceptions
+###############################
+
+
+@dataclass
+class ProjectInfoError(cdev_core_error):
+    help_message: str = (
+        "   The project info files will most likely need to be fixed by hand."
+    )
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+@dataclass
+class ProjectInfoJsonDecoding(cdev_core_error):
+    help_message: str = (
+        "   The project info files will most likely need to be fixed by hand."
+    )
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+###############################
+##### API
+###############################
 
 
 def wrap_load_and_initialize_project(
@@ -59,12 +86,13 @@ def wrap_load_and_initialize_project(
         _output_manager = _initialize_output_manager(output_type=output_type)
 
         try:
-            load_and_initialize_project(initialize=initialize)
+            _project = load_and_initialize_project(initialize=initialize)
+        except cdev_core_error as e:
+            _output_manager.print_exception(e)
+            return
         except Exception as e:
             _output_manager.print_exception(wrap_base_exception(e))
             return
-
-        _project = Project.instance()
 
         try:
             if len(args) == 1:
@@ -72,7 +100,7 @@ def wrap_load_and_initialize_project(
                     **dict_args,
                     loglevel=log_level,
                     output_manager=_output_manager,
-                    project=_project
+                    project=_project,
                 )
             else:
                 command(
@@ -94,7 +122,7 @@ def _initialize_output_manager(output_type: str) -> OutputManager:
     return OutputManager()
 
 
-def load_and_initialize_project(initialize: bool = True) -> None:
+def load_and_initialize_project(initialize: bool = True) -> Project:
     """Create the global instance of the `Project` object as a `local_project` instance. If provided, also initialize the `Project`.
 
     Args:
@@ -111,6 +139,8 @@ def load_and_initialize_project(initialize: bool = True) -> None:
     if initialize:
         project.initialize_project()
 
+    return project
+
 
 def _load_local_project_information(
     project_info_location: FilePath,
@@ -124,7 +154,22 @@ def _load_local_project_information(
         local_project_info
     """
     with open(project_info_location, "r") as fh:
-        return local_project_info(**json.load(fh))
+        try:
+            json_information = json.load(fh)
+
+            local_project_info_model = local_project_info(**json_information)
+
+        except ValidationError as e:
+            raise ProjectInfoError(
+                error_message=f"Could not convert loaded json data from {project_info_location} into a valid 'local_project_info' object because of pydantic validation error"
+            )
+
+        except json.JSONDecodeError as e:
+            raise ProjectInfoJsonDecoding(
+                error_message=f"Could not data from {project_info_location} as json data"
+            )
+
+    return local_project_info_model
 
 
 CDEV_COMMANDS = [
