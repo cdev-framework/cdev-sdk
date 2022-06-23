@@ -108,8 +108,7 @@ class LocalBackend(Backend):
         )
 
         if not os.path.isdir(self.base_folder):
-            print(f"ERROR HERE")
-            raise Exception
+            raise FileNotFoundError(f"Can not find directory -> {self.base_folder}")
 
         if not os.path.isfile(self.central_state_file):
             self._central_state = LocalCentralFile({}, [], [])
