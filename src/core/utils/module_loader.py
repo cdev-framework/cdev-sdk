@@ -1,13 +1,43 @@
 """
 Utilities to help standardize how the framework dynamically imports code
 """
-
+from dataclasses import dataclass, field
 import sys
 import importlib
 from types import ModuleType
-import sys
-from typing import TextIO
+from typing import TextIO, List
 import inspect
+
+
+from core.utils.exceptions import cdev_core_error
+
+
+###############################
+##### Exceptions
+###############################
+
+
+@dataclass
+class ImportModuleError(cdev_core_error):
+    help_message: str = """
+        This is a helper function used by Cdev. This error should have been wrapped by the high level components,
+        and they should have provided a more informative help message.
+        """
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+@dataclass
+class ImportClassError(ImportModuleError):
+    help_message: str = """
+        This is a helper function used by Cdev. This error should have been wrapped by the high level components,
+        and they should have provided a more informative help message.
+        """
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+###############################
+##### API
+###############################
 
 
 def import_module(
@@ -24,7 +54,7 @@ def import_module(
         module_name (str): The python module to be loaded. Note that this is not a file path. It is the name of a module that can be loaded.
 
     Raises:
-        Exception
+        ImportModuleError
     """
 
     if denote_output:
@@ -36,13 +66,17 @@ def import_module(
     if override_stdout:
         sys.stdout = override_sys_out
 
-    if sys.modules.get(module_name):
-        rv = importlib.reload(sys.modules.get(module_name))
-    else:
-        rv = importlib.import_module(module_name)
+    try:
+        if sys.modules.get(module_name):
+            rv = importlib.reload(sys.modules.get(module_name))
+        else:
+            rv = importlib.import_module(module_name)
+    except Exception as e:
+        raise ImportModuleError(error_message=f"Could Not Import {module_name} -> {e}")
 
-    if override_stdout:
-        sys.stdout = sys.__stdout__
+    finally:
+        if override_stdout:
+            sys.stdout = sys.__stdout__
 
     if denote_output:
         print(f"---------------------------------------------------")
@@ -62,6 +96,10 @@ def import_class(module_name: str, class_name: str) -> type:
 
     Returns:
         type: the class
+
+    Raises:
+        ImportModuleError
+        ImportClassError
     """
     mod = import_module(module_name)
 
@@ -74,7 +112,9 @@ def import_class(module_name: str, class_name: str) -> type:
         if inspect.isclass(potential_obj):
             return potential_obj
 
-    raise Exception
+    raise ImportClassError(
+        error_message=f"Could not find class '{class_name}' in the loaded module '{module_name}'"
+    )
 
 
 class override_sys_out(TextIO):
