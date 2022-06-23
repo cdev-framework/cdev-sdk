@@ -32,7 +32,12 @@ from core.constructs.resource import (
     Resource_Reference_Change_Type,
     ResourceModel,
 )
-from core.constructs.backend import Backend, Backend_Configuration, load_backend
+from core.constructs.backend import (
+    Backend,
+    Backend_Configuration,
+    BackendError,
+    load_backend,
+)
 from core.constructs.mapper import CloudMapper
 from core.constructs.components import (
     Component,
@@ -237,7 +242,16 @@ class Workspace:
             resource_state_uuid (str): resource state to execute commands over
             configuration (Dict): additional configuration
         """
-        initialized_backend = load_backend(backend_info)
+        try:
+            initialized_backend = load_backend(backend_info)
+        except BackendError as e:
+            raise WorkspaceInitializationError(
+                error_message=f"""Error initializing backend for the workspace ->
+                {e.error_message}""",
+                help_message=e.help_message,
+                help_resources=e.help_resources,
+            )
+
         self.set_backend(initialized_backend)
 
         top_level_resource_states = initialized_backend.get_top_level_resource_states()
