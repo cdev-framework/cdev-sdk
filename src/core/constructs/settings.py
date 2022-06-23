@@ -31,7 +31,7 @@ class SettingsError(cdev_core_error):
 
 
 @dataclass
-class LoadSettingsClassError(cdev_core_error):
+class LoadSettingsClassError(SettingsError):
     help_message: str = """
     Consider fixing the provided error, or change your base settings class using the following command:
     cdev environment settings_information --key base_class --new-value <settings-module>
@@ -40,7 +40,7 @@ class LoadSettingsClassError(cdev_core_error):
 
 
 @dataclass
-class InitializeSettingsClassError(cdev_core_error):
+class InitializeSettingsClassError(SettingsError):
     help_message: str = """
     Consider fixing the provided error, or change your base settings class using the following command:
     cdev environment settings_information --key base_class --new-value <settings-module>

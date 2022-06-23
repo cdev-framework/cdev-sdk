@@ -45,7 +45,12 @@ from core.constructs.cloud_output import (
     evaluate_dynamic_output,
     cloud_output_dynamic_model,
 )
-from core.constructs.settings import Settings_Info, Settings, initialize_settings
+from core.constructs.settings import (
+    Settings_Info,
+    Settings,
+    initialize_settings,
+    SettingsError,
+)
 
 
 from core.utils.command_finder import find_specified_command
@@ -238,21 +243,38 @@ class Workspace:
         top_level_resource_states = initialized_backend.get_top_level_resource_states()
 
         if resource_state_uuid not in set([x.uuid for x in top_level_resource_states]):
-            raise Exception(
-                f"{resource_state_uuid} not in loaded backend resource states: ({top_level_resource_states})"
+            raise WorkspaceInitializationError(
+                error_message=f"{resource_state_uuid} not in loaded backend resource states: ({top_level_resource_states})"
             )
 
         self.set_resource_state_uuid(resource_state_uuid)
 
-        initialized_settings = initialize_settings(settings_info)
+        try:
+            initialized_settings = initialize_settings(settings_info)
+        except SettingsError as e:
+            raise WorkspaceInitializationError(
+                error_message=f"""Error initializing settings for the workspace ->
+                {e.error_message}""",
+                help_message=e.help_message,
+                help_resources=e.help_resources,
+            )
+        except Exception as e:
+            raise WorkspaceInitializationError(
+                error_message=f"Error initializing settings for the workspace -> {e}"
+            )
+
         self.settings = initialized_settings
 
         if initialization_modules:
             for initialize_module in initialization_modules:
                 try:
                     module_loader.import_module(initialize_module)
-                except Exception as e:
-                    raise e
+                except module_loader.ImportModuleError as e:
+                    raise WorkspaceInitializationError(
+                        error_message=f"""Error loading '{initialize_module}' to initial the workspace. The following exception occurred:
+                        {e.error_message}
+                        """
+                    )
 
     def destroy_workspace(self) -> None:
         """Tear down the current Workspace
