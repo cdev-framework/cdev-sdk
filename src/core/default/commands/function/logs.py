@@ -90,40 +90,36 @@ class show_logs(BaseCommand):
         return cloud_group_name
 
     def _show_log(self, cloud_group_name, **kwargs) -> None:
-        tail_val = kwargs.get("tail")
+        backwards = kwargs.get("tail")
         limit_val = kwargs.get("limit")
 
         cloud_client = client("logs")
         streams = self._get_streams(cloud_client, cloud_group_name)
-        for stream in streams:
+
+        start_from_head = not backwards
+        next_token_name = "nextForwardToken" if start_from_head else "nextBackwardToken"
+        for stream_name in streams:
             response = cloud_client.get_log_events(
                 logGroupName=cloud_group_name,
-                logStreamName=stream,
+                logStreamName=stream_name,
                 limit=limit_val,
-                startFromHead=not tail_val,
+                startFromHead=start_from_head,
             )
-            if tail_val:
-                next_token = response.get("nextForwardToken")
-            else:
-                next_token = response.get("nextBackwardToken")
-
             prev_token = ""
+            next_token = response.get(next_token_name)
             while next_token != prev_token:
                 for event in response.get("events"):
                     self.stdout.write(self._format_event(event))
 
                 response = cloud_client.get_log_events(
                     logGroupName=cloud_group_name,
-                    logStreamName=stream,
+                    logStreamName=stream_name,
                     limit=limit_val,
-                    startFromHead=not tail_val,
+                    startFromHead=start_from_head,
                     nextToken=next_token
                 )
                 prev_token = next_token
-                if tail_val:
-                    next_token = response.get("nextForwardToken")
-                else:
-                    next_token = response.get("nextBackwardToken")
+                next_token = response.get(next_token_name)
 
     def _show_filtered_log(
         self,
