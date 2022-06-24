@@ -20,6 +20,6 @@ def get_cloud_id_from_cdev_name(component_name: str, cdev_function_name: str) ->
 
         return cloud_id
     except Exception as e:
-        print(f"Could not find cloud id")
+        print(f"Could not find cloud id for {component_name} {cdev_function_name}")
         print(e)
     return None

@@ -1,7 +1,7 @@
 import time, datetime
 
 from argparse import ArgumentParser
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from boto3 import client
 
@@ -55,70 +55,68 @@ class show_logs(BaseCommand):
         )
 
     def command(self, *args, **kwargs) -> None:
-        (
-            component_name,
-            function_name,
-        ) = self.get_component_and_resource_from_qualified_name(
-            kwargs.get("function_name")
-        )
-
-        tail_val = kwargs.get("tail")
-        limit_val = kwargs.get("limit")
-        query_val = kwargs.get("query")
-        start_time_val = kwargs.get("start_time")
-        end_time_val = kwargs.get("end_time")
-
-        cloud_name = get_cloud_id_from_cdev_name(component_name, function_name).split(
-            ":"
-        )[-1]
-        if not cloud_name:
-            self.stdout.write(
-                f"Could not find function {function_name} in component {component_name}"
-            )
+        cloud_group_name = self._get_cloud_group_name(kwargs.get("function_name"))
+        if not cloud_group_name:
             return
-
-        cloud_watch_group_name = f"/aws/lambda/{cloud_name}"
 
         watch_val = kwargs.get("watch")
         if watch_val:
-            _watch_log_group(cloud_watch_group_name, self.stdout)
-            return
-
-        cloud_watch_client = client("logs")
-        if query_val is None:
-            self.get_log_result(limit_val, tail_val, cloud_watch_client, cloud_watch_group_name)
+            self._watch_log_group(cloud_group_name)
         else:
-            self.get_log_query_result(query_val, start_time_val, end_time_val,
-                                      cloud_watch_client, cloud_watch_group_name)
+            query_val = kwargs.get("query")
+            if query_val is None:
+                self._show_log(cloud_group_name, **kwargs)
+            else:
+                self._show_filtered_log(cloud_group_name, **kwargs)
 
-    def get_log_result(self, limit_val, tail_val, cloud_watch_client, cloud_watch_group_name) -> None:
-        log_streams_rv = cloud_watch_client.describe_log_streams(
-            logGroupName=cloud_watch_group_name,
-            orderBy="LastEventTime",
+    def _get_cloud_group_name(self, function_name: str) -> Optional[str]:
+        (
+            component_name,
+            resource_name,
+        ) = self.get_component_and_resource_from_qualified_name(
+            function_name
         )
-        streams = _get_needed_streams(log_streams_rv.get("logStreams"))
+
+        cloud_name = get_cloud_id_from_cdev_name(component_name, resource_name)
+        if not cloud_name:
+            return None
+
+        cloud_name = cloud_name.split(":")
+        if len(cloud_name) != 2:
+            return None
+
+        cloud_name = cloud_name[-1]
+        cloud_group_name = f"/aws/lambda/{cloud_name}"
+        return cloud_group_name
+
+    def _show_log(self, cloud_group_name, **kwargs) -> None:
+        tail_val = kwargs.get("tail")
+        limit_val = kwargs.get("limit")
+
+        cloud_client = client("logs")
+        streams = self._get_streams(cloud_client, cloud_group_name)
         for stream in streams:
-            response = cloud_watch_client.get_log_events(
-                logGroupName=cloud_watch_group_name,
+            response = cloud_client.get_log_events(
+                logGroupName=cloud_group_name,
                 logStreamName=stream,
                 limit=limit_val,
-                startFromHead=False if tail_val else True,
+                startFromHead=not tail_val,
             )
             if tail_val:
                 next_token = response.get("nextForwardToken")
             else:
                 next_token = response.get("nextBackwardToken")
+
             prev_token = ""
             while next_token != prev_token:
                 for event in response.get("events"):
-                    self.stdout.write(
-                        f"{datetime.datetime.fromtimestamp(event.get('timestamp') / 1000).strftime('%Y-%m-%d %H:%M:%S')} - {event.get('message')} "
-                    )
-                response = cloud_watch_client.get_log_events(
-                    logGroupName=cloud_watch_group_name,
+                    self.stdout.write(self._format_event(event))
+
+                response = cloud_client.get_log_events(
+                    logGroupName=cloud_group_name,
                     logStreamName=stream,
                     limit=limit_val,
-                    startFromHead=False if tail_val else True,
+                    startFromHead=not tail_val,
                     nextToken=next_token
                 )
                 prev_token = next_token
@@ -127,104 +125,122 @@ class show_logs(BaseCommand):
                 else:
                     next_token = response.get("nextBackwardToken")
 
-    def get_log_query_result(self, query_val, start_time_val, end_time_val,
-                             cloud_watch_client, cloud_watch_group_name) -> None:
-        print(query_val)
-        print(start_time_val)
-        print(end_time_val)
-        print(cloud_watch_client)
-        print(cloud_watch_group_name)
+    def _show_filtered_log(
+        self,
+        cloud_group_name,
+        query_val,
+        **kwargs,
+    ) -> None:
+
+        start_time_val = kwargs.get("start_time")
+        end_time_val = kwargs.get("end_time")
+
         if start_time_val is None:
             start_time_val = datetime.datetime.today() - datetime.timedelta(weeks=52)
+
         if end_time_val is None:
             end_time_val = datetime.datetime.now()
-        query = ''
-        for item in query_val:
-            query = query + ' ' + str(item)
-        start_query_response = cloud_watch_client.start_query(
-            logGroupName=cloud_watch_group_name,
+
+        query = ' '.join([str(item) for item in query_val])
+
+        cloud_client = client("logs")
+        start_query_response = cloud_client.start_query(
+            logGroupName=cloud_group_name,
             startTime=int(start_time_val.timestamp()),
             endTime=int(end_time_val.timestamp()),
             queryString=query,
         )
         query_id = start_query_response['queryId']
-        response = None
-
-        while response == None or response['status'] == 'Running':
+        while True:
             self.stdout.write('Waiting for query to complete ...')
             time.sleep(1)
-            response = cloud_watch_client.get_query_results(
-                queryId=query_id
+            response = cloud_client.get_query_results(queryId=query_id)
+            for results in response['results']:
+                for item2 in results:
+                    self.stdout.write(item2['field'] + ': ' + item2['value'])
+
+            if response['status'] != 'Running':
+                break
+
+    def _watch_log_group(self, group_name: str) -> None:
+
+        events_hash = set()
+        keep_watching = True
+        cloud_client = client("logs")
+        while keep_watching:
+            previous_refresh_time = int(
+                (time.mktime(datetime.datetime.now().timetuple()) - 60) * 1000
+            )
+            keep_watching = self._read_from_streams(
+                cloud_client, group_name, events_hash, previous_refresh_time
             )
 
-        for item in response['results']:
-            for item2 in item:
-                self.stdout.write(item2['field'] + ': ' + item2['value'])
-
-
-def _watch_log_group(group_name: str, stdout: OutputWrapper, args=None) -> None:
-    cloud_watch_client = client("logs")
-
-    events_hash = set()
-    keep_watching = True
-    while keep_watching:
-        _previous_refresh_time = int(
-            (time.mktime(datetime.datetime.now().timetuple()) - 60) * 1000
-        )
-        keep_watching = _read_from_streams(
-            cloud_watch_client, group_name, stdout, events_hash, _previous_refresh_time
-        )
-
-
-def _read_from_streams(
-        cloud_watch_client,
+    def _read_from_streams(
+        self,
+        cloud_client,
         group_name: str,
-        stdout: OutputWrapper,
-        events_hash,
-        _previous_refresh_time,
-) -> bool:
-    try:
-        log_streams_rv = cloud_watch_client.describe_log_streams(
-            logGroupName=group_name,
+        events_hash: set,
+        previous_refresh_time,
+    ) -> bool:
+        try:
+            streams = self._get_streams(cloud_client, group_name, previous_refresh_time)
+            start_from_head = True
+            for stream in streams:
+                self._process_stream(cloud_client, stream, group_name, events_hash, start_from_head, previous_refresh_time)
+
+            time.sleep(0.2)
+            return True
+        except KeyboardInterrupt:
+            self.stdout.write("Interrupted")
+
+        return False
+
+    def _get_streams(self, cloud_client, cloud_group_name: str, start_time: float = None) -> List[str]:
+        log_streams_rv = cloud_client.describe_log_streams(
+            logGroupName=cloud_group_name,
             orderBy="LastEventTime",
         )
 
-        streams = _get_needed_streams(
-            log_streams_rv.get("logStreams"), _previous_refresh_time
+        stream_names = [x.get("logStreamName") for x in log_streams_rv.get("logStreams")]
+        return stream_names
+
+    def _process_stream(
+        self,
+        cloud_client,
+        stream,
+        group_name: str,
+        events_hash: set,
+        start_from_head: bool,
+        previous_refresh_time: int
+    ) -> None:
+        log_events = cloud_client.get_log_events(
+            logGroupName=group_name,
+            logStreamName=stream,
+            startTime=previous_refresh_time,
+            startFromHead=start_from_head,
         )
 
-        for stream in streams:
-            response = cloud_watch_client.get_log_events(
-                logGroupName=group_name,
-                logStreamName=stream,
-                startTime=_previous_refresh_time,
-                startFromHead=True,
-            )
+        for stream_event in log_events.get("events"):
+            self._process_stream_event(stream_event, events_hash)
 
-            for event in response.get("events"):
-                event_hash = hasher.hash_list(
-                    [
-                        event.get("timestamp"),
-                        event.get("message"),
-                        event.get("ingestionTime"),
-                    ]
-                )
+    def _process_stream_event(
+        self,
+        event: dict,
+        events_hash: set,
+    ) -> None:
 
-                if event_hash not in events_hash:
-                    stdout.write(
-                        f"{datetime.datetime.fromtimestamp(event.get('timestamp') / 1000).strftime('%Y-%m-%d %H:%M:%S')} - {event.get('message')}"
-                    )
+        event_hash = hasher.hash_list(
+            [
+                event.get("timestamp"),
+                event.get("message"),
+                event.get("ingestionTime"),
+            ]
+        )
 
-                events_hash.add(event_hash)
+        if event_hash not in events_hash:
+            self.stdout.write(self._format_event(event))
 
-        time.sleep(0.2)
-        return True
-    except KeyboardInterrupt:
-        stdout.write("Interrupted")
+        events_hash.add(event_hash)
 
-    return False
-
-
-def _get_needed_streams(streams: List[Dict], start_time: float = None) -> List[str]:
-    stream_names = [x.get("logStreamName") for x in streams]
-    return stream_names
+    def _format_event(self, event) -> str:
+        return f"{datetime.datetime.fromtimestamp(event.get('timestamp') / 1000).strftime('%Y-%m-%d %H:%M:%S')} - {event.get('message')} "
