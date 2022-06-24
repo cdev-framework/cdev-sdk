@@ -1,11 +1,12 @@
 import time, datetime
 
 from argparse import ArgumentParser
-from typing import List, Dict, Optional
+from typing import List, Optional
 
 from boto3 import client
+from botocore.exceptions import ClientError
 
-from core.constructs.commands import BaseCommand, OutputWrapper
+from core.constructs.commands import BaseCommand
 
 from core.utils import hasher
 
@@ -82,7 +83,7 @@ class show_logs(BaseCommand):
             return None
 
         cloud_name = cloud_name.split(":")
-        if len(cloud_name) != 2:
+        if len(cloud_name) < 2:
             return None
 
         cloud_name = cloud_name[-1]
@@ -192,13 +193,15 @@ class show_logs(BaseCommand):
         return False
 
     def _get_streams(self, cloud_client, cloud_group_name: str, start_time: float = None) -> List[str]:
-        log_streams_rv = cloud_client.describe_log_streams(
-            logGroupName=cloud_group_name,
-            orderBy="LastEventTime",
-        )
-
-        stream_names = [x.get("logStreamName") for x in log_streams_rv.get("logStreams")]
-        return stream_names
+        try:
+            log_streams_rv = cloud_client.describe_log_streams(
+                logGroupName=cloud_group_name,
+                orderBy="LastEventTime",
+            )
+            stream_names = [x.get("logStreamName") for x in log_streams_rv.get("logStreams")]
+            return stream_names
+        except ClientError as e:
+            raise Exception(f"Function {cloud_group_name} has not generated any logs. Trigger the function to generate logs.")
 
     def _process_stream(
         self,
