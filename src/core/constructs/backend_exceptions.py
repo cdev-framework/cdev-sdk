@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List
 
-from src.core.utils.exceptions import cdev_core_error
+from core.utils.exceptions import cdev_core_error
 
 
 @dataclass
