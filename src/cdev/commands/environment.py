@@ -82,12 +82,7 @@ def set_current_environment(
 def create_environment(
     project: Project, new_environment_name: str, output: OutputManager
 ) -> None:
-    try:
-        project.create_environment(new_environment_name)
-    except ProjectError as e:
-        output._console.print(
-            f"Error ({e}) when trying to create environment {new_environment_name}"
-        )
+    project.create_environment(new_environment_name)
 
     output._console.print(f"Created Environment -> {new_environment_name}")
 
@@ -168,9 +163,8 @@ def environment_information(
     output: OutputManager,
     environment_name: str = None,
 ):
-    _environment_name = (
-        environment_name if environment_name else project.get_current_environment_name()
-    )
+
+    _environment_name = environment_name or project.get_current_environment_name()
 
     environment_info = project.get_environment_settings_info(_environment_name)
 

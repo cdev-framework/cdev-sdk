@@ -46,9 +46,7 @@ class ProjectInfoError(cdev_core_error):
 
 @dataclass
 class ProjectInfoJsonDecoding(cdev_core_error):
-    help_message: str = (
-        "   The project info files will most likely need to be fixed by hand."
-    )
+    help_message: str = "   The project info files will most likely need to be fixed by hand. The File should be a valid Json."
     help_resources: List[str] = field(default_factory=lambda: [])
 
 
@@ -166,7 +164,7 @@ def _load_local_project_information(
 
         except json.JSONDecodeError as e:
             raise ProjectInfoJsonDecoding(
-                error_message=f"Could not data from {project_info_location} as json data"
+                error_message=f"Could not load project info from {project_info_location} as json data"
             )
 
     return local_project_info_model
