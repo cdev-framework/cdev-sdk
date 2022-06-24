@@ -98,7 +98,7 @@ class show_logs(BaseCommand):
         streams = self._get_streams(cloud_client, cloud_group_name)
 
         start_from_head = not backwards
-        next_token_name = "nextForwardToken" if start_from_head else "nextBackwardToken"
+        next_token_name = "nextBackwardToken" if start_from_head else "nextForwardToken"
         for stream_name in streams:
             response = cloud_client.get_log_events(
                 logGroupName=cloud_group_name,
