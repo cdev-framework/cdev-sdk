@@ -16,6 +16,6 @@ def deploy_command(args) -> None:
     output_manager = CdevOutputManager()
     myProject = Project.instance()
 
-    ws = myProject.get_current_environment().get_workspace()
+    ws = myProject.get_current_environment_workspace()
 
     execute_deployment(ws, output_manager)

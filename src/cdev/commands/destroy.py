@@ -16,9 +16,9 @@ def destroy_command_cli(args) -> None:
 def destroy_command(args) -> None:
 
     output_manager = CdevOutputManager()
-    myProject = Project.instance()
+    my_project = Project.instance()
 
-    ws = myProject.get_current_environment().get_workspace()
+    ws = my_project.get_current_environment().get_workspace()
 
     ws.set_state(Workspace_State.EXECUTING_FRONTEND)
 
