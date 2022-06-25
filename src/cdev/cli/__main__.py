@@ -334,22 +334,30 @@ CDEV_COMMANDS = [
             {
                 "command": "merge",
                 "help": "Safely run `git merge`",
+                "args": [
+                    {
+                        "dest": "commit",
+                        "type": str,
+                        "help": "Commits, usually other branch heads, to merge into our branch.",
+                        "nargs": "?",
+                        "default": None,
+                    },
+                    {
+                        "dest": "--abort",
+                        "action": "store_true",
+                        "help": "Commits, usually other branch heads, to merge into our branch.",
+                    },
+                    {
+                        "dest": "--continue",
+                        "action": "store_true",
+                        "help": "Commits, usually other branch heads, to merge into our branch.",
+                    },
+                ],
             },
             {
                 "command": "pull",
                 "help": "Safely run `git merge`",
             },
-            # {
-            #    "command": "set",
-            #    "help": "Set the current working environment",
-            #    "args": [
-            #        {
-            #            "dest": "env",
-            #            "type": str,
-            #            "help": "environment you want set as the new working environment",
-            #        }
-            #    ],
-            # },
         ],
     },
 ]

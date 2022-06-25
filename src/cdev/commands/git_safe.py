@@ -43,4 +43,5 @@ def git_safe_pull(**kwargs) -> None:
 
 
 def git_safe_merge(**kwargs):
+    print(kwargs)
     print("MERGE")
