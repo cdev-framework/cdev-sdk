@@ -36,23 +36,23 @@ class show_logs(BaseCommand):
         parser.add_argument(
             "--limit",
             type=int,
-            nargs='?',
+            nargs="?",
             default=10000,
             help="number of events to show. Must be used with --tail.",
         )
         parser.add_argument(
             "--query",
-            nargs='+',
+            nargs="+",
             help="retrieve information base on a cloudWatch query",
         )
         parser.add_argument(
             "--start_time",
-            type=lambda d: datetime.datetime.strptime(d, '%Y-%m-%d-%H:%M:%S'),
+            type=lambda d: datetime.datetime.strptime(d, "%Y-%m-%d-%H:%M:%S"),
             help="set the start_time when use the query option, must be on the Y-m-d-H:M:S format",
         )
         parser.add_argument(
             "--end_time",
-            type=lambda d: datetime.datetime.strptime(d, '%Y-%m-%d-%H:%M:%S'),
+            type=lambda d: datetime.datetime.strptime(d, "%Y-%m-%d-%H:%M:%S"),
             help="set the end_time when use the query option, must be on the Y-m-d-H:M:S format",
         )
 
@@ -143,7 +143,7 @@ class show_logs(BaseCommand):
         if end_time_val is None:
             end_time_val = datetime.datetime.now()
 
-        query = ' '.join([str(item) for item in query_val])
+        query = " ".join([str(item) for item in query_val])
 
         cloud_client = client("logs")
         start_query_response = cloud_client.start_query(
@@ -152,16 +152,16 @@ class show_logs(BaseCommand):
             endTime=int(end_time_val.timestamp()),
             queryString=query,
         )
-        query_id = start_query_response['queryId']
+        query_id = start_query_response["queryId"]
         while True:
-            self.output.print('Waiting for query to complete ...')
+            self.output.print("Waiting for query to complete ...")
             time.sleep(1)
             response = cloud_client.get_query_results(queryId=query_id)
-            for results in response['results']:
+            for results in response["results"]:
                 for item2 in results:
-                    self.output.print(item2['field'] + ': ' + item2['value'])
+                    self.output.print(item2["field"] + ": " + item2["value"])
 
-            if response['status'] != 'Running':
+            if response["status"] != "Running":
                 break
 
     def _watch_log_group(self, group_name: str) -> None:
@@ -254,4 +254,6 @@ class show_logs(BaseCommand):
         events_hash.add(event_hash)
 
     def _format_event(self, event) -> str:
-        return f"{datetime.datetime.fromtimestamp(event.get('timestamp') / 1000).strftime('%Y-%m-%d %H:%M:%S')} - {event.get('message')}"
+        the_timestamp = datetime.datetime.fromtimestamp(event.get("timestamp") / 1000).strftime("%Y-%m-%d %H:%M:%S")
+        the_message = event.get("message")
+        return f"{the_timestamp} - {the_message}"
