@@ -275,6 +275,17 @@ class key_definition_model(ImmutableModel):
     attribute_name: str
     key_type: key_type
 
+class secondary_key_model(ImmutableModel):
+    """Model representing a `Secondary Key`
+
+
+    Args:
+        index_name (str)
+        attribute_name (str))
+    """
+
+    index_name: str
+    attribute_name: str
 
 class KeyDefinition:
     """Construct representing a primary key of a `Table`"""
@@ -298,6 +309,27 @@ class KeyDefinition:
     def render(self) -> key_definition_model:
         return key_definition_model(attribute_name=self.name, key_type=self.type)
 
+class SecondaryKeyDefinition:
+    """Construct representing a primary key of a `Table`"""
+
+    def __init__(self, index_name: str, attribute_name: str) -> None:
+        """
+        Args:
+            name (str): Name of the index
+            attribute_name (str): Name of the attribute that will be the secondary key
+
+        Note that the `name` property must match a `name` of a given `AttributeDefinition` on the created
+        table.
+
+        The keys on a table will define the optimal way of retrieving data from the `Table`.
+
+
+        """
+        self.index_name = index_name
+        self.attribute_name = attribute_name
+
+    def render(self) -> secondary_key_model:
+        return secondary_key_model(index_name=self.index_name, attribute_name=self.attribute_name)
 
 class simple_table_model(TaggableResourceModel):
     """Model representing a `Table`
@@ -308,7 +340,7 @@ class simple_table_model(TaggableResourceModel):
 
     attributes: FrozenSet[attribute_definition_model]
     keys: FrozenSet[key_definition_model]
-
+    secondary_key: FrozenSet[secondary_key_model]
 
 class Table(PermissionsAvailableMixin, TaggableMixin, Resource):
     """Create a NoSql Table (DynamoDB)"""

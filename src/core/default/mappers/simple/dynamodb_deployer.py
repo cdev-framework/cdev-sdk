@@ -14,12 +14,15 @@ def _create_simple_dynamodb_table(
     transaction_token: str,
     namespace_token: str,
     resource: table.simple_table_model,
-    output_task: OutputTask,
+    output_task: OutputTask
 ) -> Dict:
 
+    print('passou aqui')
     full_namespace_suffix = hasher.hash_list([namespace_token, str(uuid4())])
     table_name = f"cdev-table-{full_namespace_suffix}"
-
+    print('passou aqui2')
+    print(resource)
+    # print(type(secondary_key))
     output_task.update(
         comment="[blink]Creating Table. This will take a few seconds.[/blink]"
     )
@@ -30,34 +33,36 @@ def _create_simple_dynamodb_table(
     ]
 
     key_schema.sort(key=lambda x: x.get("KeyType"))
+    return
 
-    rv = aws_client.run_client_function(
-        "dynamodb",
-        "create_table",
-        {
-            "TableName": table_name,
-            "AttributeDefinitions": [
-                {
-                    "AttributeName": x.attribute_name,
-                    "AttributeType": x.attribute_type.value,
-                }
-                for x in resource.attributes
-            ],
-            "KeySchema": key_schema,
-            "BillingMode": "PAY_PER_REQUEST",
-        },
-        wait={"name": "table_exists", "args": {"TableName": table_name}},
-    )
-
-    output_info = {
-        "table_name": table_name,
-        "cloud_id": rv.get("TableDescription").get("TableArn"),
-        "arn": rv.get("TableDescription").get("TableArn"),
-        "cdev_name": resource.name,
-        "ruuid": resource.ruuid,
-    }
-
-    return output_info
+    # rv = aws_client.run_client_function(
+    #     "dynamodb",
+    #     "create_table",
+    #     {
+    #         "TableName": table_name,
+    #         "AttributeDefinitions": [
+    #             {
+    #                 "AttributeName": x.attribute_name,
+    #                 "AttributeType": x.attribute_type.value,
+    #             }
+    #             for x in resource.attributes
+    #         ],
+    #         "KeySchema": key_schema,
+    #         "BillingMode": "PAY_PER_REQUEST",
+    #         # "GlobalSecondaryIndexes": [secondary_index]
+    #     },
+    #     wait={"name": "table_exists", "args": {"TableName": table_name}},
+    # )
+    #
+    # output_info = {
+    #     "table_name": table_name,
+    #     "cloud_id": rv.get("TableDescription").get("TableArn"),
+    #     "arn": rv.get("TableDescription").get("TableArn"),
+    #     "cdev_name": resource.name,
+    #     "ruuid": resource.ruuid,
+    # }
+    #
+    # return output_info
 
 
 def _update_simple_dynamodb_table(
@@ -68,6 +73,7 @@ def _update_simple_dynamodb_table(
     previous_output: Dict,
     output_task: OutputTask,
 ) -> Dict:
+
     raise Exception
 
 
