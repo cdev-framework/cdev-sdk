@@ -9,8 +9,9 @@ from botocore.exceptions import ClientError
 from core.constructs.commands import BaseCommand
 
 from core.utils import hasher
+from core.default.commands import utils as command_utils
 
-from core.default.commands.function.utils import get_cloud_id_from_cdev_name
+RUUID = "cdev::simple::function"
 
 
 class show_logs(BaseCommand):
@@ -74,15 +75,19 @@ class show_logs(BaseCommand):
         (
             component_name,
             resource_name,
-        ) = self.get_component_and_resource_from_qualified_name(
+        ) = command_utils.get_component_and_resource_from_qualified_name(
             function_name
         )
 
-        cloud_name = get_cloud_id_from_cdev_name(component_name, resource_name)
-        if not cloud_name:
+        cloud_output = command_utils.get_cloud_output_from_cdev_name(component_name, RUUID, function_name)
+        if not cloud_output:
             return None
 
-        cloud_name = cloud_name.split(":")
+        cloud_id = cloud_output.get("cloud_id")
+        if not cloud_id:
+            return None
+
+        cloud_name = cloud_id.split(":")
         if len(cloud_name) < 2:
             return None
 
@@ -110,7 +115,7 @@ class show_logs(BaseCommand):
             next_token = response.get(next_token_name)
             while next_token != prev_token:
                 for event in response.get("events"):
-                    self.stdout.write(self._format_event(event))
+                    self.output.print(self._format_event(event))
 
                 response = cloud_client.get_log_events(
                     logGroupName=cloud_group_name,
@@ -149,12 +154,12 @@ class show_logs(BaseCommand):
         )
         query_id = start_query_response['queryId']
         while True:
-            self.stdout.write('Waiting for query to complete ...')
+            self.output.print('Waiting for query to complete ...')
             time.sleep(1)
             response = cloud_client.get_query_results(queryId=query_id)
             for results in response['results']:
                 for item2 in results:
-                    self.stdout.write(item2['field'] + ': ' + item2['value'])
+                    self.output.print(item2['field'] + ': ' + item2['value'])
 
             if response['status'] != 'Running':
                 break
@@ -183,12 +188,19 @@ class show_logs(BaseCommand):
             streams = self._get_streams(cloud_client, group_name, previous_refresh_time)
             start_from_head = True
             for stream in streams:
-                self._process_stream(cloud_client, stream, group_name, events_hash, start_from_head, previous_refresh_time)
+                self._process_stream(
+                    cloud_client,
+                    stream,
+                    group_name,
+                    events_hash,
+                    start_from_head,
+                    previous_refresh_time
+                )
 
             time.sleep(0.2)
             return True
         except KeyboardInterrupt:
-            self.stdout.write("Interrupted")
+            self.output.print("Interrupted")
 
         return False
 
@@ -237,9 +249,9 @@ class show_logs(BaseCommand):
         )
 
         if event_hash not in events_hash:
-            self.stdout.write(self._format_event(event))
+            self.output.print(self._format_event(event))
 
         events_hash.add(event_hash)
 
     def _format_event(self, event) -> str:
-        return f"{datetime.datetime.fromtimestamp(event.get('timestamp') / 1000).strftime('%Y-%m-%d %H:%M:%S')} - {event.get('message')} "
+        return f"{datetime.datetime.fromtimestamp(event.get('timestamp') / 1000).strftime('%Y-%m-%d %H:%M:%S')} - {event.get('message')}"

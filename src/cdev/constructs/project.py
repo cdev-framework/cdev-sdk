@@ -280,16 +280,6 @@ class Project:
         """
         raise NotImplementedError
 
-    def get_current_environment_workspace(self) -> "Workspace":
-        """Get the environment object for the currently active Environment. Note that the Environment will be in a state
-        based on when this function is called within the Cdev lifecycle.
-
-        Raises:
-            EnvironmentDoesNotExist
-            NoCurrentEnvironment
-        """
-        raise NotImplementedError
-
     ############################
     ##### Settings
     ############################

@@ -244,15 +244,6 @@ class local_project(Project):
 
         return self._loaded_environment
 
-    @wrap_phases([Project_State.INITIALIZING, Project_State.INITIALIZED])
-    def get_current_environment_workspace(self) -> "Workspace":
-        environment = self.get_current_environment()
-
-        if environment:
-            return environment.get_workspace()
-
-        return None
-
     ############################
     ##### Runtime Settings
     ############################
