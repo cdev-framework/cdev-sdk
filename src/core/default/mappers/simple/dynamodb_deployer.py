@@ -19,23 +19,30 @@ def _create_simple_dynamodb_table(
 
     full_namespace_suffix = hasher.hash_list([namespace_token, str(uuid4())])
     table_name = f"cdev-table-{full_namespace_suffix}"
-    print(resource)
     output_task.update(
         comment="[blink]Creating Table. This will take a few seconds.[/blink]"
     )
-
     key_schema = [
         {"AttributeName": x.attribute_name, "KeyType": x.key_type.value}
         for x in resource.keys
     ]
-
-    key_schema.sort(key=lambda x: x.get("KeyType"))
-    return
-
-    rv = aws_client.run_client_function(
-        "dynamodb",
-        "create_table",
+    secondary_key_schema = [
         {
+            'IndexName': x.index_name,
+            'KeySchema': [
+                {
+                    'AttributeName': x.attribute_name,
+                    'KeyType': 'HASH'
+                }
+            ],
+            'Projection': {
+                'ProjectionType': 'ALL'
+            }
+        }
+        for x in resource.secondary_key
+    ]
+    key_schema.sort(key=lambda x: x.get("KeyType"))
+    create_dict ={
             "TableName": table_name,
             "AttributeDefinitions": [
                 {
@@ -45,12 +52,17 @@ def _create_simple_dynamodb_table(
                 for x in resource.attributes
             ],
             "KeySchema": key_schema,
-            "BillingMode": "PAY_PER_REQUEST",
-            # "GlobalSecondaryIndexes": [secondary_index]
-        },
+            "BillingMode": "PAY_PER_REQUEST"
+        }
+    if len(secondary_key_schema) > 0:
+        create_dict['GlobalSecondaryIndexes'] = secondary_key_schema
+
+    rv = aws_client.run_client_function(
+        "dynamodb",
+        "create_table",
+        create_dict,
         wait={"name": "table_exists", "args": {"TableName": table_name}},
     )
-
     output_info = {
         "table_name": table_name,
         "cloud_id": rv.get("TableDescription").get("TableArn"),

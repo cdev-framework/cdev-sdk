@@ -351,6 +351,7 @@ class Table(PermissionsAvailableMixin, TaggableMixin, Resource):
         cdev_name: str,
         attributes: List[AttributeDefinition],
         keys: List[KeyDefinition],
+        secondary_key: List[SecondaryKeyDefinition] =[],
         nonce: str = "",
         tags: Dict[str, str] = None,
     ) -> None:
@@ -375,6 +376,7 @@ class Table(PermissionsAvailableMixin, TaggableMixin, Resource):
 
         self._attributes = attributes
         self._keys = keys
+        self._secondary_keys = secondary_key
         self._stream = None
         self._tags = tags
 
@@ -410,6 +412,16 @@ class Table(PermissionsAvailableMixin, TaggableMixin, Resource):
     @update_hash
     def keys(self, value: List[KeyDefinition]) -> None:
         self._keys = value
+
+    @property
+    def secondary_key(self) -> List[SecondaryKeyDefinition]:
+        """Current Secondary Keys"""
+        return self._secondary_keys
+
+    @secondary_key.setter
+    @update_hash
+    def secondary_key(self, value: List[SecondaryKeyDefinition]):
+        self._secondary_keys = value
 
     def create_stream(
         self, view_type: stream_type, batch_size: int = 100, batch_failure: bool = True
@@ -514,4 +526,5 @@ class Table(PermissionsAvailableMixin, TaggableMixin, Resource):
             hash=self.hash,
             attributes=[x.render() for x in self.attributes],
             keys=[x.render() for x in self.keys],
+            secondary_key=[x.render() for x in self.secondary_key]
         )
