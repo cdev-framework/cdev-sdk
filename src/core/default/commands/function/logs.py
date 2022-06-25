@@ -200,7 +200,7 @@ class show_logs(BaseCommand):
             )
             stream_names = [x.get("logStreamName") for x in log_streams_rv.get("logStreams")]
             return stream_names
-        except ClientError as e:
+        except ClientError:
             raise Exception(f"Function {cloud_group_name} has not generated any logs. Trigger the function to generate logs.")
 
     def _process_stream(
