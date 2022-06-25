@@ -19,6 +19,7 @@ from ..commands import (
     project_initializer,
     run,
     sync,
+    git_safe,
 )
 
 from cdev.constructs.project import CDEV_PROJECT_FILE, CDEV_FOLDER, Project
@@ -319,6 +320,36 @@ CDEV_COMMANDS = [
                 "type": str,
                 "help": "do not watch for any file that matches the following pattern ['.cdev/**','__pycache__/*']",
             },
+        ],
+    },
+    {
+        "name": "git-safe",
+        "help": "Safe versions of some git operations",
+        "default": git_safe.git_safe_cli,
+        "subcommands": [
+            {
+                "command": "install-merger",
+                "help": "Install the cdev custom git merger to help properly merge the underlying used by Cdev.",
+            },
+            {
+                "command": "merge",
+                "help": "Safely run `git merge`",
+            },
+            {
+                "command": "pull",
+                "help": "Safely run `git merge`",
+            },
+            # {
+            #    "command": "set",
+            #    "help": "Set the current working environment",
+            #    "args": [
+            #        {
+            #            "dest": "env",
+            #            "type": str,
+            #            "help": "environment you want set as the new working environment",
+            #        }
+            #    ],
+            # },
         ],
     },
 ]
