@@ -1,7 +1,7 @@
 import time, datetime
 
 from argparse import ArgumentParser
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from boto3 import client
 from botocore.exceptions import ClientError
@@ -57,7 +57,7 @@ class show_logs(BaseCommand):
         )
 
     def command(self, *args, **kwargs) -> None:
-        cloud_group_name = self._get_cloud_group_name(kwargs.get("function_name"))
+        cloud_group_name = self._get_cloud_group_name(kwargs["function_name"])
         if not cloud_group_name:
             return
 
@@ -67,9 +67,9 @@ class show_logs(BaseCommand):
         else:
             query_val = kwargs.get("query")
             if query_val is None:
-                self._show_log(cloud_group_name, **kwargs)
+                self._show_log_group(cloud_group_name, **kwargs)
             else:
-                self._show_filtered_log(cloud_group_name, **kwargs)
+                self._show_filtered_log_group(cloud_group_name, **kwargs)
 
     def _get_cloud_group_name(self, function_name: str) -> Optional[str]:
         (
@@ -79,7 +79,7 @@ class show_logs(BaseCommand):
             function_name
         )
 
-        cloud_output = command_utils.get_cloud_output_from_cdev_name(component_name, RUUID, function_name)
+        cloud_output = command_utils.get_cloud_output_from_cdev_name(component_name, RUUID, resource_name)
         if not cloud_output:
             return None
 
@@ -95,39 +95,50 @@ class show_logs(BaseCommand):
         cloud_group_name = f"/aws/lambda/{cloud_name}"
         return cloud_group_name
 
-    def _show_log(self, cloud_group_name, **kwargs) -> None:
+    def _show_log_group(self, cloud_group_name, **kwargs) -> None:
         backwards = kwargs.get("tail")
-        limit_val = kwargs.get("limit")
+        limit_val = kwargs.get("limit", 10)
+        start_from_head = not backwards
+        next_token_property_name = "nextBackwardToken" if start_from_head else "nextForwardToken"
 
         cloud_client = client("logs")
-        streams = self._get_streams(cloud_client, cloud_group_name)
-
-        start_from_head = not backwards
-        next_token_name = "nextBackwardToken" if start_from_head else "nextForwardToken"
+        streams = self._get_streams_for_cloud_group_name(cloud_client, cloud_group_name)
         for stream_name in streams:
-            response = cloud_client.get_log_events(
+            self._paginate_stream_log_events(
+                cloud_client,
+                cloud_group_name,
+                stream_name,
+                limit_val,
+                start_from_head,
+                next_token_property_name)
+
+    def _paginate_stream_log_events(
+        self,
+        cloud_client,
+        cloud_group_name: str,
+        stream_name: str,
+        limit_val: int,
+        start_from_head: bool,
+        next_token_property_name: str
+    ) -> None:
+        next_token = None
+        while True:
+            log_events = cloud_client.get_log_events(
                 logGroupName=cloud_group_name,
                 logStreamName=stream_name,
                 limit=limit_val,
                 startFromHead=start_from_head,
+                nextToken=next_token
             )
-            prev_token = ""
-            next_token = response.get(next_token_name)
-            while next_token != prev_token:
-                for event in response.get("events"):
-                    self.output.print(self._format_event(event))
+            for event in log_events.get("events"):
+                self.output.print(self._format_event(event))
 
-                response = cloud_client.get_log_events(
-                    logGroupName=cloud_group_name,
-                    logStreamName=stream_name,
-                    limit=limit_val,
-                    startFromHead=start_from_head,
-                    nextToken=next_token
-                )
-                prev_token = next_token
-                next_token = response.get(next_token_name)
+            last_token = next_token
+            next_token = log_events.get(next_token_property_name)
+            if last_token == next_token:
+                break
 
-    def _show_filtered_log(
+    def _show_filtered_log_group(
         self,
         cloud_group_name,
         query_val,
@@ -176,6 +187,7 @@ class show_logs(BaseCommand):
             keep_watching = self._read_from_streams(
                 cloud_client, group_name, events_hash, previous_refresh_time
             )
+            time.sleep(0.2)
 
     def _read_from_streams(
         self,
@@ -185,26 +197,23 @@ class show_logs(BaseCommand):
         previous_refresh_time,
     ) -> bool:
         try:
-            streams = self._get_streams(cloud_client, group_name, previous_refresh_time)
-            start_from_head = True
+            streams = self._get_streams_for_cloud_group_name(cloud_client, group_name)
             for stream in streams:
                 self._process_stream(
                     cloud_client,
                     stream,
                     group_name,
                     events_hash,
-                    start_from_head,
                     previous_refresh_time
                 )
 
-            time.sleep(0.2)
             return True
         except KeyboardInterrupt:
             self.output.print("Interrupted")
 
         return False
 
-    def _get_streams(self, cloud_client, cloud_group_name: str, start_time: float = None) -> List[str]:
+    def _get_streams_for_cloud_group_name(self, cloud_client, cloud_group_name: str) -> List[str]:
         try:
             log_streams_rv = cloud_client.describe_log_streams(
                 logGroupName=cloud_group_name,
@@ -221,14 +230,13 @@ class show_logs(BaseCommand):
         stream,
         group_name: str,
         events_hash: set,
-        start_from_head: bool,
         previous_refresh_time: int
     ) -> None:
         log_events = cloud_client.get_log_events(
             logGroupName=group_name,
             logStreamName=stream,
             startTime=previous_refresh_time,
-            startFromHead=start_from_head,
+            startFromHead=True,
         )
 
         for stream_event in log_events.get("events"):
