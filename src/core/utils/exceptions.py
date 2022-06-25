@@ -9,19 +9,33 @@ Error: Something has reached a state that should terminate the process.
 
 """
 import sys
+from dataclasses import dataclass
+
+from typing import List
 
 
-class Cdev_Warning(Exception):
-    def __init__(self, msg: str) -> None:
-        self.msg = msg
-        super().__init__(self.msg)
+@dataclass
+class cdev_core_error(Exception):
+    error_message: str
+    help_message: str
+    help_resources: List[str]
 
 
-class Cdev_Error(Exception):
-    def __init__(self, msg: str, nested_exceptions: Exception = None) -> None:
-        self.msg = msg
-        self.nested_exceptions = nested_exceptions
-        super().__init__(self.msg)
+@dataclass
+class wrapped_base_exception(cdev_core_error):
+    original_exception: BaseException
+    error_message: str
+    help_message: str
+    help_resources: List[str]
+
+
+def wrap_base_exception(e: Exception) -> cdev_core_error:
+    return wrapped_base_exception(
+        original_exception=e,
+        error_message="uncaught base exception",
+        help_message="This error is unexpected.",
+        help_resources=[],
+    )
 
 
 def end_process():

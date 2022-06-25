@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 import os
 from pydantic import DirectoryPath
 from pydantic.types import FilePath
@@ -36,11 +37,41 @@ from core.utils.fs_manager import (
     package_optimizer,
     serverless_function_optimizer,
 )
+from core.utils.exceptions import cdev_core_error
 
 
 LAMBDA_LAYER_RUUID = "cdev::simple::lambda_layer"
 
 COMPUTED_ENVIRONMENT_INFORMATION = None
+
+
+#######################
+##### Exceptions
+#######################
+@dataclass
+class FinderError(cdev_core_error):
+    help_message: str = ""
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+class DependencyError(FinderError):
+    help_message: str = ""
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+def _wrap_dependency_error_message(
+    filepath: str, function_name: str, original_error_message: str
+) -> str:
+    return f"""
+Error optimizing modules used in {filepath} for function '{function_name}'. Original Error is:
+
+{original_error_message}
+"""
+
+
+#######################
+##### API
+#######################
 
 
 def parse_folder(
@@ -66,7 +97,7 @@ def parse_folder(
     cparser library and then have their dependencies managed also.
     """
     if not os.path.isdir(folder_path):
-        raise Exception
+        raise FileNotFoundError
 
     log.debug("Finding resources in folder %s", folder_path)
 
@@ -319,18 +350,30 @@ def _parse_serverless_functions(
         new_handler = _create_new_handler(full_file_path, parsed_function.name)
         needed_python_init_files = _create_init_files(full_file_path)
 
-        (
-            source_artifact_path,
-            source_hash,
-            dependencies_info,
-        ) = serverless_function_optimizer.create_optimized_serverless_function_artifacts(
-            original_file_location=full_file_path,
-            imported_modules=parsed_function.imported_packages,
-            module_creator=mod_creator,
-            handler_packager=handler_packager,
-            packaged_module_optimizer=packaged_module_packager,
-            additional_handler_files_directories=needed_python_init_files,
-        )
+        try:
+            (
+                source_artifact_path,
+                source_hash,
+                dependencies_info,
+            ) = serverless_function_optimizer.create_optimized_serverless_function_artifacts(
+                original_file_location=full_file_path,
+                imported_modules=parsed_function.imported_packages,
+                module_creator=mod_creator,
+                handler_packager=handler_packager,
+                packaged_module_optimizer=packaged_module_packager,
+                additional_handler_files_directories=needed_python_init_files,
+            )
+
+        except package_manager.PackageManagerError as e:
+            raise DependencyError(
+                error_message=_wrap_dependency_error_message(
+                    filepath=full_file_path,
+                    function_name=parsed_function.name,
+                    original_error_message=e.error_message,
+                ),
+                help_message=e.help_message,
+                help_resources=e.help_resources,
+            )
 
         dependencies_resources = [
             _create_layer(

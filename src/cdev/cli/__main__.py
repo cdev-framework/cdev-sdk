@@ -1,11 +1,14 @@
 import argparse
+from dataclasses import dataclass, field
 import json
 import logging
 import os
-import traceback
-from typing import Callable, Any
+from typing import Any, Callable, List
 
-from pydantic import FilePath
+from pydantic import FilePath, ValidationError
+
+from core.constructs.output_manager import OutputManager
+from core.utils.exceptions import cdev_core_error, wrap_base_exception
 
 from ..commands import (
     cloud_output,
@@ -18,11 +21,38 @@ from ..commands import (
     sync,
 )
 
-from cdev.constructs.project import CDEV_PROJECT_FILE, CDEV_FOLDER
+from cdev.constructs.project import CDEV_PROJECT_FILE, CDEV_FOLDER, Project
 from cdev.default.project import local_project, local_project_info
 
 parser = argparse.ArgumentParser(description="cdev cli")
 subparsers = parser.add_subparsers(title="sub_command", description="valid subcommands")
+
+LOG_LEVEL_ARG = "loglevel"
+OUTPUT_TYPE_ARG = "output_type"
+
+
+###############################
+##### Exceptions
+###############################
+
+
+@dataclass
+class ProjectInfoError(cdev_core_error):
+    help_message: str = (
+        "   The project info files will most likely need to be fixed by hand."
+    )
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+@dataclass
+class ProjectInfoJsonDecoding(cdev_core_error):
+    help_message: str = "   The project info files will most likely need to be fixed by hand. The File should be a valid Json."
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+###############################
+##### API
+###############################
 
 
 def wrap_load_and_initialize_project(
@@ -39,22 +69,58 @@ def wrap_load_and_initialize_project(
     """
 
     def wrapped_caller(*args, **kwargs):
-        try:
-            load_and_initialize_project(initialize=initialize)
-        except Exception as e:
-            print(
-                f"Could not load (initialize={initialize}) the Cdev Project to call {command}"
-            )
-            print(e)
-            print(traceback.format_exc())
+        if len(args) == 1:
+            dict_args = vars(args[0])
+
+        elif len(args) == 2:
+            dict_args = vars(args[1])
+
+        else:
             return
 
-        command(args)
+        log_level = dict_args.pop(LOG_LEVEL_ARG)
+        output_type = dict_args.pop(OUTPUT_TYPE_ARG)
+
+        _output_manager = _initialize_output_manager(output_type=output_type)
+
+        try:
+            _project = load_and_initialize_project(initialize=initialize)
+        except cdev_core_error as e:
+            _output_manager.print_exception(e)
+            return
+        except Exception as e:
+            _output_manager.print_exception(wrap_base_exception(e))
+            return
+
+        try:
+            if len(args) == 1:
+                command(
+                    **dict_args,
+                    loglevel=log_level,
+                    output_manager=_output_manager,
+                    project=_project,
+                )
+            else:
+                command(
+                    args[0],
+                    args[1],
+                    loglevel=log_level,
+                    output_manager=_output_manager,
+                    project=_project,
+                )
+        except cdev_core_error as e:
+            _output_manager.print_exception(e)
+        except Exception as e:
+            _output_manager.print_exception(wrap_base_exception(e))
 
     return wrapped_caller
 
 
-def load_and_initialize_project(initialize: bool = True) -> None:
+def _initialize_output_manager(output_type: str) -> OutputManager:
+    return OutputManager()
+
+
+def load_and_initialize_project(initialize: bool = True) -> Project:
     """Create the global instance of the `Project` object as a `local_project` instance. If provided, also initialize the `Project`.
 
     Args:
@@ -71,6 +137,8 @@ def load_and_initialize_project(initialize: bool = True) -> None:
     if initialize:
         project.initialize_project()
 
+    return project
+
 
 def _load_local_project_information(
     project_info_location: FilePath,
@@ -84,7 +152,22 @@ def _load_local_project_information(
         local_project_info
     """
     with open(project_info_location, "r") as fh:
-        return local_project_info(**json.load(fh))
+        try:
+            json_information = json.load(fh)
+
+            local_project_info_model = local_project_info(**json_information)
+
+        except ValidationError as e:
+            raise ProjectInfoError(
+                error_message=f"Could not convert loaded json data from {project_info_location} into a valid 'local_project_info' object because of pydantic validation error"
+            )
+
+        except json.JSONDecodeError as e:
+            raise ProjectInfoJsonDecoding(
+                error_message=f"Could not load project info from {project_info_location} as json data"
+            )
+
+    return local_project_info_model
 
 
 CDEV_COMMANDS = [
@@ -111,13 +194,6 @@ CDEV_COMMANDS = [
             {
                 "command": "ls",
                 "help": "Show all available environments",
-                "args": [
-                    {
-                        "dest": "--all",
-                        "help": "show more details",
-                        "action": "store_true",
-                    }
-                ],
             },
             {
                 "command": "set",
@@ -222,7 +298,7 @@ CDEV_COMMANDS = [
         "default": wrap_load_and_initialize_project(run.run_command_cli),
         "args": [
             {"dest": "subcommand", "help": "the user defined command to call"},
-            {"dest": "args", "nargs": argparse.REMAINDER},
+            {"dest": "subcommand_args", "nargs": argparse.REMAINDER},
         ],
     },
     {
@@ -270,31 +346,24 @@ def add_general_output_options(parser: argparse.ArgumentParser) -> None:
         "--output",
         type=str,
         choices=["json", "plain-text", "rich"],
-        help="change the type of output generated",
-    )
-
-    parser.add_argument(
-        "-d",
-        "--debug",
-        help="Print debug log statements. This is mostly for development use",
-        action="store_const",
-        dest="loglevel",
-        const=logging.DEBUG,
-        default=logging.WARNING,
+        dest=OUTPUT_TYPE_ARG,
+        default="rich",
+        help="BASE CDEV OPTION -> change the type of output generated",
     )
 
     parser.add_argument(
         "-v",
         "--verbose",
-        help="Print info log message. Use this to get a more detailed understanding of what is executing.",
+        help="BASE CDEV OPTION -> Print info log message. Use this to get a more detailed understanding of what is executing.",
         action="store_const",
-        dest="loglevel",
+        dest=LOG_LEVEL_ARG,
         const=logging.INFO,
     )
 
 
 for command in CDEV_COMMANDS:
     tmp = subparsers.add_parser(command.get("name"), help=command.get("help"))
+    add_general_output_options(tmp)
 
     if command.get("subcommands"):
         tmp.set_defaults(func=subcommand_function_wrapper("", command.get("default")))
@@ -308,7 +377,7 @@ for command in CDEV_COMMANDS:
                 )
             )
 
-            for arg in subcommand.get("args"):
+            for arg in subcommand.get("args", []):
                 dest = arg.get("dest")
                 arg.pop("dest")
                 t2.add_argument(dest, **arg)
@@ -322,8 +391,6 @@ for command in CDEV_COMMANDS:
                 tmp.add_argument(dest, **arg)
 
         tmp.set_defaults(func=command.get("default"))
-
-        add_general_output_options(tmp)
 
 
 args = parser.parse_args()

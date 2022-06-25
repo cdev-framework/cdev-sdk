@@ -48,13 +48,11 @@ def create_project_cli(args) -> None:
         args (_type_): cli arguments
     """
     config = args
-    set_global_logger_from_cli(config.loglevel)
 
     create_project(args.name)
 
     if args.template:
         template_name = args.template
-
         if template_name not in AVAILABLE_TEMPLATES:
             print(
                 f"{template_name} is not one of the available templates. {AVAILABLE_TEMPLATES}"
