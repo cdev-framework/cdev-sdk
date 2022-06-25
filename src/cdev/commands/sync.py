@@ -15,5 +15,6 @@ def sync_command(args) -> None:
 
     output_manager = CdevOutputManager()
     my_project = Project.instance()
-    ws = my_project.get_current_environment().get_workspace()
+
+    ws = my_project.get_current_environment_workspace()
     core_sync_command(ws, output_manager, args)

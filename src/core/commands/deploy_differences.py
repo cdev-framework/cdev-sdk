@@ -22,6 +22,7 @@ def execute_deployment(workspace: Workspace, output: OutputManager, no_prompt: O
     Args:
         workspace (Workspace): Workspace to execute the process within.
         output (OutputManager): Output manager for sending messages to the console.
+        no_prompt (bool): If set to True, we don't ask the user to confirm before deploying the resources.
     """
     unsorted_differences = execute_frontend(workspace, output)
 

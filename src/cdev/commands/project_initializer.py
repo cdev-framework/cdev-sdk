@@ -3,22 +3,18 @@ import os
 from pydantic import FilePath
 from pydantic.types import DirectoryPath
 import shutil
-from typing import Dict, Tuple, List
+from typing import Dict, List, Union
 
 from rich.prompt import Prompt
 from cdev.default.project import local_project, local_project_info
 from cdev.cli.logger import set_global_logger_from_cli
 
-from core.constructs.backend import Backend, Backend_Configuration
-from core.constructs.workspace import Workspace_Info
-from core.default.backend import Local_Backend_Configuration, LocalBackend
+from core.default.backend import Local_Backend_Configuration
 from core.utils import paths as paths_util
 
 
 from cdev.constructs.project import (
-    Project_State,
     check_if_project_exists,
-    Project_Info,
     CDEV_FOLDER,
     CDEV_PROJECT_FILE,
 )
@@ -160,15 +156,11 @@ def _default_new_project_input_questions() -> Dict[str, str]:
     Returns:
         Dict[str, str]: Settings completed by the user
     """
-    rv = {}
-
     _artifact_bucket = Prompt.ask(
         prompt="Name of bucket to store artifacts", default=""
     )
 
-    rv = {"S3_ARTIFACTS_BUCKET": _artifact_bucket}
-
-    return rv
+    return {"S3_ARTIFACTS_BUCKET": _artifact_bucket}
 
 
 def _create_folder_structure(
@@ -207,7 +199,7 @@ def _create_folder_structure(
 
 
 def _create_base_settings(
-    file_path: FilePath, base_settings: Dict[str, str] = None
+    file_path: Union[FilePath, str], base_settings: Dict[str, str] = None
 ) -> None:
     """Create the base settings for the project at the provide path. This creates a python module at the provided directory, creates
     a base settings file, and applies any base settings to the generate file.

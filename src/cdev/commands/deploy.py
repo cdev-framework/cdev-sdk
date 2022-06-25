@@ -11,11 +11,12 @@ def deploy_command_cli(args) -> None:
     deploy_command(args)
 
 
-def deploy_command(args) -> None:
+def deploy_command(cli_args) -> None:
 
     output_manager = CdevOutputManager()
-    myProject = Project.instance()
+    my_project = Project.instance()
 
-    ws = myProject.get_current_environment_workspace()
+    ws = my_project.get_current_environment_workspace()
 
-    execute_deployment(ws, output_manager)
+    no_prompt = cli_args[0].disable_prompt
+    execute_deployment(ws, output_manager, no_prompt=no_prompt)

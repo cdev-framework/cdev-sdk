@@ -14,13 +14,14 @@ def plan_command_cli(args) -> None:
 
 
 def plan_command(args) -> None:
+
     log.info(msg="Starting Plan Command")
     output_manager = CdevOutputManager()
+    my_project = Project.instance()
 
-    myProject = Project.instance()
     log.debug("Loaded Project Global Instance")
 
-    ws = myProject.get_current_environment().get_workspace()
+    ws = my_project.get_current_environment_workspace()
 
     execute_frontend(ws, output_manager)
     log.info("Finished Plan Command")
