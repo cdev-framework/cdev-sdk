@@ -11,7 +11,7 @@ from typing import List
 
 from pydantic.types import FilePath
 
-from core.utils.exceptions import Cdev_Error
+from core.utils.exceptions import cdev_core_error
 
 
 class FILE_CACHE_CLASS:
@@ -84,7 +84,7 @@ def hash_file(fp: FilePath, bypass_cache: bool = False) -> str:
         return FILE_CACHE.cache.get(fp)
 
     if not os.path.isfile(fp):
-        raise Cdev_Error(f"Could not find file ({fp}) to hash", FileNotFoundError)
+        raise cdev_core_error(f"Could not find file ({fp}) to hash", FileNotFoundError)
 
     with open(fp, "rb") as fh:
         the_hash = hashlib.md5(fh.read()).hexdigest()

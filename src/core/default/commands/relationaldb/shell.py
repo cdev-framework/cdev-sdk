@@ -12,6 +12,7 @@ from rich.table import Table
 
 from core.constructs.commands import BaseCommand
 from core.default.commands.relationaldb.utils import get_db_info_from_cdev_name
+from core.default.commands import utils as command_utils
 
 
 class shell(BaseCommand):
@@ -36,7 +37,10 @@ class shell(BaseCommand):
         (
             component_name,
             database_name,
-        ) = self.get_component_and_resource_from_qualified_name(kwargs.get("resource"))
+        ) = command_utils.get_component_and_resource_from_qualified_name(
+            kwargs.get("resource")
+        )
+
         c_command = kwargs.get("command")
         f_command = kwargs.get("file")
         cluster_arn, secret_arn, db_name = get_db_info_from_cdev_name(
@@ -81,11 +85,11 @@ class shell(BaseCommand):
         connection.begin()
         for query in query_list:
             if query != "":
-                self.stdout.write(query)
+                self.output.print(query)
                 try:
                     col_descriptions, rows, updated_row_cnt = connection.execute(query)
                 except Exception as e:
-                    self.stdout.write("FAIL")
+                    self.output.print("FAIL")
                     connection.rollback()
                     raise e
                 fmt(Console()).print_results(col_descriptions, rows, updated_row_cnt)

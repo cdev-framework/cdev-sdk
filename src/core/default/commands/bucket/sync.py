@@ -8,7 +8,9 @@ import mimetypes
 from core.constructs.commands import BaseCommand
 from core.utils.paths import get_full_path_from_workspace_base
 
-from . import utils
+from core.default.commands import utils as command_utils
+
+RUUID = "cdev::simple::bucket"
 
 
 class sync_files(BaseCommand):
@@ -32,14 +34,18 @@ class sync_files(BaseCommand):
         )
 
     def command(self, *args, **kwargs) -> None:
-        full_resource_name: str = kwargs.get("resource_name")
-        component_name = full_resource_name.split(".")[0]
-        bucket_cdev_name = full_resource_name.split(".")[1]
+        (
+            component_name,
+            bucket_cdev_name,
+        ) = command_utils.get_component_and_resource_from_qualified_name(
+            kwargs.get("resource_name")
+        )
+
         content_directory = kwargs.get("dir")
         clear_bucket = kwargs.get("clear")
 
-        cloud_output = utils.get_cloud_output_from_cdev_name(
-            component_name, bucket_cdev_name
+        cloud_output = command_utils.get_cloud_output_from_cdev_name(
+            component_name, RUUID, bucket_cdev_name
         )
 
         final_dir = get_full_path_from_workspace_base(content_directory)
@@ -61,7 +67,7 @@ class sync_files(BaseCommand):
                 mimetype, _ = mimetypes.guess_type(full_path)
                 if mimetype is None:
                     raise Exception("Failed to guess mimetype")
-                self.stdout.write(f"Uploading file -> {full_path}")
+                self.output.print(f"Uploading file -> {full_path}")
                 bucket.upload_file(
                     full_path, key_name, ExtraArgs={"ContentType": mimetype}
                 )

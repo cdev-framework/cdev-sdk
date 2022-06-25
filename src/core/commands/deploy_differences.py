@@ -15,7 +15,9 @@ def execute_deployment_cli(args) -> None:
     execute_deployment(workspace, OutputManager())
 
 
-def execute_deployment(workspace: Workspace, output: OutputManager, no_prompt: Optional[bool] = False) -> None:
+def execute_deployment(
+    workspace: Workspace, output: OutputManager, no_prompt: Optional[bool] = False
+) -> None:
     """Execute the process for a deployment. This includes generating the current frontend representation of the desired resources.
     Then after confirmation, deploy any needed changes.
 

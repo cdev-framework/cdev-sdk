@@ -5,11 +5,14 @@ from typing import List, Dict
 
 from boto3 import client
 
-from core.constructs.commands import BaseCommand, OutputWrapper
+from core.constructs.commands import BaseCommand
+from core.constructs.output_manager import OutputManager
 
 from core.utils import hasher
 
-from core.default.commands.function.utils import get_cloud_id_from_cdev_name
+from core.default.commands import utils as command_utils
+
+RUUID = "cdev::simple::function"
 
 
 class show_logs(BaseCommand):
@@ -34,23 +37,23 @@ class show_logs(BaseCommand):
         parser.add_argument(
             "--limit",
             type=int,
-            nargs='?',
+            nargs="?",
             default=10000,
             help="number of events to show. Must be used with --tail.",
         )
         parser.add_argument(
             "--query",
-            nargs='+',
+            nargs="+",
             help="retrieve information base on a cloudWatch query",
         )
         parser.add_argument(
             "--start_time",
-            type=lambda d: datetime.datetime.strptime(d, '%Y-%m-%d-%H:%M:%S'),
+            type=lambda d: datetime.datetime.strptime(d, "%Y-%m-%d-%H:%M:%S"),
             help="set the start_time when use the query option, must be on the Y-m-d-H:M:S format",
         )
         parser.add_argument(
             "--end_time",
-            type=lambda d: datetime.datetime.strptime(d, '%Y-%m-%d-%H:%M:%S'),
+            type=lambda d: datetime.datetime.strptime(d, "%Y-%m-%d-%H:%M:%S"),
             help="set the end_time when use the query option, must be on the Y-m-d-H:M:S format",
         )
 
@@ -58,7 +61,7 @@ class show_logs(BaseCommand):
         (
             component_name,
             function_name,
-        ) = self.get_component_and_resource_from_qualified_name(
+        ) = command_utils.get_component_and_resource_from_qualified_name(
             kwargs.get("function_name")
         )
 
@@ -68,30 +71,35 @@ class show_logs(BaseCommand):
         start_time_val = kwargs.get("start_time")
         end_time_val = kwargs.get("end_time")
 
-        cloud_name = get_cloud_id_from_cdev_name(component_name, function_name).split(
-            ":"
-        )[-1]
-        if not cloud_name:
-            self.stdout.write(
-                f"Could not find function {function_name} in component {component_name}"
-            )
-            return
+        cloud_id: str = command_utils.get_cloud_output_from_cdev_name(
+            component_name, RUUID, function_name
+        ).get("cloud_id")
+        cloud_name = cloud_id.split(":")[-1]
 
         cloud_watch_group_name = f"/aws/lambda/{cloud_name}"
 
         watch_val = kwargs.get("watch")
         if watch_val:
-            _watch_log_group(cloud_watch_group_name, self.stdout)
+            _watch_log_group(cloud_watch_group_name, self.output)
             return
 
         cloud_watch_client = client("logs")
         if query_val is None:
-            self.get_log_result(limit_val, tail_val, cloud_watch_client, cloud_watch_group_name)
+            self.get_log_result(
+                limit_val, tail_val, cloud_watch_client, cloud_watch_group_name
+            )
         else:
-            self.get_log_query_result(query_val, start_time_val, end_time_val,
-                                      cloud_watch_client, cloud_watch_group_name)
+            self.get_log_query_result(
+                query_val,
+                start_time_val,
+                end_time_val,
+                cloud_watch_client,
+                cloud_watch_group_name,
+            )
 
-    def get_log_result(self, limit_val, tail_val, cloud_watch_client, cloud_watch_group_name) -> None:
+    def get_log_result(
+        self, limit_val, tail_val, cloud_watch_client, cloud_watch_group_name
+    ) -> None:
         log_streams_rv = cloud_watch_client.describe_log_streams(
             logGroupName=cloud_watch_group_name,
             orderBy="LastEventTime",
@@ -111,7 +119,7 @@ class show_logs(BaseCommand):
             prev_token = ""
             while next_token != prev_token:
                 for event in response.get("events"):
-                    self.stdout.write(
+                    self.output.print(
                         f"{datetime.datetime.fromtimestamp(event.get('timestamp') / 1000).strftime('%Y-%m-%d %H:%M:%S')} - {event.get('message')} "
                     )
                 response = cloud_watch_client.get_log_events(
@@ -119,7 +127,7 @@ class show_logs(BaseCommand):
                     logStreamName=stream,
                     limit=limit_val,
                     startFromHead=False if tail_val else True,
-                    nextToken=next_token
+                    nextToken=next_token,
                 )
                 prev_token = next_token
                 if tail_val:
@@ -127,42 +135,42 @@ class show_logs(BaseCommand):
                 else:
                     next_token = response.get("nextBackwardToken")
 
-    def get_log_query_result(self, query_val, start_time_val, end_time_val,
-                             cloud_watch_client, cloud_watch_group_name) -> None:
-        print(query_val)
-        print(start_time_val)
-        print(end_time_val)
-        print(cloud_watch_client)
-        print(cloud_watch_group_name)
+    def get_log_query_result(
+        self,
+        query_val,
+        start_time_val,
+        end_time_val,
+        cloud_watch_client,
+        cloud_watch_group_name,
+    ) -> None:
+
         if start_time_val is None:
             start_time_val = datetime.datetime.today() - datetime.timedelta(weeks=52)
         if end_time_val is None:
             end_time_val = datetime.datetime.now()
-        query = ''
+        query = ""
         for item in query_val:
-            query = query + ' ' + str(item)
+            query = query + " " + str(item)
         start_query_response = cloud_watch_client.start_query(
             logGroupName=cloud_watch_group_name,
             startTime=int(start_time_val.timestamp()),
             endTime=int(end_time_val.timestamp()),
             queryString=query,
         )
-        query_id = start_query_response['queryId']
+        query_id = start_query_response["queryId"]
         response = None
 
-        while response == None or response['status'] == 'Running':
-            self.stdout.write('Waiting for query to complete ...')
+        while response == None or response["status"] == "Running":
+            self.output.print("Waiting for query to complete ...")
             time.sleep(1)
-            response = cloud_watch_client.get_query_results(
-                queryId=query_id
-            )
+            response = cloud_watch_client.get_query_results(queryId=query_id)
 
-        for item in response['results']:
+        for item in response["results"]:
             for item2 in item:
-                self.stdout.write(item2['field'] + ': ' + item2['value'])
+                self.output.print(item2["field"] + ": " + item2["value"])
 
 
-def _watch_log_group(group_name: str, stdout: OutputWrapper, args=None) -> None:
+def _watch_log_group(group_name: str, output: OutputManager, args=None) -> None:
     cloud_watch_client = client("logs")
 
     events_hash = set()
@@ -172,16 +180,16 @@ def _watch_log_group(group_name: str, stdout: OutputWrapper, args=None) -> None:
             (time.mktime(datetime.datetime.now().timetuple()) - 60) * 1000
         )
         keep_watching = _read_from_streams(
-            cloud_watch_client, group_name, stdout, events_hash, _previous_refresh_time
+            cloud_watch_client, group_name, output, events_hash, _previous_refresh_time
         )
 
 
 def _read_from_streams(
-        cloud_watch_client,
-        group_name: str,
-        stdout: OutputWrapper,
-        events_hash,
-        _previous_refresh_time,
+    cloud_watch_client,
+    group_name: str,
+    output: OutputManager,
+    events_hash,
+    _previous_refresh_time,
 ) -> bool:
     try:
         log_streams_rv = cloud_watch_client.describe_log_streams(
@@ -211,7 +219,7 @@ def _read_from_streams(
                 )
 
                 if event_hash not in events_hash:
-                    stdout.write(
+                    output.print(
                         f"{datetime.datetime.fromtimestamp(event.get('timestamp') / 1000).strftime('%Y-%m-%d %H:%M:%S')} - {event.get('message')}"
                     )
 
@@ -220,7 +228,7 @@ def _read_from_streams(
         time.sleep(0.2)
         return True
     except KeyboardInterrupt:
-        stdout.write("Interrupted")
+        output.print("Interrupted")
 
     return False
 

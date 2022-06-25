@@ -2,9 +2,17 @@
 
 
 """
-
+from dataclasses import dataclass, field
 from enum import Enum
 import inspect
+from typing import Callable, List, Dict, Any, Tuple, TypeVar, Optional
+
+from networkx.algorithms.dag import topological_sort
+from networkx.classes.digraph import DiGraph
+from networkx.classes.graph import NodeView
+
+from pydantic import BaseModel
+
 from rich.console import Console
 from rich.progress import (
     Progress,
@@ -13,14 +21,6 @@ from rich.progress import (
     TimeElapsedColumn,
     SpinnerColumn,
 )
-from typing import Callable, List, Dict, Any, Tuple, TypeVar, Optional
-
-
-from networkx.algorithms.dag import topological_sort
-from networkx.classes.digraph import DiGraph
-from networkx.classes.graph import NodeView
-
-from pydantic import BaseModel
 
 from core.constructs.models import frozendict
 from core.constructs.output_manager import OutputManager, OutputTask
@@ -32,11 +32,15 @@ from core.constructs.resource import (
     Resource_Reference_Change_Type,
     ResourceModel,
 )
-from core.constructs.backend import Backend, Backend_Configuration, load_backend
+from core.constructs.backend import (
+    Backend,
+    Backend_Configuration,
+    BackendError,
+    load_backend,
+)
 from core.constructs.mapper import CloudMapper
 from core.constructs.components import (
     Component,
-    Component_Change_Type,
     Component_Difference,
     ComponentModel,
 )
@@ -46,17 +50,48 @@ from core.constructs.cloud_output import (
     evaluate_dynamic_output,
     cloud_output_dynamic_model,
 )
-from core.constructs.settings import Settings_Info, Settings, initialize_settings
+from core.constructs.settings import (
+    Settings_Info,
+    Settings,
+    initialize_settings,
+    SettingsError,
+)
 
 
 from core.utils.command_finder import find_specified_command
 from core.utils import module_loader, topological_helper
 from core.utils.logger import log
+from core.utils.exceptions import cdev_core_error
 
 from core.constructs.types import F
 
 
 _GLOBAL_WORKSPACE: "Workspace" = None
+
+###############################
+##### Exceptions
+###############################
+
+
+@dataclass
+class WorkspaceInitializationError(cdev_core_error):
+    help_message: str = (
+        "   Commands can not be issued until the Workspace error has been resolved."
+    )
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+@dataclass
+class WorkspaceInfoError(cdev_core_error):
+    help_message: str = (
+        "   Commands can not be issued until the Workspace error has been resolved."
+    )
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+###############################
+##### Classes
+###############################
 
 
 class Workspace_Info(BaseModel):
@@ -111,6 +146,11 @@ class Workspace_State(str, Enum):
     INITIALIZED = "INITIALIZED"
     EXECUTING_FRONTEND = "EXECUTING_FRONTEND"
     EXECUTING_BACKEND = "EXECUTING_BACKEND"
+
+
+###############################
+##### Api
+###############################
 
 
 def wrap_phase(phases: List[Workspace_State]) -> Callable[[F], F]:
@@ -204,38 +244,51 @@ class Workspace:
         """
         try:
             initialized_backend = load_backend(backend_info)
-            self.set_backend(initialized_backend)
-        except Exception as e:
-            print(f"Could not load the load backend")
-            raise e
-
-        try:
-            top_level_resource_states = (
-                initialized_backend.get_top_level_resource_states()
+        except BackendError as e:
+            raise WorkspaceInitializationError(
+                error_message=f"""Error initializing backend for the workspace ->
+                {e.error_message}""",
+                help_message=e.help_message,
+                help_resources=e.help_resources,
             )
-        except Exception as e:
-            raise e
+
+        self.set_backend(initialized_backend)
+
+        top_level_resource_states = initialized_backend.get_top_level_resource_states()
 
         if resource_state_uuid not in set([x.uuid for x in top_level_resource_states]):
-            raise Exception(
-                f"{resource_state_uuid} not in loaded backend resource states: ({top_level_resource_states})"
+            raise WorkspaceInitializationError(
+                error_message=f"{resource_state_uuid} not in loaded backend resource states: ({top_level_resource_states})"
             )
 
         self.set_resource_state_uuid(resource_state_uuid)
 
         try:
             initialized_settings = initialize_settings(settings_info)
-            self.settings = initialized_settings
+        except SettingsError as e:
+            raise WorkspaceInitializationError(
+                error_message=f"""Error initializing settings for the workspace ->
+                {e.error_message}""",
+                help_message=e.help_message,
+                help_resources=e.help_resources,
+            )
         except Exception as e:
-            print(f"Could not load the load backend")
-            raise e
+            raise WorkspaceInitializationError(
+                error_message=f"Error initializing settings for the workspace -> {e}"
+            )
+
+        self.settings = initialized_settings
 
         if initialization_modules:
             for initialize_module in initialization_modules:
                 try:
                     module_loader.import_module(initialize_module)
-                except Exception as e:
-                    raise e
+                except module_loader.ImportModuleError as e:
+                    raise WorkspaceInitializationError(
+                        error_message=f"""Error loading '{initialize_module}' to initial the workspace. The following exception occurred:
+                        {e.error_message}
+                        """
+                    )
 
     def destroy_workspace(self) -> None:
         """Tear down the current Workspace
@@ -899,11 +952,11 @@ class Workspace:
         return original, resolved_values
 
     @wrap_phase([Workspace_State.INITIALIZED])
-    def execute_command(self, command: str, args: List) -> None:
+    def execute_command(self, command: str, args: List, output: OutputManager) -> None:
         """Find the desired command based on the search path and execute it with the given arguments.
 
         Args:
-            command (str): The full command to search for. can be '.' seperated to denote search path.
+            command (str): The full command to search for. can be '.' separated to denote search path.
             args (List): The command lines arguments to pass to the command.
 
         Raises:
@@ -917,27 +970,21 @@ class Workspace:
         all_search_locations_list = self.get_commands()
 
         obj, program_name, command_name, is_command = find_specified_command(
-            command_list, all_search_locations_list
+            command_list, all_search_locations_list, output=output
         )
 
         if is_command:
             if not isinstance(obj, BaseCommand):
                 raise Exception
 
-            try:
-                args = [program_name, command_name, *args]
-                obj.run_from_command_line(args)
-            except Exception as e:
-                raise e
+            args = [program_name, command_name, *args]
+            obj.run_from_command_line(args)
 
         else:
             if not isinstance(obj, BaseCommandContainer):
                 raise Exception
 
-            try:
-                obj.display_help_message()
-            except Exception as e:
-                raise e
+            obj.display_help_message()
 
 
 class WorkspaceManager:
@@ -988,18 +1035,6 @@ class WorkspaceManager:
         raise NotImplementedError
 
 
-def load_and_initialize_workspace(config: Workspace_Info) -> None:
-    """Load and initialize the workspace from the given configuration
-
-    Args:
-        config (Workspace_Info)
-    """
-    ws = load_workspace(config)
-    ws.set_state(Workspace_State.INITIALIZING)
-    initialize_workspace(ws, config.settings_info, config.config)
-    ws.set_state(Workspace_State.INITIALIZED)
-
-
 def load_workspace(config: Workspace_Info) -> Workspace:
     """Load the workspace from the given configuration
 
@@ -1015,10 +1050,9 @@ def load_workspace(config: Workspace_Info) -> Workspace:
     try:
         workspace_module = module_loader.import_module(config.python_module)
     except Exception as e:
-        print("Error loading workspace module")
-        print(f"Error > {e}")
-
-        raise e
+        raise WorkspaceInfoError(
+            error_message=f"Could not load {config.python_module} as a python module"
+        )
 
     workspace_class = None
     for item in dir(workspace_module):
@@ -1032,17 +1066,19 @@ def load_workspace(config: Workspace_Info) -> Workspace:
             break
 
     if not workspace_class:
-        print(f"Could not find {config.python_class} in {config.python_module}")
-        raise Exception
+        raise WorkspaceInfoError(
+            error_message=f"Could not find {config.python_class} in {config.python_module} to load as workspace"
+        )
 
     try:
-        return workspace_class()
+        workspace_obj = workspace_class()
 
     except Exception as e:
-        print(
-            f"Could not load {workspace_class} Class from config {config.config}; {e}"
+        raise WorkspaceInfoError(
+            error_message=f"Could not load type {workspace_class} as workspace"
         )
-        raise e
+
+    return workspace_obj
 
 
 def initialize_workspace(workspace: Workspace, workspace_info: Workspace_Info) -> None:
@@ -1055,20 +1091,15 @@ def initialize_workspace(workspace: Workspace, workspace_info: Workspace_Info) -
     Raises:
         e: _description_
     """
-    try:
-        workspace.set_state(Workspace_State.INITIALIZING)
-        # initialize the backend obj with the provided configuration values
-        workspace.initialize_workspace(
-            settings_info=workspace_info.settings_info,
-            backend_info=workspace_info.backend_info,
-            resource_state_uuid=workspace_info.resource_state_uuid,
-            initialization_modules=workspace_info.initialization_modules,
-            configuration=workspace_info.config,
-        )
-        workspace.set_state(Workspace_State.INITIALIZED)
+    workspace.set_state(Workspace_State.INITIALIZING)
 
-    except Exception as e:
-        print(
-            f"Could not initialize {workspace} Class from config {workspace_info}; {e}"
-        )
-        raise e
+    # initialize the backend obj with the provided configuration values
+    workspace.initialize_workspace(
+        settings_info=workspace_info.settings_info,
+        backend_info=workspace_info.backend_info,
+        resource_state_uuid=workspace_info.resource_state_uuid,
+        initialization_modules=workspace_info.initialization_modules,
+        configuration=workspace_info.config,
+    )
+
+    workspace.set_state(Workspace_State.INITIALIZED)
