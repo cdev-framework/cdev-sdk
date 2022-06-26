@@ -332,6 +332,22 @@ CDEV_COMMANDS = [
                 "help": "Install the cdev custom git merger to help properly merge the underlying used by Cdev.",
             },
             {
+                "command": "project-merger",
+                "help": "CLI interface to the custom merger",
+                "args": [
+                    {
+                        "dest": "current_fp",
+                        "type": str,
+                        "help": "Tmp file that contains the current version of the file",
+                    },
+                    {
+                        "dest": "other_fp",
+                        "type": str,
+                        "help": "tmp file that contains the other commits version of the file",
+                    },
+                ],
+            },
+            {
                 "command": "merge",
                 "help": "Safely run `git merge`",
                 "args": [

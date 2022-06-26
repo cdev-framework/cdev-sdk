@@ -26,6 +26,14 @@ def clean_up_resource_states() -> None:
     )
 
     if rv.returncode == 0:
+        rv2 = run(
+            [
+                "git",
+                "checkout",
+                "--",
+                ".cdev/state/resource_state_b58a461b-ddb5-454f-9b71-bed695e38a37.json",
+            ]
+        )
         return
 
     raise Exception
