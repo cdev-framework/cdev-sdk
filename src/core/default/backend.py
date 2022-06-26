@@ -289,7 +289,7 @@ class LocalBackend(Backend):
 
         if len(deleteing_component.resources) != 0:
             raise ComponentNotEmpty(
-                f"Can not delete Component {component_name} in Resource State {resource_state_uuid} because the it is not empty"
+                f"Can not delete Component {component_name} in Resource State {resource_state_uuid} because the component is not empty"
             )
 
         resource_state.components.remove(deleteing_component)
