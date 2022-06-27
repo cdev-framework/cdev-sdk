@@ -414,7 +414,7 @@ class OutputTask:
         *args,
         total: float = None,
         completed: float = None,
-        advance: None = None,
+        advance: float = None,
         description: str = None,
         visible: bool = None,
         refresh: bool = False,
