@@ -72,7 +72,6 @@ def run_client_function(
 ) -> Any:
     rendered_client = _get_boto_client(service)
     method = getattr(rendered_client, function_name)
-
     if method:
         rv = method(**args)
 
@@ -102,3 +101,20 @@ def get_aws_region() -> str:
 def get_account_number() -> str:
     caller_info_rv = run_client_function("sts", "get_caller_identity", {})
     return caller_info_rv.get("Account")
+
+
+def dynamodb_item_operation(operation_type: str, table_name: str, item: dict) -> None:
+    rendered_client = _get_boto_client("dynamodb")
+    try:
+        if operation_type == "put_item":
+            rendered_client.put_item(TableName=table_name, Item=item)
+        elif operation_type == "delete_item":
+            rendered_client.delete_item(TableName=table_name, Key=item)
+        elif operation_type == "get_item":
+            res = rendered_client.get_item(TableName=table_name, Key=item)
+            print(res)
+        else:
+            res = "Invalid operation type"
+            print(res)
+    except Exception as e:
+        raise e
