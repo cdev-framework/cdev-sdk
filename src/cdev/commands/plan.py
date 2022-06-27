@@ -2,7 +2,6 @@ from cdev.constructs.project import Project
 
 from core.commands.execute_frontend import execute_frontend
 from core.constructs.output_manager import OutputManager
-from core.utils.logger import log
 
 
 def plan_command_cli(project: Project, output_manager: OutputManager, **kwargs) -> None:
