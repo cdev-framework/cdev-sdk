@@ -5,6 +5,8 @@
 import importlib
 import inspect
 import os
+
+from core.default.resources.simple.api import RouteEvent
 from pydantic import FilePath
 from typing import Any, Callable, Dict, FrozenSet, List, Optional, Union
 
@@ -15,7 +17,8 @@ from core.constructs.cloud_output import (
 )
 from core.constructs.resource import (
     Resource,
-    ResourceModel,
+    TaggableResourceModel,
+    TaggableMixin,
     update_hash,
     ResourceOutputs,
     PermissionsGrantableMixin,
@@ -55,7 +58,7 @@ class DeployedLayer:
         self.arn = arn
 
 
-class dependency_layer_model(ResourceModel):
+class dependency_layer_model(TaggableResourceModel):
     """Model that represents a local folder that will be deployed on the cloud as a Layer"""
 
     artifact_path: str
@@ -203,7 +206,7 @@ class SimpleFunctionConfiguration:
         )
 
 
-class simple_function_model(ResourceModel):
+class simple_function_model(TaggableResourceModel):
     """Model representing a Serverless Function
 
     Args:
@@ -219,7 +222,7 @@ class simple_function_model(ResourceModel):
     platform: lambda_python_environment
 
 
-class SimpleFunction(PermissionsGrantableMixin, Resource):
+class SimpleFunction(PermissionsGrantableMixin, TaggableMixin, Resource):
     """Construct to represent a Serverless Function. It is recommend to generate this resource using the `simple_function_annotation`"""
 
     @update_hash
@@ -235,6 +238,7 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
         src_code_hash: str = None,
         preserve_function: Callable = None,
         nonce: str = "",
+        tags: Dict[str, str] = None,
     ) -> None:
         """
 
@@ -249,8 +253,9 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
             src_code_hash (str, optional): identifying hash of the source code. Defaults to None.
             preserve_function (Callable, optional): the original function that is being deployed. This allows the returned object ro remain Callable. Default to None.
             nonce (str, optional): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+            tags (Dict[str, str]): A set of tags to add to the resource
         """
-        super().__init__(cdev_name, RUUID, nonce)
+        super().__init__(cdev_name, RUUID, nonce, tags)
 
         self._filepath = filepath
         self._events = events
@@ -267,6 +272,7 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
         self._platform = platform or get_current_closest_platform()
 
         self._preserved_function = preserve_function
+        self._tags = tags
         self.__annotations__ = preserve_function.__annotations__
         self.__doc__ = preserve_function.__doc__
 
@@ -318,18 +324,18 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
         self._external_dependencies = value
 
     def compute_hash(self) -> None:
-        self._permissions_hash = hasher.hash_list(
+        permissions_hash = hasher.hash_list(
             [x.hash() for x in self._granted_permissions]
         )
-        self._config_hash = self._configuration.hash()
-        self._events_hash = hasher.hash_list([x.hash() for x in self.events])
+        config_hash = self._configuration.hash()
+        events_hash = hasher.hash_list([x.hash() for x in self.events])
 
         self._hash = hasher.hash_list(
             [
                 self.src_code_hash,
-                self._config_hash,
-                self._events_hash,
-                self._permissions_hash,
+                config_hash,
+                events_hash,
+                permissions_hash,
                 self._nonce,
                 self._platform,
             ]
@@ -366,7 +372,7 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
 
 def simple_function_annotation(
     name: str,
-    events: List[Event] = [],
+    events: List[Union[Event, RouteEvent]] = [],
     environment={},
     memory_size: int = 128,
     timeout: int = 30,
@@ -375,6 +381,7 @@ def simple_function_annotation(
     override_platform: lambda_python_environment = None,
     includes: List[str] = [],
     nonce: str = "",
+    tags: Dict[str, str] = None,
 ) -> Callable[[Callable], SimpleFunction]:
     """This annotation is used to designate that a function should be deployed as a Serverless function.
 
@@ -389,6 +396,7 @@ def simple_function_annotation(
         override_platform (lambda_python_environment, optional): Option to override the deployment platform in the Cloud. Defaults to None.
         includes (List[str], optional): Set of identifiers to extra global statements to include in parsed artifacts. Defaults to [].
         nonce (str, optional): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+        tags (dict[str, str]): A set pf tags to use to identify the resource.
 
     Returns:
         Callable[[Callable], SimpleFunction]: wrapper that returns the `SimpleFunction`
@@ -396,13 +404,18 @@ def simple_function_annotation(
 
     def create_function(func: Callable) -> SimpleFunction:
 
+        # ANIBAL are these optional???
+        # confirm with Daniel
+        handler_name = None
+        description = None
+        mod_name = None
         if inspect.isfunction(func):
             for item in inspect.getmembers(func):
 
                 if item[0] == "__name__":
                     handler_name = item[1]
                 elif item[0] == "__doc__":
-                    description = item[1] if item[1] else ""
+                    description = item[1] or ""
                 elif item[0] == "__module__":
                     mod_name = item[1]
         final_config = SimpleFunctionConfiguration(
@@ -426,6 +439,7 @@ def simple_function_annotation(
             function_permissions=permissions,
             preserve_function=func,
             nonce=nonce,
+            tags=tags,
         )
 
     return create_function

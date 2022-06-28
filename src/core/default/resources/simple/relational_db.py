@@ -3,14 +3,15 @@
 """
 
 from enum import Enum
-from typing import Any
+from typing import Any, Dict
 
 from core.constructs.resource import (
     Resource,
-    ResourceModel,
+    TaggableResourceModel,
     ResourceOutputs,
     update_hash,
     PermissionsAvailableMixin,
+    TaggableMixin,
 )
 from core.constructs.cloud_output import Cloud_Output_Str, OutputType
 from core.utils import hasher
@@ -105,7 +106,7 @@ class db_engine(str, Enum):
     """Postgres 10.4-compatible Aurora"""
 
 
-class simple_relational_db_model(ResourceModel):
+class simple_relational_db_model(TaggableResourceModel):
     """Model that represents a relation db"""
 
     Engine: db_engine
@@ -126,7 +127,7 @@ class simple_relational_db_model(ResourceModel):
     """Amount of seconds to wait before scaling DB completely down"""
 
 
-class RelationalDB(PermissionsAvailableMixin, Resource):
+class RelationalDB(PermissionsAvailableMixin, TaggableMixin, Resource):
     """Construct for creating a Serverless Relational DB"""
 
     @update_hash
@@ -142,6 +143,7 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
         min_capacity: int = 2,
         seconds_to_pause: int = 300,
         nonce: str = "",
+        tags: Dict[str, str] = None,
     ) -> None:
         """
         Args:
@@ -155,6 +157,7 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
             min_capacity (int, optional): Minimum amount of capacity to scale to. Defaults to 2.
             seconds_to_pause (int, optional): Amount of seconds to wait before scaling DB completely down. Defaults to 300.
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+            tags (Dict[str, str]): A set of tags to add to the resource
         """
         super().__init__(cdev_name, RUUID, nonce)
 
@@ -166,6 +169,7 @@ class RelationalDB(PermissionsAvailableMixin, Resource):
         self._max_capacity = max_capacity
         self._min_capacity = min_capacity
         self._seconds_to_pause = seconds_to_pause
+        self._tags = tags
 
         self.output: RelationalDBOutput = RelationalDBOutput(cdev_name)
         self.available_permissions: RelationalDBPermissions = RelationalDBPermissions(

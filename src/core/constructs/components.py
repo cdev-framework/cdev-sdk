@@ -10,7 +10,7 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
-from .resource import ResourceReferenceModel, ResourceModel
+from .resource import ResourceReferenceModel, TaggableResourceModel
 
 
 class ComponentModel(BaseModel):
@@ -43,7 +43,7 @@ class ComponentModel(BaseModel):
     - This value changes only if a there is a change in the resource.
     """
 
-    resources: Optional[List[ResourceModel]]
+    resources: Optional[List[TaggableResourceModel]]
     """
     List of Rendered Resources that make up the current state of this component
     """
@@ -72,7 +72,7 @@ class ComponentModel(BaseModel):
         __pydantic_self__,
         name: str,
         hash: str = "0",
-        resources: List[ResourceModel] = [],
+        resources: List[TaggableResourceModel] = [],
         references: List[ResourceReferenceModel] = [],
         cloud_output: Dict[str, Dict] = {},
         previous_resolved_cloud_values: Dict[str, Dict] = {},

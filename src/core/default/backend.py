@@ -20,7 +20,7 @@ from core.constructs.resource import (
     Resource_Change_Type,
     Resource_Difference,
     Resource_Reference_Change_Type,
-    ResourceModel,
+    TaggableResourceModel,
     Resource_Reference_Difference,
     ResourceReferenceModel,
 )
@@ -711,7 +711,7 @@ class LocalBackend(Backend):
         component_name: str,
         resource_type: str,
         resource_name: str,
-    ) -> ResourceModel:
+    ) -> TaggableResourceModel:
 
         component = self.get_component(resource_state_uuid, component_name)
 
@@ -737,7 +737,7 @@ class LocalBackend(Backend):
         component_name: str,
         resource_type: str,
         resource_hash: str,
-    ) -> ResourceModel:
+    ) -> TaggableResourceModel:
 
         component = self.get_component(resource_state_uuid, component_name)
 
@@ -859,7 +859,9 @@ class LocalBackend(Backend):
         new_components: List[ComponentModel],
         old_components: List[str],
     ) -> Tuple[
-        Component_Difference, Resource_Reference_Difference, Resource_Difference
+        List[Component_Difference],
+        List[Resource_Difference],
+        List[Resource_Reference_Difference],
     ]:
         try:
             # Load the previous components
@@ -969,11 +971,11 @@ class LocalBackend(Backend):
 
         return component
 
-    def _get_cloud_output_id(self, resource: ResourceModel) -> str:
+    def _get_cloud_output_id(self, resource: TaggableResourceModel) -> str:
         """Uniform way of generating cloud mapping id's
 
         Args:
-            resource (ResourceModel): resource to get id of
+            resource (TaggableResourceModel): resource to get id of
 
         Returns:
             cloud_output_id (str): id for the resource
@@ -1019,26 +1021,26 @@ def _compute_component_hash(component: ComponentModel) -> str:
 
 def _create_resource_diffs(
     component_name: str,
-    new_resources: List[ResourceModel],
-    old_resource: List[ResourceModel],
+    new_resources: List[TaggableResourceModel],
+    old_resource: List[TaggableResourceModel],
 ) -> List[Resource_Difference]:
     """Create the differences between differences in the resources
 
     Args:
         component_name (str)
-        new_resources (List[ResourceModel]
-        old_resource (List[ResourceModel])
+        new_resources (List[TaggableResourceModel]
+        old_resource (List[TaggableResourceModel])
 
     Returns:
         List[Resource_Difference]
     """
     if old_resource:
         # build map<hash,resource>
-        old_hash_to_resource: Dict[str, ResourceModel] = {
+        old_hash_to_resource: Dict[str, TaggableResourceModel] = {
             x.hash: x for x in old_resource
         }
         # build map<name,resource>
-        old_name_to_resource: Dict[str, ResourceModel] = {
+        old_name_to_resource: Dict[str, TaggableResourceModel] = {
             x.name: x for x in old_resource
         }
     else:

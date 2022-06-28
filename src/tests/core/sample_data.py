@@ -13,7 +13,7 @@ from core.constructs.resource import (
     Resource_Difference,
     Resource_Reference_Change_Type,
     Resource_Reference_Difference,
-    ResourceModel,
+    TaggableResourceModel,
     Resource_Change_Type,
     ResourceReferenceModel,
 )
@@ -34,17 +34,17 @@ class simple_component(Component):
         return ComponentModel(self.name, "111")
 
 
-class simple_resource_model(ResourceModel):
+class simple_resource_model(TaggableResourceModel):
     val: Union[str, cdev_str_model]
 
 
 def simple_resource_data():
     return [
-        ResourceModel(ruuid="cdev::resource::x", hash="1", name="resource1"),
-        ResourceModel(ruuid="cdev::resource::x", hash="2", name="resource2"),
-        ResourceModel(ruuid="cdev::resource::x", hash="3", name="resource3"),
-        ResourceModel(ruuid="cdev::resource::x", hash="4", name="resource4"),
-        ResourceModel(ruuid="cdev::resource::x", hash="5", name="resource5"),
+        TaggableResourceModel(ruuid="cdev::resource::x", hash="1", name="resource1"),
+        TaggableResourceModel(ruuid="cdev::resource::x", hash="2", name="resource2"),
+        TaggableResourceModel(ruuid="cdev::resource::x", hash="3", name="resource3"),
+        TaggableResourceModel(ruuid="cdev::resource::x", hash="4", name="resource4"),
+        TaggableResourceModel(ruuid="cdev::resource::x", hash="5", name="resource5"),
     ]
 
 
@@ -175,28 +175,28 @@ def simple_component_differences() -> Tuple[List[ComponentModel], List[Component
     """
 
     basic_resource_set = [
-        ResourceModel(
+        TaggableResourceModel(
             **{
                 "ruuid": "cdev::resource",
                 "name": "resource1",
                 "hash": "1",
             }
         ),
-        ResourceModel(
+        TaggableResourceModel(
             **{
                 "ruuid": "cdev::resource",
                 "name": "resource2",
                 "hash": "2",
             }
         ),
-        ResourceModel(
+        TaggableResourceModel(
             **{
                 "ruuid": "cdev::resource",
                 "name": "resource3",
                 "hash": "3",
             }
         ),
-        ResourceModel(
+        TaggableResourceModel(
             **{
                 "ruuid": "cdev::resource",
                 "name": "resource4",
@@ -206,28 +206,28 @@ def simple_component_differences() -> Tuple[List[ComponentModel], List[Component
     ]
 
     new_component2_resources = [
-        ResourceModel(
+        TaggableResourceModel(
             **{
                 "ruuid": "cdev::resource",
                 "name": "resource1",
                 "hash": "1",
             }
         ),
-        ResourceModel(
+        TaggableResourceModel(
             **{
                 "ruuid": "cdev::resource",
                 "name": "resource2",
                 "hash": "22",
             }
         ),
-        ResourceModel(
+        TaggableResourceModel(
             **{
                 "ruuid": "cdev::resource",
                 "name": "resource44",
                 "hash": "4",
             }
         ),
-        ResourceModel(
+        TaggableResourceModel(
             **{
                 "ruuid": "cdev::resource",
                 "name": "resource5",
@@ -386,19 +386,19 @@ def simple_differences_for_topo_sort() -> Tuple[
         action_type=Resource_Change_Type.CREATE,
         component_name="comp1",
         previous_resource=None,
-        new_resource=ResourceModel(ruuid="cdev::test::r1", hash="123", name="r11"),
+        new_resource=TaggableResourceModel(ruuid="cdev::test::r1", hash="123", name="r11"),
     )
     rd2 = Resource_Difference(
         action_type=Resource_Change_Type.UPDATE_IDENTITY,
         component_name="comp1",
-        previous_resource=ResourceModel(ruuid="cdev::test::r1", hash="1234", name="r2"),
-        new_resource=ResourceModel(ruuid="cdev::test::r1", hash="1235", name="r2"),
+        previous_resource=TaggableResourceModel(ruuid="cdev::test::r1", hash="1234", name="r2"),
+        new_resource=TaggableResourceModel(ruuid="cdev::test::r1", hash="1235", name="r2"),
     )
 
     rd3 = Resource_Difference(
         action_type=Resource_Change_Type.DELETE,
         component_name="comp3",
-        previous_resource=ResourceModel(
+        previous_resource=TaggableResourceModel(
             ruuid="cdev::test::r1", hash="9871", name="r3", val="2"
         ),
     )
@@ -406,7 +406,7 @@ def simple_differences_for_topo_sort() -> Tuple[
     rd4 = Resource_Difference(
         action_type=Resource_Change_Type.DELETE,
         component_name="comp3",
-        previous_resource=ResourceModel(
+        previous_resource=TaggableResourceModel(
             ruuid="cdev::test::r1",
             hash="9871",
             name="r4",
@@ -455,7 +455,7 @@ def simple_differences_for_topo_sort() -> Tuple[
     return (component_diffs, resource_diffs, reference_diffs), edges, nodes
 
 
-def simple_resources_for_find_parents() -> List[Tuple[ResourceModel, int]]:
+def simple_resources_for_find_parents() -> List[Tuple[TaggableResourceModel, int]]:
     return [
         (
             simple_resource_model(
@@ -519,13 +519,13 @@ def simple_change_dag() -> Tuple[DiGraph, Dict[NodeView, List[NodeView]]]:
         action_type=Resource_Change_Type.CREATE,
         component_name="comp1",
         previous_resource=None,
-        new_resource=ResourceModel(ruuid="cdev::test::r1", hash="123", name="r11"),
+        new_resource=TaggableResourceModel(ruuid="cdev::test::r1", hash="123", name="r11"),
     )
     rd2 = Resource_Difference(
         action_type=Resource_Change_Type.UPDATE_IDENTITY,
         component_name="comp1",
-        previous_resource=ResourceModel(ruuid="cdev::test::r1", hash="1234", name="r2"),
-        new_resource=ResourceModel(ruuid="cdev::test::r1", hash="1235", name="r2"),
+        previous_resource=TaggableResourceModel(ruuid="cdev::test::r1", hash="1234", name="r2"),
+        new_resource=TaggableResourceModel(ruuid="cdev::test::r1", hash="1235", name="r2"),
     )
 
     refd1 = Resource_Reference_Difference(

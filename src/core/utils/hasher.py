@@ -7,7 +7,7 @@ that will be used to track changes throughout the system.
 
 import hashlib
 import os
-from typing import List
+from typing import List, Union
 
 from pydantic.types import FilePath
 
@@ -57,7 +57,7 @@ def clear_file_cache() -> None:
     FILE_CACHE.cache = {}
 
 
-def hash_file(fp: FilePath, bypass_cache: bool = False) -> str:
+def hash_file(fp: Union[FilePath, str], bypass_cache: bool = False) -> str:
     """Hash a file given a path
 
     Note that the implementation contains a reference to a cache. Since this utility is primarily

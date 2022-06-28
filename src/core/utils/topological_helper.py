@@ -17,13 +17,13 @@ from time import sleep
 from core.constructs.resource import (
     Resource_Change_Type,
     Resource_Reference_Change_Type,
-    ResourceModel,
+    TaggableResourceModel,
     Resource_Difference,
     Resource_Reference_Difference,
 )
 from core.constructs.cloud_output import OutputType, cloud_output_model
 from core.constructs.components import Component_Change_Type, Component_Difference
-from core.constructs.output_manager import OutputManager, OutputTask
+from core.constructs.output_manager import OutputTask
 from core.constructs.models import frozendict
 
 from core.utils.operations import concatenate
@@ -31,7 +31,7 @@ from core.utils.operations import concatenate
 deliminator = "+"
 
 
-def find_parents(resource: ResourceModel) -> Tuple[List, List]:
+def find_parents(resource: TaggableResourceModel) -> Tuple[List, List]:
     """Find any parents resources via any linked Cloud Output Models
 
     If a resource contains the cloud output of another resource, the relationship
@@ -186,7 +186,7 @@ def generate_sorted_resources(
 
         parent_resources, parent_references = (
             find_parents(resource.new_resource)
-            if not resource.action_type == Resource_Change_Type.DELETE
+            if resource.action_type != Resource_Change_Type.DELETE
             else find_parents(resource.previous_resource)
         )
 

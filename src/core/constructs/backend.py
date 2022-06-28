@@ -21,7 +21,7 @@ from pydantic import BaseModel
 from core.constructs.components import Component_Difference, ComponentModel
 from core.constructs.resource import (
     Resource_Reference_Difference,
-    ResourceModel,
+    TaggableResourceModel,
     Resource_Difference,
 )
 from core.constructs.resource_state import Resource_State
@@ -358,7 +358,7 @@ class Backend:
         component_name: str,
         resource_type: str,
         resource_name: str,
-    ) -> ResourceModel:
+    ) -> TaggableResourceModel:
         """
         Get the state of a resource from a component based on the name of the resource
 
@@ -381,7 +381,7 @@ class Backend:
         component_name: str,
         resource_type: str,
         resource_hash: str,
-    ) -> ResourceModel:
+    ) -> TaggableResourceModel:
         """
         Get the state of a resource from a component based on the hash of the resource
 
@@ -390,6 +390,30 @@ class Backend:
             component_name (str): The component this resource is in.
             resource_type (str): The RUUID of the resource desired.
             resource_hash (str): The hash of the resource desired.
+
+        Raises:
+            ResourceStateDoesNotExist
+            ComponentDoesNotExist
+            ResourceDoesNotExist
+        """
+        raise NotImplementedError
+
+    # Api for getting a set of resources that match the given tag from the backend
+    def get_resources_by_tag(
+            self,
+            resource_state_uuid: str,
+            component_name: str,
+            resource_type: str,
+            resource_tag: str,
+    ) -> List[TaggableResourceModel]:
+        """
+        Get the state of a resource from a component based on the name of the resource
+
+        Args:
+            resource_state_uuid (str): The resource state for this resource.
+            component_name (str): The component this resource is in.
+            resource_type: The RUUID of the resource desired
+            resource_tag: The tag of the resources desired
 
         Raises:
             ResourceStateDoesNotExist
@@ -491,9 +515,9 @@ class Backend:
         new_components: List[ComponentModel],
         old_components: List[str],
     ) -> Tuple[
-        Component_Difference,
-        Resource_Difference,
-        Resource_Reference_Difference,
+        List[Component_Difference],
+        List[Resource_Difference],
+        List[Resource_Reference_Difference],
     ]:
         """
         Create the set of differences from a proposed set of components to a provided set of current components identified by their name. This allows the flexibility for working on a particular

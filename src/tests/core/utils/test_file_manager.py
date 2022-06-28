@@ -2,7 +2,7 @@ import os
 
 from core.constructs.components import ComponentModel
 from core.constructs.models import frozendict
-from core.constructs.resource import ResourceModel
+from core.constructs.resource import TaggableResourceModel
 from core.constructs.resource_state import Resource_State
 
 from core.utils.file_manager import (
@@ -19,7 +19,7 @@ _resource_state = Resource_State(
         ComponentModel(
             "name",
             "123",
-            resources=[ResourceModel(name="r1", ruuid="r", hash="12345", val="val")],
+            resources=[TaggableResourceModel(name="r1", ruuid="r", hash="12345", val="val")],
         )
     ],
 )

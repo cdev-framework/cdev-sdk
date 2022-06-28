@@ -2,21 +2,21 @@
 
 """
 from enum import Enum
-from typing import Any, Dict, FrozenSet, List, Optional
+from typing import Any, Dict, FrozenSet, List, Optional, Union
 
 from core.constructs.models import ImmutableModel
 from core.constructs.cloud_output import (
     Cloud_Output_Mapping,
-    Cloud_Output_Sequence,
     Cloud_Output_Str,
     OutputType,
 )
 
 from core.constructs.resource import (
-    Resource,
-    ResourceModel,
     update_hash,
+    Resource,
     ResourceOutputs,
+    TaggableResourceModel,
+    TaggableMixin,
 )
 from core.constructs.types import cdev_str_model
 from core.utils import hasher
@@ -275,7 +275,7 @@ class ApiOutput(ResourceOutputs):
 ########################
 ##### Api
 ########################
-class simple_api_model(ResourceModel):
+class simple_api_model(TaggableResourceModel):
     """Model for representing a desired HTTP API"""
 
     routes: FrozenSet[route_model]
@@ -287,7 +287,7 @@ class simple_api_model(ResourceModel):
         super().__init__(**data)
 
 
-class Api(Resource):
+class Api(Resource, TaggableMixin):
     @update_hash
     def __init__(
         self,
@@ -296,6 +296,7 @@ class Api(Resource):
         authorizers: List[Authorizer] = [],
         default_authorizer: str = None,
         nonce: str = "",
+        tags: Dict[str, str] = None,
     ):
         """Create a HTTP API.
 
@@ -305,6 +306,7 @@ class Api(Resource):
             authorizers (List[Authorizer]): List of JWT Authorizers for the api.
             default_authorizer (str): The name of an authorizer to add as the default to all routes.
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+            tags (Dict[str, str]): A set of tags to add to the resource
 
         With an HTTP API, you can create different routes that represent different requests to your backend service. Use the
         `route` method to create these routes then attach them to other resource to handle the requests.
@@ -325,6 +327,7 @@ class Api(Resource):
 
         self._allow_cors = allow_cors
         self._routes: List[Route] = []
+        self._tags = tags
 
         self._authorizers: List[Authorizer] = authorizers
 
@@ -354,7 +357,7 @@ class Api(Resource):
     def route(
         self,
         path: str,
-        verb: route_verb,
+        verb: Union[route_verb, str],
         additional_scopes: List[str] = [],
         override_authorizer_name: str = None,
     ) -> Route:

@@ -1,14 +1,15 @@
 """Set of constructs for making message queues
 
 """
-from typing import Any
+from typing import Any, Dict
 
 from core.constructs.resource import (
     Resource,
-    ResourceModel,
+    TaggableResourceModel,
     update_hash,
     ResourceOutputs,
     PermissionsAvailableMixin,
+    TaggableMixin,
 )
 from core.constructs.cloud_output import Cloud_Output_Str, OutputType
 from core.constructs.types import cdev_str_model
@@ -152,29 +153,37 @@ class QueueOutput(ResourceOutputs):
 ######################
 ##### Queue
 ######################
-class queue_model(ResourceModel):
+class queue_model(TaggableResourceModel):
     """Model representing a Message Queue"""
 
     is_fifo: bool
     """Should the Queue guarantee ordering of messages"""
 
 
-class Queue(PermissionsAvailableMixin, Resource):
+class Queue(PermissionsAvailableMixin, TaggableMixin, Resource):
     """A Message Queue"""
 
     @update_hash
-    def __init__(self, cdev_name: str, is_fifo: bool = False, nonce: str = "") -> None:
+    def __init__(
+        self,
+        cdev_name: str,
+        is_fifo: bool = False,
+        nonce: str = "",
+        tags: Dict[str, str] = None,
+    ) -> None:
         """
         args:
             cdev_name (str): Name of the resource.
             is_fifo (bool, default=False): If True, the Queue will guarantee ordering of messages.
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+            tags (Dict[str, str]): A set of tags to add to the resource
         """
         super().__init__(cdev_name, RUUID, nonce)
 
         self.is_fifo = is_fifo
         self.output = QueueOutput(cdev_name)
         self._event = None
+        self._tags = tags
 
         self.available_permissions: QueuePermissions = QueuePermissions(cdev_name)
 

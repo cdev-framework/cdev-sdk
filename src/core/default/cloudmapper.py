@@ -2,15 +2,8 @@ from typing import Callable, Dict, List, Set
 
 
 from core.constructs.output_manager import OutputTask
-
-from ..constructs.resource import (
-    Resource_Change_Type,
-    Resource_Reference_Difference,
-    Resource_Difference,
-)
-from ..constructs.mapper import CloudMapper
-
-# from .mappers.aws import aws_lambda, dynamodb, iam, s3, sqs, apigatewayv2, apigateway
+from core.constructs.resource import Resource_Difference
+from core.constructs.mapper import CloudMapper
 
 from .mappers.simple import (
     api_deployer,

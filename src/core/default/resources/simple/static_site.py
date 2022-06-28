@@ -1,11 +1,12 @@
 """Set of constructs for for making a website to serve Static Web Content
 
 """
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 
 from core.constructs.resource import (
     Resource,
-    ResourceModel,
+    TaggableResourceModel,
+    TaggableMixin,
     update_hash,
     ResourceOutputs,
 )
@@ -67,7 +68,7 @@ class StaticSiteOutput(ResourceOutputs):
 ###############
 ##### Static Site
 ###############
-class simple_static_site_model(ResourceModel):
+class simple_static_site_model(TaggableResourceModel):
     index_document: str
     """The suffix for documents when request are made for a folder. ex: site.com/dir1/ will look for /dir1/<index_document>"""
     error_document: str
@@ -82,7 +83,7 @@ class simple_static_site_model(ResourceModel):
     """Arn of a SSL certificate to use with the site."""
 
 
-class StaticSite(Resource):
+class StaticSite(Resource, TaggableMixin):
     """A Static Site that can be used to serve static web content."""
 
     @update_hash
@@ -96,6 +97,7 @@ class StaticSite(Resource):
         domain_name: str = None,
         ssl_certificate_arn: str = None,
         nonce: str = "",
+        tags: Dict[str, str] = None,
     ) -> None:
         """Create a static hosted site.
 
@@ -108,6 +110,7 @@ class StaticSite(Resource):
             domain_name (str): The domain name to associate with this site. This will set up the site to be aliased via DNS to the given domain name.
             ssl_certificate_arn (str): Arn of a SSL certificate to use with the site.
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+            tags (Dict[str, str]): A set of tags to add to the resource
         """
         super().__init__(cdev_name, RUUID, nonce)
 
@@ -117,6 +120,7 @@ class StaticSite(Resource):
         self._content_folder = content_folder
         self._domain_name = domain_name
         self._ssl_certificate_arn = ssl_certificate_arn
+        self._tags = tags
 
         self.output = StaticSiteOutput(cdev_name)
 

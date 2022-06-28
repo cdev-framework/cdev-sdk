@@ -9,7 +9,7 @@ from functools import partial
 
 from core.constructs.resource import (
     Resource,
-    ResourceModel,
+    TaggableResourceModel,
     ResourceReferenceModel,
     Resource_Reference,
 )
@@ -76,7 +76,7 @@ Error optimizing modules used in {filepath} for function '{function_name}'. Orig
 
 def parse_folder(
     folder_path: DirectoryPath,
-) -> Tuple[List[ResourceModel], List[ResourceReferenceModel]]:
+) -> Tuple[List[TaggableResourceModel], List[ResourceReferenceModel]]:
     """Search through the given folder looking for resource and references in Python files.
 
     Args:
@@ -84,7 +84,7 @@ def parse_folder(
 
     Returns:
         Tuple[
-            List[ResourceModel],
+            List[TaggableResourceModel],
             List[ResourceReferenceModel]
         ]
 
@@ -190,7 +190,7 @@ def _get_module_name_from_path(fp: FilePath):
 
 def _find_resources_information_from_file(
     fp: FilePath,
-) -> Tuple[List[ResourceModel], List[ResourceReferenceModel]]:
+) -> Tuple[List[TaggableResourceModel], List[ResourceReferenceModel]]:
     """Load a file and find top level objects that are Resources or References
 
     Args:
