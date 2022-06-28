@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 
@@ -66,7 +67,7 @@ class Local_Backend_Configuration(Backend_Configuration):
         )
 
 
-class LocalCentralFile(BaseModel):
+class CentralState(BaseModel):
     resource_state_locations: Dict[str, str]  # uuid -> file location
     top_level_states: List[str]  # uuid
     resource_state_names: List[str]
@@ -87,40 +88,65 @@ class LocalCentralFile(BaseModel):
 
 
 class LocalBackend(Backend):
-    # Structurally, this implementation will have a central json that can be used as an index into more precise json files. For example, each resource state will be its own json file, but
-    # the central file will keep track of each one.
-    def __init__(
-        self, base_folder: DirectoryPath, central_state_file: FilePath = None
-    ) -> None:
-        """Implementation of a Backend using locally stored json files as the persistent storage medium. This backend should only be used for small project as it does not provide any mechanisms
-        to work well when multiple people edit the state. Also this is a single threaded implementation.
+    # This implementation uses local json files to store the different states. Each Resource State will be store in a different json files to help with diffing them using git.
+    # note the __init__ function allows any kwargs to preserve backwards compatibility with previous implementations.
+    def __init__(self, base_folder: DirectoryPath, *args, **kwargs) -> None:
+        """This implementation uses local json files to store the different states. Each Resource State will be store in a different json files to help with diffing them using git.
 
         Args:
             base_folder (DirectoryPath): Path to a folder to use for storing local json files. Defaults to cdev setting if not provided.
-            central_state_file (FilePath): Path to the central state file. Defaults to cdev setting if not provided.
         """
 
-        DEFAULT_CENTRAL_STATE_FILE = os.path.join(base_folder, "local_state.json")
-
         self.base_folder = base_folder
-        self.central_state_file = (
-            central_state_file if central_state_file else DEFAULT_CENTRAL_STATE_FILE
-        )
+        self._resource_state_prefix = "resource_state_"
 
         if not os.path.isdir(self.base_folder):
             raise FileNotFoundError(f"Can not find directory -> {self.base_folder}")
 
-        if not os.path.isfile(self.central_state_file):
-            self._central_state = LocalCentralFile({}, [], [])
+        self._central_state = self._compute_central_state()
 
-        else:
-            with open(self.central_state_file, "r") as fh:
-                self._central_state = LocalCentralFile(**json.load(fh))
+    def _compute_resource_state_file_location(
+        self, resource_state_uuid: str
+    ) -> FilePath:
+        """Helper function to uniformly compute the resource state file name
 
-    def _write_central_file(self):
-        """Save the central state to disk"""
-        file_manager.safe_json_write(
-            self._central_state.dict(), self.central_state_file
+        Args:
+            resource_state_uuid (str)
+
+        Returns:
+            FilePath
+        """
+
+        return os.path.join(
+            self.base_folder, f"{self._resource_state_prefix}{resource_state_uuid}.json"
+        )
+
+    def _compute_central_state(self) -> CentralState:
+        resource_state_locations = {}
+        top_level_states = []
+        resource_state_names = []
+
+        for child in os.listdir(self.base_folder):
+            full_path = os.path.join(self.base_folder, child)
+            if not (
+                child.startswith(self._resource_state_prefix)
+                and os.path.isfile(full_path)
+            ):
+                continue
+
+            try:
+                rs = Resource_State(**json.load(open(full_path)))
+            except Exception:
+                continue
+
+            resource_state_locations[rs.uuid] = full_path
+            top_level_states.append(rs.uuid)
+            resource_state_names.append(rs.name)
+
+        return CentralState(
+            resource_state_locations=resource_state_locations,
+            top_level_states=top_level_states,
+            resource_state_names=resource_state_names,
         )
 
     def _write_resource_state_file(self, resource_state: Resource_State, fp: FilePath):
@@ -154,20 +180,17 @@ class LocalBackend(Backend):
                 parent_uuid=parent_resource_state_uuid,
             )
 
-        filename = os.path.join(
-            self.base_folder, f"resource_state_{new_resource_state.uuid}.json"
-        )
+        filename = self._compute_resource_state_file_location(new_resource_state.uuid)
 
         self._central_state.resource_state_locations[new_resource_state.uuid] = filename
         self._central_state.resource_state_names.append(new_resource_state.name)
 
-        self._write_central_file()
         self._write_resource_state_file(new_resource_state, filename)
 
         return new_resource_state.uuid
 
     def delete_resource_state(self, resource_state_uuid: str) -> None:
-        if not resource_state_uuid in self._central_state.resource_state_locations:
+        if resource_state_uuid not in self._central_state.resource_state_locations:
             raise ResourceStateDoesNotExist(
                 f"Resource state: {resource_state_uuid} does not exist"
             )
@@ -195,11 +218,10 @@ class LocalBackend(Backend):
             resource_state_to_delete.uuid
         )
 
-        self._write_central_file()
         os.remove(file_location)
 
     def get_resource_state(self, resource_state_uuid: str) -> Resource_State:
-        if not resource_state_uuid in self._central_state.resource_state_locations:
+        if resource_state_uuid not in self._central_state.resource_state_locations:
             raise ResourceStateDoesNotExist(
                 f"Resource State: {resource_state_uuid} does not exists"
             )
@@ -222,12 +244,11 @@ class LocalBackend(Backend):
             )
 
     def get_top_level_resource_states(self) -> List[Resource_State]:
-        rv = []
-
-        for resource_id in self._central_state.top_level_states:
-            # Let any exception from loading a state pass up to caller
-            rv.append(self.get_resource_state(resource_id))
-
+        # Let any exception from loading a state pass up to caller
+        rv = [
+            self.get_resource_state(resource_id)
+            for resource_id in self._central_state.top_level_states
+        ]
         return rv
 
     # Components
@@ -247,7 +268,7 @@ class LocalBackend(Backend):
         )
 
         if component_name in set(x.name for x in resource_state.components):
-            # Cant not have two components of the same name in the same resource state
+            # Can't have two components of the same name in the same resource state
             raise ComponentAlreadyExists(
                 f"Component already exists with name {component_name} in Resource State {resource_state_uuid}"
             )
@@ -278,25 +299,24 @@ class LocalBackend(Backend):
             resource_state_uuid
         )
 
-        if not component_name in set(x.name for x in resource_state.components):
-            # Component of that name does not exists
+        deleting_component = None
+        for component in resource_state.components:
+            if component.name == component_name:
+                deleting_component = component
+                break
+
+        if not deleting_component:
+            # Component of that name does not exist
             raise ComponentDoesNotExist(
                 f"Could not find component {component_name} in Resource State {resource_state_uuid}"
             )
 
-        deleteing_component = next(
-            x for x in resource_state.components if x.name == component_name
-        )
-
-        if not len(deleteing_component.resources) == 0:
+        if len(deleting_component.resources) != 0:
             raise ComponentNotEmpty(
                 f"Can not delete Component {component_name} in Resource State {resource_state_uuid} because the component is not empty"
             )
 
-        resource_state.components = [
-            x for x in resource_state.components if not x.name == component_name
-        ]
-
+        resource_state.components.remove(deleting_component)
         resource_state.component_name_to_uuid.pop(component_name)
 
         self._write_resource_state_file(resource_state, resource_state_file_location)
@@ -324,9 +344,9 @@ class LocalBackend(Backend):
         )
 
         if (
-            not previous_component_name
-            in set(x.name for x in resource_state.components)
-            or not previous_component_name in resource_state.component_name_to_uuid
+            previous_component_name
+            not in set(x.name for x in resource_state.components)
+            or previous_component_name not in resource_state.component_name_to_uuid
         ):
             # Component of that name does not exists
             raise ComponentDoesNotExist(
@@ -348,11 +368,7 @@ class LocalBackend(Backend):
         )
 
         # remove the component from the list of components
-        resource_state.components = [
-            x
-            for x in resource_state.components
-            if not x.name == previous_component_name
-        ]
+        resource_state.components.remove(rename_component)
 
         # Since ComponentModels are frozen, we can just change the name
         # So we make a dict of the current ComponentModel then change the name and use the dict as input
@@ -365,6 +381,7 @@ class LocalBackend(Backend):
 
         # Update the name to uuid dict
         resource_state.component_name_to_uuid.pop(previous_component_name)
+        # ANIBAL IS THIS RIGHT, it is expecting str and we are setting it to ComponentModel
         resource_state.component_name_to_uuid[new_component_name] = new_component
 
         self._write_resource_state_file(resource_state, resource_state_file_location)
@@ -374,18 +391,19 @@ class LocalBackend(Backend):
     ) -> ComponentModel:
         resource_state = self.get_resource_state(resource_state_uuid)
 
-        if not component_name in set(x.name for x in resource_state.components):
-            # Component of that name does not exists
-            raise ComponentDoesNotExist(
-                f"Can not find Component {component_name} in Resource State {resource_state_uuid}"
-            )
+        for component in resource_state.components:
+            if component.name == component_name:
+                return component
 
-        return next(x for x in resource_state.components if x.name == component_name)
+        # Component of that name does not exists
+        raise ComponentDoesNotExist(
+            f"Can not find Component {component_name} in Resource State {resource_state_uuid}"
+        )
 
     def get_component_uuid(self, resource_state_uuid: str, component_name: str) -> str:
         resource_state = self.get_resource_state(resource_state_uuid)
 
-        if not component_name in resource_state.component_name_to_uuid:
+        if component_name not in resource_state.component_name_to_uuid:
             raise ComponentDoesNotExist(
                 f"Can not find Component {component_name} in Resource State {resource_state_uuid}"
             )
@@ -430,8 +448,6 @@ class LocalBackend(Backend):
             resource_state_uuid
         )
 
-        transaction_token = str(uuid.uuid4())
-
         ruuid = (
             diff.new_resource.ruuid
             if diff.new_resource
@@ -446,6 +462,7 @@ class LocalBackend(Backend):
             ]
         )
 
+        transaction_token = str(uuid.uuid4())
         resource_state.resource_changes[transaction_token] = (component_name, diff)
 
         self._write_resource_state_file(resource_state, resource_state_file_location)
@@ -467,8 +484,7 @@ class LocalBackend(Backend):
             resource_state_uuid
         )
 
-        if not transaction_token in resource_state.resource_changes:
-
+        if transaction_token not in resource_state.resource_changes:
             raise ResourceChangeTransactionDoesNotExist(
                 f"Transaction {transaction_token} does not exist in Resource State {resource_state_uuid}"
             )
@@ -480,7 +496,7 @@ class LocalBackend(Backend):
         )
 
         resource_state.components = [
-            x for x in resource_state.components if not x.name == component.name
+            x for x in resource_state.components if x.name != component.name
         ] + [new_component]
 
         resource_state.resource_changes.pop(transaction_token)
@@ -501,7 +517,7 @@ class LocalBackend(Backend):
             resource_state_uuid
         )
 
-        if not transaction_token in resource_state.resource_changes:
+        if transaction_token not in resource_state.resource_changes:
             raise ResourceChangeTransactionDoesNotExist(
                 f"Transaction {transaction_token} does not exist in Resource State {resource_state_uuid}"
             )
@@ -524,7 +540,7 @@ class LocalBackend(Backend):
             resource_state_uuid
         )
 
-        if not transaction_token in resource_state.failed_changes:
+        if transaction_token not in resource_state.failed_changes:
             raise ResourceChangeTransactionDoesNotExist(
                 f"Transaction {transaction_token} does not exist in Resource State {resource_state_uuid}"
             )
@@ -554,7 +570,7 @@ class LocalBackend(Backend):
             resource_state_uuid
         )
 
-        if not transaction_token in resource_state.failed_changes:
+        if transaction_token not in resource_state.failed_changes:
             raise ResourceChangeTransactionDoesNotExist(
                 f"Transaction {transaction_token} does not exist in Resource State {resource_state_uuid}"
             )
@@ -562,12 +578,13 @@ class LocalBackend(Backend):
         component_name, diff, _ = resource_state.failed_changes.pop(transaction_token)
 
         if not to_previous_state:
+            # ANIBAL THIS METHOD IS WRONG
             component = self.get_component(component_name)
 
             new_component = self._update_component(component, diff, cloud_output)
 
             resource_state.components = [
-                x for x in resource_state.components if not x.name == component_name
+                x for x in resource_state.components if x.name != component_name
             ] + [new_component]
 
         self._write_resource_state_file(resource_state, resource_state_file_location)
@@ -581,7 +598,7 @@ class LocalBackend(Backend):
             resource_state_uuid
         )
 
-        if not transaction_token in resource_state.failed_changes:
+        if transaction_token not in resource_state.failed_changes:
             raise ResourceChangeTransactionDoesNotExist(
                 f"Transaction {transaction_token} does not exist in Resource State {resource_state_uuid}"
             )
@@ -629,8 +646,8 @@ class LocalBackend(Backend):
         )
 
         if (
-            not f"{diff.resource_reference.ruuid}{diff.resource_reference.name}"
-            in all_parent_resources
+            f"{diff.resource_reference.ruuid}{diff.resource_reference.name}"
+            not in all_parent_resources
         ):
             raise ResourceReferenceError(
                 f"Could not find resource {diff.resource_reference.ruuid};{diff.resource_reference.name} in parent component"
@@ -643,7 +660,7 @@ class LocalBackend(Backend):
             )
 
             # resolve the reference by adding a count to the reference counter in the referenced component
-            if not reference_id in _referenced_component.external_references:
+            if reference_id not in _referenced_component.external_references:
                 _referenced_component.external_references[reference_id] = {"cnt": 1}
 
             else:
@@ -664,7 +681,7 @@ class LocalBackend(Backend):
             )
 
             # resolve the dereference by subtracting a count to the reference counter in the referenced component
-            if not reference_id in _referenced_component.external_references:
+            if reference_id not in _referenced_component.external_references:
                 raise ResourceReferenceError(
                     f"Trying to deference resource that does not have reference info"
                 )
@@ -684,12 +701,10 @@ class LocalBackend(Backend):
             component.references.remove(diff.resource_reference)
 
         _reference_resource_state.components = [
-            x
-            for x in resource_state.components
-            if not x.name == _referenced_component.name
+            x for x in resource_state.components if x.name != _referenced_component.name
         ] + [_referenced_component]
         resource_state.components = [
-            x for x in resource_state.components if not x.name == component.name
+            x for x in resource_state.components if x.name != component.name
         ] + [component]
 
         if diff.resource_reference.is_in_parent_resource_state:
@@ -712,23 +727,9 @@ class LocalBackend(Backend):
         resource_type: str,
         resource_name: str,
     ) -> TaggableResourceModel:
-
-        component = self.get_component(resource_state_uuid, component_name)
-
-        resource = next(
-            (
-                x
-                for x in component.resources
-                if x.ruuid == resource_type and x.name == resource_name
-            ),
-            None,
+        resource = self._get_resource_by_property(
+            resource_state_uuid, component_name, resource_type, "name", resource_name
         )
-
-        if not resource:
-            raise ResourceDoesNotExist(
-                error_message=f"Resource {resource_type}::{resource_name} does not exist in Component {component_name} in Resource State {resource_state_uuid}"
-            )
-
         return resource
 
     def get_resource_by_hash(
@@ -738,24 +739,32 @@ class LocalBackend(Backend):
         resource_type: str,
         resource_hash: str,
     ) -> TaggableResourceModel:
+        resource = self._get_resource_by_property(
+            resource_state_uuid, component_name, resource_type, "hash", resource_hash
+        )
+        return resource
+
+    def _get_resource_by_property(
+        self,
+        resource_state_uuid: str,
+        component_name: str,
+        resource_type: str,
+        property_name: str,
+        property_value: str,
+    ) -> TaggableResourceModel:
 
         component = self.get_component(resource_state_uuid, component_name)
 
-        resource = next(
-            (
-                x
-                for x in component.resources
-                if x.ruuid == resource_type and x.hash == resource_hash
-            ),
-            None,
+        for resource in component.resources:
+            if (
+                resource.ruuid == resource_type
+                and getattr(resource, property_name) == property_value
+            ):
+                return resource
+
+        raise ResourceDoesNotExist(
+            f"Resource {resource_type}::{property_value} does not exist in Component {component_name} in Resource State {resource_state_uuid}"
         )
-
-        if not resource:
-            raise ResourceDoesNotExist(
-                f"Resource {resource_type}::{resource_hash} does not exist in Component {component_name} in Resource State {resource_state_uuid}"
-            )
-
-        return resource
 
     def get_cloud_output_value_by_name(
         self,
@@ -766,32 +775,15 @@ class LocalBackend(Backend):
         key: str,
     ) -> Any:
 
-        component = self.get_component(resource_state_uuid, component_name)
-        resource = self.get_resource_by_name(
-            resource_state_uuid, component_name, resource_type, resource_name
+        cloud_output_value = self._get_cloud_output_value_by_property(
+            resource_state_uuid,
+            component_name,
+            resource_type,
+            "name",
+            resource_name,
+            key,
         )
-
-        cloud_output_id = self._get_cloud_output_id(resource)
-
-        if not cloud_output_id in component.cloud_output:
-
-            raise CloudOutputDoesNotExist(
-                f"Can not find Cloud Output for {resource_type}::{resource_name} in Component {component_name} in Resource State {resource_state_uuid}"
-            )
-
-        cloud_output = component.cloud_output.get(cloud_output_id)
-
-        if not cloud_output:
-            raise CloudOutputDoesNotExist(
-                f"No values for Cloud Output for {resource_type}::{resource_name} in Component {component_name} in Resource State {resource_state_uuid}"
-            )
-
-        if not key in cloud_output:
-            raise KeyNotInCloudOutput(
-                f"Can not find Key '{key}' in Cloud Output for {resource_type}::{resource_name} in Component {component_name} in Resource State {resource_state_uuid}. Available keys are: {list(cloud_output.keys())}"
-            )
-
-        return cloud_output.get(key)
+        return cloud_output_value
 
     def get_cloud_output_value_by_hash(
         self,
@@ -802,28 +794,52 @@ class LocalBackend(Backend):
         key: str,
     ) -> Any:
 
+        cloud_output_value = self._get_cloud_output_value_by_property(
+            resource_state_uuid,
+            component_name,
+            resource_type,
+            "hash",
+            resource_hash,
+            key,
+        )
+        return cloud_output_value
+
+    def _get_cloud_output_value_by_property(
+        self,
+        resource_state_uuid: str,
+        component_name: str,
+        resource_type: str,
+        property_name: str,
+        property_value: str,
+        key: str,
+    ) -> Any:
+
         component = self.get_component(resource_state_uuid, component_name)
-        resource = self.get_resource_by_hash(
-            resource_state_uuid, component_name, resource_type, resource_hash
+        resource = self._get_resource_by_property(
+            resource_state_uuid,
+            component_name,
+            resource_type,
+            property_name,
+            property_value,
         )
 
         cloud_output_id = self._get_cloud_output_id(resource)
 
-        if not cloud_output_id in component.cloud_output:
+        if cloud_output_id not in component.cloud_output:
             raise CloudOutputDoesNotExist(
-                f"Can not find Cloud Output for {resource_type}::{resource_hash} in Component {component_name} in Resource State {resource_state_uuid}"
+                f"Can not find Cloud Output for {resource_type}::{property_value} in Component {component_name} in Resource State {resource_state_uuid}"
             )
 
-        cloud_output = component.cloud_output.get(cloud_output_id)
+        cloud_output = component.cloud_output[cloud_output_id]
 
         if not cloud_output:
             raise CloudOutputDoesNotExist(
-                f"None value for Cloud Output for {resource_type}::{resource_hash} in Component {component_name} in Resource State {resource_state_uuid}"
+                f"None value for Cloud Output for {resource_type}::{property_value} in Component {component_name} in Resource State {resource_state_uuid}"
             )
 
-        if not key in cloud_output:
+        if key not in cloud_output:
             raise KeyNotInCloudOutput(
-                f"Can not find Key {key} in Cloud Output for {resource_type}::{resource_hash} in Component {component_name} in Resource State {resource_state_uuid}"
+                f"Can not find Key {key} in Cloud Output for {resource_type}::{property_value} in Component {component_name} in Resource State {resource_state_uuid}"
             )
 
         return cloud_output.get(key)
@@ -838,12 +854,12 @@ class LocalBackend(Backend):
 
         component = self.get_component(resource_state_uuid, component_name)
         resource = self.get_resource_by_name(
-            resource_state_uuid, component_name, resource_type, resource_name
+            resource_state_uuid, component.name, resource_type, resource_name
         )
 
         cloud_output_id = self._get_cloud_output_id(resource)
 
-        if not cloud_output_id in component.cloud_output:
+        if cloud_output_id not in component.cloud_output:
 
             raise CloudOutputDoesNotExist(
                 f"Can not find Cloud Output for {resource_type}::{resource_name} in Component {component_name} in Resource State {resource_state_uuid}"
@@ -998,24 +1014,21 @@ def _compute_component_hash(component: ComponentModel) -> str:
     """
     if component.resources:
 
-        resources = [x for x in component.resources]
+        resources = copy.copy(component.resources)
         resources.sort(key=lambda x: x.hash)
-
         resource_hashes = [x.hash for x in resources]
     else:
         resource_hashes = []
 
     if component.references:
         # TODO create hash of all the things
-        references = [x for x in component.references]
+        references = copy.copy(component.references)
         references.sort(key=lambda x: x.name)
-
         references_hashes = [x.name for x in references]
     else:
         references_hashes = []
 
     all_hashes = references_hashes + resource_hashes
-
     return cdev_hasher.hash_list(all_hashes)
 
 
@@ -1060,7 +1073,7 @@ def _create_resource_diffs(
 
         elif (
             resource.hash in old_hash_to_resource
-            and not resource.name in old_name_to_resource
+            and resource.name not in old_name_to_resource
         ):
 
             rv.append(
@@ -1096,7 +1109,7 @@ def _create_resource_diffs(
 
         elif (
             not resource.hash in old_hash_to_resource
-            and not resource.name in old_name_to_resource
+            and resource.name not in old_name_to_resource
         ):
 
             rv.append(
@@ -1218,7 +1231,7 @@ def _create_differences(
 
             if (
                 not component.hash in previous_hash_to_component
-                and not component.name in previous_name_to_component
+                and component.name not in previous_name_to_component
             ):
                 # Create component and all resources and all references
 
@@ -1253,7 +1266,7 @@ def _create_differences(
 
                 if any(
                     [
-                        not x.action_type == Resource_Change_Type.UPDATE_NAME
+                        x.action_type != Resource_Change_Type.UPDATE_NAME
                         for x in tmp_resource_diff
                     ]
                 ):
@@ -1267,7 +1280,7 @@ def _create_differences(
 
             elif (
                 component.hash in previous_hash_to_component
-                and not component.name in previous_name_to_component
+                and component.name not in previous_name_to_component
             ):
                 # hash of the component has stayed the same but the user has renamed the component name
                 # Even though the hash has remained the same we need to check for name changes in the resources
