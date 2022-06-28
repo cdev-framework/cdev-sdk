@@ -67,7 +67,7 @@ class Local_Backend_Configuration(Backend_Configuration):
         )
 
 
-class LocalCentralFile(BaseModel):
+class CentralState(BaseModel):
     resource_state_locations: Dict[str, str]  # uuid -> file location
     top_level_states: List[str]  # uuid
     resource_state_names: List[str]
@@ -88,40 +88,65 @@ class LocalCentralFile(BaseModel):
 
 
 class LocalBackend(Backend):
-    # Structurally, this implementation will have a central json that can be used as an index into more precise json files. For example, each resource state will be its own json file, but
-    # the central file will keep track of each one.
-    def __init__(
-        self, base_folder: DirectoryPath, central_state_file: FilePath = None
-    ) -> None:
-        """Implementation of a Backend using locally stored json files as the persistent storage medium. This backend should only be used for small project as it does not provide any mechanisms
-        to work well when multiple people edit the state. Also this is a single threaded implementation.
+    # This implementation uses local json files to store the different states. Each Resource State will be store in a different json files to help with diffing them using git.
+    # note the __init__ function allows any kwargs to preserve backwards compatibility with previous implementations.
+    def __init__(self, base_folder: DirectoryPath, *args, **kwargs) -> None:
+        """This implementation uses local json files to store the different states. Each Resource State will be store in a different json files to help with diffing them using git.
 
         Args:
             base_folder (DirectoryPath): Path to a folder to use for storing local json files. Defaults to cdev setting if not provided.
-            central_state_file (FilePath): Path to the central state file. Defaults to cdev setting if not provided.
         """
 
-        DEFAULT_CENTRAL_STATE_FILE = os.path.join(base_folder, "local_state.json")
-
         self.base_folder = base_folder
-        self.central_state_file = (
-            central_state_file if central_state_file else DEFAULT_CENTRAL_STATE_FILE
-        )
+        self._resource_state_prefix = "resource_state_"
 
         if not os.path.isdir(self.base_folder):
             raise FileNotFoundError(f"Can not find directory -> {self.base_folder}")
 
-        if not os.path.isfile(self.central_state_file):
-            self._central_state = LocalCentralFile({}, [], [])
+        self._central_state = self._compute_central_state()
 
-        else:
-            with open(self.central_state_file, "r") as fh:
-                self._central_state = LocalCentralFile(**json.load(fh))
+    def _compute_resource_state_file_location(
+        self, resource_state_uuid: str
+    ) -> FilePath:
+        """Helper function to uniformly compute the resource state file name
 
-    def _write_central_file(self):
-        """Save the central state to disk"""
-        file_manager.safe_json_write(
-            self._central_state.dict(), self.central_state_file
+        Args:
+            resource_state_uuid (str)
+
+        Returns:
+            FilePath
+        """
+
+        return os.path.join(
+            self.base_folder, f"{self._resource_state_prefix}{resource_state_uuid}.json"
+        )
+
+    def _compute_central_state(self) -> CentralState:
+        resource_state_locations = {}
+        top_level_states = []
+        resource_state_names = []
+
+        for child in os.listdir(self.base_folder):
+            full_path = os.path.join(self.base_folder, child)
+            if not (
+                child.startswith(self._resource_state_prefix)
+                and os.path.isfile(full_path)
+            ):
+                continue
+
+            try:
+                rs = Resource_State(**json.load(open(full_path)))
+            except Exception:
+                continue
+
+            resource_state_locations[rs.uuid] = full_path
+            top_level_states.append(rs.uuid)
+            resource_state_names.append(rs.name)
+
+        return CentralState(
+            resource_state_locations=resource_state_locations,
+            top_level_states=top_level_states,
+            resource_state_names=resource_state_names,
         )
 
     def _write_resource_state_file(self, resource_state: Resource_State, fp: FilePath):
@@ -155,14 +180,11 @@ class LocalBackend(Backend):
                 parent_uuid=parent_resource_state_uuid,
             )
 
-        filename = os.path.join(
-            self.base_folder, f"resource_state_{new_resource_state.uuid}.json"
-        )
+        filename = self._compute_resource_state_file_location(new_resource_state.uuid)
 
         self._central_state.resource_state_locations[new_resource_state.uuid] = filename
         self._central_state.resource_state_names.append(new_resource_state.name)
 
-        self._write_central_file()
         self._write_resource_state_file(new_resource_state, filename)
 
         return new_resource_state.uuid
@@ -196,7 +218,6 @@ class LocalBackend(Backend):
             resource_state_to_delete.uuid
         )
 
-        self._write_central_file()
         os.remove(file_location)
 
     def get_resource_state(self, resource_state_uuid: str) -> Resource_State:
@@ -224,7 +245,10 @@ class LocalBackend(Backend):
 
     def get_top_level_resource_states(self) -> List[Resource_State]:
         # Let any exception from loading a state pass up to caller
-        rv = [self.get_resource_state(resource_id) for resource_id in self._central_state.top_level_states]
+        rv = [
+            self.get_resource_state(resource_id)
+            for resource_id in self._central_state.top_level_states
+        ]
         return rv
 
     # Components
@@ -275,24 +299,24 @@ class LocalBackend(Backend):
             resource_state_uuid
         )
 
-        deleteing_component = None
+        deleting_component = None
         for component in resource_state.components:
             if component.name == component_name:
-                deleteing_component = component
+                deleting_component = component
                 break
 
-        if not deleteing_component:
+        if not deleting_component:
             # Component of that name does not exist
             raise ComponentDoesNotExist(
                 f"Could not find component {component_name} in Resource State {resource_state_uuid}"
             )
 
-        if len(deleteing_component.resources) != 0:
+        if len(deleting_component.resources) != 0:
             raise ComponentNotEmpty(
-                f"Can not delete Component {component_name} in Resource State {resource_state_uuid} because the it is not empty"
+                f"Can not delete Component {component_name} in Resource State {resource_state_uuid} because the component is not empty"
             )
 
-        resource_state.components.remove(deleteing_component)
+        resource_state.components.remove(deleting_component)
         resource_state.component_name_to_uuid.pop(component_name)
 
         self._write_resource_state_file(resource_state, resource_state_file_location)
@@ -423,7 +447,6 @@ class LocalBackend(Backend):
         resource_state_file_location = self._get_resource_state_file_location(
             resource_state_uuid
         )
-
 
         ruuid = (
             diff.new_resource.ruuid
@@ -678,9 +701,7 @@ class LocalBackend(Backend):
             component.references.remove(diff.resource_reference)
 
         _reference_resource_state.components = [
-            x
-            for x in resource_state.components
-            if x.name != _referenced_component.name
+            x for x in resource_state.components if x.name != _referenced_component.name
         ] + [_referenced_component]
         resource_state.components = [
             x for x in resource_state.components if x.name != component.name
@@ -706,11 +727,9 @@ class LocalBackend(Backend):
         resource_type: str,
         resource_name: str,
     ) -> ResourceModel:
-        resource = self._get_resource_by_property(resource_state_uuid,
-                                                  component_name,
-                                                  resource_type,
-                                                  "name",
-                                                  resource_name)
+        resource = self._get_resource_by_property(
+            resource_state_uuid, component_name, resource_type, "name", resource_name
+        )
         return resource
 
     def get_resource_by_hash(
@@ -720,11 +739,9 @@ class LocalBackend(Backend):
         resource_type: str,
         resource_hash: str,
     ) -> ResourceModel:
-        resource = self._get_resource_by_property(resource_state_uuid,
-                                                  component_name,
-                                                  resource_type,
-                                                  "hash",
-                                                  resource_hash)
+        resource = self._get_resource_by_property(
+            resource_state_uuid, component_name, resource_type, "hash", resource_hash
+        )
         return resource
 
     def _get_resource_by_property(
@@ -739,7 +756,10 @@ class LocalBackend(Backend):
         component = self.get_component(resource_state_uuid, component_name)
 
         for resource in component.resources:
-            if resource.ruuid == resource_type and getattr(resource,property_name) == property_value:
+            if (
+                resource.ruuid == resource_type
+                and getattr(resource, property_name) == property_value
+            ):
                 return resource
 
         raise ResourceDoesNotExist(
@@ -761,7 +781,8 @@ class LocalBackend(Backend):
             resource_type,
             "name",
             resource_name,
-            key)
+            key,
+        )
         return cloud_output_value
 
     def get_cloud_output_value_by_hash(
@@ -779,7 +800,8 @@ class LocalBackend(Backend):
             resource_type,
             "hash",
             resource_hash,
-            key)
+            key,
+        )
         return cloud_output_value
 
     def _get_cloud_output_value_by_property(
@@ -794,7 +816,11 @@ class LocalBackend(Backend):
 
         component = self.get_component(resource_state_uuid, component_name)
         resource = self._get_resource_by_property(
-            resource_state_uuid, component_name, resource_type, property_name, property_value
+            resource_state_uuid,
+            component_name,
+            resource_type,
+            property_name,
+            property_value,
         )
 
         cloud_output_id = self._get_cloud_output_id(resource)

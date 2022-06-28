@@ -1,9 +1,5 @@
 from dataclasses import dataclass
 import re
-from tokenize import group
-
-from core.constructs.resource import ResourceModel
-from core.constructs.workspace import Workspace
 
 
 remote_name_regex = "bucket://([a-z,_]+).([a-z,_]+)/?(\S+)?"
