@@ -1,7 +1,7 @@
 import time, datetime
 
 from argparse import ArgumentParser
-from typing import List, Optional, Dict
+from typing import List, Optional
 
 from boto3 import client
 from botocore.exceptions import ClientError
@@ -123,13 +123,21 @@ class show_logs(BaseCommand):
     ) -> None:
         next_token = None
         while True:
-            log_events = cloud_client.get_log_events(
-                logGroupName=cloud_group_name,
-                logStreamName=stream_name,
-                limit=limit_val,
-                startFromHead=start_from_head,
-                nextToken=next_token
-            )
+            if next_token:
+                log_events = cloud_client.get_log_events(
+                    logGroupName=cloud_group_name,
+                    logStreamName=stream_name,
+                    limit=limit_val,
+                    startFromHead=start_from_head,
+                    nextToken=next_token
+                )
+            else:
+                log_events = cloud_client.get_log_events(
+                    logGroupName=cloud_group_name,
+                    logStreamName=stream_name,
+                    limit=limit_val,
+                    startFromHead=start_from_head,
+                )
             for event in log_events.get("events"):
                 self.output.print(self._format_event(event))
 
