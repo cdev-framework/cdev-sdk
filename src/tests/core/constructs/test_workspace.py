@@ -2,7 +2,7 @@ from typing import Dict
 from core.constructs.backend import Backend
 from core.constructs.cloud_output import cloud_output_model
 from core.constructs.workspace import Workspace, Workspace_State, Workspace_Info
-from core.constructs.resource import TaggableResourceModel
+from core.constructs.resource import ResourceModel
 from core.constructs.components import ComponentModel
 
 from core.constructs.backend import Backend_Configuration
@@ -121,7 +121,7 @@ def _get_fake_backend():
 def simple_evaluate_and_replace_cloud_output(workspace: Workspace):
     data = [
         (
-            TaggableResourceModel(
+            ResourceModel(
                 **{
                     "name": "e1",
                     "ruuid": "r",
@@ -138,14 +138,14 @@ def simple_evaluate_and_replace_cloud_output(workspace: Workspace):
                 }
             ),
             (
-                TaggableResourceModel(
+                ResourceModel(
                     **{"name": "e1", "ruuid": "r", "hash": "0", "val": "val1"}
                 ),
                 {"r;r1;cloud_id": "val1"},
             ),
         ),
         (
-            TaggableResourceModel(
+            ResourceModel(
                 **{
                     "name": "e1",
                     "ruuid": "r",
@@ -162,14 +162,14 @@ def simple_evaluate_and_replace_cloud_output(workspace: Workspace):
                 }
             ),
             (
-                TaggableResourceModel(
+                ResourceModel(
                     **{"name": "e1", "ruuid": "r", "hash": "0", "val": "val2"}
                 ),
                 {"r;r2;cloud_id": "val2"},
             ),
         ),
         (
-            TaggableResourceModel(
+            ResourceModel(
                 **{
                     "name": "e1",
                     "ruuid": "r",
@@ -186,7 +186,7 @@ def simple_evaluate_and_replace_cloud_output(workspace: Workspace):
                 }
             ),
             (
-                TaggableResourceModel(
+                ResourceModel(
                     **{"name": "e1", "ruuid": "r", "hash": "0", "val": "val3"}
                 ),
                 {"r;r3;cloud_id": "val3"},
@@ -202,7 +202,7 @@ def simple_evaluate_and_replace_cloud_output(workspace: Workspace):
 def simple_evaluate_and_replace_previous_cloud_output(workspace: Workspace):
     data = [
         (
-            TaggableResourceModel(
+            ResourceModel(
                 **{
                     "name": "e1",
                     "ruuid": "r",
@@ -218,10 +218,10 @@ def simple_evaluate_and_replace_previous_cloud_output(workspace: Workspace):
                     ),
                 }
             ),
-            TaggableResourceModel(**{"name": "e1", "ruuid": "r", "hash": "0", "val": "val1"}),
+            ResourceModel(**{"name": "e1", "ruuid": "r", "hash": "0", "val": "val1"}),
         ),
         (
-            TaggableResourceModel(
+            ResourceModel(
                 **{
                     "name": "e1",
                     "ruuid": "r",
@@ -237,10 +237,10 @@ def simple_evaluate_and_replace_previous_cloud_output(workspace: Workspace):
                     ),
                 }
             ),
-            TaggableResourceModel(**{"name": "e1", "ruuid": "r", "hash": "0", "val": "val2"}),
+            ResourceModel(**{"name": "e1", "ruuid": "r", "hash": "0", "val": "val2"}),
         ),
         (
-            TaggableResourceModel(
+            ResourceModel(
                 **{
                     "name": "e1",
                     "ruuid": "r",
@@ -256,7 +256,7 @@ def simple_evaluate_and_replace_previous_cloud_output(workspace: Workspace):
                     ),
                 }
             ),
-            TaggableResourceModel(**{"name": "e1", "ruuid": "r", "hash": "0", "val": "val3"}),
+            ResourceModel(**{"name": "e1", "ruuid": "r", "hash": "0", "val": "val3"}),
         ),
     ]
 

@@ -1,15 +1,15 @@
-from dataclasses import dataclass, field
 import os
+import sys
+from typing import Dict, List, Set, Tuple, Union
+from dataclasses import dataclass, field
 from pydantic import DirectoryPath
 from pydantic.types import FilePath
 from sortedcontainers.sortedlist import SortedKeyList
-import sys
-from typing import Dict, List, Set, Tuple, Union
 from functools import partial
 
 from core.constructs.resource import (
     Resource,
-    TaggableResourceModel,
+    ResourceModel,
     ResourceReferenceModel,
     Resource_Reference,
 )
@@ -76,7 +76,7 @@ Error optimizing modules used in {filepath} for function '{function_name}'. Orig
 
 def parse_folder(
     folder_path: DirectoryPath,
-) -> Tuple[List[TaggableResourceModel], List[ResourceReferenceModel]]:
+) -> Tuple[List[ResourceModel], List[ResourceReferenceModel]]:
     """Search through the given folder looking for resource and references in Python files.
 
     Args:
@@ -84,7 +84,7 @@ def parse_folder(
 
     Returns:
         Tuple[
-            List[TaggableResourceModel],
+            List[ResourceModel],
             List[ResourceReferenceModel]
         ]
 
@@ -190,7 +190,7 @@ def _get_module_name_from_path(fp: FilePath):
 
 def _find_resources_information_from_file(
     fp: FilePath,
-) -> Tuple[List[TaggableResourceModel], List[ResourceReferenceModel]]:
+) -> Tuple[List[ResourceModel], List[ResourceReferenceModel]]:
     """Load a file and find top level objects that are Resources or References
 
     Args:

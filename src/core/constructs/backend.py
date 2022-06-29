@@ -21,7 +21,7 @@ from pydantic import BaseModel
 from core.constructs.components import Component_Difference, ComponentModel
 from core.constructs.resource import (
     Resource_Reference_Difference,
-    TaggableResourceModel,
+    ResourceModel,
     Resource_Difference,
 )
 from core.constructs.resource_state import Resource_State
@@ -358,7 +358,7 @@ class Backend:
         component_name: str,
         resource_type: str,
         resource_name: str,
-    ) -> TaggableResourceModel:
+    ) -> ResourceModel:
         """
         Get the state of a resource from a component based on the name of the resource
 
@@ -381,7 +381,7 @@ class Backend:
         component_name: str,
         resource_type: str,
         resource_hash: str,
-    ) -> TaggableResourceModel:
+    ) -> ResourceModel:
         """
         Get the state of a resource from a component based on the hash of the resource
 
@@ -405,7 +405,7 @@ class Backend:
             component_name: str,
             resource_type: str,
             resource_tag: str,
-    ) -> List[TaggableResourceModel]:
+    ) -> List[ResourceModel]:
         """
         Get the state of a resource from a component based on the name of the resource
 

@@ -17,7 +17,7 @@ from time import sleep
 from core.constructs.resource import (
     Resource_Change_Type,
     Resource_Reference_Change_Type,
-    TaggableResourceModel,
+    ResourceModel,
     Resource_Difference,
     Resource_Reference_Difference,
 )
@@ -31,7 +31,7 @@ from core.utils.operations import concatenate
 deliminator = "+"
 
 
-def find_parents(resource: TaggableResourceModel) -> Tuple[List, List]:
+def find_parents(resource: ResourceModel) -> Tuple[List, List]:
     """Find any parents resources via any linked Cloud Output Models
 
     If a resource contains the cloud output of another resource, the relationship

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple
 
-from core.constructs.resource import TaggableResourceModel
+from core.constructs.resource import ResourceModel
 from core.constructs.workspace import Workspace
 from core.utils.exceptions import cdev_core_error
 
@@ -38,7 +38,7 @@ def get_cloud_output_from_cdev_name(
 
 def get_resource_from_cdev_name(
     component_name: str, ruuid: str, cdev_name: str
-) -> TaggableResourceModel:
+) -> ResourceModel:
     ws = Workspace.instance()
 
     resource = ws.get_backend().get_resource_by_name(
