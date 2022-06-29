@@ -289,6 +289,9 @@ def _update_simple_api(
                 _delete_route(previous_cloud_id, previous_route_info.get(route_id))
             except Exception as e:
                 output_task.print_error(e)
+                print(
+                    f"error deleting {previous_cloud_id} -> {previous_route_info.get(route_id)}"
+                )
                 raise e
 
             previous_route_info.pop(route_id)
