@@ -260,6 +260,13 @@ CDEV_COMMANDS = [
         "name": "deploy",
         "help": "Deploy a set of changes",
         "default": wrap_load_and_initialize_project(deploy.deploy_command_cli),
+        "args": [
+            {
+                "dest": "--disable-prompt",
+                "action": "store_true",
+                "help": "by default we ask for confirmation before deploying the resources. Turn this on and perform deployments w/o requiring confirmation",
+            },
+        ]
     },
     {
         "name": "destroy",

@@ -1,6 +1,8 @@
 import json
-from typing import FrozenSet, List, Tuple, Union, Dict
+from typing import FrozenSet, List, Tuple, Union, Dict, Optional
 from uuid import uuid4
+
+from botocore.exceptions import ClientError
 
 from core.default.resources.simple.iam import permission_model, permission_arn_model
 
@@ -11,7 +13,7 @@ def create_role_with_permissions(
     role_name: str,
     permissions: FrozenSet[Union[permission_model, permission_arn_model]],
     assume_role_policy: str,
-) -> Tuple[str, List[Dict]]:
+) -> Tuple[Optional[str], Optional[List[Dict]]]:
     """
     This function creates a new IAM role and policies such that the function will have correct access to resources.
 
@@ -26,6 +28,9 @@ def create_role_with_permissions(
     """
 
     role_arn = _create_role(role_name, assume_role_policy)
+    if role_arn is None:
+        return None, None
+
     permission_info: List[Dict] = []
 
     for permission in permissions:
@@ -120,21 +125,24 @@ def detach_policy(role_name: str, permission_arn: str) -> None:
     )
 
 
-def _create_role(name: str, assume_role_policy: str) -> str:
+def _create_role(name: str, assume_role_policy: str) -> Optional[str]:
     """
     Creates the role and returns the arn
     """
+    try:
+        rv = aws_client.run_client_function(
+            "iam",
+            "create_role",
+            {
+                "RoleName": name,
+                "AssumeRolePolicyDocument": assume_role_policy,
+            },
+        )
+        return rv.get("Role").get("Arn")
+    except ClientError as e:
+        print(f"Unable to create role {name}. {e}")
 
-    rv = aws_client.run_client_function(
-        "iam",
-        "create_role",
-        {
-            "RoleName": name,
-            "AssumeRolePolicyDocument": assume_role_policy,
-        },
-    )
-
-    return rv.get("Role").get("Arn")
+    return None
 
 
 def _attach_policy_to_arn(role_arn: str, policy_arn: str) -> None:
