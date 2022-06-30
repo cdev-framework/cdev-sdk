@@ -62,7 +62,6 @@ def run_client_function(
 ) -> Any:
     rendered_client = _get_boto_client(service)
     method = getattr(rendered_client, function_name)
-    
     if method:
         rv = method(**args)
 
