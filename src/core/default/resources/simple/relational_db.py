@@ -268,6 +268,7 @@ class RelationalDB(PermissionsAvailableMixin, TaggableMixin, Resource):
                 self.min_capacity,
                 self.seconds_to_pause,
                 self.nonce,
+                self._get_tags_hash(),
             ]
         )
 

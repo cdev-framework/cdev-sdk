@@ -195,6 +195,7 @@ class StaticSite(Resource, TaggableMixin):
                 self.domain_name,
                 self.ssl_certificate_arn,
                 self.nonce,
+                self._get_tags_hash(),
             ]
         )
 

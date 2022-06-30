@@ -327,17 +327,16 @@ class SimpleFunction(PermissionsGrantableMixin, TaggableMixin, Resource):
         permissions_hash = hasher.hash_list(
             [x.hash() for x in self._granted_permissions]
         )
-        config_hash = self._configuration.hash()
-        events_hash = hasher.hash_list([x.hash() for x in self.events])
 
         self._hash = hasher.hash_list(
             [
                 self.src_code_hash,
-                config_hash,
-                events_hash,
+                self._configuration.hash(),
+                hasher.hash_list([x.hash() for x in self.events]),
                 permissions_hash,
                 self._nonce,
                 self._platform,
+                self._get_tags_hash(),
             ]
         )
 
@@ -373,7 +372,7 @@ class SimpleFunction(PermissionsGrantableMixin, TaggableMixin, Resource):
 def simple_function_annotation(
     name: str,
     events: List[Union[Event, RouteEvent]] = [],
-    environment={},
+    environment = {},
     memory_size: int = 128,
     timeout: int = 30,
     storage: int = 512,

@@ -186,7 +186,12 @@ class Bucket(PermissionsAvailableMixin, TaggableMixin, Resource):
         return event
 
     def compute_hash(self) -> None:
-        self._hash = hasher.hash_list([self.nonce])
+        self._hash = hasher.hash_list(
+            [
+                self.nonce,
+                self._get_tags_hash(),
+            ]
+        )
 
     def render(self) -> bucket_model:
         return bucket_model(

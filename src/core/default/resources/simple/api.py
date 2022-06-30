@@ -396,6 +396,7 @@ class Api(Resource, TaggableMixin):
                 self.allow_cors,
                 self.nonce,
                 self._default_authorizer_name,
+                self._get_tags_hash(),
                 hasher.hash_list([x.hash() for x in self._authorizers]),
             ]
         )

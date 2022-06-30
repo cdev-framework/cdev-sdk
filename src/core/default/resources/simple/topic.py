@@ -184,13 +184,21 @@ class Topic(PermissionsAvailableMixin, TaggableMixin, Resource):
         """
         if not self._event:
             raise Exception(
-                "Topic Event has not been created. Create a Topic Event for this topic using the `create_event_trigger` function before calling this function."
+                "Topic Event has not been created. "
+                "Create a Topic Event for this topic using the `create_event_trigger` "
+                "function before calling this function."
             )
 
         return self._event
 
     def compute_hash(self) -> None:
-        self._hash = hasher.hash_list([self.is_fifo, self.nonce])
+        self._hash = hasher.hash_list(
+            [
+                self.is_fifo,
+                self.nonce,
+                self._get_tags_hash(),
+            ]
+        )
 
     def render(self) -> simple_topic_model:
         return simple_topic_model(

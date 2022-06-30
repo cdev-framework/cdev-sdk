@@ -10,6 +10,7 @@ from core.constructs.models import ImmutableModel
 from core.constructs.cloud_output import OutputType, Cloud_Output_Str
 from core.constructs.types import F
 from core.utils.hasher import hash_list
+from core.utils.hasher import hash_string
 
 
 ##################
@@ -180,7 +181,7 @@ class Resource:
             "The `hash` of a Resource can only be set by the `compute_hash` method"
         )
 
-    def compute_hash(self):
+    def compute_hash(self) -> str:
         raise NotImplementedError
 
 
@@ -467,6 +468,12 @@ class TaggableMixin:
                     f"and a maximum of {self.MAX_TAG_VALUE_LEN} Unicode characters in UTF-8. "
                     f"Please change the following tag's value {keys[0]}"
                 )
+
+    def _get_tags_hash(self) -> str:
+        if not self._tags:
+            return ""
+
+        return hash_list([hash_string(f"{k}-{v}") for k, v in self._tags.items()])
 
 
 class PermissionsGrantableMixin:

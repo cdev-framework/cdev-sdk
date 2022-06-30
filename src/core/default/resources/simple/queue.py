@@ -246,7 +246,13 @@ class Queue(PermissionsAvailableMixin, TaggableMixin, Resource):
         return self._event
 
     def compute_hash(self) -> None:
-        self._hash = hasher.hash_list([self.is_fifo, self.nonce])
+        self._hash = hasher.hash_list(
+            [
+                self.is_fifo,
+                self.nonce,
+                self._get_tags_hash(),
+            ]
+        )
 
     def render(self) -> queue_model:
         return queue_model(

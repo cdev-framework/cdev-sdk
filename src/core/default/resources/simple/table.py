@@ -469,6 +469,7 @@ class Table(PermissionsAvailableMixin, TaggableMixin, Resource):
                 [x.render() for x in self.attributes],
                 [x.render() for x in self.keys],
                 self.nonce,
+                self._get_tags_hash(),
             ]
         )
 
