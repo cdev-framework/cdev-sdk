@@ -10,7 +10,10 @@ from rich.console import Console
 from rich.table import Table
 
 from core.constructs.commands import BaseCommand
-from core.default.commands.dynamodb.utils import get_dynamodb_info_from_cdev_name
+from core.default.commands.dynamodb.utils import (
+    get_dynamodb_info_from_cdev_name,
+    dynamodb_item_action,
+)
 
 import core.default.mappers.aws_client as aws_client
 import boto3
@@ -88,7 +91,7 @@ class shell(BaseCommand):
         cloud_arn, db_name = get_dynamodb_info_from_cdev_name(
             component_name, database_name
         )
-        put_dynamodb_item(action_type, db_name, dict_fields)
+        dynamodb_item_action(action_type, db_name, dict_fields)
 
 
 def import_json(file_path: str) -> dict:
@@ -127,20 +130,3 @@ def create_dict_from_string(str_text: str) -> dict:
             )
         dict_fields[field.replace(" ", "")] = {type_field: value_add}
     return dict_fields
-
-
-def put_dynamodb_item(operation_type: str, table_name: str, item: dict) -> None:
-    rendered_client = boto3.client("dynamodb")
-    try:
-        if operation_type == "put_item":
-            rendered_client.put_item(TableName=table_name, Item=item)
-        elif operation_type == "delete_item":
-            rendered_client.delete_item(TableName=table_name, Key=item)
-        elif operation_type == "get_item":
-            res = rendered_client.get_item(TableName=table_name, Key=item)
-            print(res)
-        else:
-            res = "Invalid operation type"
-            print(res)
-    except Exception as e:
-        raise e

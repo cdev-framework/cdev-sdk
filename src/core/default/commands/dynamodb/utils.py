@@ -1,6 +1,7 @@
 from typing import Tuple, Any
 
 from core.constructs.workspace import Workspace
+import boto3
 
 RUUID = "cdev::simple::table"
 
@@ -30,3 +31,20 @@ def get_dynamodb_info_from_cdev_name(
         return [cloud_arn, table_name]
     except Exception as e:
         print(e)
+
+
+def dynamodb_item_action(operation_type: str, table_name: str, item: dict) -> None:
+    rendered_client = boto3.client("dynamodb")
+    try:
+        if operation_type == "put_item":
+            rendered_client.put_item(TableName=table_name, Item=item)
+        elif operation_type == "delete_item":
+            rendered_client.delete_item(TableName=table_name, Key=item)
+        elif operation_type == "get_item":
+            res = rendered_client.get_item(TableName=table_name, Key=item)
+            print(res)
+        else:
+            res = "Invalid operation type"
+            print(res)
+    except Exception as e:
+        raise e
