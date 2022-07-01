@@ -73,7 +73,7 @@ class put_object(BaseCommand):
                 print(e)
                 raise e
 
-            if not "items" in data:
+            if "items" not in data:
                 raise Exception(
                     f"Loaded data from {data_file} does not contain the 'items' key"
                 )

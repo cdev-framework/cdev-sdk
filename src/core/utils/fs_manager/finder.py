@@ -1,10 +1,10 @@
-from dataclasses import dataclass, field
 import os
+import sys
+from typing import Dict, List, Set, Tuple, Union
+from dataclasses import dataclass, field
 from pydantic import DirectoryPath
 from pydantic.types import FilePath
 from sortedcontainers.sortedlist import SortedKeyList
-import sys
-from typing import Dict, List, Set, Tuple, Union
 from functools import partial
 
 from core.constructs.resource import (

@@ -875,7 +875,9 @@ class LocalBackend(Backend):
         new_components: List[ComponentModel],
         old_components: List[str],
     ) -> Tuple[
-        Component_Difference, Resource_Reference_Difference, Resource_Difference
+        List[Component_Difference],
+        List[Resource_Difference],
+        List[Resource_Reference_Difference],
     ]:
         try:
             # Load the previous components

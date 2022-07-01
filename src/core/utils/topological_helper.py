@@ -23,7 +23,7 @@ from core.constructs.resource import (
 )
 from core.constructs.cloud_output import OutputType, cloud_output_model
 from core.constructs.components import Component_Change_Type, Component_Difference
-from core.constructs.output_manager import OutputManager, OutputTask
+from core.constructs.output_manager import OutputTask
 from core.constructs.models import frozendict
 
 from core.utils.operations import concatenate
@@ -186,7 +186,7 @@ def generate_sorted_resources(
 
         parent_resources, parent_references = (
             find_parents(resource.new_resource)
-            if not resource.action_type == Resource_Change_Type.DELETE
+            if resource.action_type != Resource_Change_Type.DELETE
             else find_parents(resource.previous_resource)
         )
 

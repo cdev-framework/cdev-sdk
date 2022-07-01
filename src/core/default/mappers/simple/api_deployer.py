@@ -13,6 +13,22 @@ class NoAuthorizerIdFoundError(Exception):
     pass
 
 
+default_cors_args = {
+    "CorsConfiguration": {
+        "AllowOrigins": ["*"],
+        "AllowMethods": ["*"],
+        "AllowHeaders": [
+            "Content-Type",
+            "X-Amz-Date",
+            "Authorization",
+            "X-Api-Key",
+            "X-Amz-Security-Token",
+            "X-Amz-User-Agent",
+        ],
+    }
+}
+
+
 def _create_simple_api(
     transaction_token: str,
     namespace_token: str,
@@ -40,23 +56,8 @@ def _create_simple_api(
         "ProtocolType": "HTTP",
     }
 
-    cors_args = {
-        "CorsConfiguration": {
-            "AllowOrigins": ["*"],
-            "AllowMethods": ["*"],
-            "AllowHeaders": [
-                "Content-Type",
-                "X-Amz-Date",
-                "Authorization",
-                "X-Api-Key",
-                "X-Amz-Security-Token",
-                "X-Amz-User-Agent",
-            ],
-        }
-    }
-
     if resource.allow_cors:
-        base_args.update(cors_args)
+        base_args.update(default_cors_args)
 
     output_task.update(advance=1, comment="Creating Api")
 

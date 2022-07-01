@@ -398,6 +398,30 @@ class Backend:
         """
         raise NotImplementedError
 
+    # Api for getting a set of resources that match the given tag from the backend
+    def get_resources_by_tag(
+            self,
+            resource_state_uuid: str,
+            component_name: str,
+            resource_type: str,
+            resource_tag: str,
+    ) -> List[ResourceModel]:
+        """
+        Get the state of a resource from a component based on the name of the resource
+
+        Args:
+            resource_state_uuid (str): The resource state for this resource.
+            component_name (str): The component this resource is in.
+            resource_type: The RUUID of the resource desired
+            resource_tag: The tag of the resources desired
+
+        Raises:
+            ResourceStateDoesNotExist
+            ComponentDoesNotExist
+            ResourceDoesNotExist
+        """
+        raise NotImplementedError
+
     def get_cloud_output_value_by_name(
         self,
         resource_state_uuid: str,
@@ -491,9 +515,9 @@ class Backend:
         new_components: List[ComponentModel],
         old_components: List[str],
     ) -> Tuple[
-        Component_Difference,
-        Resource_Difference,
-        Resource_Reference_Difference,
+        List[Component_Difference],
+        List[Resource_Difference],
+        List[Resource_Reference_Difference],
     ]:
         """
         Create the set of differences from a proposed set of components to a provided set of current components identified by their name. This allows the flexibility for working on a particular

@@ -1,11 +1,12 @@
 """Set of constructs for making No SQL DB Tables
 """
 from enum import Enum
-from typing import Any, FrozenSet, List
+from typing import Any, FrozenSet, List, Dict
 
 from core.constructs.resource import (
     Resource,
-    ResourceModel,
+    TaggableResourceModel,
+    TaggableMixin,
     update_hash,
     ResourceOutputs,
     PermissionsAvailableMixin,
@@ -298,7 +299,7 @@ class KeyDefinition:
         return key_definition_model(attribute_name=self.name, key_type=self.type)
 
 
-class simple_table_model(ResourceModel):
+class simple_table_model(TaggableResourceModel):
     """Model representing a `Table`
 
     Args:
@@ -309,7 +310,7 @@ class simple_table_model(ResourceModel):
     keys: FrozenSet[key_definition_model]
 
 
-class Table(PermissionsAvailableMixin, Resource):
+class Table(PermissionsAvailableMixin, TaggableMixin, Resource):
     """Create a NoSql Table (DynamoDB)"""
 
     @update_hash
@@ -319,6 +320,7 @@ class Table(PermissionsAvailableMixin, Resource):
         attributes: List[AttributeDefinition],
         keys: List[KeyDefinition],
         nonce: str = "",
+        tags: Dict[str, str] = None,
     ) -> None:
         """
         Args:
@@ -326,6 +328,7 @@ class Table(PermissionsAvailableMixin, Resource):
             attributes (List[AttributeDefinition]): List of Attributes on the Table
             keys (List[KeyDefinition]): List of Key Definitions that make up the primary keys
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+            tags (Dict[str, str]): A set of tags to add to the resource
 
 
         <a href='https://code.tutsplus.com/tutorials/a-beginners-guide-to-http-and-rest--net-16340'>More information on how to use a DynamoDB Table</a>
@@ -341,6 +344,7 @@ class Table(PermissionsAvailableMixin, Resource):
         self._attributes = attributes
         self._keys = keys
         self._stream = None
+        self._tags = tags
 
         self._available_permissions: TablePermissions = TablePermissions(cdev_name)
         self._output = TableOutput(cdev_name)
@@ -396,15 +400,14 @@ class Table(PermissionsAvailableMixin, Resource):
                 f"Already created stream on this table. Use `get_stream()` to get the current stream."
             )
 
-        event = StreamEvent(
+        self._stream = StreamEvent(
             table_name=self.name,
             view_type=view_type,
             batch_size=batch_size,
             batch_failure=batch_failure,
         )
 
-        self._stream = event
-        return event
+        return self._stream
 
     def get_stream(self) -> StreamEvent:
         """Get the `StreamEvent` for this `Table`
@@ -426,7 +429,11 @@ class Table(PermissionsAvailableMixin, Resource):
         """
         Check key constraints based on https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.create_table
         """
-        if len(self.keys) > 2:
+        key_count = len(self.keys)
+        if key_count == 0:
+            return
+
+        if key_count > 2:
             raise Exception("Only two primary keys can be used")
 
         primary_key = self.keys[0]
@@ -437,12 +444,13 @@ class Table(PermissionsAvailableMixin, Resource):
         if not primary_key.type == key_type.HASH:
             raise Exception("First key is not Hash key")
 
-        if not primary_key.name in set([x.name for x in self.attributes]):
+        attributes_names = set([x.name for x in self.attributes])
+        if primary_key.name not in attributes_names:
             raise Exception(
                 f"Hash key 'AttributeName' ({primary_key.name}) not defined in attributes",
             )
 
-        if len(self.keys) == 1:
+        if key_count == 1:
             return
 
         range_key = self.keys[1]
@@ -450,7 +458,7 @@ class Table(PermissionsAvailableMixin, Resource):
         if not range_key.type == key_type.RANGE:
             raise Exception("Second key is not a Range key")
 
-        if not range_key.name in set([x.name for x in self.attributes]):
+        if range_key.name not in attributes_names:
             raise Exception(
                 f"Range key 'AttributeName' ({range_key.name}) not defined in attributes",
             )
@@ -461,6 +469,7 @@ class Table(PermissionsAvailableMixin, Resource):
                 [x.render() for x in self.attributes],
                 [x.render() for x in self.keys],
                 self.nonce,
+                self._get_tags_hash(),
             ]
         )
 
