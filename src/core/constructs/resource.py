@@ -93,8 +93,8 @@ class Resource_Difference(ImmutableModel):
         __pydantic_self__,
         action_type: Resource_Change_Type,
         component_name: str,
-        previous_resource: TaggableResourceModel = None,
-        new_resource: TaggableResourceModel = None,
+        previous_resource: ResourceModel = None,
+        new_resource: ResourceModel = None,
     ) -> None:
         super().__init__(
             **{
