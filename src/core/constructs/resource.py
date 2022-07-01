@@ -137,7 +137,7 @@ class Resource:
         self._hash = None
         self._nonce = nonce
 
-    def render(self) -> TaggableResourceModel:
+    def render(self) -> ResourceModel:
         raise NotImplementedError
 
     @property
