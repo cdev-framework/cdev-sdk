@@ -1,26 +1,14 @@
-import cmd
-import json
-import csv
-from io import StringIO
 from argparse import ArgumentParser
-from typing import List, Tuple
-
-import aurora_data_api
-from rich.console import Console
-from rich.table import Table
-
 from core.constructs.commands import BaseCommand
-from core.default.commands.dynamodb.utils import (
+from core.default.commands.table.utils import (
     get_dynamodb_info_from_cdev_name,
     dynamodb_item_action,
 )
 
-import core.default.mappers.aws_client as aws_client
-import boto3
 import json
 
 
-class shell(BaseCommand):
+class execute(BaseCommand):
     help = """
         run commands on dynamodb.
     """
