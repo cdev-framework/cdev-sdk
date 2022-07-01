@@ -86,8 +86,8 @@ class Resource_Change_Type(str, Enum):
 class Resource_Difference(ImmutableModel):
     action_type: Resource_Change_Type
     component_name: str
-    previous_resource: Optional[TaggableResourceModel]
-    new_resource: Optional[TaggableResourceModel]
+    previous_resource: Optional[ResourceModel]
+    new_resource: Optional[ResourceModel]
 
     def __init__(
         __pydantic_self__,
