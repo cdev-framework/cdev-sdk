@@ -22,7 +22,7 @@ import json
 
 class shell(BaseCommand):
     help = """
-        Open an interactive shell to a non-relational db.
+        run commands on dynamodb.
     """
 
     def add_arguments(self, parser: ArgumentParser) -> None:
@@ -52,12 +52,16 @@ class shell(BaseCommand):
         parser.add_argument(
             "--put_item_from_json",
             type=str,
-            help="put item command from a json file in single quotes",
+            help="put item command from a json file with the item, "
+                 "json format: {'field':{'type':'value'},'field2':{'type':'value'}} "
+                 " item documentation: https://docs.aws.amazon.com/cli/latest/reference/dynamodb/put-item.html",
         )
         parser.add_argument(
             "--delete_item_from_json",
             type=str,
-            help="delete item command from a json file in single quotes",
+            help="delete item command from a json file with the item, "
+                 "json format: {'field':{'type':'value'},'field2':{'type':'value'}} "
+                 " item documentation: https://docs.aws.amazon.com/cli/latest/reference/dynamodb/put-item.html",
         )
 
     def command(self, *args, **kwargs) -> None:
