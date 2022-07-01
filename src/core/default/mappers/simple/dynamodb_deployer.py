@@ -54,7 +54,6 @@ def _create_simple_dynamodb_table(
         create_dict,
         wait={"name": "table_exists", "args": {"TableName": table_name}},
     )
-    print(rv)
     output_info = {
         "table_name": table_name,
         "cloud_id": rv.get("TableDescription").get("TableArn"),
