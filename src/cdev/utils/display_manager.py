@@ -97,17 +97,15 @@ class InformationPage(Page):
         super().__init__()
         self._content = content
 
-        self.header = Layout(
-            Panel(Text(header, justify="center")), name="header", ratio=2
-        )
         self.content = Layout(
-            Panel(Text(content, justify="center")), name="content", ratio=5
+            Panel(Text.from_markup(content, justify="center"), title=header),
+            name="content",
+            ratio=8,
         )
 
         self.nav = Layout(name="navbar", ratio=2)
 
         self.base_layout.split_column(
-            header,
             self.content,
             self.nav,
         )
@@ -429,12 +427,20 @@ class TwoItemSelectionPage(SelectionPage):
 
 
 class SelectionPageContainer:
-    def __init__(self) -> None:
+    def __init__(
+        self, quit_title: str, quit_content: str, quit_navbar: str = None
+    ) -> None:
         self.pages: List[Page] = []
         self._current_index = 0
         self._final_page: Page = None
-        self._quit_page = InformationPage(
-            "QUIT PAGE", "ARE YOU SURE YOU WANT TO QUIT???"
+        self._quit_page = InformationPage(quit_title, quit_content)
+
+        self._quit_page.update_navigation_bar(
+            Panel(
+                Text.from_markup(quit_navbar, justify="center"),
+                title=f"NAVIGATION",
+                title_align="center",
+            )
         )
 
     def add_page(self, page: Page) -> None:

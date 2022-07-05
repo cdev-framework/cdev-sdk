@@ -16,7 +16,14 @@ from cdev.utils.display_manager import (
     DidNotCompleteSelections,
 )
 
-from cdev.utils.git_safe.utils import get_repo
+
+from cdev.utils.git_safe.project_merger_handler_info import (
+    INTRODUCTION_PAGE_CONTENT,
+    INTRODUCTION_PAGE_TITLE,
+    QUIT_PAGE_CONTENT,
+    QUIT_PAGE_NAVBAR,
+    QUIT_PAGE_TITLE,
+)
 
 
 def merge_local_project_info(
@@ -173,10 +180,12 @@ class RichDifferenceHelper:
         adds, deletes, updates = _diff_environments(
             other_environments, current_environments
         )
-        container = SelectionPageContainer()
+        container = SelectionPageContainer(
+            QUIT_PAGE_TITLE, QUIT_PAGE_CONTENT, QUIT_PAGE_NAVBAR
+        )
 
         container.add_page(
-            InformationPage("CDEV ENVIRONMENT MERGE UTILITY", "THIS THING DOES STUFF")
+            InformationPage(INTRODUCTION_PAGE_TITLE, INTRODUCTION_PAGE_CONTENT)
         )
 
         [
