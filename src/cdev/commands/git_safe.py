@@ -66,7 +66,7 @@ def git_safe_cli(
 
 def git_safe_install_merger(**kwargs) -> None:
     install_custom_merger(os.getcwd())
-    print("INSTALLED")
+    print("-----Installed Cdev Customer Merger Utility-----")
 
 
 def git_safe_pull(repository: str, ref_spec: str, **kwargs) -> None:
