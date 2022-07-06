@@ -79,10 +79,10 @@ def git_safe_merge(commit: str = None, **kwargs):
         merge_branch(commit)
         print("no merge conflicts")
 
-        # clean_up_resource_states()
-        # print("fix resource states")
-        # commit_merge("CDEV SAFE MERGE")
-        # print("commited")
+        clean_up_resource_states()
+        print("fix resource states")
+        commit_merge("CDEV SAFE MERGE")
+        print("commited")
 
 
 def git_custom_project_merger(
