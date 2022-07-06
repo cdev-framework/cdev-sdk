@@ -181,10 +181,6 @@ or
 
 cdev git-safe merge --abort
 
-or
-
-cdev git-safe merge --quit
-
 ++++++++++++++++++++++++++++++++++++++++++++
 """
 
