@@ -28,6 +28,7 @@ from cdev.utils.git_safe.safe_merger import (
     merge_branch,
     clean_up_resource_states,
     commit_merge,
+    pull_branch,
 )
 
 from core.utils.file_manager import safe_json_write
@@ -60,8 +61,14 @@ def git_safe_install_merger(**kwargs) -> None:
     install_custom_merger(os.getcwd())
 
 
-def git_safe_pull(**kwargs) -> None:
+def git_safe_pull(repository: str, ref_spec: str, **kwargs) -> None:
     print("PULL")
+    print(repository)
+    print(ref_spec)
+    print(kwargs)
+
+    if repository and ref_spec:
+        pull_branch(repository, ref_spec)
 
 
 def git_safe_merge(commit: str = None, **kwargs):

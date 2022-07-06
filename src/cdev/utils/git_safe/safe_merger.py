@@ -14,29 +14,43 @@ def merge_branch(branch_name: str) -> None:
     raise Exception(rv)
 
 
-# RESET THE FILE
-def clean_up_resource_states() -> None:
-    rv = run(
-        [
-            "git",
-            "reset",
-            "--",
-            ".cdev/state/resource_state_b58a461b-ddb5-454f-9b71-bed695e38a37.json",
-        ]
-    )
+# Merge the branch with no ff or commit
+def pull_branch(repository: str, ref_spec: str) -> None:
+
+    rv = run(["git", "pull", "--no-ff", "--no-commit", repository, ref_spec])
 
     if rv.returncode == 0:
-        rv2 = run(
-            [
-                "git",
-                "checkout",
-                "--",
-                ".cdev/state/resource_state_b58a461b-ddb5-454f-9b71-bed695e38a37.json",
-            ]
-        )
         return
 
-    raise Exception
+    raise Exception(rv)
+
+
+# RESET THE FILE
+def clean_up_resource_states() -> None:
+    pass
+    # rv = run(
+    #    [
+    #        "git",
+    #        "reset",
+    #        "--",
+    #        ".cdev/state/resource_state_b58a461b-ddb5-454f-9b71-bed695e38a37.json",
+    #    ]
+    # )
+
+
+#
+# if rv.returncode == 0:
+#    rv2 = run(
+#        [
+#            "git",
+#            "checkout",
+#            "--",
+#            ".cdev/state/resource_state_b58a461b-ddb5-454f-9b71-bed695e38a37.json",
+#        ]
+#    )
+#    return
+#
+# raise Exception
 
 
 # FINISH MERGE

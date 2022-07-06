@@ -373,6 +373,22 @@ CDEV_COMMANDS = [
             {
                 "command": "pull",
                 "help": "Safely run `git merge`",
+                "args": [
+                    {
+                        "dest": "repository",
+                        "type": str,
+                        "help": "Repository",
+                        "default": None,
+                        "nargs": "?",
+                    },
+                    {
+                        "dest": "ref_spec",
+                        "type": str,
+                        "help": "commit like object",
+                        "default": None,
+                        "nargs": "?",
+                    },
+                ],
             },
         ],
     },
