@@ -33,7 +33,7 @@ from cdev.utils.git_safe.safe_merger import (
     pull_branch,
     MergeException,
     AbortMergeException,
-    PullException,
+    FetchException,
 )
 
 from core.utils.file_manager import safe_json_write
@@ -67,13 +67,18 @@ def git_safe_install_merger(**kwargs) -> None:
 
 
 def git_safe_pull(repository: str, ref_spec: str, **kwargs) -> None:
-    if repository and ref_spec:
-        pull_branch(repository, ref_spec)
 
-        clean_up_resource_states()
-        print("fix resource states")
-        commit_merge("CDEV SAFE MERGE")
-        print("commited")
+    try:
+        pull_branch(repository, ref_spec)
+    except FetchException:
+        print(_failed_fetch_message)
+        return
+    except MergeException:
+        print(_failed_merge_message)
+        return
+
+    clean_up_resource_states()
+    commit_merge("CDEV SAFE MERGE")
 
 
 def git_safe_merge(commit: str = None, abort: bool = None, **kwargs):
@@ -188,6 +193,15 @@ _failed_abort_merge_message = """
 +++++++++++++++ABORT MERGE FAILED+++++++++++++++++
 
 Cdev safe-git was not able to abort the current merge. Above are the errors raised directly by git for the abort.
+
+++++++++++++++++++++++++++++++++++++++++++++
+"""
+
+
+_failed_fetch_message = """
++++++++++++++++FETCH FAILED+++++++++++++++++
+
+Cdev safe-git was not able to fetch the provided repository to complete the pull. Above are the errors raised directly by git for the fetch.
 
 ++++++++++++++++++++++++++++++++++++++++++++
 """

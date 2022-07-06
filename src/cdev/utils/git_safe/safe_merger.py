@@ -15,7 +15,7 @@ class AbortMergeException(Exception):
     pass
 
 
-class PullException(Exception):
+class FetchException(Exception):
     pass
 
 
@@ -43,13 +43,17 @@ def abort_merge() -> None:
 
 # Merge the branch with no ff or commit
 def pull_branch(repository: str, ref_spec: str) -> None:
+    fetch_remote(repository)
+    merge_branch(f"{repository}/{ref_spec}")
 
-    rv = run(["git", "pull", "--no-ff", "--no-commit", repository, ref_spec])
+
+def fetch_remote(repository: str) -> None:
+    rv = run(["git", "fetch", repository])
 
     if rv.returncode == 0:
         return
 
-    raise PullException(rv)
+    raise FetchException(rv)
 
 
 # RESET THE FILE
