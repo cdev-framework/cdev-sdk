@@ -70,6 +70,11 @@ def git_safe_pull(repository: str, ref_spec: str, **kwargs) -> None:
     if repository and ref_spec:
         pull_branch(repository, ref_spec)
 
+        clean_up_resource_states()
+        print("fix resource states")
+        commit_merge("CDEV SAFE MERGE")
+        print("commited")
+
 
 def git_safe_merge(commit: str = None, **kwargs):
     print(kwargs)
