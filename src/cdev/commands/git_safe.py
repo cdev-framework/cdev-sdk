@@ -14,6 +14,7 @@
 from argparse import Namespace
 import json
 import os
+from re import L
 
 from pydantic import FilePath
 
@@ -29,6 +30,8 @@ from cdev.utils.git_safe.safe_merger import (
     clean_up_resource_states,
     commit_merge,
     pull_branch,
+    MergeException,
+    PullException,
 )
 
 from core.utils.file_manager import safe_json_write
@@ -62,11 +65,6 @@ def git_safe_install_merger(**kwargs) -> None:
 
 
 def git_safe_pull(repository: str, ref_spec: str, **kwargs) -> None:
-    print("PULL")
-    print(repository)
-    print(ref_spec)
-    print(kwargs)
-
     if repository and ref_spec:
         pull_branch(repository, ref_spec)
 
@@ -76,18 +74,35 @@ def git_safe_pull(repository: str, ref_spec: str, **kwargs) -> None:
         print("commited")
 
 
-def git_safe_merge(commit: str = None, **kwargs):
-    print(kwargs)
+def git_safe_merge(commit: str = None, abort: bool = None, quit: bool = None, **kwargs):
+    _continue = kwargs.get("continue")
+
+    _opt_params_list = [abort, _continue, quit]
+
+    if not any(_opt_params_list + [commit]):
+        print(f"ERROR: Can must provide one of <commit>, --continue, --abort, --quit")
+        return
+
+    if commit and any(_opt_params_list):
+        print(
+            f"ERROR: Can not use --continue, --abort, --quit with the <commit> positional argument"
+        )
+        return
+
+    if len([x for x in _opt_params_list if x]) > 1:
+        print(f"ERROR: Can only use one of --continue, --abort, --quit at a time")
+        return
 
     if commit:
-        print("starting merge")
-        merge_branch(commit)
-        print("no merge conflicts")
+        try:
+            merge_branch(commit)
+        except MergeException:
+            print(_failed_merge_message)
+            return
 
         clean_up_resource_states()
-        print("fix resource states")
+
         commit_merge("CDEV SAFE MERGE")
-        print("commited")
 
 
 def git_custom_project_merger(
@@ -133,3 +148,28 @@ def _load_local_project_information(
         local_project_info_model = local_project_info(**json_information)
 
     return local_project_info_model
+
+
+#############################################
+##### Help Messages
+#############################################
+
+_failed_merge_message = """
++++++++++++++++MERGE FAILED+++++++++++++++++
+
+Cdev safe-git was not able to automatically merge the commits. Above are the errors raised by git for the merge. You will need to manually fix the failed files and finish the merge, or you can abandon the merge:
+
+<Manually fix file>
+git add <files>
+cdev git-safe merge --continue
+
+or
+
+cdev git-safe merge --abort
+
+or
+
+cdev git-safe merge --quit
+
+++++++++++++++++++++++++++++++++++++++++++++
+"""

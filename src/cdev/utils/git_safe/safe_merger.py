@@ -3,6 +3,18 @@ from subprocess import run
 
 from cdev.utils.git_safe.utils import get_repo
 
+
+########################################
+##### Exceptions
+########################################
+class MergeException(Exception):
+    pass
+
+
+class PullException(Exception):
+    pass
+
+
 # Merge the branch with no ff or commit
 def merge_branch(branch_name: str) -> None:
 
@@ -11,7 +23,7 @@ def merge_branch(branch_name: str) -> None:
     if rv.returncode == 0:
         return
 
-    raise Exception(rv)
+    raise MergeException(rv)
 
 
 # Merge the branch with no ff or commit
@@ -22,7 +34,7 @@ def pull_branch(repository: str, ref_spec: str) -> None:
     if rv.returncode == 0:
         return
 
-    raise Exception(rv)
+    raise PullException(rv)
 
 
 # RESET THE FILE

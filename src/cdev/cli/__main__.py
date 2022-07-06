@@ -368,6 +368,11 @@ CDEV_COMMANDS = [
                         "action": "store_true",
                         "help": "Commits, usually other branch heads, to merge into our branch.",
                     },
+                    {
+                        "dest": "--quit",
+                        "action": "store_true",
+                        "help": "Commits, usually other branch heads, to merge into our branch.",
+                    },
                 ],
             },
             {
