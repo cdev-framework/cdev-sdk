@@ -25,6 +25,8 @@ from cdev.utils.git_safe.project_merger_handler_info import (
     QUIT_PAGE_TITLE,
     ADDITION_ENVIRONMENT_TEMPLATE,
     UPDATE_ENVIRONMENT_TEMPLATE,
+    FINAL_PAGE_COMPLETE_TEMPLATE,
+    FINAL_PAGE_INCOMPLETE_TEMPLATE,
 )
 
 

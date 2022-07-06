@@ -10,6 +10,11 @@ from rich.panel import Panel
 from rich.console import Console
 from rich.text import Text
 
+from cdev.utils.git_safe.project_merger_handler_info import (
+    FINAL_PAGE_COMPLETE_TEMPLATE,
+    FINAL_PAGE_INCOMPLETE_TEMPLATE,
+)
+
 
 class DidNotCompleteSelections(Exception):
     pass
@@ -96,6 +101,7 @@ class InformationPage(Page):
     def __init__(self, header: str, content: Any) -> None:
         super().__init__()
         self._content = content
+        self._header = header
 
         self.content = Layout(
             Panel(Text.from_markup(content, justify="center"), title=header),
@@ -111,6 +117,17 @@ class InformationPage(Page):
         )
 
         self._key_strokes_mappings = DEFAULT_KEY_BINDINGS
+
+    def update_content(self, content: Any):
+        self._content = content
+
+        self.content.update(
+            Layout(
+                Panel(Text.from_markup(content, justify="center"), title=self._header),
+                name="content",
+                ratio=8,
+            )
+        )
 
     def blocking_selection_process(self) -> PAGE_EXIT_CODES:
         with Live(self.base_layout, auto_refresh=False):
@@ -135,12 +152,12 @@ class InformationPage(Page):
     def expand_view(self) -> None:
         console = Console()
         with console.pager():
-            console.print(Pretty(self._content, expand_all=True))
+            console.print(Text.from_markup(self._content))
 
 
 class FinalInformationPage(InformationPage):
-    def __init__(self, header: str, content: Any) -> None:
-        super().__init__(header, content)
+    def __init__(self, content: Any) -> None:
+        super().__init__("REVIEW PAGE", content)
         self._is_completable = True
 
     def blocking_selection_process(self) -> PAGE_EXIT_CODES:
@@ -164,9 +181,15 @@ class FinalInformationPage(InformationPage):
                     if self._is_completable:
                         return PAGE_EXIT_CODES.ACTION
 
+    def set_is_completable(self, is_completed: bool) -> None:
+        self._is_completable = is_completed
+
 
 class SelectionPage(Page):
     def get_selected_item(self) -> Any:
+        raise NotImplementedError
+
+    def get_selected_label(self) -> Any:
         raise NotImplementedError
 
 
@@ -178,7 +201,7 @@ class SingleItemSelectionPage(SelectionPage):
         self._selected_item_index = None
 
         self.header = Layout(
-            Panel(Text.from_markup(header), title="Single Item Selection"),
+            Panel(Text.from_markup(header)),
             name="header",
             ratio=5,
         )
@@ -270,6 +293,12 @@ class SingleItemSelectionPage(SelectionPage):
 
         return self.selection_data.options[self._selected_item_index][1]
 
+    def get_selected_label(self) -> Any:
+        if self._selected_item_index is None:
+            return None
+
+        return self.selection_data.options[self._selected_item_index][0]
+
 
 class TwoItemSelectionPage(SelectionPage):
     def __init__(self, header: str, selection_data: two_item_selection_data) -> None:
@@ -277,7 +306,7 @@ class TwoItemSelectionPage(SelectionPage):
 
         self.selection_data = selection_data
         self.header = Layout(
-            Panel(Text.from_markup(header), title="Single Item Selection"),
+            Panel(Text.from_markup(header)),
             name="header",
             ratio=5,
         )
@@ -434,6 +463,16 @@ class TwoItemSelectionPage(SelectionPage):
             else self.selection_data.right_data.rv
         )
 
+    def get_selected_label(self) -> Any:
+        if self.is_left_selected is None:
+            return None
+
+        return (
+            self.selection_data.left_data.header
+            if self.is_left_selected
+            else self.selection_data.right_data.header
+        )
+
 
 class SelectionPageContainer:
     def __init__(
@@ -441,7 +480,7 @@ class SelectionPageContainer:
     ) -> None:
         self.pages: List[Page] = []
         self._current_index = 0
-        self._final_page: Page = None
+        self._final_page: FinalInformationPage = None
         self._quit_page = InformationPage(quit_title, quit_content)
 
         self._quit_page.update_navigation_bar(
@@ -490,13 +529,30 @@ class SelectionPageContainer:
         )
 
     def _update_final_page(self) -> None:
-        pass
+        _results = self.get_results()
+        is_completed = all(_results)
+
+        self._final_page.set_is_completable(is_completed)
+
+        _selection_str = "\n".join(
+            f"page {i+1} -> {f'[blue]{x}[/blue]' if x else '[red]No Selection. Return to page to complete.[/red]'}"
+            for i, x in enumerate(self.get_result_labels())
+        )
+
+        if is_completed:
+            self._final_page.update_content(
+                FINAL_PAGE_COMPLETE_TEMPLATE.format(selections=_selection_str)
+            )
+        else:
+            self._final_page.update_content(
+                FINAL_PAGE_INCOMPLETE_TEMPLATE.format(selections=_selection_str)
+            )
 
     def _get_final_page(self) -> Page:
         if self._final_page:
             return self._final_page
 
-        self._final_page = FinalInformationPage("REVIEW PAGE", "Review your selections")
+        self._final_page = FinalInformationPage("Review your selections")
 
         return self._final_page
 
@@ -533,19 +589,18 @@ class SelectionPageContainer:
                     return
 
     def get_results(self) -> List[Any]:
-        results = list(
-            filter(
-                None,
-                [
-                    page.get_selected_item()
-                    if isinstance(page, SelectionPage)
-                    else None
-                    for page in self.pages
-                ],
-            )
-        )
+        return [
+            page.get_selected_item()
+            for page in self.pages
+            if isinstance(page, SelectionPage)
+        ]
 
-        return results
+    def get_result_labels(self) -> List[Any]:
+        return [
+            page.get_selected_label()
+            for page in self.pages
+            if isinstance(page, SelectionPage)
+        ]
 
 
 def _blocking_get_keystroke(mapping: Dict[Any, KEY_ACTIONS] = None) -> KEY_ACTIONS:
@@ -560,5 +615,4 @@ def _blocking_get_keystroke(mapping: Dict[Any, KEY_ACTIONS] = None) -> KEY_ACTIO
         # reset settings from the tty session
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
-    print(ch)
     return mapping.get(ch) if mapping else ch

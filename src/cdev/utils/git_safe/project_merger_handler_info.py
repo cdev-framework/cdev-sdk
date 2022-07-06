@@ -68,3 +68,17 @@ You have a conflicting configuration for environment [cyan]{environment_name}[/c
 
 if your terminal is too small to see the all environment information, you can press [yellow]e[/yellow] to open the data in a scrollable window.
 """
+
+
+FINAL_PAGE_COMPLETE_TEMPLATE = """
+You have completed all the steps for merging your Environments. Please review the final information, and if it is correct, you can hit '[yellow]enter[/yellow]' to complete the process and continue with your git merge.
+
+{selections}
+"""
+
+
+FINAL_PAGE_INCOMPLETE_TEMPLATE = """
+You have NOT completed all the steps for merging your Environments. Please go back to the incomplete pages and make a selection.
+
+{selections}
+"""
