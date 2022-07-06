@@ -20,7 +20,7 @@ from pydantic import FilePath
 from cdev.default.project import local_project_info
 
 from cdev.utils.git_safe.merger_installer import install_custom_merger
-from cdev.utils.git_safe.project_merger_handler import (
+from src.cdev.utils.git_safe.project_merger import (
     merge_local_project_info,
     RichDifferenceHelper,
 )
