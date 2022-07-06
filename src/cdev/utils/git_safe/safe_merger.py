@@ -19,6 +19,10 @@ class FetchException(Exception):
     pass
 
 
+class CommitException(Exception):
+    pass
+
+
 # Merge the branch with no ff or commit
 def merge_branch(branch_name: str) -> None:
 
@@ -87,8 +91,10 @@ def clean_up_resource_states() -> None:
 # FINISH MERGE
 def commit_merge(message: str) -> None:
     repo = get_repo(os.getcwd())
-    repo.git.commit(f"-m {message}")
-    print(f"Committed Changes")
+    try:
+        repo.git.commit(f"-m {message}")
+    except Exception:
+        raise CommitException
 
 
 # try:

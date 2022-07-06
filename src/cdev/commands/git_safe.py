@@ -14,7 +14,6 @@
 from argparse import Namespace
 import json
 import os
-from re import L
 
 from pydantic import FilePath
 
@@ -34,7 +33,10 @@ from cdev.utils.git_safe.safe_merger import (
     MergeException,
     AbortMergeException,
     FetchException,
+    CommitException,
 )
+
+from cdev.commands import git_safe_messages
 
 from core.utils.file_manager import safe_json_write
 
@@ -48,7 +50,7 @@ def git_safe_cli(
     parsed_args = vars(parsed_args_namespace)
 
     if command == "":
-        print(_no_command_message)
+        print(git_safe_messages.no_command_message)
     elif command == "install-merger":
         git_safe_install_merger(**parsed_args)
     elif command == "pull":
@@ -71,15 +73,20 @@ def git_safe_pull(repository: str, ref_spec: str, **kwargs) -> None:
     try:
         pull_branch(repository, ref_spec)
     except FetchException:
-        print(_failed_fetch_message)
+        print(git_safe_messages.failed_fetch_message)
         return
     except MergeException:
-        print(_failed_merge_message)
+        print(git_safe_messages.failed_merge_message)
         return
 
     clean_up_resource_states()
-    commit_merge("CDEV SAFE MERGE")
-    print(_success_pull_message)
+
+    try:
+        commit_merge("CDEV SAFE MERGE")
+    except CommitException:
+        print(git_safe_messages.failed_commit_message)
+
+    print(git_safe_messages.success_pull_message)
 
 
 def git_safe_merge(commit: str = None, abort: bool = None, **kwargs):
@@ -99,24 +106,34 @@ def git_safe_merge(commit: str = None, abort: bool = None, **kwargs):
         try:
             merge_branch(commit)
         except MergeException:
-            print(_failed_merge_message)
+            print(git_safe_messages.failed_merge_message)
             return
 
         clean_up_resource_states()
-        commit_merge("CDEV SAFE MERGE")
-        print(_success_merge_message)
+
+        try:
+            commit_merge("CDEV SAFE MERGE")
+        except CommitException:
+            print(git_safe_messages.failed_commit_message)
+
+        print(git_safe_messages.success_merge_message)
 
     elif _continue:
         clean_up_resource_states()
-        commit_merge("CDEV SAFE MERGE")
-        print(_success_merge_message)
+
+        try:
+            commit_merge("CDEV SAFE MERGE")
+        except CommitException:
+            print(git_safe_messages.failed_commit_message)
+
+        print(git_safe_messages.success_merge_message)
 
     elif abort:
         try:
             abort_merge()
-            print(_success_merge_abort_message)
+            print(git_safe_messages.success_merge_abort_message)
         except AbortMergeException:
-            print(_failed_abort_merge_message)
+            print(git_safe_messages.failed_abort_merge_message)
             return
 
 
@@ -163,77 +180,3 @@ def _load_local_project_information(
         local_project_info_model = local_project_info(**json_information)
 
     return local_project_info_model
-
-
-#############################################
-##### Help Messages
-#############################################
-
-_no_command_message = """
-Need to either supply a command. Run with the -h flag for all available commands:
-
-cdev git-safe -h
-"""
-
-_failed_merge_message = """
-+++++++++++++++MERGE FAILED+++++++++++++++++
-
-Cdev safe-git was not able to automatically merge the commits. Above are the errors raised directly by git for the merge. You will need to manually fix the failed files and finish the merge, or you can abandon the merge:
-
-<Manually fix file>
-git add <files>
-cdev git-safe merge --continue
-
-or
-
-cdev git-safe merge --abort
-
-++++++++++++++++++++++++++++++++++++++++++++
-"""
-
-
-_failed_abort_merge_message = """
-+++++++++++++++ABORT MERGE FAILED+++++++++++++++++
-
-Cdev safe-git was not able to abort the current merge. Above are the errors raised directly by git for the abort.
-
-++++++++++++++++++++++++++++++++++++++++++++
-"""
-
-
-_failed_fetch_message = """
-+++++++++++++++FETCH FAILED+++++++++++++++++
-
-Cdev safe-git was not able to fetch the provided repository to complete the pull. Above are the errors raised directly by git for the fetch.
-
-++++++++++++++++++++++++++++++++++++++++++++
-"""
-
-_success_merge_message = """
-=================MERGE SUCCEEDED===================
-
-Cdev safe-git was able to complete the merge!
-
-===================================================
-
-"""
-
-
-_success_pull_message = """
-=================MERGE SUCCEEDED===================
-
-Cdev safe-git was able to complete the pull!
-
-===================================================
-
-"""
-
-
-_success_merge_abort_message = """
-=================MERGE SUCCEEDED===================
-
-Cdev safe-git was able to abort the merge!
-
-===================================================
-
-"""
