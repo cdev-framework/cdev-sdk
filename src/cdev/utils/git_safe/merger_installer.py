@@ -2,6 +2,9 @@ from typing import Tuple, List
 
 from pydantic import DirectoryPath
 from cdev.utils.git_safe.utils import get_repo, create_repo
+from core.utils.paths import touch_file
+
+import os
 
 
 def install_custom_merger(_base_dir: DirectoryPath) -> None:
@@ -30,16 +33,50 @@ def install_custom_merger(_base_dir: DirectoryPath) -> None:
     except Exception:
         is_config_setup = False
 
-    if is_config_setup:
-        print(f"Config is already set up correctly")
+    if not is_config_setup:
+        # If configuration does not exist, write the configuration
+        config_writer = repo.config_writer()
+        for configuration in configurations:
+            config_writer.set_value(
+                configuration_name, configuration[0], configuration[1]
+            )
+
+        config_writer.release()
+
+    # Check if the project currently has the gitattributes set
+    _check_or_make_local_attributes(_base_dir)
+    _needed_attribute = _get_git_attribute_information()
+
+    _add_git_attribute(_base_dir, _needed_attribute)
+
+
+def _check_or_make_local_attributes(base_dir: DirectoryPath) -> None:
+    if not os.path.isdir(base_dir):
+        raise Exception
+
+    _attribute_location = os.path.join(base_dir, ".gitattributes")
+
+    if os.path.isfile(_attribute_location):
         return
+    else:
+        touch_file(_attribute_location)
 
-    # If configuration does not exist, write the configuration
-    config_writer = repo.config_writer()
-    for configuration in configurations:
-        config_writer.set_value(configuration_name, configuration[0], configuration[1])
 
-    config_writer.release()
+def _add_git_attribute(base_dir: DirectoryPath, attributes: List[str]) -> None:
+    _attribute_location = os.path.join(base_dir, ".gitattributes")
+
+    _current_attributes = open(_attribute_location).readlines()
+
+    if not _current_attributes:
+        _needed_attributes = attributes
+
+    else:
+        _needed_attributes = list(set(attributes).difference(set(_current_attributes)))
+
+    _current_attributes.extend(_needed_attributes)
+
+    with open(_attribute_location, "w") as fh:
+        fh.writelines(_current_attributes)
 
 
 def _get_configuration_information() -> Tuple[str, List[str]]:
@@ -52,3 +89,7 @@ def _get_configuration_information() -> Tuple[str, List[str]]:
     ]  # %A -> Current File; %B -> Other Commit File
 
     return ("merge.cdev-project-drive", _configs)
+
+
+def _get_git_attribute_information() -> List[str]:
+    return [".cdev/cdev_project.json merge=cdev-project-drive"]
