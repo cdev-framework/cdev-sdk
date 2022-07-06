@@ -83,3 +83,44 @@ cdev git-safe merge --continue
 ++++++++++++++++++++++++++++++++++++++++++++
 
 """
+
+
+failed_to_load_other_message = """
++++++++++++++++ERROR+++++++++++++++++
+
+Cdev was not able to properly load the cdev_project.json file from the other branch. You will need to manually check that the .cdev/cdev_project.json file in the other commit is in a valid state.
+
+This error will cause a merge conflict on the .cdev/cdev_project.json file. It is HIGHLY recommend that you abort this merge and fix the issue on the other brach manually before merging.
+
+cdev git-safe merge --abort
+
+++++++++++++++++++++++++++++++++++++++++++++
+
+"""
+
+failed_to_load_current_message = """
++++++++++++++++ERROR+++++++++++++++++
+
+Cdev was not able to properly load the cdev_project.json file from the this branch. You will need to manually check that the .cdev/cdev_project.json file on this branch is in a valid state.
+
+This error will cause a merge conflict on the .cdev/cdev_project.json file. It is HIGHLY recommend that you abort this merge and fix the issue on this brach manually before merging.
+
+cdev git-safe merge --abort
+
+++++++++++++++++++++++++++++++++++++++++++++
+
+"""
+
+
+exited_merge_message = """
++++++++++++++++ERROR+++++++++++++++++
+
+You exited the cdev merge utility before completing all the information needed to properly merge your cdev environments.
+
+This error will cause a merge conflict on the .cdev/cdev_project.json file. It is HIGHLY recommend that you abort this merge and retry your merge.
+
+cdev git-safe merge --abort
+
+++++++++++++++++++++++++++++++++++++++++++++
+
+"""

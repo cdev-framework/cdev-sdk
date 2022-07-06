@@ -23,6 +23,7 @@ from cdev.utils.git_safe.merger_installer import install_custom_merger
 from cdev.utils.git_safe.project_merger import (
     merge_local_project_info,
     RichDifferenceHelper,
+    ExitedMerge,
 )
 from cdev.utils.git_safe.safe_merger import (
     merge_branch,
@@ -140,22 +141,26 @@ def git_safe_merge(commit: str = None, abort: bool = None, **kwargs):
 def git_custom_project_merger(
     current_fp: FilePath, other_fp: FilePath, **kwargs
 ) -> None:
-    print("CURRENT")
-    # current_fp = sys.argv[2]
-    print(os.path.isfile(current_fp))
-    # print(open(sys.argv[2]).read())
 
-    print("OTHER")
-    # other_fp = sys.argv[3]
-    print(os.path.isfile(other_fp))
-    # print(open(sys.argv[3]).read())
+    try:
+        other_project_info = _load_local_project_information(other_fp)
+    except Exception:
+        print(git_safe_messages.failed_to_load_other_message)
+        exit(1)
 
-    other_project_info = _load_local_project_information(other_fp)
-    current_project_info = _load_local_project_information(current_fp)
+    try:
+        current_project_info = _load_local_project_information(current_fp)
+    except Exception:
+        print(git_safe_messages.failed_to_load_current_message)
+        exit(1)
 
-    merged_info = merge_local_project_info(
-        other_project_info, current_project_info, RichDifferenceHelper()
-    )
+    try:
+        merged_info = merge_local_project_info(
+            other_project_info, current_project_info, RichDifferenceHelper()
+        )
+    except ExitedMerge:
+        print(git_safe_messages.exited_merge_message)
+        exit(1)
 
     safe_json_write(merged_info.dict(), current_fp)
 

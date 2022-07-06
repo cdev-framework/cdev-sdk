@@ -30,6 +30,10 @@ from cdev.utils.git_safe.project_merger_info import (
 )
 
 
+class ExitedMerge(Exception):
+    pass
+
+
 def merge_local_project_info(
     other_project: local_project_info,
     current_project: local_project_info,
@@ -232,7 +236,7 @@ class RichDifferenceHelper:
         try:
             container.run_pages()
         except DidNotCompleteSelections:
-            raise Exception
+            raise ExitedMerge
 
         final_environments = _process_actions(
             other_environments, container.get_results()
