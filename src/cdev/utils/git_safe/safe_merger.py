@@ -11,6 +11,10 @@ class MergeException(Exception):
     pass
 
 
+class AbortMergeException(Exception):
+    pass
+
+
 class PullException(Exception):
     pass
 
@@ -24,6 +28,17 @@ def merge_branch(branch_name: str) -> None:
         return
 
     raise MergeException(rv)
+
+
+# Abort the current merge
+def abort_merge() -> None:
+
+    rv = run(["git", "merge", "--abort"])
+
+    if rv.returncode == 0:
+        return
+
+    raise AbortMergeException(rv)
 
 
 # Merge the branch with no ff or commit

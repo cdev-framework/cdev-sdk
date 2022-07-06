@@ -29,8 +29,10 @@ from cdev.utils.git_safe.safe_merger import (
     merge_branch,
     clean_up_resource_states,
     commit_merge,
+    abort_merge,
     pull_branch,
     MergeException,
+    AbortMergeException,
     PullException,
 )
 
@@ -74,23 +76,17 @@ def git_safe_pull(repository: str, ref_spec: str, **kwargs) -> None:
         print("commited")
 
 
-def git_safe_merge(commit: str = None, abort: bool = None, quit: bool = None, **kwargs):
+def git_safe_merge(commit: str = None, abort: bool = None, **kwargs):
     _continue = kwargs.get("continue")
 
-    _opt_params_list = [abort, _continue, quit]
+    _opt_params_list = [abort, _continue]
 
     if not any(_opt_params_list + [commit]):
-        print(f"ERROR: Can must provide one of <commit>, --continue, --abort, --quit")
+        print(f"ERROR: Can must provide one of <commit>, --continue, --abort")
         return
 
-    if commit and any(_opt_params_list):
-        print(
-            f"ERROR: Can not use --continue, --abort, --quit with the <commit> positional argument"
-        )
-        return
-
-    if len([x for x in _opt_params_list if x]) > 1:
-        print(f"ERROR: Can only use one of --continue, --abort, --quit at a time")
+    if len([x for x in _opt_params_list + [commit] if x]) > 1:
+        print(f"ERROR: Can only use one of <commit>, --continue, --abort at a time")
         return
 
     if commit:
@@ -103,6 +99,19 @@ def git_safe_merge(commit: str = None, abort: bool = None, quit: bool = None, **
         clean_up_resource_states()
 
         commit_merge("CDEV SAFE MERGE")
+
+    elif _continue:
+        clean_up_resource_states()
+
+        commit_merge("CDEV SAFE MERGE")
+
+    elif abort:
+        try:
+            abort_merge()
+            print("Aborted the current merge")
+        except AbortMergeException:
+            print(_failed_abort_merge_message)
+            return
 
 
 def git_custom_project_merger(
@@ -157,7 +166,7 @@ def _load_local_project_information(
 _failed_merge_message = """
 +++++++++++++++MERGE FAILED+++++++++++++++++
 
-Cdev safe-git was not able to automatically merge the commits. Above are the errors raised by git for the merge. You will need to manually fix the failed files and finish the merge, or you can abandon the merge:
+Cdev safe-git was not able to automatically merge the commits. Above are the errors raised directly by git for the merge. You will need to manually fix the failed files and finish the merge, or you can abandon the merge:
 
 <Manually fix file>
 git add <files>
@@ -170,6 +179,15 @@ cdev git-safe merge --abort
 or
 
 cdev git-safe merge --quit
+
+++++++++++++++++++++++++++++++++++++++++++++
+"""
+
+
+_failed_abort_merge_message = """
++++++++++++++++ABORT MERGE FAILED+++++++++++++++++
+
+Cdev safe-git was not able to abort the current merge. Above are the errors raised directly by git for the abort.
 
 ++++++++++++++++++++++++++++++++++++++++++++
 """
