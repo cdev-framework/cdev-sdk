@@ -17,7 +17,7 @@ from cdev.utils.display_manager import (
 )
 
 
-from src.cdev.utils.git_safe.project_merger_info import (
+from cdev.utils.git_safe.project_merger_info import (
     INTRODUCTION_PAGE_CONTENT,
     INTRODUCTION_PAGE_TITLE,
     QUIT_PAGE_CONTENT,
