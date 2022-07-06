@@ -177,17 +177,23 @@ class SingleItemSelectionPage(SelectionPage):
         self.selection_data = selection_data
         self._selected_item_index = None
 
-        self.header = Layout(name="header", ratio=2)
+        self.header = Layout(
+            Panel(Text.from_markup(header), title="Single Item Selection"),
+            name="header",
+            ratio=5,
+        )
 
         self.content = Layout(
-            Panel(Pretty(self.selection_data.content)), name="content", ratio=5
+            Panel(Pretty(self.selection_data.content), title="Data"),
+            name="content",
+            ratio=10,
         )
         self.selection = Layout(name="content", ratio=1)
 
-        self.nav = Layout(name="bottom", ratio=2)
+        self.nav = Layout(name="bottom", ratio=4)
 
         self.base_layout.split_column(
-            header,
+            self.header,
             self.selection,
             self.content,
             self.nav,
@@ -229,10 +235,9 @@ class SingleItemSelectionPage(SelectionPage):
     def expand_view(self) -> None:
         console = Console()
         with console.pager():
-            console.print("+++++++++++++++++++++++++++++++++++++++")
-            console.print(Pretty(self.selection_data.options, expand_all=True))
-            console.print("+++++++++++++++++++++++++++++++++++++++")
+            console.print("++++++++++++++++DATA++++++++++++++++")
             console.print(Pretty(self.selection_data.content, expand_all=True))
+            console.print("+++++++++++++++++++++++++++++++++++++++")
 
     def _move_selection(self, increment: int):
         _tmp_index = (
@@ -271,17 +276,21 @@ class TwoItemSelectionPage(SelectionPage):
         super().__init__()
 
         self.selection_data = selection_data
-        self.header = Layout(name="header", ratio=2)
+        self.header = Layout(
+            Panel(Text.from_markup(header), title="Single Item Selection"),
+            name="header",
+            ratio=5,
+        )
 
         self.subheader = TwoItemSelectionPage._make_split_pane(
             name="subheader", ratio=1
         )
-        self.content = TwoItemSelectionPage._make_split_pane(name="content", ratio=5)
+        self.content = TwoItemSelectionPage._make_split_pane(name="content", ratio=10)
 
-        self.nav = Layout(name="nav", ratio=2)
+        self.nav = Layout(name="nav", ratio=4)
 
         self.base_layout.split_column(
-            header,
+            self.header,
             self.subheader.base,
             self.content.base,
             self.nav,

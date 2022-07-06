@@ -23,6 +23,8 @@ from cdev.utils.git_safe.project_merger_handler_info import (
     QUIT_PAGE_CONTENT,
     QUIT_PAGE_NAVBAR,
     QUIT_PAGE_TITLE,
+    ADDITION_ENVIRONMENT_TEMPLATE,
+    UPDATE_ENVIRONMENT_TEMPLATE,
 )
 
 
@@ -191,7 +193,7 @@ class RichDifferenceHelper:
         [
             container.add_page(
                 SingleItemSelectionPage(
-                    "HANDLE ADDING NEW ENVIRONMENT",
+                    ADDITION_ENVIRONMENT_TEMPLATE.format(environment_name=x.name),
                     single_item_selection_data(
                         content=x.dict(),
                         options=[
@@ -207,7 +209,9 @@ class RichDifferenceHelper:
         for original_env_info, current_env_info in updates:
             container.add_page(
                 TwoItemSelectionPage(
-                    "CONFLICTING INFORMATION FOR AN ENVIRONMENT. SELECT THE VERSION OF THE ENVIRONMENT TO MERGE.",
+                    UPDATE_ENVIRONMENT_TEMPLATE.format(
+                        environment_name=current_env_info.name
+                    ),
                     two_item_selection_data(
                         left_data=select_data(
                             "OTHER BRANCH VERSION",

@@ -53,5 +53,18 @@ To return to the utility press -> [blue]up-arrow, down-arrow, left-arrow, right-
 
 """
 
-
 QUIT_PAGE_NAVBAR = """[bold red]q[/bold red]: QUIT; [bold blue]up-arrow[/bold blue]: RETURN; [bold blue]down-arrow[/bold blue]: RETURN; [bold blue]right-arrow[/bold blue]: RETURN; [bold blue]left-arrow[/bold blue]: RETURN; [bold blue]enter[/bold blue]: RETURN; [bold blue]e[/bold blue]: RETURN"""
+
+
+ADDITION_ENVIRONMENT_TEMPLATE = """
+You have a new environment [cyan]{environment_name}[/cyan] on your current branch. Would you like to add [cyan]{environment_name}[/cyan] to the final merged cdev project information?
+
+if your terminal is too small to see the whole environment information, you can press [yellow]e[/yellow] to open the data in a scrollable window.
+"""
+
+
+UPDATE_ENVIRONMENT_TEMPLATE = """
+You have a conflicting configuration for environment [cyan]{environment_name}[/cyan] between the two branches. Select which version of the environment you want to be in the final merged cdev project information?
+
+if your terminal is too small to see the all environment information, you can press [yellow]e[/yellow] to open the data in a scrollable window.
+"""
