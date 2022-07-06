@@ -10,7 +10,7 @@ from rich.panel import Panel
 from rich.console import Console
 from rich.text import Text
 
-from src.cdev.utils.git_safe.project_merger_info import (
+from cdev.utils.git_safe.project_merger_info import (
     FINAL_PAGE_COMPLETE_TEMPLATE,
     FINAL_PAGE_INCOMPLETE_TEMPLATE,
 )
