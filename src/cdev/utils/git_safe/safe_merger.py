@@ -88,6 +88,7 @@ def clean_up_resource_states() -> None:
 def commit_merge(message: str) -> None:
     repo = get_repo(os.getcwd())
     repo.git.commit(f"-m {message}")
+    print(f"Committed Changes")
 
 
 # try:

@@ -377,7 +377,7 @@ CDEV_COMMANDS = [
             },
             {
                 "command": "pull",
-                "help": "Safely run `git merge`",
+                "help": "Safely run `git pull`",
                 "args": [
                     {
                         "dest": "repository",

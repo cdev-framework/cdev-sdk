@@ -48,7 +48,7 @@ def git_safe_cli(
     parsed_args = vars(parsed_args_namespace)
 
     if command == "":
-        print("NEED TO SUPPLY A COMMAND")
+        print(_no_command_message)
     elif command == "install-merger":
         git_safe_install_merger(**parsed_args)
     elif command == "pull":
@@ -62,8 +62,8 @@ def git_safe_cli(
 
 
 def git_safe_install_merger(**kwargs) -> None:
-    print("INSTALL")
     install_custom_merger(os.getcwd())
+    print("INSTALLED")
 
 
 def git_safe_pull(repository: str, ref_spec: str, **kwargs) -> None:
@@ -79,6 +79,7 @@ def git_safe_pull(repository: str, ref_spec: str, **kwargs) -> None:
 
     clean_up_resource_states()
     commit_merge("CDEV SAFE MERGE")
+    print(_success_pull_message)
 
 
 def git_safe_merge(commit: str = None, abort: bool = None, **kwargs):
@@ -102,18 +103,18 @@ def git_safe_merge(commit: str = None, abort: bool = None, **kwargs):
             return
 
         clean_up_resource_states()
-
         commit_merge("CDEV SAFE MERGE")
+        print(_success_merge_message)
 
     elif _continue:
         clean_up_resource_states()
-
         commit_merge("CDEV SAFE MERGE")
+        print(_success_merge_message)
 
     elif abort:
         try:
             abort_merge()
-            print("Aborted the current merge")
+            print(_success_merge_abort_message)
         except AbortMergeException:
             print(_failed_abort_merge_message)
             return
@@ -168,6 +169,12 @@ def _load_local_project_information(
 ##### Help Messages
 #############################################
 
+_no_command_message = """
+Need to either supply a command. Run with the -h flag for all available commands:
+
+cdev git-safe -h
+"""
+
 _failed_merge_message = """
 +++++++++++++++MERGE FAILED+++++++++++++++++
 
@@ -200,4 +207,33 @@ _failed_fetch_message = """
 Cdev safe-git was not able to fetch the provided repository to complete the pull. Above are the errors raised directly by git for the fetch.
 
 ++++++++++++++++++++++++++++++++++++++++++++
+"""
+
+_success_merge_message = """
+=================MERGE SUCCEEDED===================
+
+Cdev safe-git was able to complete the merge!
+
+===================================================
+
+"""
+
+
+_success_pull_message = """
+=================MERGE SUCCEEDED===================
+
+Cdev safe-git was able to complete the pull!
+
+===================================================
+
+"""
+
+
+_success_merge_abort_message = """
+=================MERGE SUCCEEDED===================
+
+Cdev safe-git was able to abort the merge!
+
+===================================================
+
 """
