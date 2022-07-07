@@ -1,8 +1,19 @@
+from dataclasses import dataclass
+from email import message
 import os
 from subprocess import run
 
-from cdev.utils.git_safe.utils import get_repo
+from cdev.utils.git_safe.utils import (
+    get_repo,
+    clean_up_resource_states_util,
+    ProjectNotMerged,
+    ProjectFileEdited,
+    ProjectFileReadingError,
+    PreserveResourceStatesError,
+)
 
+
+from cdev.utils.git_safe import safe_merger_error_messages
 
 ########################################
 ##### Exceptions
@@ -21,6 +32,11 @@ class FetchException(Exception):
 
 class CommitException(Exception):
     pass
+
+
+@dataclass
+class CleanUpResourceStateException(Exception):
+    message: str
 
 
 # Merge the branch with no ff or commit
@@ -62,30 +78,24 @@ def fetch_remote(repository: str) -> None:
 
 # RESET THE FILE
 def clean_up_resource_states() -> None:
-    pass
-    # rv = run(
-    #    [
-    #        "git",
-    #        "reset",
-    #        "--",
-    #        ".cdev/state/resource_state_b58a461b-ddb5-454f-9b71-bed695e38a37.json",
-    #    ]
-    # )
-
-
-#
-# if rv.returncode == 0:
-#    rv2 = run(
-#        [
-#            "git",
-#            "checkout",
-#            "--",
-#            ".cdev/state/resource_state_b58a461b-ddb5-454f-9b71-bed695e38a37.json",
-#        ]
-#    )
-#    return
-#
-# raise Exception
+    try:
+        clean_up_resource_states_util()
+    except ProjectNotMerged as e:
+        raise CleanUpResourceStateException(
+            message=safe_merger_error_messages.project_not_merged
+        )
+    except ProjectFileEdited as e:
+        raise CleanUpResourceStateException(
+            message=safe_merger_error_messages.project_file_edited
+        )
+    except ProjectFileReadingError as e:
+        raise CleanUpResourceStateException(
+            message=safe_merger_error_messages.project_file_reading
+        )
+    except PreserveResourceStatesError as e:
+        raise CleanUpResourceStateException(
+            message=safe_merger_error_messages.preserve_resource_states
+        )
 
 
 # FINISH MERGE
@@ -93,7 +103,8 @@ def commit_merge(message: str) -> None:
     repo = get_repo(os.getcwd())
     try:
         repo.git.commit(f"-m {message}")
-    except Exception:
+    except Exception as e:
+        print(e)
         raise CommitException
 
 

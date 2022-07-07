@@ -63,7 +63,7 @@ Cdev safe-git was able to complete the pull!
 
 
 success_merge_abort_message = """
-=================MERGE SUCCEEDED===================
+=================ABORT SUCCEEDED===================
 
 Cdev safe-git was able to abort the merge!
 

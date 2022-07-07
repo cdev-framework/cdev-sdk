@@ -35,6 +35,7 @@ from cdev.utils.git_safe.safe_merger import (
     AbortMergeException,
     FetchException,
     CommitException,
+    CleanUpResourceStateException,
 )
 
 from cdev.commands import git_safe_messages
@@ -80,7 +81,11 @@ def git_safe_pull(repository: str, ref_spec: str, **kwargs) -> None:
         print(git_safe_messages.failed_merge_message)
         return
 
-    clean_up_resource_states()
+    try:
+        clean_up_resource_states()
+    except CleanUpResourceStateException as e:
+        print(e.message)
+        return
 
     try:
         commit_merge("CDEV SAFE MERGE")
@@ -110,7 +115,11 @@ def git_safe_merge(commit: str = None, abort: bool = None, **kwargs):
             print(git_safe_messages.failed_merge_message)
             return
 
-        clean_up_resource_states()
+        try:
+            clean_up_resource_states()
+        except CleanUpResourceStateException as e:
+            print(e.message)
+            return
 
         try:
             commit_merge("CDEV SAFE MERGE")
@@ -120,12 +129,17 @@ def git_safe_merge(commit: str = None, abort: bool = None, **kwargs):
         print(git_safe_messages.success_merge_message)
 
     elif _continue:
-        clean_up_resource_states()
+        try:
+            clean_up_resource_states()
+        except CleanUpResourceStateException as e:
+            print(e.message)
+            return
 
         try:
             commit_merge("CDEV SAFE MERGE")
         except CommitException:
             print(git_safe_messages.failed_commit_message)
+            return
 
         print(git_safe_messages.success_merge_message)
 
