@@ -178,12 +178,11 @@ class Queue(PermissionsAvailableMixin, TaggableMixin, Resource):
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
             tags (Dict[str, str]): A set of tags to add to the resource
         """
-        super().__init__(cdev_name, RUUID, nonce)
+        super().__init__(cdev_name, RUUID, nonce, tags=tags)
 
         self.is_fifo = is_fifo
         self.output = QueueOutput(cdev_name)
         self._event = None
-        self._tags = tags
 
         self.available_permissions: QueuePermissions = QueuePermissions(cdev_name)
 
@@ -260,4 +259,5 @@ class Queue(PermissionsAvailableMixin, TaggableMixin, Resource):
             ruuid=self.ruuid,
             hash=self.hash,
             is_fifo=self.is_fifo,
+            tags=self.tags
         )

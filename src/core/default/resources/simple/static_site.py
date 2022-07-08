@@ -112,7 +112,7 @@ class StaticSite(Resource, TaggableMixin):
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
             tags (Dict[str, str]): A set of tags to add to the resource
         """
-        super().__init__(cdev_name, RUUID, nonce)
+        super().__init__(cdev_name, RUUID, nonce, tags=tags)
 
         self._index_document = index_document
         self._error_document = error_document
@@ -120,7 +120,6 @@ class StaticSite(Resource, TaggableMixin):
         self._content_folder = content_folder
         self._domain_name = domain_name
         self._ssl_certificate_arn = ssl_certificate_arn
-        self._tags = tags
 
         self.output = StaticSiteOutput(cdev_name)
 
@@ -216,4 +215,5 @@ class StaticSite(Resource, TaggableMixin):
             content_folder=self.content_folder,
             domain_name=self.domain_name,
             ssl_certificate_arn=self.ssl_certificate_arn,
+            tags=self.tags
         )

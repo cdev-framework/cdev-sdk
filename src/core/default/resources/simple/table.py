@@ -372,13 +372,12 @@ class Table(PermissionsAvailableMixin, TaggableMixin, Resource):
 
         <a href="https://aws.amazon.com/dynamodb/pricing/"> Details on pricing</a>
         """
-        super().__init__(cdev_name, RUUID, nonce)
+        super().__init__(cdev_name, RUUID, nonce, tags=tags)
 
         self._attributes = attributes
         self._keys = keys
         self._secondary_keys = secondary_key
         self._stream = None
-        self._tags = tags
 
         self._available_permissions: TablePermissions = TablePermissions(cdev_name)
         self._output = TableOutput(cdev_name)
@@ -526,5 +525,6 @@ class Table(PermissionsAvailableMixin, TaggableMixin, Resource):
             hash=self.hash,
             attributes=[x.render() for x in self.attributes],
             keys=[x.render() for x in self.keys],
-            secondary_key=[x.render() for x in self.secondary_key]
+            secondary_key=[x.render() for x in self.secondary_key],
+            tags=self.tags
         )

@@ -364,9 +364,9 @@ class TaggableMixin:
     MIN_TAG_VALUE_LEN = 0
     MAX_TAG_VALUE_LEN = 256
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self,  *args, tags: Dict[str, str] = None, **kwargs):
         super().__init__(*args, **kwargs)  # forwards all unused arguments
-        self._tags = {}
+        self._tags = tags or {}
 
     @property
     def tags(self) -> Dict[str, str]:

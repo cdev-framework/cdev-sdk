@@ -159,7 +159,7 @@ class RelationalDB(PermissionsAvailableMixin, TaggableMixin, Resource):
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
             tags (Dict[str, str]): A set of tags to add to the resource
         """
-        super().__init__(cdev_name, RUUID, nonce)
+        super().__init__(cdev_name, RUUID, nonce, tags=tags)
 
         self._engine = engine.value
         self._master_username = username
@@ -169,7 +169,6 @@ class RelationalDB(PermissionsAvailableMixin, TaggableMixin, Resource):
         self._max_capacity = max_capacity
         self._min_capacity = min_capacity
         self._seconds_to_pause = seconds_to_pause
-        self._tags = tags
 
         self.output: RelationalDBOutput = RelationalDBOutput(cdev_name)
         self.available_permissions: RelationalDBPermissions = RelationalDBPermissions(
@@ -286,5 +285,6 @@ class RelationalDB(PermissionsAvailableMixin, TaggableMixin, Resource):
                 "MaxCapacity": self.max_capacity,
                 "MinCapacity": self.min_capacity,
                 "SecondsToPause": self.seconds_to_pause,
+                "tags": self.tags
             }
         )
