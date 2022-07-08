@@ -13,7 +13,7 @@ from core.constructs.resource import (
 )
 from core.constructs.cloud_output import Cloud_Output_Str, OutputType
 from core.constructs.types import cdev_str_model
-from core.constructs.models import ImmutableModel
+from core.constructs.models import ImmutableModel, frozendict
 
 from core.default.resources.simple.events import Event, event_model
 from core.default.resources.simple.iam import Permission
@@ -526,5 +526,5 @@ class Table(PermissionsAvailableMixin, TaggableMixin, Resource):
             attributes=[x.render() for x in self.attributes],
             keys=[x.render() for x in self.keys],
             secondary_key=[x.render() for x in self.secondary_key],
-            tags=self.tags
+            tags=frozendict(self.tags)
         )

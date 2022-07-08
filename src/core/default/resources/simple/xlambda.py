@@ -360,7 +360,7 @@ class SimpleFunction(PermissionsGrantableMixin, TaggableMixin, Resource):
             external_dependencies=frozenset(dependencies),
             src_code_hash=self.src_code_hash,
             platform=self.platform,
-            tags=self.tags
+            tags=frozendict(self.tags)
         )
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:

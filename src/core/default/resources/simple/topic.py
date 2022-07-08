@@ -13,6 +13,7 @@ from core.constructs.resource import (
 )
 from core.constructs.cloud_output import Cloud_Output_Str, OutputType
 from core.constructs.types import cdev_str_model
+from core.constructs.models import frozendict
 
 from core.default.resources.simple.events import Event, event_model
 from core.default.resources.simple.iam import Permission
@@ -205,5 +206,5 @@ class Topic(PermissionsAvailableMixin, TaggableMixin, Resource):
             ruuid=self.ruuid,
             hash=self.hash,
             is_fifo=self.is_fifo,
-            tags=self.tags
+            tags=frozendict(self.tags)
         )

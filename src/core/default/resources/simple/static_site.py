@@ -12,6 +12,7 @@ from core.constructs.resource import (
 )
 from core.constructs.cloud_output import Cloud_Output_Str
 from core.utils import hasher
+from core.constructs.models import frozendict
 
 RUUID = "cdev::simple::staticsite"
 
@@ -215,5 +216,5 @@ class StaticSite(Resource, TaggableMixin):
             content_folder=self.content_folder,
             domain_name=self.domain_name,
             ssl_certificate_arn=self.ssl_certificate_arn,
-            tags=self.tags
+            tags=frozendict(self.tags)
         )

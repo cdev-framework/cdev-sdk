@@ -4,7 +4,7 @@
 from enum import Enum
 from typing import Any, Dict, FrozenSet, List, Optional, Union
 
-from core.constructs.models import ImmutableModel
+from core.constructs.models import ImmutableModel, frozendict
 from core.constructs.cloud_output import (
     Cloud_Output_Mapping,
     Cloud_Output_Str,
@@ -410,5 +410,5 @@ class Api(TaggableMixin, Resource):
             routes=frozenset([x.render() for x in routes]),
             allow_cors=self.allow_cors,
             authorizers=frozenset([x.render() for x in self._authorizers]),
-            tags=self.tags
+            tags=frozendict(self.tags)
         )

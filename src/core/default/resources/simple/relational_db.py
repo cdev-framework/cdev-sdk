@@ -15,6 +15,7 @@ from core.constructs.resource import (
 )
 from core.constructs.cloud_output import Cloud_Output_Str, OutputType
 from core.utils import hasher
+from core.constructs.models import frozendict
 
 from core.default.resources.simple.iam import Permission, PermissionArn
 
@@ -285,6 +286,6 @@ class RelationalDB(PermissionsAvailableMixin, TaggableMixin, Resource):
                 "MaxCapacity": self.max_capacity,
                 "MinCapacity": self.min_capacity,
                 "SecondsToPause": self.seconds_to_pause,
-                "tags": self.tags
+                "tags": frozendict(self.tags)
             }
         )

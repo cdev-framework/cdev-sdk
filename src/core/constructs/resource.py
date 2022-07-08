@@ -6,7 +6,7 @@ from typing import List, Optional, Any, Dict
 
 from enum import Enum
 
-from core.constructs.models import ImmutableModel
+from core.constructs.models import ImmutableModel, frozendict
 from core.constructs.cloud_output import OutputType, Cloud_Output_Str
 from core.constructs.types import F
 from core.utils.hasher import hash_list
@@ -65,7 +65,7 @@ class TaggableResourceModel(ResourceModel):
         tags: When deploying the resource we add them to it so it can be filtered by any of them
     """
 
-    tags: Dict[str, str]
+    tags: frozendict
     """
     When deploying the resource we add them to it so it can be filtered by any of them
     
