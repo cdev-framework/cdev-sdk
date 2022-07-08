@@ -13,20 +13,19 @@ class NoAuthorizerIdFoundError(Exception):
     pass
 
 
-default_cors_args = {
-    "CorsConfiguration": {
-        "AllowOrigins": ["*"],
-        "AllowMethods": ["*"],
-        "AllowHeaders": [
-            "Content-Type",
-            "X-Amz-Date",
-            "Authorization",
-            "X-Api-Key",
-            "X-Amz-Security-Token",
-            "X-Amz-User-Agent",
-        ],
-    }
+default_cors_args =  {
+    "AllowOrigins": ["*"],
+    "AllowMethods": ["*"],
+    "AllowHeaders": [
+        "Content-Type",
+        "X-Amz-Date",
+        "Authorization",
+        "X-Api-Key",
+        "X-Amz-Security-Token",
+        "X-Amz-User-Agent",
+    ],
 }
+
 
 def _create_simple_api(
     transaction_token: str,
@@ -54,7 +53,7 @@ def _create_simple_api(
         "Name": f"cdev-api-{namespace_token}-{str(uuid4())}",
         "ProtocolType": "HTTP",
         "CorsConfiguration": default_cors_args if resource.allow_cors else {},
-        "Tags": resource.tags if resource.tags else [],
+        "Tags": dict(resource.tags) if resource.tags else {},
     }
 
     output_task.update(advance=1, comment="Creating Api")
@@ -121,7 +120,7 @@ def _update_simple_api(
     ):
         api_args = {
             "api_id": previous_cloud_id,
-            "Tags": new_resource.tags if new_resource.tags else [],
+            "Tags": dict(new_resource.tags) if new_resource.tags else [],
             "CorsConfiguration": default_cors_args if new_resource.allow_cors else {}
         }
 
@@ -497,7 +496,7 @@ def _create_stage(
         "ApiId": cloud_id,
         "AutoDeploy": True,
         "StageName": "live",
-        "Tags": resource.tags if resource.tags else []
+        "Tags": dict(resource.tags) if resource.tags else []
     }
 
     stage: str
