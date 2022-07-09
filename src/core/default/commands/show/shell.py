@@ -1,24 +1,4 @@
-import cmd
-import readline
-import os
-
-from argparse import ArgumentParser
-from core.constructs.workspace import Workspace
-from typing import List, Tuple
-
-import aurora_data_api
-from rich.console import Console
-from rich.table import Table
-
 from core.constructs.commands import BaseCommand
-from core.default.commands.relationaldb.utils import get_db_info_from_cdev_name
-
-from textual.app import App
-from textual.reactive import Reactive
-from textual.widgets import Footer, Placeholder
-from textual.widget import Widget
-from textual.widget import Panel
-
 
 import zipfile
 
