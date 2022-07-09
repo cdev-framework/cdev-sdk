@@ -14,15 +14,8 @@ from textual.widgets import Header, Footer, FileClick, ScrollView, DirectoryTree
 
 class shell(BaseCommand):
     help = """
-        Open an interactive shell to a relational db.
+        Open an interactive shell to a file with deployed information.
     """
-
-    # def add_arguments(self, parser: ArgumentParser) -> None:
-        # parser.add_argument(
-        #     "resource",
-        #     type=str,
-        #     help="The database to execute on. Name must include component name. ex: comp1.myDb",
-        # )
 
     def command(self, *args, **kwargs) -> None:
         full_file_path = '/Users/cleoberf/Documents/cdev/resources_hello_world_function.zip'
