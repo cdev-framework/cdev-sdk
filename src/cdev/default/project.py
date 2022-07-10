@@ -95,22 +95,16 @@ class local_project(Project):
             resource_state_id = load_backend(
                 backend_configuration
             ).create_resource_state(environment_name)
-        except Exception as e:
+        except Exception:
             raise BackendError
 
-        base_directory = os.path.dirname(self._project_info.settings_directory)
+        base_settings_file = self._get_base_settings_file()
+        environment_settings_file = self._get_environment_settings_file(environment_name)
 
-        _base_settings_file = os.path.join(
-            self._project_info.settings_directory, f"base_settings.py"
-        )
-        _environment_settings_file = os.path.join(
-            self._project_info.settings_directory, f"{environment_name}_settings.py"
-        )
-
-        settings_files = [_base_settings_file, _environment_settings_file]
-
+        settings_files = (base_settings_file, environment_settings_file)
         [paths_utils.touch_file(x) for x in settings_files]
 
+        base_directory = os.path.dirname(self._project_info.settings_directory)
         user_setting_modules = [
             # set the settings modules as python modules
             os.path.relpath(x, start=base_directory,)[
@@ -119,11 +113,9 @@ class local_project(Project):
             for x in settings_files
         ]
 
-        _abs_secrets_dir = os.path.join(
-            self._project_info.settings_directory, f"{environment_name}_secrets"
-        )
-        paths_utils.mkdir(_abs_secrets_dir)
-        relative_secret_dir = os.path.relpath(_abs_secrets_dir, start=base_directory)
+        abs_secrets_dir = self._get_environment_secrets_directory(environment_name)
+        paths_utils.mkdir(abs_secrets_dir)
+        relative_secret_dir = os.path.relpath(abs_secrets_dir, start=base_directory)
 
         settings = Settings_Info(
             base_class="core.constructs.settings.Settings",
@@ -148,36 +140,46 @@ class local_project(Project):
         self._write_info()
 
     @wrap_phases([Project_State.INFO_LOADED])
+    def delete_environment(self, environment_name: str) -> None:
+        self._assert_environment_exists(environment_name)
+        backend_configuration = self._create_default_backend_configuration()
+        with local_project_manager(self):
+            try:
+                backend = load_backend(backend_configuration)
+                resource_states = backend.get_top_level_resource_states()
+                environment_resource_state = next(
+                    x for x in resource_states if x.name == environment_name
+                )
+                if not environment_resource_state:
+                    raise BackendError
+
+                backend.delete_resource_state(environment_resource_state.uuid)
+            except Exception:
+                raise BackendError
+            self.destroy_environment(environment_name)
+            self._delete_environment_resources(environment_name)
+
+    @wrap_phases([Project_State.INFO_LOADED])
     def destroy_environment(self, environment_name: str) -> None:
-        self._load_info()
-
-        if environment_name not in self.get_all_environment_names():
-            raise EnvironmentDoesNotExist
-
-        self._project_info.environment_infos = [
-            x
-            for x in self._project_info.environment_infos
-            if x.name != environment_name
-        ]
-
-        self._write_info()
+        with local_project_manager(self):
+            self._assert_environment_exists(environment_name)
+            self._project_info.environment_infos = [
+                x
+                for x in self._project_info.environment_infos
+                if x.name != environment_name
+            ]
 
     @wrap_phases([Project_State.INFO_LOADED])
     def get_all_environment_names(self) -> List[str]:
         self._load_info()
-
         return [x.name for x in self._project_info.environment_infos]
 
     @wrap_phases([Project_State.INFO_LOADED])
     def set_current_environment(self, environment_name: str) -> None:
         self._load_info()
-
-        if environment_name not in self.get_all_environment_names():
-            raise EnvironmentDoesNotExist
-
-        self._project_info.current_environment_name = environment_name
-
-        self._write_info()
+        with local_project_manager(self):
+            self._assert_environment_exists(environment_name)
+            self._project_info.current_environment_name = environment_name
 
     @wrap_phases([Project_State.INFO_LOADED])
     def get_environment_settings_info(
@@ -185,8 +187,6 @@ class local_project(Project):
     ) -> Settings_Info:
         if not environment_name:
             environment_name = self.get_current_environment_name()
-
-        self._load_info()
 
         environment_info = self._get_environment_info(environment_name)
 
@@ -199,21 +199,18 @@ class local_project(Project):
         if not environment_name:
             environment_name = self.get_current_environment_name()
 
-        self._load_info()
+        with local_project_manager(self):
+            # Remove the old environment
+            previous_environment_var = self._get_environment_info(environment_name)
+            previous_environment_var.workspace_info.settings_info = new_value
 
-        # Remove the old environment
-        previous_environment_var = self._get_environment_info(environment_name)
-        previous_environment_var.workspace_info.settings_info = new_value
+            self._project_info.environment_infos = [
+                x
+                for x in self._project_info.environment_infos
+                if not x.name == environment_name
+            ]
 
-        self._project_info.environment_infos = [
-            x
-            for x in self._project_info.environment_infos
-            if not x.name == environment_name
-        ]
-
-        self._project_info.environment_infos.append(previous_environment_var)
-
-        self._write_info()
+            self._project_info.environment_infos.append(previous_environment_var)
 
     @wrap_phases(
         [
@@ -224,13 +221,10 @@ class local_project(Project):
     )
     def get_current_environment_name(self) -> str:
         self._load_info()
-
         return self._project_info.current_environment_name
 
     @wrap_phases([Project_State.INITIALIZING, Project_State.INITIALIZED])
     def get_current_environment(self) -> Environment:
-        self._load_info()
-
         current_environment_name = self.get_current_environment_name()
 
         if (
@@ -331,7 +325,7 @@ class local_project(Project):
             self._project_info.dict(), self._project_info_location
         )
 
-    def _load_info(self):
+    def _load_info(self) -> None:
         with open(self._project_info_location, "r") as fh:
             self._project_info = local_project_info(**json.load(fh))
 
@@ -355,3 +349,58 @@ class local_project(Project):
             raise EnvironmentDoesNotExist
 
         return rv
+
+    def _assert_environment_exists(self, environment_name: str) -> None:
+        if environment_name in self.get_all_environment_names():
+            return
+        raise EnvironmentDoesNotExist
+
+    def _delete_environment_resources(self, environment_name: str) -> None:
+        try:
+            environment_settings_file = self._get_environment_settings_file(environment_name)
+            paths_utils.rm_file(environment_settings_file)
+        except:
+            # Allow this to fail in case of a corrupt environment
+            pass
+
+        try:
+            secrets_dir = self._get_environment_secrets_directory(environment_name)
+            paths_utils.rm_directory(secrets_dir)
+        except:
+            # Allow this to fail in case of a corrupt environment
+            pass
+
+    def _get_environment_settings_file(self, environment_name: str) -> str:
+        return self._get_environment_path(environment_name, "settings.py")
+
+    def _get_base_settings_file(self) -> str:
+        return os.path.join(
+            self._project_info.settings_directory, f"base_settings.py"
+        )
+
+    def _get_environment_secrets_directory(self, environment_name: str) -> str:
+        return self._get_environment_path(environment_name, "secrets")
+
+    def _get_environment_path(self, environment_name: str, relative: str) -> str:
+        return os.path.join(
+            self._project_info.settings_directory, f"{environment_name}_{relative}"
+        )
+
+
+class local_project_manager(object):
+    """
+    context manager to handle environment modification and saving
+
+    usage:
+        with environment_manager(300):
+            # code that modifies the environment
+    """
+
+    def __init__(self, the_project: local_project):
+        self._local_project = the_project
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self._local_project._write_info()

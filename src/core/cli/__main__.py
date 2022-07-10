@@ -11,7 +11,6 @@ from ..commands import (
     create_resource_state,
     cloud_output,
 )
-from ..constructs.workspace import Workspace
 
 parser = argparse.ArgumentParser(description="cdev core cli")
 subparsers = parser.add_subparsers(title="sub_command", description="valid subcommands")

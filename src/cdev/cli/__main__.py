@@ -186,7 +186,7 @@ CDEV_COMMANDS = [
     },
     {
         "name": "environment",
-        "help": "Change and create environments for deployment",
+        "help": "Create, change, list and, delete environments for deployment",
         "default": wrap_load_and_initialize_project(
             environment.environment_cli, initialize=False
         ),
@@ -225,6 +225,17 @@ CDEV_COMMANDS = [
                         "dest": "env",
                         "type": str,
                         "help": "name of environment you want to create",
+                    }
+                ],
+            },
+            {
+                "command": "delete",
+                "help": "Delete an existing environment",
+                "args": [
+                    {
+                        "dest": "env",
+                        "type": str,
+                        "help": "name of environment you want to delete",
                     }
                 ],
             },

@@ -26,6 +26,7 @@ This is a important part to improve the DX of the working with library.
 """
 
 import os
+import shutil
 from typing import Union
 
 from pydantic import DirectoryPath
@@ -201,6 +202,37 @@ def touch_file(file_path: Union[FilePath, str]) -> None:
 
     with open(file_path, "a"):
         pass
+
+
+def rm_file(file_path: Union[FilePath, str]) -> None:
+    """Helper function to remove a file
+
+    Args:
+        file_path (FilePath)
+
+    Raises:
+        Exception: Directory does not exist
+    """
+    if not os.path.isdir(os.path.dirname(file_path)):
+        raise Exception(
+            f"Can not delete {file_path} because {os.path.dirname(file_path)} is not a directory."
+        )
+
+    os.remove(file_path)
+
+
+def rm_directory(directory_path: Union[DirectoryPath, str]) -> None:
+    """Delete a directory if it exists.
+
+    Args:
+        directory_path (DirectoryPath)
+    """
+    if not os.path.isdir(directory_path):
+        raise Exception(
+            f"Can not delete {directory_path} because is not a directory."
+        )
+
+    shutil.rmtree(directory_path)
 
 
 def mkdir(directory_path: Union[DirectoryPath, str]) -> None:

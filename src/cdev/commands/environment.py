@@ -1,5 +1,7 @@
 from argparse import Namespace
 
+from rich.prompt import Confirm
+
 from cdev.constructs.project import EnvironmentDoesNotExist, Project, ProjectError
 
 from core.constructs.output_manager import OutputManager
@@ -20,15 +22,17 @@ def environment_cli(
             "You must provide a sub-command. run `cdev environment --help` for more information on available subcommands"
         )
     elif command == "ls":
-        list_environments(project, output_manager)
+        _list_environments(project, output_manager)
     elif command == "info":
-        environment_information(project, output_manager, parsed_args.get("env"))
+        _environment_information(project, output_manager, parsed_args.get("env"))
     elif command == "set":
-        set_current_environment(project, parsed_args.get("env"), output_manager)
+        _set_current_environment(project, parsed_args.get("env"), output_manager)
     elif command == "create":
-        create_environment(project, parsed_args.get("env"), output_manager)
+        _create_environment(project, parsed_args.get("env"), output_manager)
+    elif command == "delete":
+        _delete_environment(project, parsed_args["env"], output_manager)
     elif command == "settings_information":
-        settings_information(
+        _settings_information(
             project,
             output_manager,
             parsed_args.get("key"),
@@ -37,7 +41,7 @@ def environment_cli(
         )
 
 
-def list_environments(project: Project, output: OutputManager) -> None:
+def _list_environments(project: Project, output: OutputManager) -> None:
     """
     Get the current list of environments and the current environment from the Project object.
     Must be called when the Project is in the UNINITIALIZED phase.
@@ -53,7 +57,7 @@ def list_environments(project: Project, output: OutputManager) -> None:
             output._console.print(environment_name)
 
 
-def set_current_environment(
+def _set_current_environment(
     project: Project, new_current_environment: str, output: OutputManager
 ) -> None:
     """Change the current environment of the project
@@ -79,7 +83,7 @@ def set_current_environment(
     output._console.print(f"Set Current Environment -> {new_current_environment}")
 
 
-def create_environment(
+def _create_environment(
     project: Project, new_environment_name: str, output: OutputManager
 ) -> None:
     project.create_environment(new_environment_name)
@@ -87,7 +91,30 @@ def create_environment(
     output._console.print(f"Created Environment -> {new_environment_name}")
 
 
-def settings_information(
+def _delete_environment(
+    project: Project, existing_environment_name: str, output: OutputManager
+) -> None:
+
+    print("")
+    do_delete = Confirm.ask("Are you sure you want to Delete the environment?")
+
+    if not do_delete:
+        return
+
+    need_to_switch = project.get_current_environment_name() == existing_environment_name
+    project.delete_environment(existing_environment_name)
+    output._console.print(f"Deleted Environment -> {existing_environment_name}")
+
+    if need_to_switch:
+        all_environment_names = project.get_all_environment_names()
+        if not all_environment_names:
+            output._console.print("Warning there are no more environments. Please create a new one to continue working")
+            return
+        output._console.print(f"Warning: You deleted what used to be the current environment. You have to set it again from the following list:")
+    _list_environments(project, output)
+
+
+def _settings_information(
     project: Project,
     output: OutputManager,
     key: str = None,
@@ -158,7 +185,7 @@ def settings_information(
                 )
 
 
-def environment_information(
+def _environment_information(
     project: Project,
     output: OutputManager,
     environment_name: str = None,

@@ -1,4 +1,3 @@
-from cdev.constructs.project import Project
 from core.constructs.workspace import Workspace
 from core.constructs.output_manager import OutputManager
 from core.constructs.workspace_watcher import WorkspaceWatcher
@@ -36,5 +35,5 @@ def core_sync_command(
             patterns_to_ignore=ignore,
         )
         workspace_watcher.watch()
-    except Exception as e:
+    except Exception:
         return

@@ -164,7 +164,7 @@ class LocalBackend(Backend):
     ) -> str:
         # Create the new resource state
         if name in set(self._central_state.resource_state_names):
-            raise ResourceStateAlreadyExists("Creating resource state with taken name")
+            raise ResourceStateAlreadyExists(f"Creating resource state with taken name `{name}`")
 
         resource_state_uuid = str(uuid.uuid4())
         if not parent_resource_state_uuid:

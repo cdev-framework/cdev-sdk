@@ -156,8 +156,9 @@ class Project:
         raise NotImplementedError
 
     def initialize_project(self) -> None:
-        """Initialize the Project object. This function can only be called when in the `LOAD_INFO` state. It will transition into the `INITIALIZING` phase
-        while the function is executing. Then it will transition to the `INITIALIZED` phase as the final action.
+        """Initialize the Project object. This function can only be called when in the `LOAD_INFO` state.
+        It will transition into the `INITIALIZING` phase while the function is executing. Then it will transition to
+        the `INITIALIZED` phase as the final action.
 
         Raises:
             ProjectError
@@ -171,7 +172,19 @@ class Project:
 
         Args:
             environment_name (str): Name of the `Environment` to create
-            backend_configuration (Backend_Configuration, optional): Backend configuration to associate with the created `Environment`. Defaults to None.
+            backend_configuration (Backend_Configuration, optional): Backend configuration to associate with the
+            created `Environment`. Defaults to None.
+
+        Raises:
+            ProjectError
+        """
+        raise NotImplementedError
+
+    def delete_environment(self, environment_name: str) -> None:
+        """Delete an existing environment for this project.
+
+        Args:
+            environment_name (str): Name of the `Environment` to delete
 
         Raises:
             ProjectError
@@ -179,7 +192,8 @@ class Project:
         raise NotImplementedError
 
     def destroy_environment(self, environment_name: str) -> None:
-        """Destroy an environment. This function should only be used to delete the information about an environment. To delete actual cloud resources in an,
+        """Destroy an environment. This function should only be used to delete the information about an environment.
+        To delete actual cloud resources in an,
         an environment you should use the `cdev destroy` command.
 
         Args:
