@@ -123,8 +123,8 @@ def _update_simple_api(
         or previous_resource.tags != new_resource.tags
     ):
         api_args = {
-            "api_id": previous_cloud_id,
-            "Tags": dict(new_resource.tags) if new_resource.tags else {},
+            "ApiId": previous_cloud_id,
+            # "Tags": dict(new_resource.tags) if new_resource.tags else [],
             "CorsConfiguration": default_cors_args if new_resource.allow_cors else {},
         }
 
