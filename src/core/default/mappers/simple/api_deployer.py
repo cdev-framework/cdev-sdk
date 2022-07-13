@@ -13,7 +13,7 @@ class NoAuthorizerIdFoundError(Exception):
     pass
 
 
-default_cors_args =  {
+default_cors_args = {
     "AllowOrigins": ["*"],
     "AllowMethods": ["*"],
     "AllowHeaders": [
@@ -74,10 +74,14 @@ def _create_simple_api(
     if resource.authorizers:
         info["authorizers"] = _create_authorizers(api_id, resource, output_task)
 
-    info["endpoint"] = _create_stage(api_id, rv.get('ApiEndpoint'), resource, output_task)
+    info["endpoint"] = _create_stage(
+        api_id, rv.get("ApiEndpoint"), resource, output_task
+    )
 
     if resource.routes:
-        info["endpoints"] = _create_routes(api_id, info.get("authorizers"), resource, output_task)
+        info["endpoints"] = _create_routes(
+            api_id, info.get("authorizers"), resource, output_task
+        )
 
     return info
 
@@ -115,13 +119,13 @@ def _update_simple_api(
 
     # Change the CORS Settings of the API
     if (
-            previous_resource.allow_cors != new_resource.allow_cors
-            or previous_resource.tags != new_resource.tags
+        previous_resource.allow_cors != new_resource.allow_cors
+        or previous_resource.tags != new_resource.tags
     ):
         api_args = {
-            "api_id": previous_cloud_id,
-            "Tags": dict(new_resource.tags) if new_resource.tags else [],
-            "CorsConfiguration": default_cors_args if new_resource.allow_cors else {}
+            "ApiId": previous_cloud_id,
+            # "Tags": dict(new_resource.tags) if new_resource.tags else [],
+            "CorsConfiguration": default_cors_args if new_resource.allow_cors else {},
         }
 
         output_task.update(advance=1, comment=f"Updating CORS Policy and tags")
@@ -379,16 +383,12 @@ def _remove_simple_api(
 
 
 def _create_authorizers(
-    api_id: str,
-    resource: simple_api.simple_api_model,
-    output_task: OutputTask
+    api_id: str, resource: simple_api.simple_api_model, output_task: OutputTask
 ) -> Dict[str, Dict]:
     authorizers_created: Dict[str, Dict] = {}
 
     for authorizer in resource.authorizers:
-        output_task.update(
-            advance=1, comment=f"Creating Authorizer {authorizer.name}"
-        )
+        output_task.update(advance=1, comment=f"Creating Authorizer {authorizer.name}")
         authorizer_id = _create_authorizer(api_id, authorizer)
         authorizers_created[authorizer_id] = authorizer.dict()
 
@@ -492,22 +492,20 @@ def _create_stage(
     cloud_id: str,
     api_endpoint: str,
     resource: simple_api.simple_api_model,
-    output_task: OutputTask
+    output_task: OutputTask,
 ) -> str:
 
     stage_args = {
         "ApiId": cloud_id,
         "AutoDeploy": True,
         "StageName": "live",
-        "Tags": dict(resource.tags) if resource.tags else []
+        "Tags": dict(resource.tags) if resource.tags else {},
     }
 
     stage: str
     output_task.update(advance=1, comment="Creating Stage")
     try:
-        rv2 = aws_client.run_client_function(
-            "apigatewayv2", "create_stage", stage_args
-        )
+        rv2 = aws_client.run_client_function("apigatewayv2", "create_stage", stage_args)
         stage = f"{api_endpoint}/{rv2.get('StageName')}"
     except Exception as e:
         output_task.print_error(e)
@@ -519,7 +517,7 @@ def _create_routes(
     cloud_id: str,
     authorizers,
     resource: simple_api.simple_api_model,
-    output_task: OutputTask
+    output_task: OutputTask,
 ) -> Dict[str, str]:
 
     created_endpoints = {}
