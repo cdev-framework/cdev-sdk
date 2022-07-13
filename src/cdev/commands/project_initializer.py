@@ -240,9 +240,9 @@ def _list_all_available_buckets(s3_client: Any) -> List[str]:
     Returns:
         List[str]: bucket names
     """
-    bucket_names = (
-        []
-    )  # [bucket.get('Name') for bucket in s3_client.list_buckets().get('Buckets')]
+    bucket_names = [
+        bucket.get("Name") for bucket in s3_client.list_buckets().get("Buckets")
+    ]
 
     return list(
         filter(
