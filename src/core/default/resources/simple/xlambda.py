@@ -81,6 +81,7 @@ class DependencyLayer(Resource):
             ruuid=LAMBDA_LAYER_RUUID,
             name=self.name,
             hash=self.artifact_hash,
+            tags=frozendict({}),
             artifact_path=self.artifact_path,
         )
 
@@ -255,7 +256,7 @@ class SimpleFunction(PermissionsGrantableMixin, TaggableMixin, Resource):
             nonce (str, optional): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
             tags (Dict[str, str]): A set of tags to add to the resource
         """
-        
+
         super().__init__(name=cdev_name, ruuid=RUUID, nonce=nonce, tags=tags)
 
         self._filepath = filepath
@@ -360,7 +361,7 @@ class SimpleFunction(PermissionsGrantableMixin, TaggableMixin, Resource):
             external_dependencies=frozenset(dependencies),
             src_code_hash=self.src_code_hash,
             platform=self.platform,
-            tags=frozendict(self.tags)
+            tags=frozendict(self.tags),
         )
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
@@ -373,7 +374,7 @@ class SimpleFunction(PermissionsGrantableMixin, TaggableMixin, Resource):
 def simple_function_annotation(
     name: str,
     events: List[Union[Event, RouteEvent]] = [],
-    environment = {},
+    environment={},
     memory_size: int = 128,
     timeout: int = 30,
     storage: int = 512,

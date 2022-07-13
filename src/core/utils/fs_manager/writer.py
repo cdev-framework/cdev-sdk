@@ -50,7 +50,7 @@ def create_layer_archive(
     """
     if cache:
         cache_key = _create_cache_key(modules)
-        if cache.in_cache(cache_key):
+        if cache.in_cache(cache_key) and output_fp == cache.in_cache(cache_key):
             return cache.get_from_cache(cache_key)[1]
 
         artifact_hash = _create_archive_and_hash(
