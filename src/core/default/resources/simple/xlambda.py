@@ -77,7 +77,6 @@ class DependencyLayer(Resource):
         self.output = DependencyLayerOutput(cdev_name)
 
     def render(self) -> dependency_layer_model:
-        print(self.artifact_path)
         return dependency_layer_model(
             ruuid=LAMBDA_LAYER_RUUID,
             name=self.name,
