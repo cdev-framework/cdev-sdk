@@ -236,6 +236,9 @@ def _update_simple_api(
                 _delete_route(previous_cloud_id, previous_route_info.get(route_id))
             except Exception as e:
                 output_task.print_error(e)
+                print(
+                    f"error deleting {previous_cloud_id} -> {previous_route_info.get(route_id)}"
+                )
                 raise e
 
             previous_route_info.pop(route_id)
@@ -576,7 +579,7 @@ def _delete_route(api_id: str, route_id: str) -> None:
         api_id (str): Api ID of the api in AWS.
         route_id (lambda_event): Route ID of the route in AWS.
     """
-
+    print(f">>> {route_id}")
     aws_client.run_client_function(
         "apigatewayv2", "delete_route", {"ApiId": api_id, "RouteId": route_id}
     )

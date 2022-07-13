@@ -19,6 +19,7 @@ from ..commands import (
     project_initializer,
     run,
     sync,
+    git_safe,
 )
 
 from cdev.constructs.project import CDEV_PROJECT_FILE, CDEV_FOLDER, Project
@@ -325,6 +326,81 @@ CDEV_COMMANDS = [
                 "dest": "--ignore",
                 "type": str,
                 "help": "do not watch for any file that matches the following pattern ['.cdev/**','__pycache__/*']",
+            },
+        ],
+    },
+    {
+        "name": "git-safe",
+        "help": "Safe versions of some git operations",
+        "default": git_safe.git_safe_cli,
+        "subcommands": [
+            {
+                "command": "install-merger",
+                "help": "Install the cdev custom git merger to help properly merge the underlying used by Cdev.",
+            },
+            {
+                "command": "project-merger",
+                "help": "CLI interface to the custom merger",
+                "args": [
+                    {
+                        "dest": "current_fp",
+                        "type": str,
+                        "help": "Tmp file that contains the current version of the file",
+                    },
+                    {
+                        "dest": "other_fp",
+                        "type": str,
+                        "help": "tmp file that contains the other commits version of the file",
+                    },
+                ],
+            },
+            {
+                "command": "merge",
+                "help": "Safely run `git merge`",
+                "args": [
+                    {
+                        "dest": "commit",
+                        "type": str,
+                        "help": "Commits, usually other branch heads, to merge into our branch.",
+                        "nargs": "?",
+                        "default": None,
+                    },
+                    {
+                        "dest": "--abort",
+                        "action": "store_true",
+                        "help": "Commits, usually other branch heads, to merge into our branch.",
+                    },
+                    {
+                        "dest": "--continue",
+                        "action": "store_true",
+                        "help": "Commits, usually other branch heads, to merge into our branch.",
+                    },
+                    {
+                        "dest": "--quit",
+                        "action": "store_true",
+                        "help": "Commits, usually other branch heads, to merge into our branch.",
+                    },
+                ],
+            },
+            {
+                "command": "pull",
+                "help": "Safely run `git pull`",
+                "args": [
+                    {
+                        "dest": "repository",
+                        "type": str,
+                        "help": "Repository",
+                        "default": None,
+                        "nargs": "?",
+                    },
+                    {
+                        "dest": "ref_spec",
+                        "type": str,
+                        "help": "commit like object",
+                        "default": None,
+                        "nargs": "?",
+                    },
+                ],
             },
         ],
     },

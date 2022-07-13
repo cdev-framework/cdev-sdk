@@ -44,6 +44,7 @@ setuptools.setup(
         "rich",
         "sortedcontainers",
         "watchdog",
+        "GitPython",
     ],
     python_requires=">=3.7",
 )

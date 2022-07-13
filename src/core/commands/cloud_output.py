@@ -55,7 +55,8 @@ def cloud_output_command(
         output_key,
     )
 
+    # LEAVE AS REGULAR PRINTS BECAUSE OF EMOJI ISSUE
     if not only_value:
-        output._console.print(f"{output_key} -> {cloud_output}")
+        print(f"{output_key} -> {cloud_output}")
     else:
-        output._console.print(cloud_output)
+        print(cloud_output)
