@@ -26,6 +26,7 @@ All release will have a corresponding git tag.
 - Add query, tail and limit args to logging function
 - Add sync to watch for filesystem changes
 - Add keep-in-sync argument to _cdev run static_site.sync <resource>_
+- Add tags to resources that support them
 
 ### Fixed
 - Fix issues with a bucket when it is not empty and we need to delete it

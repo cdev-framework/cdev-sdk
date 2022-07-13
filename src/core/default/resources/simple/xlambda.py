@@ -238,7 +238,7 @@ class SimpleFunction(PermissionsGrantableMixin, TaggableMixin, Resource):
         src_code_hash: str = None,
         preserve_function: Callable = None,
         nonce: str = "",
-        tags: Dict[str, str] = None,
+        tags: Dict[str, str] = {},
     ) -> None:
         """
 
@@ -255,7 +255,8 @@ class SimpleFunction(PermissionsGrantableMixin, TaggableMixin, Resource):
             nonce (str, optional): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
             tags (Dict[str, str]): A set of tags to add to the resource
         """
-        super().__init__(cdev_name, RUUID, nonce, tags)
+        
+        super().__init__(name=cdev_name, ruuid=RUUID, nonce=nonce, tags=tags)
 
         self._filepath = filepath
         self._events = events
@@ -272,7 +273,6 @@ class SimpleFunction(PermissionsGrantableMixin, TaggableMixin, Resource):
         self._platform = platform or get_current_closest_platform()
 
         self._preserved_function = preserve_function
-        self._tags = tags
         self.__annotations__ = preserve_function.__annotations__
         self.__doc__ = preserve_function.__doc__
 
@@ -360,6 +360,7 @@ class SimpleFunction(PermissionsGrantableMixin, TaggableMixin, Resource):
             external_dependencies=frozenset(dependencies),
             src_code_hash=self.src_code_hash,
             platform=self.platform,
+            tags=frozendict(self.tags)
         )
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:

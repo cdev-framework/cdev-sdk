@@ -13,19 +13,17 @@ class NoAuthorizerIdFoundError(Exception):
     pass
 
 
-default_cors_args = {
-    "CorsConfiguration": {
-        "AllowOrigins": ["*"],
-        "AllowMethods": ["*"],
-        "AllowHeaders": [
-            "Content-Type",
-            "X-Amz-Date",
-            "Authorization",
-            "X-Api-Key",
-            "X-Amz-Security-Token",
-            "X-Amz-User-Agent",
-        ],
-    }
+default_cors_args =  {
+    "AllowOrigins": ["*"],
+    "AllowMethods": ["*"],
+    "AllowHeaders": [
+        "Content-Type",
+        "X-Amz-Date",
+        "Authorization",
+        "X-Api-Key",
+        "X-Amz-Security-Token",
+        "X-Amz-User-Agent",
+    ],
 }
 
 
@@ -51,18 +49,17 @@ def _create_simple_api(
         Dict: Information from the cloud about the resource.
     """
 
-    base_args = {
+    api_args = {
         "Name": f"cdev-api-{namespace_token}-{str(uuid4())}",
         "ProtocolType": "HTTP",
+        "CorsConfiguration": default_cors_args if resource.allow_cors else {},
+        "Tags": dict(resource.tags) if resource.tags else {},
     }
-
-    if resource.allow_cors:
-        base_args.update(default_cors_args)
 
     output_task.update(advance=1, comment="Creating Api")
 
     try:
-        rv = aws_client.run_client_function("apigatewayv2", "create_api", base_args)
+        rv = aws_client.run_client_function("apigatewayv2", "create_api", api_args)
     except Exception as e:
         output_task.print_error(e)
         raise e
@@ -75,56 +72,12 @@ def _create_simple_api(
     }
 
     if resource.authorizers:
-        _authorizer_outputs: Dict[str, Dict] = {}
+        info["authorizers"] = _create_authorizers(api_id, resource, output_task)
 
-        for authorizer in resource.authorizers:
-            output_task.update(
-                advance=1, comment=f"Creating Authorizer {authorizer.name}"
-            )
-            authorizer_id = _create_authorizer(api_id, authorizer)
-            _authorizer_outputs[authorizer_id] = authorizer.dict()
+    info["endpoint"] = _create_stage(api_id, rv.get('ApiEndpoint'), resource, output_task)
 
-        info["authorizers"] = _authorizer_outputs
-
-    _stage_args = {
-        "ApiId": info.get("cloud_id"),
-        "AutoDeploy": True,
-        "StageName": "live",
-    }
-
-    output_task.update(advance=1, comment="Creating Stage")
-    try:
-        rv2 = aws_client.run_client_function(
-            "apigatewayv2", "create_stage", _stage_args
-        )
-    except Exception as e:
-        output_task.print_error(e)
-        raise e
-
-    info["endpoint"] = f"{rv.get('ApiEndpoint')}/{rv2.get('StageName')}"
-
-    api_id = info.get("cloud_id")
     if resource.routes:
-        _created_endpoints = {}
-        for route in resource.routes:
-            output_task.update(
-                advance=1, comment=f"Creating Route {route.path} [{route.verb}]"
-            )
-
-            try:
-                authorizer_id = _find_authorization_id(route, info.get("authorizers"))
-
-                route_cloud_id = _create_route(api_id, route, authorizer_id)
-            except Exception as e:
-                output_task.print_error(e)
-                raise e
-
-            # Add route to the return info
-            dict_key = f"{route.path} {route.verb}"
-
-            _created_endpoints[dict_key] = route_cloud_id
-
-        info["endpoints"] = _created_endpoints
+        info["endpoints"] = _create_routes(api_id, info.get("authorizers"), resource, output_task)
 
     return info
 
@@ -161,42 +114,35 @@ def _update_simple_api(
     output_task.print(previous_resource)
 
     # Change the CORS Settings of the API
-    if not previous_resource.allow_cors == new_resource.allow_cors:
-        new_cors_policy = (
-            {
-                "AllowOrigins": ["*"],
-                "AllowMethods": ["*"],
-                "AllowHeaders": [
-                    "Content-Type",
-                    "X-Amz-Date",
-                    "Authorization",
-                    "X-Api-Key",
-                    "X-Amz-Security-Token",
-                    "X-Amz-User-Agent",
-                ],
-            }
-            if new_resource.allow_cors
-            else {}
-        )
+    if (
+            previous_resource.allow_cors != new_resource.allow_cors
+            or previous_resource.tags != new_resource.tags
+    ):
+        api_args = {
+            "api_id": previous_cloud_id,
+            "Tags": dict(new_resource.tags) if new_resource.tags else [],
+            "CorsConfiguration": default_cors_args if new_resource.allow_cors else {}
+        }
 
-        output_task.update(advance=1, comment=f"Updating CORS Policy")
+        output_task.update(advance=1, comment=f"Updating CORS Policy and tags")
         try:
             aws_client.run_client_function(
                 "apigatewayv2",
                 "update_api",
-                {"api_id": previous_cloud_id, "CorsConfiguration ": new_cors_policy},
+                api_args,
             )
         except Exception as e:
             output_task.print_error(e)
             raise e
 
-    # If an authorizer is to be deleted, it must already be removed from any route, but to create a route with an authorizer, you must
-    # have already created the authorizer. This means we can NOT do all the operations on the routes before authorizers but also can NOT do all
+    # If an authorizer is to be deleted, it must already be removed from any route but,
+    # to create a route with an authorizer, you must have already created the authorizer.
+    # This means we can NOT do all the operations on the routes before authorizers but also can NOT do all
     # the authorizers before the routes.
 
-    # We must do them in an order that does not cause errors, so we are only going to perform update operations that must happen before the
-    # authorizers are updated then defer the rest of the updates till after by storing their info in the `_update_route_info` and `_create_route_info`
-    # list.
+    # We must do them in an order that does not cause errors, so we are only going to perform update operations
+    # that must happen before the authorizers are updated then defer the rest of the updates till after by storing
+    # their info in the `_update_route_info` and `_create_route_info` list.
     _create_route_info: List[simple_api.route_model] = []
     _update_route_info: List[Tuple[str, simple_api.route_model]] = []
     previous_route_info: Dict[str, str] = (
@@ -206,7 +152,7 @@ def _update_simple_api(
     )
     new_output_info = {}
 
-    if not previous_resource.routes == new_resource.routes:
+    if previous_resource.routes != new_resource.routes:
 
         update_routes = set()
 
@@ -294,7 +240,7 @@ def _update_simple_api(
 
             previous_route_info.pop(route_id)
 
-    if not previous_resource.authorizers == new_resource.authorizers:
+    if previous_resource.authorizers != new_resource.authorizers:
         # Three options for types of changes to authorizers
         # 1. Complete New
         # 2. Complete Remove
@@ -429,6 +375,23 @@ def _remove_simple_api(
         raise e
 
 
+def _create_authorizers(
+    api_id: str,
+    resource: simple_api.simple_api_model,
+    output_task: OutputTask
+) -> Dict[str, Dict]:
+    authorizers_created: Dict[str, Dict] = {}
+
+    for authorizer in resource.authorizers:
+        output_task.update(
+            advance=1, comment=f"Creating Authorizer {authorizer.name}"
+        )
+        authorizer_id = _create_authorizer(api_id, authorizer)
+        authorizers_created[authorizer_id] = authorizer.dict()
+
+    return authorizers_created
+
+
 def _create_authorizer(api_id: str, authorizer: simple_api.authorizer_model) -> str:
     """Helper function for creating new authorizers
 
@@ -522,6 +485,58 @@ def _find_authorization_id(
     return found_id[0]
 
 
+def _create_stage(
+    cloud_id: str,
+    api_endpoint: str,
+    resource: simple_api.simple_api_model,
+    output_task: OutputTask
+) -> str:
+
+    stage_args = {
+        "ApiId": cloud_id,
+        "AutoDeploy": True,
+        "StageName": "live",
+        "Tags": dict(resource.tags) if resource.tags else []
+    }
+
+    stage: str
+    output_task.update(advance=1, comment="Creating Stage")
+    try:
+        rv2 = aws_client.run_client_function(
+            "apigatewayv2", "create_stage", stage_args
+        )
+        stage = f"{api_endpoint}/{rv2.get('StageName')}"
+    except Exception as e:
+        output_task.print_error(e)
+        raise e
+    return stage
+
+
+def _create_routes(
+    cloud_id: str,
+    authorizers,
+    resource: simple_api.simple_api_model,
+    output_task: OutputTask
+) -> Dict[str, str]:
+
+    created_endpoints = {}
+    for route in resource.routes:
+        output_task.update(
+            advance=1, comment=f"Creating Route {route.path} [{route.verb}]"
+        )
+
+        try:
+            authorizer_id = _find_authorization_id(route, authorizers)
+            route_cloud_id = _create_route(cloud_id, route, authorizer_id)
+            # Add route to the return info
+            created_endpoints[f"{route.path} {route.verb}"] = route_cloud_id
+        except Exception as e:
+            output_task.print_error(e)
+            raise e
+
+    return created_endpoints
+
+
 def _create_route(
     api_id: str, route: simple_api.route_model, authorizer_id: str = None
 ) -> str:
@@ -536,26 +551,19 @@ def _create_route(
     Returns:
         str: Route ID of the create route.
     """
-
-    full_args = {}
-    _authorizer_args = {}
-
-    _route_args = {
+    route_args = {
         "ApiId": api_id,
         "RouteKey": f"{route.verb} {route.path}",
     }
 
     if authorizer_id:
-        _authorizer_args["AuthorizerId"] = authorizer_id
-        _authorizer_args["AuthorizationType"] = "JWT"
+        route_args["AuthorizerId"] = authorizer_id
+        route_args["AuthorizationType"] = "JWT"
 
         if route.additional_scopes:
-            _authorizer_args["AuthorizationScopes"] = list(route.additional_scopes)
+            route_args["AuthorizationScopes"] = list(route.additional_scopes)
 
-    full_args.update(_route_args)
-    full_args.update(_authorizer_args)
-    rv = aws_client.run_client_function("apigatewayv2", "create_route", full_args)
-
+    rv = aws_client.run_client_function("apigatewayv2", "create_route", route_args)
     return rv.get("RouteId")
 
 
@@ -578,24 +586,25 @@ def _update_route(
     api_id: str, route_id: str, route: simple_api.route_model, authorizer_id: str = None
 ):
 
-    args = {
+    route_args = {
         "ApiId": api_id,
         "RouteId": route_id,
     }
 
     if authorizer_id:
-        args["AuthorizerId"] = authorizer_id
-        args["AuthorizationType"] = "JWT"
+        route_args["AuthorizerId"] = authorizer_id
+        route_args["AuthorizationType"] = "JWT"
 
         if route.additional_scopes:
-            args["AuthorizationScopes"] = list(route.additional_scopes)
-
+            route_args["AuthorizationScopes"] = list(route.additional_scopes)
+        else:
+            route_args["AuthorizationScopes"] = []
     else:
-        args["AuthorizerId"] = ""
-        args["AuthorizationType"] = "NONE"
-        args["AuthorizationScopes"] = []
+        route_args["AuthorizerId"] = ""
+        route_args["AuthorizationType"] = "NONE"
+        route_args["AuthorizationScopes"] = []
 
-    aws_client.run_client_function("apigatewayv2", "update_route", args)
+    aws_client.run_client_function("apigatewayv2", "update_route", route_args)
 
 
 def handle_simple_api_deployment(
@@ -606,13 +615,14 @@ def handle_simple_api_deployment(
     output_task: OutputTask,
 ) -> Dict:
 
+    result: Dict = {}
     if resource_diff.action_type == Resource_Change_Type.CREATE:
-        return _create_simple_api(
+        result = _create_simple_api(
             transaction_token, namespace_token, resource_diff.new_resource, output_task
         )
 
     elif resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY:
-        return _update_simple_api(
+        result = _update_simple_api(
             transaction_token,
             namespace_token,
             simple_api.simple_api_model(**resource_diff.previous_resource.dict()),
@@ -622,7 +632,6 @@ def handle_simple_api_deployment(
         )
 
     elif resource_diff.action_type == Resource_Change_Type.DELETE:
-
         _remove_simple_api(transaction_token, previous_output, output_task)
 
-        return {}
+    return result

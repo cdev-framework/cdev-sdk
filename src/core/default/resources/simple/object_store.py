@@ -16,6 +16,7 @@ from core.constructs.resource import (
 from core.constructs.cloud_output import Cloud_Output_Str, OutputType
 from core.constructs.types import cdev_str_model
 from core.utils import hasher
+from core.constructs.models import frozendict
 
 from core.default.resources.simple.iam import Permission
 
@@ -172,11 +173,10 @@ class Bucket(PermissionsAvailableMixin, TaggableMixin, Resource):
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
             tags (Dict[str, str]): A set of tags to add to the resource
         """
-        super().__init__(cdev_name, RUUID, nonce)
+        super().__init__(cdev_name, RUUID, nonce, tags=tags)
 
         self.available_permissions: BucketPermissions = BucketPermissions(cdev_name)
         self.output = BucketOutput(cdev_name)
-        self._tags = tags
 
     def create_event_trigger(self, event_type: Bucket_Event_Type) -> BucketEvent:
         """Create Construct of event that other resources can respond to"""
@@ -198,4 +198,5 @@ class Bucket(PermissionsAvailableMixin, TaggableMixin, Resource):
             ruuid=self.ruuid,
             name=self.name,
             hash=self.hash,
+            tags=frozendict(self.tags)
         )

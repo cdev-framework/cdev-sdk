@@ -4,7 +4,7 @@
 from enum import Enum
 from typing import Any, Dict, FrozenSet, List, Optional, Union
 
-from core.constructs.models import ImmutableModel
+from core.constructs.models import ImmutableModel, frozendict
 from core.constructs.cloud_output import (
     Cloud_Output_Mapping,
     Cloud_Output_Str,
@@ -287,7 +287,7 @@ class simple_api_model(TaggableResourceModel):
         super().__init__(**data)
 
 
-class Api(Resource, TaggableMixin):
+class Api(TaggableMixin, Resource):
     @update_hash
     def __init__(
         self,
@@ -323,11 +323,10 @@ class Api(Resource, TaggableMixin):
         <a href="https://aws.amazon.com/api-gateway/pricing/"> Details on pricing</a>
         """
 
-        super().__init__(cdev_name, RUUID, nonce)
+        super().__init__(cdev_name, RUUID, nonce, tags=tags)
 
         self._allow_cors = allow_cors
         self._routes: List[Route] = []
-        self._tags = tags
 
         self._authorizers: List[Authorizer] = authorizers
 
@@ -411,4 +410,5 @@ class Api(Resource, TaggableMixin):
             routes=frozenset([x.render() for x in routes]),
             allow_cors=self.allow_cors,
             authorizers=frozenset([x.render() for x in self._authorizers]),
+            tags=frozendict(self.tags)
         )
