@@ -181,7 +181,8 @@ CDEV_COMMANDS = [
             {
                 "dest": "--template",
                 "type": str,
-                "help": "Name of the template for the new project",
+                "default": "quick-start",
+                "help": "Name of the template for the new project. Defaults to 'quick-start'.",
             },
         ],
     },
@@ -267,7 +268,7 @@ CDEV_COMMANDS = [
                 "action": "store_true",
                 "help": "by default we ask for confirmation before deploying the resources. Turn this on and perform deployments w/o requiring confirmation",
             },
-        ]
+        ],
     },
     {
         "name": "destroy",
