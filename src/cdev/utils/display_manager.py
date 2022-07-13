@@ -193,6 +193,55 @@ class SelectionPage(Page):
         raise NotImplementedError
 
 
+class SimpleSelectionListPage(Page):
+    def __init__(self, options: List[str]):
+        super().__init__()
+        self.data = options
+        self._selected_item_index = 0
+        self._key_strokes_mappings = DEFAULT_KEY_BINDINGS
+        self._update_selection()
+
+    def blocking_selection_process(self) -> str:
+        with Live(self.base_layout, auto_refresh=False) as live:
+
+            while True:
+                next_char = _blocking_get_keystroke(self._key_strokes_mappings)
+
+                if next_char == KEY_ACTIONS.DOWN:
+                    self._move_selection(1)
+                    live.update(self.base_layout, refresh=True)
+
+                if next_char == KEY_ACTIONS.UP:
+                    self._move_selection(-1)
+                    live.update(self.base_layout, refresh=True)
+
+                if next_char == KEY_ACTIONS.ENTER:
+                    self.base_layout = ""
+                    return self.data[self._selected_item_index]
+
+    def _move_selection(self, increment: int):
+        _tmp_index = (
+            0
+            if self._selected_item_index is None
+            else increment + self._selected_item_index
+        )
+
+        if _tmp_index >= len(self.data) or _tmp_index < 0:
+            return
+
+        self._selected_item_index = _tmp_index
+        self._update_selection()
+
+    def _update_selection(self):
+        _options_list = "\n".join(
+            [
+                x if i != self._selected_item_index else f"> {x}"
+                for i, x in enumerate(self.data)
+            ]
+        )
+        self.base_layout = Text.from_markup(_options_list)
+
+
 class SingleItemSelectionPage(SelectionPage):
     def __init__(self, header: str, selection_data: single_item_selection_data) -> None:
         super().__init__()
