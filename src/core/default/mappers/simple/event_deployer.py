@@ -105,7 +105,20 @@ def _handle_deleting_api_event(event: dict, function_cloud_id: str) -> bool:
     # Then delete the actual integration cloud obj
     update_info = {"ApiId": api_id, "RouteId": route_id, "Target": ""}
 
-    aws_client.run_client_function("apigatewayv2", "update_route", update_info)
+    # Stop Gap Solution
+    # When an event is being removed, it can be because of two reasons:
+    # 1. The event was removed, but the route still exists
+    # 2. The event and route were removed.
+    # To accommodate both situations, we need to try to the update the route to remove
+    # the integration, but not fail completely when if the route has already been deleted.
+
+    # We are catch the base exception because to catch a direct exception from boto3, we need to
+    # have access to the client to boto3.
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/error-handling.html#catching-exceptions-when-using-a-resource-client
+    try:
+        aws_client.run_client_function("apigatewayv2", "update_route", update_info)
+    except Exception:
+        pass
 
     aws_client.run_client_function(
         "apigatewayv2",
