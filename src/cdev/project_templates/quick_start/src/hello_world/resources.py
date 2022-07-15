@@ -12,7 +12,11 @@ DemoApi = Api("demoapi")
 hello_route = DemoApi.route("/hello_world", "GET")
 
 
-@simple_function_annotation("hello_world_function", events=[hello_route.event()], tags={"environment": "dev", "sample_tag": "hello"})
+@simple_function_annotation(
+    "hello_world_function",
+    events=[hello_route.event()],
+    tags={"sample_tag": "sample_value"},
+)
 def hello_world(event, context):
     print("Hello from inside your Function!")
 
