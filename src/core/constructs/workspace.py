@@ -716,18 +716,23 @@ class Workspace:
                     raise e
 
                 try:
+                    # Deploy the changes to the cloud using the defined mapper for the resource.
                     log.debug("evaluated information %s", _evaluated_change)
                     output_task.update(advance=5, comment="Deploying on Cloud :cloud:")
                     mapper = self.get_mapper_namespace().get(ruuid)
-                    cloud_output = mapper.deploy_resource(
-                        transaction_token,
-                        namespace_token,
-                        _evaluated_change,
-                        previous_output,
-                        output_task,
-                    )
-                    output_task.update(
-                        advance=3, comment="Completing transaction with Backend"
+
+                    # If the resource change type is a renaming of the resource, then it should not call to the mapper
+                    cloud_output = (
+                        mapper.deploy_resource(
+                            transaction_token,
+                            namespace_token,
+                            _evaluated_change,
+                            previous_output,
+                            output_task,
+                        )
+                        if _evaluated_change.action_type
+                        != Resource_Change_Type.UPDATE_NAME
+                        else previous_output
                     )
 
                 except Exception as e:
@@ -750,6 +755,10 @@ class Workspace:
                         cloud_output[
                             "cloud_region"
                         ] = Workspace.instance().settings.AWS_REGION
+
+                    output_task.update(
+                        advance=3, comment="Completing transaction with Backend"
+                    )
 
                     self.get_backend().complete_resource_change(
                         self.get_resource_state_uuid(),
