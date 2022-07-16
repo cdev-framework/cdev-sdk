@@ -1273,6 +1273,14 @@ def _create_differences(
 
                 resource_diffs.extend(tmp_resource_diff)
 
+                component_diffs.append(
+                    Component_Difference(
+                        Component_Change_Type.UPDATE_IDENTITY,
+                        previous_name=previous_component.name,
+                        new_name=component.name,
+                    )
+                )
+
                 # POP the seen previous component as we go so only remaining resources will be deletes
                 previous_components_to_remove.remove(previous_component)
 
