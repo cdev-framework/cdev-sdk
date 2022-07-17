@@ -84,7 +84,7 @@ class simple_static_site_model(TaggableResourceModel):
     """Arn of a SSL certificate to use with the site."""
 
 
-class StaticSite(Resource, TaggableMixin):
+class StaticSite(TaggableMixin, Resource):
     """A Static Site that can be used to serve static web content."""
 
     @update_hash
@@ -216,5 +216,5 @@ class StaticSite(Resource, TaggableMixin):
             content_folder=self.content_folder,
             domain_name=self.domain_name,
             ssl_certificate_arn=self.ssl_certificate_arn,
-            tags=frozendict(self.tags)
+            tags=frozendict(self.tags),
         )
