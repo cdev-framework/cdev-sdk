@@ -1,16 +1,18 @@
 """Set of constructs for for making a website to serve Static Web Content
 
 """
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 
 from core.constructs.resource import (
     Resource,
-    ResourceModel,
+    TaggableResourceModel,
+    TaggableMixin,
     update_hash,
     ResourceOutputs,
 )
 from core.constructs.cloud_output import Cloud_Output_Str
 from core.utils import hasher
+from core.constructs.models import frozendict
 
 RUUID = "cdev::simple::staticsite"
 
@@ -67,7 +69,7 @@ class StaticSiteOutput(ResourceOutputs):
 ###############
 ##### Static Site
 ###############
-class simple_static_site_model(ResourceModel):
+class simple_static_site_model(TaggableResourceModel):
     index_document: str
     """The suffix for documents when request are made for a folder. ex: site.com/dir1/ will look for /dir1/<index_document>"""
     error_document: str
@@ -82,7 +84,7 @@ class simple_static_site_model(ResourceModel):
     """Arn of a SSL certificate to use with the site."""
 
 
-class StaticSite(Resource):
+class StaticSite(TaggableMixin, Resource):
     """A Static Site that can be used to serve static web content."""
 
     @update_hash
@@ -96,6 +98,7 @@ class StaticSite(Resource):
         domain_name: str = None,
         ssl_certificate_arn: str = None,
         nonce: str = "",
+        tags: Dict[str, str] = None,
     ) -> None:
         """Create a static hosted site.
 
@@ -108,8 +111,9 @@ class StaticSite(Resource):
             domain_name (str): The domain name to associate with this site. This will set up the site to be aliased via DNS to the given domain name.
             ssl_certificate_arn (str): Arn of a SSL certificate to use with the site.
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+            tags (Dict[str, str]): A set of tags to add to the resource
         """
-        super().__init__(cdev_name, RUUID, nonce)
+        super().__init__(cdev_name, RUUID, nonce, tags=tags)
 
         self._index_document = index_document
         self._error_document = error_document
@@ -191,6 +195,7 @@ class StaticSite(Resource):
                 self.domain_name,
                 self.ssl_certificate_arn,
                 self.nonce,
+                self._get_tags_hash(),
             ]
         )
 
@@ -211,4 +216,5 @@ class StaticSite(Resource):
             content_folder=self.content_folder,
             domain_name=self.domain_name,
             ssl_certificate_arn=self.ssl_certificate_arn,
+            tags=frozendict(self.tags),
         )

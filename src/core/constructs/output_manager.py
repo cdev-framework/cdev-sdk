@@ -5,7 +5,8 @@
 """
 
 from rich.console import Console
-from typing import Any, List, Tuple, Union
+from rich.traceback import Traceback
+from typing import Any, List, Optional, Tuple, Union
 
 from rich.progress import Progress, TaskID
 
@@ -20,18 +21,78 @@ from core.constructs.resource import (
     Resource_Reference_Change_Type,
     Resource_Reference_Difference,
 )
+from core.utils.exceptions import cdev_core_error, wrapped_base_exception
+
+
+class CdevCoreConsole(Console):
+    def print_exception(
+        self,
+        *,
+        exception: BaseException,
+        width: Optional[int] = 100,
+        extra_lines: int = 3,
+        theme: Optional[str] = None,
+        word_wrap: bool = False,
+        show_locals: bool = False,
+    ) -> None:
+        """Prints a rich render of the last exception and traceback.
+
+        Args:
+            width (Optional[int], optional): Number of characters used to render code. Defaults to 88.
+            extra_lines (int, optional): Additional lines of code to render. Defaults to 3.
+            theme (str, optional): Override pygments theme used in traceback
+            word_wrap (bool, optional): Enable word wrapping of long lines. Defaults to False.
+            show_locals (bool, optional): Enable display of local variables. Defaults to False.
+        """
+
+        _trace = Traceback.extract(
+            type(exception), exception, exception.__traceback__, show_locals=show_locals
+        )
+        traceback = Traceback(
+            trace=_trace,
+            width=width,
+            extra_lines=extra_lines,
+            theme=theme,
+            word_wrap=word_wrap,
+            show_locals=show_locals,
+        )
+        self.print(traceback)
 
 
 class OutputManager:
-    def __init__(self, console: Console = None, progress: Progress = None) -> None:
+    def __init__(
+        self, console: CdevCoreConsole = None, progress: Progress = None
+    ) -> None:
         """Initialize the Output Manager
 
         Args:
             console (Console, optional): Defaults to None.
             progress (Progress, optional): Defaults to None.
         """
-        self._console = console or Console()
+        self._console = console or CdevCoreConsole()
         self._progress = progress
+
+    def print(self, msg: str) -> None:
+        self._console.print(msg)
+
+    def print_exception(self, exception: cdev_core_error):
+        # self._console.print("TRACEBACK")
+        if isinstance(exception, wrapped_base_exception):
+            self._console.print_exception(exception=exception.original_exception)
+        else:
+            self._console.print_exception(exception=exception)
+        self._console.print("")
+
+        self._console.print(f"EXCEPTION: ")
+        self._console.print(f"   {exception.error_message}")
+        self._console.print("")
+
+        self._console.print("GENERAL HELP MESSAGE:")
+        self._console.print(exception.help_message)
+        self._console.print("")
+
+        self._console.print("RESOURCES THAT CAN HELP:")
+        self._console.print(exception.help_resources)
 
     def print_header(self, resource_state_uuid: str) -> None:
         """Print the header of the output
@@ -189,7 +250,6 @@ class OutputManager:
                 f"Trying to deploy node {node} but it is not a correct type "
             )
 
-
     def _print_component_resources(self, component: ComponentModel) -> None:
         """Print the resources in a component
 
@@ -204,7 +264,6 @@ class OutputManager:
             self._console.print(
                 f"        [bold blue]{resource.name} ({resource.ruuid})[/bold blue]"
             )
-
 
     def _print_component_references(self, component: ComponentModel) -> None:
         """Print the references in a component
@@ -355,7 +414,7 @@ class OutputTask:
         *args,
         total: float = None,
         completed: float = None,
-        advance: None = None,
+        advance: float = None,
         description: str = None,
         visible: bool = None,
         refresh: bool = False,

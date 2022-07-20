@@ -2,23 +2,24 @@
 
 """
 from argparse import ArgumentParser
-from imp import source_from_cache
 import boto3
 import os
 import mimetypes
 
-from core.constructs.commands import BaseCommand, OutputWrapper
-from core.default.resources.simple.object_store import Bucket, bucket_model
+from core.constructs.commands import BaseCommand
 
+from core.default.commands import utils as command_utils
 
-from . import utils
+from . import utils as bucket_utils
+
+RUUID = "cdev::simple::bucket"
 
 
 class cp(BaseCommand):
     help = """
     Command to mirror s3 `cp` command.
-
     """
+
     def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "source",
@@ -44,9 +45,9 @@ class cp(BaseCommand):
 
         is_recursive = kwargs.get("recursive")
 
-        if utils.is_valid_remote(source_raw):
+        if bucket_utils.is_valid_remote(source_raw):
             is_source_remote = True
-            source = utils.parse_remote_location(source_raw)
+            source = bucket_utils.parse_remote_location(source_raw)
 
         elif os.path.isfile(source_raw):
             is_source_remote = False
@@ -61,9 +62,9 @@ class cp(BaseCommand):
                 f"Source {source_raw} is neither a valid location on the file system or a valid remote location"
             )
 
-        if utils.is_valid_remote(destination_raw):
+        if bucket_utils.is_valid_remote(destination_raw):
             is_destination_remote = True
-            destination = utils.parse_remote_location(destination_raw)
+            destination = bucket_utils.parse_remote_location(destination_raw)
 
         elif os.path.isdir(destination_raw):
             is_destination_remote = False
@@ -88,8 +89,8 @@ class cp(BaseCommand):
         if is_destination_remote and not is_source_remote:
             # Remote destination and local file system.
             # Copying up
-            cloud_output = utils.get_cloud_output_from_cdev_name(
-                destination.component_name, destination.cdev_bucket_name
+            cloud_output = command_utils.get_cloud_output_from_cdev_name(
+                destination.component_name, RUUID, destination.cdev_bucket_name
             )
             bucket_name = cloud_output.get("bucket_name")
 
@@ -104,40 +105,40 @@ class cp(BaseCommand):
             if mimetype is None:
                 raise Exception("Failed to guess mimetype")
 
-            self.stdout.write(f"Upload {source_raw} ->  {destination_raw}")
+            self.output.print(f"Upload {source_raw} ->  {destination_raw}")
             bucket.upload_file(source, key_name, ExtraArgs={"ContentType": mimetype})
 
         if not is_destination_remote and is_source_remote:
             # Local destination and remote source.
             # Pulling down
 
-            cloud_output = utils.get_cloud_output_from_cdev_name(
-                source.component_name, source.cdev_bucket_name
+            cloud_output = command_utils.get_cloud_output_from_cdev_name(
+                source.component_name, RUUID, source.cdev_bucket_name
             )
             bucket_name = cloud_output.get("bucket_name")
 
             bucket = s3.Bucket(bucket_name)
 
-            self.stdout.write(f"Download {source_raw} -> {destination_raw} ")
+            self.output.print(f"Download {source_raw} -> {destination_raw} ")
             bucket.download_file(source.path, destination)
 
         if is_destination_remote and is_source_remote:
             # Local destination and remote source.
             # Pulling down
 
-            source_cloud_output = utils.get_cloud_output_from_cdev_name(
-                source.component_name, source.cdev_bucket_name
+            source_cloud_output = command_utils.get_cloud_output_from_cdev_name(
+                source.component_name, RUUID, source.cdev_bucket_name
             )
             source_bucket_name = source_cloud_output.get("bucket_name")
-            destination_cloud_output = utils.get_cloud_output_from_cdev_name(
-                destination.component_name, destination.cdev_bucket_name
+            destination_cloud_output = command_utils.get_cloud_output_from_cdev_name(
+                destination.component_name, RUUID, destination.cdev_bucket_name
             )
             destination_bucket_name = destination_cloud_output.get("bucket_name")
             destination_bucket = s3.Bucket(destination_bucket_name)
 
             destination_key = destination.path if destination.path else source.path
 
-            self.stdout.write(f"Copy {source_raw} -> {destination_raw}")
+            self.output.print(f"Copy {source_raw} -> {destination_raw}")
             destination_bucket.copy(
                 {"Bucket": source_bucket_name, "Key": source.path}, destination_key
             )

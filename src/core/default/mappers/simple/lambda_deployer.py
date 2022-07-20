@@ -93,6 +93,10 @@ def _create_simple_lambda(
         role_name, resource.permissions, AssumeRolePolicyDocumentJSON
     )
 
+    if role_arn is None:
+        output_task.update(comment=f"Failed to create role {role_name} for lambda function {resource.name}")
+        raise Exception("DEPLOY FAILED")
+
     output_task.update(comment=f"Create role for lambda function {resource.name}")
 
     final_info["role_id"] = role_arn
