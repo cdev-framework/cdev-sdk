@@ -94,7 +94,9 @@ def _create_simple_lambda(
     )
 
     if role_arn is None:
-        output_task.update(comment=f"Failed to create role {role_name} for lambda function {resource.name}")
+        output_task.update(
+            comment=f"Failed to create role {role_name} for lambda function {resource.name}"
+        )
         raise Exception("DEPLOY FAILED")
 
     output_task.update(comment=f"Create role for lambda function {resource.name}")
@@ -194,14 +196,15 @@ def _remove_simple_lambda(
             x.get("hash"): x for x in [dict(y) for y in previous_resource.events]
         }
 
-        for event_id, event_output in previous_output.get("events").items():
-            originating_resource_type = event_hashes_to_events.get(event_id).get(
-                "originating_resource_type"
-            )
+        if previous_output.get("events"):
+            for event_id, event_output in previous_output.get("events").items():
+                originating_resource_type = event_hashes_to_events.get(event_id).get(
+                    "originating_resource_type"
+                )
 
-            EVENT_TO_HANDLERS.get(simple_xlambda.RUUID).get(
-                originating_resource_type
-            ).get("REMOVE")(event_output, cloud_id)
+                EVENT_TO_HANDLERS.get(simple_xlambda.RUUID).get(
+                    originating_resource_type
+                ).get("REMOVE")(event_output, cloud_id)
 
     output_task.update(comment=f"Deleting function resource for {cloud_id}")
 
