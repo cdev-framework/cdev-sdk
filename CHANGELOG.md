@@ -8,10 +8,11 @@ All release will have a corresponding git tag.
 
 ## [Unreleased]
 ### Added
+- Update the number of buckets in initialization selection tool from 10 to 25
 
 ### Fixed
 
-## [0.0.8] - 2022-06-20
+## [0.0.9] - 2022-06-20
 ### Added
 - Add support for Serverless Function Resource to preserve original callable object
 - Add `pre-commit` to the code base to be used for styling
