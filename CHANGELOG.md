@@ -9,6 +9,7 @@ All release will have a corresponding git tag.
 ## [Unreleased]
 ### Added
 - Update the number of buckets in initialization selection tool from 10 to 25
+- Add `__init__.py` file to the twilio quick start project
 
 ### Fixed
 
