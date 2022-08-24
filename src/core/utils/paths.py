@@ -26,6 +26,8 @@ This is a important part to improve the DX of the working with library.
 """
 
 import os
+from typing import Union
+
 from pydantic import DirectoryPath
 from pydantic.types import FilePath
 
@@ -94,26 +96,26 @@ def get_full_path_from_intermediate_base(relative_path: str) -> FilePath:
 
 
 def is_in_workspace(full_path: str) -> bool:
-    """Check if a given file is within the workspace filespace
+    """Check if a given file is within the workspace file space
 
     Args:
-        full_path (str): [description]
+        full_path (str): The full path to check
 
     Returns:
-        bool: [description]
+        bool
     """
     base_path = Workspace.instance().settings.BASE_PATH
     return os.path.commonprefix([full_path, base_path]) == base_path
 
 
 def is_in_intermediate(full_path: str) -> bool:
-    """Check if a given file is within the intermediate filespace
+    """Check if a given file is within the intermediate file space
 
     Args:
-        full_path (str): [description]
+        full_path (str): The full path to check
 
     Returns:
-        bool: [description]
+        bool
     """
     intermediate_path = Workspace.instance().settings.INTERMEDIATE_FOLDER_LOCATION
     t = os.path.commonprefix([full_path, intermediate_path])
@@ -140,9 +142,21 @@ def get_intermediate_path() -> DirectoryPath:
     return intermediate_path
 
 
+def create_path_from_workspace(desired_path: DirectoryPath) -> None:
+
+    if not is_in_workspace(desired_path):
+        raise Exception
+
+    if os.path.isdir(desired_path):
+        return
+
+    relative_parts = get_relative_to_workspace_path(desired_path).split("/")
+
+    create_path(get_workspace_path(), relative_parts)
+
+
 def create_path(startingpath, fullpath) -> DirectoryPath:
     """This functions takes a starting path and list of child dir and makes them all
-
 
     Example
 
@@ -169,3 +183,31 @@ def create_path(startingpath, fullpath) -> DirectoryPath:
         intermediate_path = os.path.join(intermediate_path, p)
 
     return intermediate_path
+
+
+def touch_file(file_path: Union[FilePath, str]) -> None:
+    """Helper function to touch a file
+
+    Args:
+        file_path (FilePath)
+
+    Raises:
+        Exception: Directory does not exist
+    """
+    if not os.path.isdir(os.path.dirname(file_path)):
+        raise Exception(
+            f"Can not create {file_path} because {os.path.dirname(file_path)} is not a directory."
+        )
+
+    with open(file_path, "a"):
+        pass
+
+
+def mkdir(directory_path: Union[DirectoryPath, str]) -> None:
+    """Create a directory if it does not already exist.
+
+    Args:
+        directory_path (DirectoryPath)
+    """
+    if not os.path.isdir(directory_path):
+        os.mkdir(directory_path)

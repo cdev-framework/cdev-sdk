@@ -93,6 +93,12 @@ def _create_simple_lambda(
         role_name, resource.permissions, AssumeRolePolicyDocumentJSON
     )
 
+    if role_arn is None:
+        output_task.update(
+            comment=f"Failed to create role {role_name} for lambda function {resource.name}"
+        )
+        raise Exception("DEPLOY FAILED")
+
     output_task.update(comment=f"Create role for lambda function {resource.name}")
 
     final_info["role_id"] = role_arn
@@ -125,6 +131,9 @@ def _create_simple_lambda(
         "Architectures": [arch],
         "Role": role_arn,
         "Handler": resource.configuration.handler,
+        "MemorySize": resource.configuration.memory_size,
+        "EphemeralStorage": {"Size": resource.configuration.storage},
+        "Timeout": resource.configuration.timeout,
         "Code": {"S3Bucket": artifact_bucket, "S3Key": keyname},
         "Environment": {"Variables": resource.configuration.environment_variables._d}
         if resource.configuration.environment_variables
@@ -187,14 +196,15 @@ def _remove_simple_lambda(
             x.get("hash"): x for x in [dict(y) for y in previous_resource.events]
         }
 
-        for event_id, event_output in previous_output.get("events").items():
-            originating_resource_type = event_hashes_to_events.get(event_id).get(
-                "originating_resource_type"
-            )
+        if previous_output.get("events"):
+            for event_id, event_output in previous_output.get("events").items():
+                originating_resource_type = event_hashes_to_events.get(event_id).get(
+                    "originating_resource_type"
+                )
 
-            EVENT_TO_HANDLERS.get(simple_xlambda.RUUID).get(
-                originating_resource_type
-            ).get("REMOVE")(event_output, cloud_id)
+                EVENT_TO_HANDLERS.get(simple_xlambda.RUUID).get(
+                    originating_resource_type
+                ).get("REMOVE")(event_output, cloud_id)
 
     output_task.update(comment=f"Deleting function resource for {cloud_id}")
 
@@ -322,6 +332,9 @@ def __update_configuration_basic(
     else:
         log.debug("Simple lambda, basic configuration modified")
         updated_configuration["Handler"] = new_configuration.handler
+        updated_configuration["MemorySize"] = new_configuration.memory_size
+        updated_configuration["Timeout"] = new_configuration.timeout
+        updated_configuration["EphemeralStorage"] = {"Size": new_configuration.storage}
 
 
 def __update_configuration_environment_variables(

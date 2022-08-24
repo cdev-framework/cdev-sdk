@@ -3,31 +3,66 @@
 [detailed description]
 
 """
-import importlib
+from dataclasses import dataclass, field
 import inspect
 import os
-import sys
 from typing import List, Tuple, Union
 
 from core.constructs.commands import BaseCommand, BaseCommandContainer
+from core.constructs.output_manager import OutputManager
+
 from core.utils.module_loader import import_module
+from core.utils.exceptions import cdev_core_error
+
+###############################
+##### Exceptions
+###############################
 
 
-class AmbiguousCommandName(Exception):
-    pass
+@dataclass
+class CommandFinderError(cdev_core_error):
+    help_message: str = ""
+    help_resources: List[str] = field(default_factory=lambda: [])
 
 
-class NoCommandFound(Exception):
-    pass
+@dataclass
+class AmbiguousCommandName(CommandFinderError):
+    help_message: str = ""
+    help_resources: List[str] = field(default_factory=lambda: [])
 
 
-class TooManyCommandClasses(Exception):
-    pass
+@dataclass
+class NoCommandFound(CommandFinderError):
+    help_message: str = "   Make sure to check the spelling of the provided command and that the expected search path is being provided."
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+@dataclass
+class TooManyCommandClasses(CommandFinderError):
+    help_message: str = "   You should only have one class that derives from BaseCommand in a given file."
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+###############################
+##### Api
+###############################
 
 
 def find_specified_command(
-    command_list: List[str], all_search_locations_list: List[str]
+    command_list: List[str], all_search_locations_list: List[str], output: OutputManager
 ) -> Tuple[Union[BaseCommand, BaseCommandContainer], str, str, bool]:
+    """Search the provided locations for the given command.
+
+    Args:
+        command_list (List[str]): _description_
+        all_search_locations_list (List[str]): _description_
+
+    Raises:
+        NoCommandFound
+
+    Returns:
+        Tuple[Union[BaseCommand, BaseCommandContainer], str, str, bool]: _description_
+    """
 
     command_list_copy = command_list.copy()
 
@@ -46,36 +81,37 @@ def find_specified_command(
         full_command_module_name = f"{search_location}.{'.'.join(command_list_copy)}"
 
         if is_command:
-            try:
-                initialized_object = initialize_command_module(full_command_module_name)
-            except Exception as e:
-                print(e)
-                raise Exception(
-                    f"ERROR Initializing Command Module at {full_command_module_name}"
-                )
+            initialized_object = initialize_command_module(
+                full_command_module_name, output
+            )
 
         else:
-            try:
-                initialized_object = initialize_command_container_module(
-                    full_command_module_name
-                )
-            except Exception as e:
-                print(e)
-                raise Exception(
-                    f"ERROR Initializing Command Container Module at {search_location}.{command_list}"
-                )
+            initialized_object = initialize_command_container_module(
+                full_command_module_name, output
+            )
 
         final_path_name = f"{search_location}.{'.'.join(command_list_copy[:-1])}"
         command_name = command_list_copy[-1]
         return initialized_object, final_path_name, command_name, is_command
 
-    # If we loop through all the search locations and no commands were found then throw exception
     raise NoCommandFound(
-        f"No Command or Commands Container found for {command_list_copy}"
+        error_message=f"No Command or Commands Container found for `{'.'.join(command_list_copy)}` in the given list of search locations ({all_search_locations_list})"
     )
 
 
-def initialize_command_module(mod_path: str) -> BaseCommand:
+def initialize_command_module(mod_path: str, output: OutputManager) -> BaseCommand:
+    """Given a path to a command, initialize the given command.
+
+    Args:
+        mod_path (str): path to the command module
+
+    Raises:
+        TooManyCommandClasses: The module contained more than one command
+        NoCommandFound: No command was found in the module
+
+    Returns:
+        BaseCommand
+    """
 
     mod = import_module(mod_path)
     # Check for the class that derives from BaseCommand... if there is more then one class then throw error (note this is a current implementation detail)
@@ -90,20 +126,38 @@ def initialize_command_module(mod_path: str) -> BaseCommand:
             and not (potential_obj == BaseCommand)
         ):
             if _has_found_a_valid_command:
-                raise TooManyCommandClasses
+                raise TooManyCommandClasses(
+                    error_message=f"Too many commands that derive from BaseCommand in the module {mod_path}. There should only be one class that derives from BaseCommand."
+                )
 
             _has_found_a_valid_command = True
 
             # initialize an instance of the class
-            initialized_obj = potential_obj()
+            initialized_obj = potential_obj(output=output)
 
     if not initialized_obj:
-        raise NoCommandFound
+        raise NoCommandFound(
+            error_message=f"No class that derive from BaseCommand was found in the module {mod_path}. There should be one class that derives from BaseCommand."
+        )
 
     return initialized_obj
 
 
-def initialize_command_container_module(mod_path: str) -> BaseCommandContainer:
+def initialize_command_container_module(
+    mod_path: str, output: OutputManager
+) -> BaseCommandContainer:
+    """Given a path to a command, initialize the given command container.
+
+    Args:
+        mod_path (str): path to the command module
+
+    Raises:
+        TooManyCommandClasses: The module contained more than one command
+        NoCommandFound: No command was found in the module
+
+    Returns:
+        BaseCommandContainer
+    """
     mod = import_module(mod_path)
 
     # Check for the class that derives from BaseCommandContainer... if there is more then one class then throw error (note this is a current implementation detail)
@@ -119,14 +173,18 @@ def initialize_command_container_module(mod_path: str) -> BaseCommandContainer:
         ):
             if _has_found_a_valid_command_container:
                 # TODO better exception
-                return
+                raise TooManyCommandClasses(
+                    error_message=f"Found too many Classes that derive from BaseCommandContainer in {mod_path}"
+                )
 
             _has_found_a_valid_command_container = True
 
-            initialized_obj = potential_obj()
+            initialized_obj = potential_obj(output=output)
 
     if not initialized_obj:
-        raise NoCommandFound(f"Could not find command Container")
+        raise NoCommandFound(
+            error_message=f"No class that derives from BaseCommandContainer in {mod_path}"
+        )
 
     return initialized_obj
 

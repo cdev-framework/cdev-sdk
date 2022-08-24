@@ -23,7 +23,7 @@ from core.constructs.resource import (
 )
 from core.constructs.cloud_output import OutputType, cloud_output_model
 from core.constructs.components import Component_Change_Type, Component_Difference
-from core.constructs.output_manager import OutputManager, OutputTask
+from core.constructs.output_manager import OutputTask
 from core.constructs.models import frozendict
 
 from core.utils.operations import concatenate
@@ -62,6 +62,14 @@ def find_parents(resource: ResourceModel) -> Tuple[List, List]:
 
 
 def find_cloud_output(obj: dict) -> List[cloud_output_model]:
+    """Given an object representing the cloud output generate all the parent cloud output models
+
+    Args:
+        obj (dict)
+
+    Returns:
+        List[cloud_output_model]
+    """
 
     rv = _recursive_find_output(obj)
 
@@ -89,6 +97,17 @@ def generate_sorted_resources(
         List[Resource_Reference_Difference],
     ]
 ) -> DiGraph:
+    """Given the tuple of all differences, generate a DiGraph representing a topologically valid way of applying the changes.
+
+    Args:
+        differences (Tuple[ List[Component_Difference], List[Resource_Difference], List[Resource_Reference_Difference], ]): _description_
+
+    Raises:
+        Exception
+
+    Returns:
+        DiGraph
+    """
     # nx graphs work on the element level by using the __hash__ of objects added to the graph, so all the elements added to the graph should be a pydantic Model with
     # the 'frozen' feature set
     change_dag = DiGraph()
@@ -161,13 +180,14 @@ def generate_sorted_resources(
             else:
                 change_dag.add_edge(component_ids.get(component_id), resource)
         else:
-            raise Exception(
-                f"There should always be a change in a component for a resource change {resource}"
-            )
+            pass
+            # raise Exception(
+            #    f"There should always be a change in a component for a resource change {resource}"
+            # )
 
         parent_resources, parent_references = (
             find_parents(resource.new_resource)
-            if not resource.action_type == Resource_Change_Type.DELETE
+            if resource.action_type != Resource_Change_Type.DELETE
             else find_parents(resource.previous_resource)
         )
 
@@ -255,12 +275,32 @@ def generate_sorted_resources(
 
 
 def _create_component_id(component_name: str) -> str:
-    # Component Differences will be identified by the key component<deliminator><component_name>
+    """Create the id for a given component
+
+    Component Differences will be identified by the key component<deliminator><component_name>
+
+    Args:
+        component_name (str)
+
+    Returns:
+        str
+    """
     return f"component{deliminator}{component_name}"
 
 
 def _create_resource_id(component_name: str, ruuid: str, name: str) -> str:
-    # Resource Differences will be identified by the key resource<deliminator><ruuid><deliminator><name>
+    """Create id for a given resource
+
+    Resource Differences will be identified by the key resource<deliminator><ruuid><deliminator><name>
+
+    Args:
+        component_name (str): component the resource is in
+        ruuid (str): resource type id
+        name (str): name of the resource
+
+    Returns:
+        str
+    """
     return (
         f"resource{deliminator}{component_name}{deliminator}{ruuid}{deliminator}{name}"
     )
@@ -269,7 +309,19 @@ def _create_resource_id(component_name: str, ruuid: str, name: str) -> str:
 def _create_reference_id(
     originating_component_name: str, component_name: str, ruuid: str, name: str
 ) -> str:
-    # Reference Differences will be identified by the key reference<deliminator><ruuid><deliminator><name>
+    """Create id for a given reference
+
+    Reference Differences will be identified by the key reference<deliminator><ruuid><deliminator><name>
+
+    Args:
+        originating_component_name (str): component original resource resides in
+        component_name (str): component the reference is in
+        ruuid (str): resource type id
+        name (str): name of the reference
+
+    Returns:
+        str: _description_
+    """
     return f"reference{deliminator}{originating_component_name}{deliminator}{component_name}{deliminator}{ruuid}{deliminator}{name}"
 
 
@@ -394,6 +446,18 @@ def _recursively_mark_parent_failure(
     handler: Callable[[NodeView, OutputTask], None] = None,
     pass_through_exceptions: bool = False,
 ) -> None:
+    """Recursively mark all descendent of a failure
+
+    Args:
+        _node_to_state (Dict[NodeView, node_state]): mapping between nodes and final states
+        dag (DiGraph): graph
+        parent_node (NodeView): starting node
+        handler (Callable[[NodeView, OutputTask], None], optional): function to call on children. Defaults to None.
+        pass_through_exceptions (bool, optional): suppress any additional errors. Defaults to False.
+
+    Raises:
+        Exception
+    """
 
     if parent_node not in _node_to_state:
         raise Exception(

@@ -1,7 +1,7 @@
 """Utilities for creating a representation of a desired state of the workspace
 
 """
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from ..constructs.workspace import Workspace, Workspace_State
 from ..constructs.components import Component_Difference
@@ -23,11 +23,21 @@ def execute_frontend(
     workspace: Workspace,
     output: OutputManager,
     previous_component_names: List[str] = None,
-) -> Tuple[
+) -> Optional[Tuple[
     List[Component_Difference],
     List[Resource_Difference],
     List[Resource_Reference_Difference],
-]:
+]]:
+    """Execute the Frontend process to generate the current set of differences between the desired resources and current deployed versions.
+
+    Args:
+        workspace (Workspace): Workspace to execute the process within.
+        output (OutputManager): Output manager for sending messages to the console.
+        previous_component_names (List[str], optional): components to diff against. Defaults to None.
+
+    Returns:
+        Tuple[ List[Component_Difference], List[Resource_Difference], List[Resource_Reference_Difference], ]: _description_
+    """
 
     log.debug("Executing Frontend")
 

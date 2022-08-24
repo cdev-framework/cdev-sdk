@@ -19,6 +19,7 @@ capabilities and limits of this system read out documentation at <link>.
 from enum import Enum
 from typing import (
     Any,
+    Dict,
     List,
     Tuple,
     NewType,
@@ -194,7 +195,6 @@ class Cloud_Output:
         return hasher.hash_list([self._name, self._ruuid, self._key, self._type])
 
 
-
 class Cloud_Output_Dynamic(Cloud_Output):
     """
     Mutable Class that can used during the creation phases to represent a desired cloud output model. Allows the user to define
@@ -227,6 +227,7 @@ class Cloud_Output_Dynamic(Cloud_Output):
             ]
         )
 
+
 ########################
 ##### Types of Output
 ########################
@@ -243,7 +244,11 @@ class Cloud_Output_Bool(Cloud_Output_Dynamic):
     def and_(self, x: bool) -> "Cloud_Output_Bool":
         """And against x
 
-        Returns a Cloud Output Bool on which further operations can be chained.
+        Args:
+            x (bool)
+
+        Returns:
+            Cloud_Output_Bool
         """
         self._operations.append(
             (
@@ -258,7 +263,11 @@ class Cloud_Output_Bool(Cloud_Output_Dynamic):
     def or_(self, x: bool) -> "Cloud_Output_Bool":
         """Or against x
 
-        Returns a Cloud Output Bool on which further operations can be chained.
+        Args:
+            x (bool)
+
+        Returns:
+            Cloud_Output_Bool
         """
         self._operations.append(
             (
@@ -273,7 +282,11 @@ class Cloud_Output_Bool(Cloud_Output_Dynamic):
     def xor_(self, x: bool) -> "Cloud_Output_Bool":
         """Xor against x
 
-        Returns a Cloud Output Bool on which further operations can be chained.
+        Args:
+            x (bool)
+
+        Returns:
+            Cloud_Output_Bool
         """
         self._operations.append(
             (
@@ -286,9 +299,10 @@ class Cloud_Output_Bool(Cloud_Output_Dynamic):
         return self
 
     def not_(self) -> "Cloud_Output_Bool":
-        """Not Current Value
+        """Not against self
 
-        Returns a Cloud Output Bool on which further operations can be chained.
+        Returns:
+            Cloud_Output_Bool
         """
         # Special case because there is not underlying method to call for not so pass this hardcoded
         # value and make sure that the operation interpreter respects this token as the 'not' operator.
@@ -314,7 +328,11 @@ class Cloud_Output_Int(Cloud_Output_Dynamic):
     def add(self, x: int) -> "Cloud_Output_Int":
         """Add x
 
-        Returns a Cloud Output Int on which further operations can be chained.
+        Args:
+            x (int)
+
+        Returns:
+            Cloud_Output_Int
         """
         self._operations.append(
             (
@@ -327,9 +345,13 @@ class Cloud_Output_Int(Cloud_Output_Dynamic):
         return self
 
     def subtract(self, x: int) -> "Cloud_Output_Int":
-        """Substract x
+        """Subtract x
 
-        Returns a Cloud Output Int on which further operations can be chained.
+        Args:
+            x (int)
+
+        Returns:
+            Cloud_Output_Int
         """
         self._operations.append(
             (
@@ -344,7 +366,11 @@ class Cloud_Output_Int(Cloud_Output_Dynamic):
     def multiply(self, x: int) -> "Cloud_Output_Int":
         """Multiply x
 
-        Returns a Cloud Output Int on which further operations can be chained.
+        Args:
+            x (int)
+
+        Returns:
+            Cloud_Output_Int
         """
         self._operations.append(
             (
@@ -359,7 +385,8 @@ class Cloud_Output_Int(Cloud_Output_Dynamic):
     def divide_mod(self, x: int) -> Tuple["Cloud_Output_Int", "Cloud_Output_Int"]:
         """Return the pair (i // x, i % x)
 
-        Returns a Cloud Output Int on which further operations can be chained.
+        Returns:
+            Tuple["Cloud_Output_Int", "Cloud_Output_Int"]
         """
         self._operations.append(
             (
@@ -396,9 +423,8 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def capitalize(self) -> "Cloud_Output_Str":
         """Make the first character have upper case and the rest lower case.
 
-        Append the operation to the Cloud Output Object and return the same Object for
-        any further operations.
-
+        Returns:
+            Cloud_Output_Str
         """
         self._operations.append(
             (
@@ -412,9 +438,8 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def casefold(self) -> "Cloud_Output_Str":
         """Make S suitable for caseless comparisons.
 
-        Append the operation to the Cloud Output Object and return the same Object for
-        any further operations.
-
+        Returns:
+            Cloud_Output_Str
         """
         self._operations.append(
             (
@@ -428,7 +453,12 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def center(self, width: SupportsIndex, fillchar: str = None) -> "Cloud_Output_Str":
         """S centered in a string of length width. Padding is done using the specified fill character (default is a space)
 
-        Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
+        Args:
+            width (SupportsIndex)
+            fillchar (str, optional)
+
+        Returns:
+            Cloud_Output_Str
         """
 
         if fillchar:
@@ -453,10 +483,13 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     ) -> Cloud_Output_Int:
         """The number of non-overlapping occurrences of substring sub in string S[start:end].
 
-        Returns a Cloud Output Int on which further operations can be chained. The created Cloud Output Int
-        will contain all previous operations of the current Cloud Output String that this is being called on.
+        Args:
+            x (str)
+            start (Optional[SupportsIndex], optional): Defaults to None.
+            end (Optional[SupportsIndex], optional): Defaults to None.
 
-        Optional arguments start and end are interpreted as in slice notation.
+        Returns:
+            Cloud_Output_Int
         """
 
         if start and end:
@@ -492,12 +525,17 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     ) -> Cloud_Output_Bool:
         """Return True if S ends with the specified suffix, False otherwise.
 
-        Returns a Cloud Output Boolean on which further operations can be chained. The created Cloud Output Boolean
-        will contain all previous operations of the current Cloud Output String that this is being called on.
-
         With optional start, test S beginning at that position.
         With optional end, stop comparing S at that position.
         suffix can also be a tuple of strings to try.
+
+        Args:
+            suffix (Union[str, Tuple[str, ...]]):
+            start (Optional[SupportsIndex], optional): Defaults to None.
+            end (Optional[SupportsIndex], optional): Defaults to None.
+
+        Returns:
+            Cloud_Output_Bool
         """
 
         args = []
@@ -528,9 +566,13 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def expandtabs(self, tabsize=8) -> "Cloud_Output_Str":
         """S where all tab characters are expanded using spaces.
 
-        Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
-
         If tabsize is not given, a tab size of 8 characters is assumed.
+
+        Args:
+            tabsize (int, optional): Defaults to 8.
+
+        Returns:
+            Cloud_Output_Str
         """
         self._operations.append(
             (
@@ -547,13 +589,17 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
         start: Optional[SupportsIndex] = None,
         end: Optional[SupportsIndex] = None,
     ) -> Cloud_Output_Int:
-        """
-        Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
-
-        Returns a Cloud Output Int on which further operations can be chained. The created Cloud Output Int
-        will contain all previous operations of the current Cloud Output String that this is being called on.
+        """Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
 
         Optional arguments start and end are interpreted as in slice notation.
+
+        Args:
+            sub (str)
+            start (Optional[SupportsIndex], optional): Defaults to None.
+            end (Optional[SupportsIndex], optional): Defaults to None.
+
+        Returns:
+            Cloud_Output_Int
         """
 
         args = [sub]
@@ -581,9 +627,10 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def format(self, *args, **kwargs) -> "Cloud_Output_Str":
         """Format S, using substitutions from args and kwargs.
 
-        Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
-
         The substitutions are identified by braces ('{' and '}').
+
+        Returns:
+            Cloud_Output_Str
         """
         self._operations.append(
             (
@@ -594,11 +641,16 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
         )
         return self
 
-    def format_map(self, mapping) -> "Cloud_Output_Str":
+    def format_map(self, mapping: Dict) -> "Cloud_Output_Str":
         """Format S, using substitutions from mapping.
+
         The substitutions are identified by braces ('{' and '}').
 
-        Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
+        Args:
+            mapping (Dict)
+
+        Returns:
+            Cloud_Output_Str
         """
         self._operations.append(
             (
@@ -617,12 +669,17 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     ) -> Cloud_Output_Int:
         """Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
 
-        Returns a Cloud Output Int on which further operations can be chained. The created Cloud Output Int
-        will contain all previous operations of the current Cloud Output String that this is being called on.
-
         Optional arguments start and end are interpreted as in slice notation.
 
-        Raises ValueError when the substring is not found.
+        When evaluating, raises ValueError if the substring is not found.
+
+        Args:
+            sub (str)
+            start (Optional[SupportsIndex], optional): Defaults to None.
+            end (Optional[SupportsIndex], optional): Defaults to None.
+
+        Returns:
+            Cloud_Output_Int
         """
 
         args = [sub]
@@ -650,8 +707,8 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def isalnum(self) -> Cloud_Output_Bool:
         """Return True if all characters in S are alphanumeric and there is at least one character in S, False otherwise.
 
-        Returns a Cloud Output Boolean on which further operations can be chained. The created Cloud Output Boolean
-        will contain all previous operations of the current Cloud Output String that this is being called on.
+        Returns:
+            Cloud_Output_Bool
         """
         self._operations.append(
             (
@@ -670,8 +727,8 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def isalpha(self) -> Cloud_Output_Bool:
         """Return True if all characters in S are alphabetic and there is at least one character in S, False otherwise.
 
-        Returns a Cloud Output Boolean on which further operations can be chained. The created Cloud Output Boolean
-        will contain all previous operations of the current Cloud Output String that this is being called on.
+        Returns:
+            Cloud_Output_Bool
         """
         self._operations.append(
             (
@@ -690,8 +747,8 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def isdecimal(self) -> Cloud_Output_Bool:
         """Return True if there are only decimal characters in S, False otherwise.
 
-        Returns a Cloud Output Boolean on which further operations can be chained. The created Cloud Output Boolean
-        will contain all previous operations of the current Cloud Output String that this is being called on.
+        Returns:
+            Cloud_Output_Bool
         """
         self._operations.append(
             (
@@ -710,8 +767,8 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def isdigit(self) -> Cloud_Output_Bool:
         """Return True if all characters in S are digits and there is at least one character in S, False otherwise.
 
-        Returns a Cloud Output Boolean on which further operations can be chained. The created Cloud Output Boolean
-        will contain all previous operations of the current Cloud Output String that this is being called on.
+        Returns:
+            Cloud_Output_Bool
         """
         self._operations.append(
             (
@@ -730,12 +787,11 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def isidentifier(self) -> Cloud_Output_Bool:
         """Return True if S is a valid identifier according to the language definition.
 
-        Returns a Cloud Output Boolean on which further operations can be chained. The created Cloud Output Boolean
-        will contain all previous operations of the current Cloud Output String that this is being called on.
-
         Use keyword.iskeyword() to test for reserved identifiers
         such as "def" and "class".
 
+        Returns:
+            Cloud_Output_Bool
         """
         self._operations.append(
             (
@@ -754,8 +810,9 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def islower(self) -> Cloud_Output_Bool:
         """Return True if all cased characters in S are lowercase and there is at least one cased character in S, False otherwise.
 
-        Returns a Cloud Output Boolean on which further operations can be chained. The created Cloud Output Boolean
-        will contain all previous operations of the current Cloud Output String that this is being called on.
+
+        Returns:
+            Cloud_Output_Bool
         """
         self._operations.append(
             (
@@ -774,8 +831,8 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def isnumeric(self) -> Cloud_Output_Bool:
         """Return True if there are only numeric characters in S, False otherwise.
 
-        Returns a Cloud Output Boolean on which further operations can be chained. The created Cloud Output Boolean
-        will contain all previous operations of the current Cloud Output String that this is being called on.
+        Returns:
+            Cloud_Output_Bool
         """
         self._operations.append(
             (
@@ -794,8 +851,8 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def isprintable(self) -> Cloud_Output_Bool:
         """Return True if all characters in S are considered printable in repr() or S is empty, False otherwise.
 
-        Returns a Cloud Output Boolean on which further operations can be chained. The created Cloud Output Boolean
-        will contain all previous operations of the current Cloud Output String that this is being called on.
+        Returns:
+            Cloud_Output_Bool
         """
         self._operations.append(
             (
@@ -814,8 +871,8 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def isspace(self) -> Cloud_Output_Bool:
         """Return True if all characters in S are whitespace and there is at least one character in S, False otherwise.
 
-        Returns a Cloud Output Boolean on which further operations can be chained. The created Cloud Output Boolean
-        will contain all previous operations of the current Cloud Output String that this is being called on.
+        Returns:
+            Cloud_Output_Bool
         """
         self._operations.append(
             (
@@ -837,8 +894,8 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
         follow uncased characters and lowercase characters only cased ones.
         Return False otherwise.
 
-        Returns a Cloud Output Boolean on which further operations can be chained. The created Cloud Output Boolean
-        will contain all previous operations of the current Cloud Output String that this is being called on.
+        Returns:
+            Cloud_Output_Bool
         """
         self._operations.append(
             (
@@ -858,8 +915,8 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
         """Return True if all cased characters in S are uppercase and there is
         at least one cased character in S, False otherwise.
 
-        Returns a Cloud Output Boolean on which further operations can be chained. The created Cloud Output Boolean
-        will contain all previous operations of the current Cloud Output String that this is being called on.
+        Returns:
+            Cloud_Output_Bool
         """
         self._operations.append(
             (
@@ -876,9 +933,13 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
         return rv
 
     def join(self, iterable: Iterable[str]) -> "Cloud_Output_Str":
-        """Return a string which is the concatenation of the strings in the iterable with S being the seperator.
+        """Return a string which is the concatenation of the strings in the iterable with S being the separator.
 
-        Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
+        Args:
+            iterable (Iterable[str])
+
+        Returns:
+            Cloud_Output_Str
         """
         self._operations.append(
             (
@@ -887,15 +948,19 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
                 {},
             )
         )
-        print(self._operations)
         return self
 
     def ljust(self, width: SupportsIndex, __fillchar: str = "") -> "Cloud_Output_Str":
         """Return S left-justified in a Unicode string of length __width.
 
-        Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
-
         Padding is done using the specified fill character (default is a space).
+
+        Args:
+            width (SupportsIndex)
+            __fillchar (str, optional): Defaults to "".
+
+        Returns:
+            Cloud_Output_Str
         """
 
         args = [width]
@@ -915,7 +980,8 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def lower(self) -> "Cloud_Output_Str":
         """Return a copy of the string S converted to lowercase.
 
-        Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
+        Returns:
+            Cloud_Output_Str
         """
         self._operations.append(
             (
@@ -929,9 +995,13 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def lstrip(self, chars: Optional[str] = None) -> "Cloud_Output_Str":
         """Return a copy of the string S with leading whitespace removed.
 
-        Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
-
         If chars is given and not None, remove characters in chars instead.
+
+        Args:
+            chars (Optional[str], optional): Defaults to None.
+
+        Returns:
+            Cloud_Output_Str
         """
 
         args = []
@@ -953,9 +1023,15 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     ) -> "Cloud_Output_Str":
         """Change all occurrences of substring old replaced by new.
 
-        Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
-
         If the optional argument count is given, only the first count occurrences are replaced.
+
+        Args:
+            old (str)
+            new (str)
+            count (SupportsIndex, optional): Defaults to None.
+
+        Returns:
+            Cloud_Output_Str
         """
 
         if count:
@@ -981,14 +1057,18 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     ) -> Cloud_Output_Int:
         """Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
 
-        Returns a Cloud Output Int on which further operations can be chained. The created Cloud Output Int
-        will contain all previous operations of the current Cloud Output String that this is being called on.
-
         Optional arguments start and end are interpreted as in slice notation.
 
         Return -1 on failure.
-        """
 
+        Args:
+            sub (str)
+            start (Optional[SupportsIndex], optional): Defaults to None.
+            end (Optional[SupportsIndex], optional): Defaults to None.
+
+        Returns:
+            Cloud_Output_Int
+        """
         args = [sub]
 
         if start:
@@ -1019,12 +1099,17 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     ) -> Cloud_Output_Int:
         """Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
 
-        Returns a Cloud Output Int on which further operations can be chained. The created Cloud Output Int
-        will contain all previous operations of the current Cloud Output String that this is being called on.
-
         Optional arguments start and end are interpreted as in slice notation.
 
-        Raises ValueError when the substring is not found.
+        When evaluating, raises ValueError if the substring is not found.
+
+        Args:
+            sub (str)
+            start (Optional[SupportsIndex], optional): Defaults to None.
+            end (Optional[SupportsIndex], optional): Defaults to None.
+
+        Returns:
+            Cloud_Output_Int
         """
 
         args = [sub]
@@ -1057,9 +1142,14 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
         """Right-justify S in a string of length width. Padding is
         done using the specified fill character (default is a space).
 
-        Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
-        """
 
+        Args:
+            width (SupportsIndex):
+            fillchar (str, optional): Defaults to None.
+
+        Returns:
+            Cloud_Output_Str
+        """
         args = [width]
 
         if fillchar:
@@ -1111,9 +1201,13 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def rstrip(self, chars: Optional[str] = None) -> "Cloud_Output_Str":
         """Return S with trailing whitespace removed.
 
-        Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
-
         If chars is given and not None, remove characters in chars instead.
+
+        Args:
+            chars (Optional[str], optional): Defaults to None.
+
+        Returns:
+            Cloud_Output_Str
         """
         self._operations.append(
             (
@@ -1170,12 +1264,17 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     ) -> Cloud_Output_Int:
         """Return True if S starts with the specified prefix, False otherwise.
 
-        Returns a Cloud Output Boolean on which further operations can be chained. The created Cloud Output Boolean
-        will contain all previous operations of the current Cloud Output String that this is being called on.
-
         With optional start, test S beginning at that position.
         With optional end, stop comparing S at that position.
         prefix can also be a tuple of strings to try.
+
+        Args:
+            prefix (Union[str, Tuple[str, ...]]):
+            start (Optional[SupportsIndex], optional): Defaults to None.
+            end (Optional[SupportsIndex], optional): Defaults to None.
+
+        Returns:
+            Cloud_Output_Int
         """
 
         args = [prefix]
@@ -1203,9 +1302,13 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def strip(self, chars: Optional[str] = ...) -> "Cloud_Output_Str":
         """S with leading and trailing whitespace removed.
 
-        Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
-
         If chars is given and not None, remove characters in chars instead.
+
+        Args:
+            chars (Optional[str], optional): Defaults to ....
+
+        Returns:
+            Cloud_Output_Str
         """
         self._operations.append(("strip", (chars), {}))
         return self
@@ -1213,7 +1316,8 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def swapcase(self) -> "Cloud_Output_Str":
         """S with uppercase characters converted to lowercase and vice versa.
 
-        Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
+        Returns:
+            Cloud_Output_Str
         """
         self._operations.append(("swapcase", (), {}))
 
@@ -1222,9 +1326,10 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def title(self) -> "Cloud_Output_Str":
         """Titlecased version of S
 
-        Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
-
         i.e. words start with title case characters, all remaining cased characters have lower case.
+
+        Returns:
+            Cloud_Output_Str
         """
         self._operations.append(("title", (), {}))
         return self
@@ -1240,14 +1345,20 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
         mapping Unicode ordinals to Unicode ordinals, strings, or None. If
         this operation raises LookupError, the character is left untouched.
         Characters mapped to None are deleted.
+
+        Args:
+            table (Mapping[int, Union[Union[int, str, None], List[Union[int, str, None]]]]):
+
+        Returns:
+            Cloud_Output_Str
         """
         self._operations.append(("translate", (table), {}))
 
     def upper(self) -> "Cloud_Output_Str":
-        """
-        Return a copy of S converted to uppercase.
+        """Return a copy of S converted to uppercase.
 
-        Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
+        Returns:
+            Cloud_Output_Str
         """
         self._operations.append(("upper", (), {}))
 
@@ -1256,9 +1367,13 @@ class Cloud_Output_Str(Sequence, Cloud_Output_Dynamic):
     def zfill(self, width: SupportsIndex) -> "Cloud_Output_Str":
         """Pad a numeric string S with zeros on the left, to fill a field of the specified width.
 
-        Append the operation to the Cloud Output Object and return the same Cloud Output String object for any further operations.
-
         The string S is never truncated.
+
+        Args:
+            width (SupportsIndex)
+
+        Returns:
+            Cloud_Output_Str
         """
         self._operations.append(("zfill", tuple([width]), {}))
 
@@ -1297,6 +1412,17 @@ class Cloud_Output_Sequence(Sequence, Cloud_Output_Dynamic, Generic[T]):
 
     # implementation
     def __getitem__(self, key):
+        """Provides API for lazy evaluating __getitem__
+
+        Args:
+            key (_type_)
+
+        Raises:
+            Exception
+
+        Returns:
+            _type_
+        """
         self._operations.append(("__getitem__", [key], {}))
 
         if isinstance(key, slice):
@@ -1313,6 +1439,14 @@ class Cloud_Output_Sequence(Sequence, Cloud_Output_Dynamic, Generic[T]):
             raise Exception
 
     def __contains__(self, o: Any) -> Cloud_Output_Bool:
+        """Provides API for lazy evaluating __contains__
+
+        Args:
+            o (Any)
+
+        Returns:
+            Cloud_Output_Bool
+        """
         self._operations.append(("__contains__", [o], {}))
 
         rv = Cloud_Output_Bool(self._name, self._ruuid, self._key, self._type)
@@ -1322,6 +1456,11 @@ class Cloud_Output_Sequence(Sequence, Cloud_Output_Dynamic, Generic[T]):
         return rv
 
     def __len__(self) -> Cloud_Output_Int:
+        """Provides API for lazy evaluating __len__
+
+        Returns:
+            Cloud_Output_Int
+        """
         self._operations.append(("__len__", [], {}))
 
         rv = Cloud_Output_Int(self._name, self._ruuid, self._key, self._type)
@@ -1348,6 +1487,17 @@ class Cloud_Output_Mapping(Sequence, Cloud_Output_Dynamic, Generic[T]):
 
     # implementation
     def __getitem__(self, key: str) -> T:
+        """Provides API for lazy evaluating __getitem__
+
+        Args:
+            key (str)
+
+        Raises:
+            Exception
+
+        Returns:
+            T
+        """
         if not isinstance(key, str):
             raise Exception
 
@@ -1360,6 +1510,14 @@ class Cloud_Output_Mapping(Sequence, Cloud_Output_Dynamic, Generic[T]):
         return rv
 
     def __contains__(self, _o: str) -> Cloud_Output_Bool:
+        """Provides API for lazy evaluating __contains__
+
+        Args:
+            _o (str)
+
+        Returns:
+            Cloud_Output_Bool
+        """
         self._operations.append(("__contains__", [_o], {}))
 
         rv = Cloud_Output_Bool(self._name, self._ruuid, self._key, self._type)

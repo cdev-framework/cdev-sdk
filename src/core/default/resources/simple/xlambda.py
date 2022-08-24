@@ -5,6 +5,8 @@
 import importlib
 import inspect
 import os
+
+from core.default.resources.simple.api import RouteEvent
 from pydantic import FilePath
 from typing import Any, Callable, Dict, FrozenSet, List, Optional, Union
 
@@ -15,13 +17,14 @@ from core.constructs.cloud_output import (
 )
 from core.constructs.resource import (
     Resource,
-    ResourceModel,
+    TaggableResourceModel,
+    TaggableMixin,
     update_hash,
     ResourceOutputs,
     PermissionsGrantableMixin,
 )
 from core.constructs.models import frozendict, ImmutableModel
-from core.constructs.types import cdev_str_model, cdev_str
+from core.constructs.types import cdev_str_model, cdev_str, cdev_int
 
 from core.utils import hasher
 from core.utils.platforms import lambda_python_environment, get_current_closest_platform
@@ -55,7 +58,7 @@ class DeployedLayer:
         self.arn = arn
 
 
-class dependency_layer_model(ResourceModel):
+class dependency_layer_model(TaggableResourceModel):
     """Model that represents a local folder that will be deployed on the cloud as a Layer"""
 
     artifact_path: str
@@ -78,6 +81,7 @@ class DependencyLayer(Resource):
             ruuid=LAMBDA_LAYER_RUUID,
             name=self.name,
             hash=self.artifact_hash,
+            tags=frozendict({}),
             artifact_path=self.artifact_path,
         )
 
@@ -121,6 +125,9 @@ class simple_function_configuration_model(ImmutableModel):
     handler: str
     description: Optional[cdev_str_model]
     environment_variables: frozendict
+    memory_size: int
+    timeout: int
+    storage: int
 
     class Config:
         use_enum_values = True
@@ -134,6 +141,9 @@ class SimpleFunctionConfiguration:
     def __init__(
         self,
         handler: cdev_str,
+        memory_size: cdev_int,
+        timeout: cdev_int,
+        storage: cdev_int,
         description: cdev_str = "",
         environment_variables: Dict[str, cdev_str] = {},
     ) -> None:
@@ -144,6 +154,9 @@ class SimpleFunctionConfiguration:
             environment_variables (Dict[str, cdev_str], optional): A dict of overriding variabled for the Environment. Defaults to {}.
         """
         self.handler = handler
+        self.memory_size = memory_size
+        self.timeout = timeout
+        self.storage = storage
         self.description = description
         self.environment_variables = environment_variables
 
@@ -152,6 +165,15 @@ class SimpleFunctionConfiguration:
             handler=self.handler.render()
             if isinstance(self.handler, Cloud_Output_Dynamic)
             else self.handler,
+            memory_size=self.memory_size.render()
+            if isinstance(self.memory_size, Cloud_Output_Dynamic)
+            else self.memory_size,
+            timeout=self.timeout.render()
+            if isinstance(self.timeout, Cloud_Output_Dynamic)
+            else self.timeout,
+            storage=self.storage.render()
+            if isinstance(self.storage, Cloud_Output_Dynamic)
+            else self.storage,
             description=self.description.render()
             if isinstance(self.description, Cloud_Output_Dynamic)
             else self.description,
@@ -176,13 +198,16 @@ class SimpleFunctionConfiguration:
         return hasher.hash_list(
             [
                 self.handler,
+                self.memory_size,
+                self.timeout,
+                self.storage,
                 self.description,
                 hasher.hash_list(sorted(env_hashable.items())),
             ]
         )
 
 
-class simple_function_model(ResourceModel):
+class simple_function_model(TaggableResourceModel):
     """Model representing a Serverless Function
 
     Args:
@@ -198,7 +223,7 @@ class simple_function_model(ResourceModel):
     platform: lambda_python_environment
 
 
-class SimpleFunction(PermissionsGrantableMixin, Resource):
+class SimpleFunction(PermissionsGrantableMixin, TaggableMixin, Resource):
     """Construct to represent a Serverless Function. It is recommend to generate this resource using the `simple_function_annotation`"""
 
     @update_hash
@@ -214,6 +239,7 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
         src_code_hash: str = None,
         preserve_function: Callable = None,
         nonce: str = "",
+        tags: Dict[str, str] = {},
     ) -> None:
         """
 
@@ -228,8 +254,10 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
             src_code_hash (str, optional): identifying hash of the source code. Defaults to None.
             preserve_function (Callable, optional): the original function that is being deployed. This allows the returned object ro remain Callable. Default to None.
             nonce (str, optional): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+            tags (Dict[str, str]): A set of tags to add to the resource
         """
-        super().__init__(cdev_name, RUUID, nonce)
+
+        super().__init__(name=cdev_name, ruuid=RUUID, nonce=nonce, tags=tags)
 
         self._filepath = filepath
         self._events = events
@@ -243,7 +271,7 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
             src_code_hash if src_code_hash else hasher.hash_file(filepath)
         )
 
-        self._platform = platform if platform else get_current_closest_platform()
+        self._platform = platform or get_current_closest_platform()
 
         self._preserved_function = preserve_function
         self.__annotations__ = preserve_function.__annotations__
@@ -291,24 +319,25 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
 
     @external_dependencies.setter
     @update_hash
-    def external_dependencies(self, value: List[Union[DeployedLayer, DependencyLayer]]) -> None:
+    def external_dependencies(
+        self, value: List[Union[DeployedLayer, DependencyLayer]]
+    ) -> None:
         self._external_dependencies = value
 
     def compute_hash(self) -> None:
-        self._permissions_hash = hasher.hash_list(
+        permissions_hash = hasher.hash_list(
             [x.hash() for x in self._granted_permissions]
         )
-        self._config_hash = self._configuration.hash()
-        self._events_hash = hasher.hash_list([x.hash() for x in self.events])
 
         self._hash = hasher.hash_list(
             [
                 self.src_code_hash,
-                self._config_hash,
-                self._events_hash,
-                self._permissions_hash,
+                self._configuration.hash(),
+                hasher.hash_list([x.hash() for x in self.events]),
+                permissions_hash,
                 self._nonce,
                 self._platform,
+                self._get_tags_hash(),
             ]
         )
 
@@ -332,6 +361,7 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
             external_dependencies=frozenset(dependencies),
             src_code_hash=self.src_code_hash,
             platform=self.platform,
+            tags=frozendict(self.tags),
         )
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
@@ -343,12 +373,16 @@ class SimpleFunction(PermissionsGrantableMixin, Resource):
 
 def simple_function_annotation(
     name: str,
-    events: List[Event] = [],
+    events: List[Union[Event, RouteEvent]] = [],
     environment={},
+    memory_size: int = 128,
+    timeout: int = 30,
+    storage: int = 512,
     permissions: List[Union[Permission, PermissionArn]] = [],
     override_platform: lambda_python_environment = None,
     includes: List[str] = [],
     nonce: str = "",
+    tags: Dict[str, str] = None,
 ) -> Callable[[Callable], SimpleFunction]:
     """This annotation is used to designate that a function should be deployed as a Serverless function.
 
@@ -356,10 +390,14 @@ def simple_function_annotation(
         name (str): Cdev Name for the function
         events (List[Event], optional): List of event triggers for the function. Defaults to [].
         environment (dict, optional): Dictionary to apply to the Environment Variables of the deployed function. Defaults to {}.
+        memory_size (int, optional): Memory Size of you lambda in MB. Default is 128.
+        timeout (int, optional): Timeout of your lambda in seconds. Default is 30 sec and up to 900.
+        storage (int, optional): Storage of your lambda in MB. Default is 512 MB and can be up to 10240.
         permissions (List[Union[Permission, PermissionArn]], optional): List of Permissions to grant to the Function. Defaults to [].
         override_platform (lambda_python_environment, optional): Option to override the deployment platform in the Cloud. Defaults to None.
         includes (List[str], optional): Set of identifiers to extra global statements to include in parsed artifacts. Defaults to [].
         nonce (str, optional): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+        tags (dict[str, str]): A set pf tags to use to identify the resource.
 
     Returns:
         Callable[[Callable], SimpleFunction]: wrapper that returns the `SimpleFunction`
@@ -367,22 +405,28 @@ def simple_function_annotation(
 
     def create_function(func: Callable) -> SimpleFunction:
 
+        # ANIBAL are these optional???
+        # confirm with Daniel
+        handler_name = None
+        description = None
+        mod_name = None
         if inspect.isfunction(func):
             for item in inspect.getmembers(func):
 
                 if item[0] == "__name__":
                     handler_name = item[1]
                 elif item[0] == "__doc__":
-                    description = item[1] if item[1] else ""
+                    description = item[1] or ""
                 elif item[0] == "__module__":
                     mod_name = item[1]
-
         final_config = SimpleFunctionConfiguration(
             handler=handler_name,
+            memory_size=memory_size,
+            timeout=timeout,
+            storage=storage,
             description=description,
             environment_variables=environment,
         )
-
         mod = importlib.import_module(mod_name)
 
         full_filepath = os.path.abspath(mod.__file__)
@@ -396,6 +440,7 @@ def simple_function_annotation(
             function_permissions=permissions,
             preserve_function=func,
             nonce=nonce,
+            tags=tags,
         )
 
     return create_function

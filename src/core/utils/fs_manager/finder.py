@@ -1,9 +1,10 @@
 import os
+import sys
+from typing import Dict, List, Set, Tuple, Union
+from dataclasses import dataclass, field
 from pydantic import DirectoryPath
 from pydantic.types import FilePath
 from sortedcontainers.sortedlist import SortedKeyList
-import sys
-from typing import Dict, List, Set, Tuple, Union
 from functools import partial
 
 from core.constructs.resource import (
@@ -18,6 +19,7 @@ from core.default.resources.simple.xlambda import (
     DependencyLayer,
     DeployedLayer,
     SimpleFunction,
+    SimpleFunctionConfiguration,
     dependency_layer_model,
     simple_function_model,
 )
@@ -35,11 +37,41 @@ from core.utils.fs_manager import (
     package_optimizer,
     serverless_function_optimizer,
 )
+from core.utils.exceptions import cdev_core_error
 
 
 LAMBDA_LAYER_RUUID = "cdev::simple::lambda_layer"
 
 COMPUTED_ENVIRONMENT_INFORMATION = None
+
+
+#######################
+##### Exceptions
+#######################
+@dataclass
+class FinderError(cdev_core_error):
+    help_message: str = ""
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+class DependencyError(FinderError):
+    help_message: str = ""
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+def _wrap_dependency_error_message(
+    filepath: str, function_name: str, original_error_message: str
+) -> str:
+    return f"""
+Error optimizing modules used in {filepath} for function '{function_name}'. Original Error is:
+
+{original_error_message}
+"""
+
+
+#######################
+##### API
+#######################
 
 
 def parse_folder(
@@ -65,7 +97,7 @@ def parse_folder(
     cparser library and then have their dependencies managed also.
     """
     if not os.path.isdir(folder_path):
-        raise Exception
+        raise FileNotFoundError
 
     log.debug("Finding resources in folder %s", folder_path)
 
@@ -264,8 +296,7 @@ def _parse_serverless_functions(
         Workspace.instance().get_resource_state_uuid(),
     )
 
-    if not os.path.isdir(base_archive_path):
-        os.mkdir(base_archive_path)
+    paths.create_path_from_workspace(base_archive_path)
 
     # Caches
     packaged_module_cache = package_optimizer.load_packaged_artifact_cache(
@@ -297,7 +328,6 @@ def _parse_serverless_functions(
         flattened_needed_lines = _compress_lines(parsed_function.needed_line_numbers)
 
         # First handle getting all the module information for this function
-
         handler_packager = partial(
             handler_optimizer.create_optimized_handler_artifact,
             base_packaging_path=os.getcwd(),
@@ -317,26 +347,49 @@ def _parse_serverless_functions(
             optimal_module_cache=optimal_modules_cache,
         )
 
-        (
-            source_artifact_path,
-            source_hash,
-            dependencies_info,
-        ) = serverless_function_optimizer.create_optimized_serverless_function_artifacts(
-            original_file_location=full_file_path,
-            imported_modules=parsed_function.imported_packages,
-            module_creator=mod_creator,
-            handler_packager=handler_packager,
-            packaged_module_optimizer=packaged_module_packager,
-            additional_handler_files_directories=[],
-        )
+        new_handler = _create_new_handler(full_file_path, parsed_function.name)
+        needed_python_init_files = _create_init_files(full_file_path)
+
+        try:
+            (
+                source_artifact_path,
+                source_hash,
+                dependencies_info,
+            ) = serverless_function_optimizer.create_optimized_serverless_function_artifacts(
+                original_file_location=full_file_path,
+                imported_modules=parsed_function.imported_packages,
+                module_creator=mod_creator,
+                handler_packager=handler_packager,
+                packaged_module_optimizer=packaged_module_packager,
+                additional_handler_files_directories=needed_python_init_files,
+            )
+
+        except package_manager.PackageManagerError as e:
+            raise DependencyError(
+                error_message=_wrap_dependency_error_message(
+                    filepath=full_file_path,
+                    function_name=parsed_function.name,
+                    original_error_message=e.error_message,
+                ),
+                help_message=e.help_message,
+                help_resources=e.help_resources,
+            )
 
         dependencies_resources = [
-            _create_layer(_create_layer_name_from_artifact_path(x[0]), x[0], x[1])
-            for x in dependencies_info
+            _create_layer(
+                _create_layer_name_from_artifact_path(absolute_archive_path),
+                paths.get_relative_to_workspace_path(absolute_archive_path),
+                archive_hash,
+            )
+            for absolute_archive_path, archive_hash in dependencies_info
         ]
 
-        function_resource = _create_new_function(
-            previous_info, source_artifact_path, source_hash, dependencies_resources
+        function_resource = _create_new_function_resource(
+            previous_info,
+            paths.get_relative_to_workspace_path(source_artifact_path),
+            source_hash,
+            dependencies_resources,
+            new_handler,
         )
 
         rv_functions.append(function_resource)
@@ -347,6 +400,49 @@ def _parse_serverless_functions(
     optimal_modules_cache.dump_to_file()
 
     return [x.render() for x in rv_functions], [x.render() for x in rv_layers]
+
+
+def _create_new_handler(original_file_location: FilePath, function_name: str) -> str:
+    """Given a file location and function name, create the new handler path for the function
+
+    Args:
+        original_file_location (FilePath): original location
+        function_name (str): function name
+
+    Returns:
+        str: handler
+    """
+
+    relative_to_ws_path = paths.get_relative_to_workspace_path(original_file_location)
+    base_python_module_path = relative_to_ws_path[:-3].replace("/", ".")
+
+    final_module_path = base_python_module_path + "." + function_name
+
+    return final_module_path
+
+
+def _create_init_files(original_file_location: FilePath) -> List[str]:
+    """Given the original file location of a handler, create the artifact paths for all the __init__.py files that
+    make the handle a valid python modules
+
+    Args:
+        original_file_location (str): original file path
+
+    Returns:
+        List[str]: all __init__.py files needed
+    """
+
+    relative_to_ws_path_paths = paths.get_relative_to_workspace_path(
+        original_file_location
+    ).split("/")[:-1]
+
+    base_path = paths.get_workspace_path()
+    rv = []
+    for path in relative_to_ws_path_paths:
+        rv.append(os.path.join(base_path, path, "__init__.py"))
+        base_path = os.path.join(base_path, path)
+
+    return rv
 
 
 def _load_environment_information() -> Tuple[
@@ -379,28 +475,61 @@ def _load_environment_information() -> Tuple[
 
 
 def _create_layer_name_from_artifact_path(artifact_path: FilePath) -> str:
+    """Given a layer artifact, generate a unique name for the resource
+
+    Args:
+        artifact_path (FilePath)
+
+    Returns:
+        str: layer name
+    """
     return str(artifact_path).split("/")[-1][:-4]
 
 
 def _create_layer(
     name: str, artifact_path: FilePath, artifact_hash: str
 ) -> DependencyLayer:
+    """Wrap the given information into a Dependency Layer Resource
+
+    Args:
+        name (str): Name of the resource
+        artifact_path (FilePath): Path to the artifact
+        artifact_hash (str): hash of the artifact
+
+    Returns:
+        DependencyLayer
+    """
     return DependencyLayer(
         cdev_name=name, artifact_path=artifact_path, artifact_hash=artifact_hash
     )
 
 
-def _create_new_function(
+def _create_new_function_resource(
     previous_info: SimpleFunction,
     new_source_artifact: FilePath,
     new_source_hash: str,
     new_dependencies: List[Union[DeployedLayer, DependencyLayer]],
+    new_handler: str,
 ) -> SimpleFunction:
+    """Given a Serverless function, return an updated SimpleFunction that has the updated values
+
+    Args:
+        previous_info (SimpleFunction): previous Serverless Function
+        new_source_artifact (FilePath): new artifact path
+        new_source_hash (str): new source code hash
+        new_dependencies (List[Union[DeployedLayer, DependencyLayer]]): list of new dependencies
+        new_handler (str): new handler
+
+    Returns:
+        SimpleFunction: updated Serverless Function
+    """
     return SimpleFunction(
         cdev_name=previous_info.name,
         filepath=new_source_artifact,
         events=previous_info.events,
-        configuration=previous_info.configuration,
+        configuration=_create_new_configuration(
+            previous_info.configuration, new_handler
+        ),
         function_permissions=previous_info.granted_permissions,
         external_dependencies=new_dependencies,
         src_code_hash=new_source_hash,
@@ -410,15 +539,43 @@ def _create_new_function(
     )
 
 
-def _compress_lines(original_lines):
-    # Takes input SORTED([(l1,l2), (l3,l4), ...])
-    # returns [l1,...,l2,l3,...,l4]
+def _create_new_configuration(
+    previous_configuration: SimpleFunctionConfiguration, new_handler: str
+) -> SimpleFunctionConfiguration:
+    """Given a serverless function configuration, return an updated configuration with the new handler value
+
+    Args:
+        previous_configuration (SimpleFunctionConfiguration): previous configuration
+        new_handler (str): new handler value
+
+    Returns:
+        SimpleFunctionConfiguration: updated configuration
+    """
+    return SimpleFunctionConfiguration(
+        handler=new_handler,
+        memory_size=previous_configuration.memory_size,
+        timeout=previous_configuration.timeout,
+        storage=previous_configuration.storage,
+        description=previous_configuration.description,
+        environment_variables=previous_configuration.environment_variables,
+    )
+
+
+def _compress_lines(original_lines: List[Tuple[int, int]]) -> List[int]:
+    """Given a list of tuple of line ranges, compress the tuples into a single list explicitly containing all line numbers
+
+    Args:
+        original_lines (List[Tuple[int,int]]): line ranges
+
+    Returns:
+        List[int]: all line numbers
+    """
     rv = []
 
     for pair in original_lines:
         for i in range(pair[0], pair[1] + 1):
             if rv and rv[-1] == i:
-                # if the last element already equals the current value continue... helps eleminate touching boundaries
+                # if the last element already equals the current value continue... eliminates touching boundaries
                 continue
 
             rv.append(i)

@@ -8,6 +8,15 @@ All release will have a corresponding git tag.
 
 ## [Unreleased]
 ### Added
+- Update the number of buckets in initialization selection tool from 10 to 25
+- Add `__init__.py` file to the twilio quick start project
+- Update the output of cloud values during the `deploy` command to use a `rich` table
+- Update the output of current state output
+
+### Fixed
+
+## [0.0.9] - 2022-06-20
+### Added
 - Add support for Serverless Function Resource to preserve original callable object
 - Add `pre-commit` to the code base to be used for styling
 - Add `tox` to help with testing multiple `python` versions
@@ -16,8 +25,18 @@ All release will have a corresponding git tag.
 - Update imports to be absolute when possible
 - Add function to parse qualified resources into its parts
 - Add support for lambda functions to update the handler
+- Add option to set your memory, storage and timeout on serverless functions
 - Add user input for setting artifact bucket when creating a new project
+- Add query, tail and limit args to logging function
+- Add sync to watch for filesystem changes
+- Add keep-in-sync argument to _cdev run static_site.sync <resource>_
+- Add tags to resources that support them
 
+### Fixed
+- Fix issues with a bucket when it is not empty and we need to delete it
+- Refactor automated packaging system
+- Refactor Project, Environment, and Workspace abstractions
+- Fix issue with uploading static site files if the mimetype could not be guessed
 
 ## [0.0.8] - 2022-04-05
 ### Added

@@ -24,7 +24,7 @@ def get_cache(cache_name: str) -> "Cache":
     return _ALL_CACHES.get(cache_name)
 
 
-def register_cache(cache_name: str, cache: "Cache"):
+def register_cache(cache_name: str, cache: "Cache") -> None:
     """Register a Cache by name
 
     Args:
@@ -66,7 +66,7 @@ class Cache:
         """
         raise NotImplementedError
 
-    def update_cache(self, key: str, val: Any):
+    def update_cache(self, key: str, val: Any) -> None:
         """Update a <key,value> in the Cache
 
         Args:
@@ -81,7 +81,7 @@ class InMemoryCache(Cache):
 
     def __init__(self, initial_data: Dict = None) -> None:
         super().__init__()
-        self._cache_data = initial_data if initial_data else {}
+        self._cache_data = initial_data or {}
 
     def in_cache(self, key: str) -> bool:
         return key in self._cache_data

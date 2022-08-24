@@ -136,3 +136,22 @@ class ImmutableModel(BaseModel):
     class Config:
         extra = "allow"
         frozen = True
+
+
+def deep_convert_to_mutable(obj: Any) -> Any:
+    """Given a nested data structure of python types, frozensets, and frozendicts, return a mutable object with the same data.
+
+    Frozendicts are converted to standard python dicts and frozensets are converted to standard python lists
+
+    Args:
+        obj (Any): original object
+
+    Returns:
+        Any: mutable copy
+    """
+    if isinstance(obj, frozenset) or isinstance(obj, list) or isinstance(obj, set):
+        return [deep_convert_to_mutable(x) for x in obj]
+    elif isinstance(obj, frozendict) or isinstance(obj, dict):
+        return {k: deep_convert_to_mutable(v) for k, v in obj.items()}
+    else:
+        return obj

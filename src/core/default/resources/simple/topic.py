@@ -1,17 +1,19 @@
 """Set of constructs for making fan our message topics
 
 """
-from typing import Any
+from typing import Any, Dict
 
 from core.constructs.resource import (
     Resource,
-    ResourceModel,
+    TaggableResourceModel,
+    TaggableMixin,
     update_hash,
     ResourceOutputs,
     PermissionsAvailableMixin,
 )
 from core.constructs.cloud_output import Cloud_Output_Str, OutputType
 from core.constructs.types import cdev_str_model
+from core.constructs.models import frozendict
 
 from core.default.resources.simple.events import Event, event_model
 from core.default.resources.simple.iam import Permission
@@ -108,25 +110,32 @@ class TopicOutput(ResourceOutputs):
 ###############
 ##### Topic
 ###############
-class simple_topic_model(ResourceModel):
+class simple_topic_model(TaggableResourceModel):
     """Model representing a Pub/Sub Topic"""
 
     is_fifo: bool
     """Should the Topic guarantee ordering of messages"""
 
 
-class Topic(PermissionsAvailableMixin, Resource):
+class Topic(PermissionsAvailableMixin, TaggableMixin, Resource):
     """Construct for creating a managed SNS Pub/Sub Topic"""
 
     @update_hash
-    def __init__(self, cdev_name: str, is_fifo: bool = False, nonce: str = "") -> None:
+    def __init__(
+        self,
+        cdev_name: str,
+        is_fifo: bool = False,
+        nonce: str = "",
+        tags: Dict[str, str] = None,
+    ) -> None:
         """
         Args:
             cdev_name (str): Name of the resource.
             is_fifo (bool, default=False): If True, the Queue will guarantee ordering of messages.
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+            tags (Dict[str, str]): A set of tags to add to the resource
         """
-        super().__init__(cdev_name, RUUID, nonce)
+        super().__init__(cdev_name, RUUID, nonce, tags=tags)
 
         self._is_fifo = is_fifo
         self.output = TopicOutput(cdev_name)
@@ -158,13 +167,11 @@ class Topic(PermissionsAvailableMixin, Resource):
                 "Already created an event on this topic. Use `get_event()` to get the current event."
             )
 
-        event = TopicEvent(
+        self._event = TopicEvent(
             topic_name=self.name,
         )
 
-        self._event = event
-
-        return event
+        return self._event
 
     def get_event(self) -> TopicEvent:
         """Get the Event for this Queue
@@ -177,13 +184,21 @@ class Topic(PermissionsAvailableMixin, Resource):
         """
         if not self._event:
             raise Exception(
-                "Topic Event has not been created. Create a Topic Event for this topic using the `create_event_trigger` function before calling this function."
+                "Topic Event has not been created. "
+                "Create a Topic Event for this topic using the `create_event_trigger` "
+                "function before calling this function."
             )
 
         return self._event
 
     def compute_hash(self) -> None:
-        self._hash = hasher.hash_list([self.is_fifo, self.nonce])
+        self._hash = hasher.hash_list(
+            [
+                self.is_fifo,
+                self.nonce,
+                self._get_tags_hash(),
+            ]
+        )
 
     def render(self) -> simple_topic_model:
         return simple_topic_model(
@@ -191,4 +206,5 @@ class Topic(PermissionsAvailableMixin, Resource):
             ruuid=self.ruuid,
             hash=self.hash,
             is_fifo=self.is_fifo,
+            tags=frozendict(self.tags)
         )

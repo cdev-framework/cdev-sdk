@@ -6,7 +6,7 @@ from typing import Dict
 from boto3 import client
 
 from core.constructs.commands import BaseCommand
-from core.default.commands.function.utils import get_cloud_id_from_cdev_name
+from core.default.commands import utils as command_utils
 
 RUUID = "cdev::simple::function"
 
@@ -37,20 +37,27 @@ class execute(BaseCommand):
         event_data = self._get_event_data(*args, **kwargs)
 
         full_function_name = kwargs.get("function_id")
-        component_name, function_name = self.get_component_and_resource_from_qualified_name(full_function_name)
+        (
+            component_name,
+            function_name,
+        ) = command_utils.get_component_and_resource_from_qualified_name(
+            full_function_name
+        )
 
-        cloud_name = get_cloud_id_from_cdev_name(component_name, function_name)
+        cloud_name = command_utils.get_cloud_output_from_cdev_name(
+            component_name, RUUID, function_name
+        ).get("cloud_id")
 
         lambda_client = client("lambda")
 
-        self.stdout.write(f"executing {full_function_name}")
+        self.output.print(f"executing {full_function_name}")
         response = lambda_client.invoke(
             FunctionName=cloud_name,
             InvocationType="RequestResponse",
             Payload=json.dumps(event_data),
         )
 
-        self.stdout(response)
+        self.output.print(str(response))
 
     def _get_event_data(self, *args, **kwargs) -> Dict:
         event_file_location: str = kwargs.get("event")

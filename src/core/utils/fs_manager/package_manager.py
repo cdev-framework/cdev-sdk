@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 import os
 from pydantic.types import DirectoryPath, FilePath
 from typing import Any, Callable, List, Set, Dict, Tuple, Union
@@ -17,6 +18,8 @@ from .module_types import (
 )
 from core.utils.operations import concatenate_to_set, combine_dictionaries
 
+from core.utils.exceptions import cdev_core_error
+
 #######################
 ##### Types
 #######################
@@ -24,6 +27,31 @@ from core.utils.operations import concatenate_to_set, combine_dictionaries
 module_info_creator = Callable[[str], ModuleInfo]
 
 module_segmenter = Callable[[List[str]], Tuple[List[str], List[str], List[str]]]
+
+
+#######################
+##### Exceptions
+#######################
+@dataclass
+class PackageManagerError(cdev_core_error):
+    help_message: str = ""
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+@dataclass
+class PackagingError(PackageManagerError):
+    help_message: str = """
+    Cdev does not support locally linked python modules that are not relatively imported. Either convert the import of the module to a relative import or do not link to the module.
+    """
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+@dataclass
+class SegmentError(PackageManagerError):
+    help_message: str = """
+    Cdev does not support locally linked python modules that are not relatively imported. Either convert the import of the module to a relative import or do not link to the module.
+    """
+    help_resources: List[str] = field(default_factory=lambda: [])
 
 
 #######################
@@ -239,8 +267,8 @@ def _create_module_info(
         )
 
     else:
-        raise Exception(
-            f"Error with module {module_name}: Can not create module info for module that is not relative, std lib, or from a package"
+        raise PackagingError(
+            error_message=f"Error with packaging module '{module_name}'."
         )
 
 
@@ -276,8 +304,8 @@ def _segment_module_names(
             rv_packaged_modules.append(module_name)
 
         else:
-            raise Exception(
-                f"Error with module {module_name}: Can not segment module not for module that is not relative, std lib, or from a package"
+            raise SegmentError(
+                error_message=f"Error with packaging module '{module_name}'."
             )
 
     return rv_relative_modules, rv_packaged_modules, rv_std_library_modules
@@ -304,9 +332,10 @@ def _recursive_find_relative_module_dependencies(
     """
     cache_copy = copy(cache)
 
-    if get_from_relative_modules_cache(module, cache_copy):
-        # Return cached value if available
-        return get_from_relative_modules_cache(module, cache_copy)
+    # if get_from_relative_modules_cache(module, cache_copy):
+    #    # Return cached value if available
+    #    print(get_from_relative_modules_cache(module, cache_copy))
+    #    return get_from_relative_modules_cache(module, cache_copy)
 
     # Get all the directly referenced modules in the provided relative module
     direct_dependencies: List[str] = list(

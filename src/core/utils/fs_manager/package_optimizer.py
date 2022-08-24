@@ -6,6 +6,7 @@ import json
 from core.utils.cache import Cache, FileLoadableCache
 from core.utils.file_manager import safe_json_write
 from core.utils.hasher import hash_list
+from core.utils.paths import create_path_from_workspace
 
 
 from . import writer
@@ -107,9 +108,7 @@ def load_optimal_modules_cache(
         OptimalModulesCache
     """
     if not os.path.isdir(base_cache_location):
-        raise Exception(
-            f"Can not load OptimalModulesCache because the provided directory does not exist: {base_cache_location} "
-        )
+        create_path_from_workspace(base_cache_location)
 
     cache_location = os.path.join(base_cache_location, OPTIMIZED_MODULES_CACHE_FILENAME)
 
@@ -133,9 +132,7 @@ def load_packaged_artifact_cache(
         PackagedArtifactCache: _description_
     """
     if not os.path.isdir(base_cache_location):
-        raise Exception(
-            f"Can not load PackagedArtifactCache because the provided directory does not exist: {base_cache_location} "
-        )
+        create_path_from_workspace(base_cache_location)
 
     cache_location = os.path.join(base_cache_location, ARTIFACT_CACHE_FILENAME)
 

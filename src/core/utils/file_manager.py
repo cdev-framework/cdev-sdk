@@ -13,7 +13,7 @@ from typing import Dict, List, Tuple
 from core.constructs.cloud_output import cloud_output_dynamic_model
 
 from core.constructs.resource_state import Resource_State
-from core.utils.exceptions import Cdev_Error
+from core.utils.exceptions import cdev_core_error
 from ..constructs.models import frozendict
 
 
@@ -55,7 +55,6 @@ def safe_json_write(obj: Dict, fp: FilePath) -> None:
     Args:
         obj (Dict): The dictionary that should be written
         fp (FilePath): The path the file should be written at
-
     """
 
     tmp_fp = f"{fp}.tmp"
@@ -69,12 +68,12 @@ def safe_json_write(obj: Dict, fp: FilePath) -> None:
 
     except Exception as e:
         print(e)
-        raise Cdev_Error(f"Could not write data as a json into tmp file; {obj}", e)
+        raise cdev_core_error(f"Could not write data as a json into tmp file; {obj}", e)
 
     try:
         shutil.copyfile(tmp_fp, fp)
     except Exception as e:
-        raise Cdev_Error(
+        raise cdev_core_error(
             f"Could not copy tmp file into actual location; {tmp_fp} -> {fp}", e
         )
 
@@ -96,7 +95,7 @@ def load_resource_state(fp: FilePath) -> Resource_State:
 
     for the `cloud_output`, all the structures in the list container should be loaded as immutable objects
     because they are `cloud_output`models`. They have a special structure that needs to be preserved so that
-    the exectution order of the operations are preserved.
+    the execution order of the operations are preserved.
 
     Args:
         fp (FilePath): Path to the file storing the resource state
@@ -109,7 +108,7 @@ def load_resource_state(fp: FilePath) -> Resource_State:
     """
 
     if not os.path.isfile(fp):
-        raise Cdev_Error(
+        raise cdev_core_error(
             f"Trying to load resource state from {fp} but it does not exist"
         )
 
@@ -118,7 +117,7 @@ def load_resource_state(fp: FilePath) -> Resource_State:
             _mutable_json = json.load(fh)
 
     except Exception as e:
-        raise Cdev_Error(
+        raise cdev_core_error(
             f"Trying to load resource state from {fp} but could not load the file as a json"
         )
 
@@ -143,7 +142,7 @@ def load_resource_state(fp: FilePath) -> Resource_State:
                 )
 
         except Exception as e:
-            raise Cdev_Error(
+            raise cdev_core_error(
                 f"Trying to load resource state from {fp} but could not make dict immutable",
                 e,
             )
@@ -151,7 +150,7 @@ def load_resource_state(fp: FilePath) -> Resource_State:
     try:
         rv = Resource_State(**_mutable_json)
     except Exception as e:
-        raise Cdev_Error(
+        raise cdev_core_error(
             f"Trying to load resource state from {fp} but could not serialized Dict into Resource_State",
             e,
         )
@@ -164,7 +163,7 @@ def _recursive_make_immutable(o):
 
     This is a cdev core specific transformation that is used to convert Dict and List and other native python
     types into frozendict, frozenset, etc. The purpose is that the later set of objects are immutable in python
-    and therefor can be used to directly compare against eachother and be used as __hash__ able objects in
+    and therefor can be used to directly compare against each other and be used as __hash__ able objects in
     things like dicts and `networkx` DAGs.
 
     Note the special case of handling Cloud Output Dict. These are identified as a dict with the key `id` that has

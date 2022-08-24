@@ -1,27 +1,32 @@
 import json
 import os
+import shutil
+from typing import Any, Dict, List, Union
+import uuid
+
+import boto3
 from pydantic import FilePath
 from pydantic.types import DirectoryPath
-import shutil
-from typing import Dict, Tuple, List
+from rich.prompt import Prompt, Confirm
 
-from rich.prompt import Prompt
-from cdev.default.project import local_project
-from cdev.cli.logger import set_global_logger_from_cli
+from cdev.commands import project_initializer_params
+from cdev.default.project import local_project, local_project_info
+from cdev.utils.display_manager import SimpleSelectionListPage
 
-from core.constructs.backend import Backend, Backend_Configuration
-from core.constructs.workspace import Workspace_Info
-from core.default.backend import Local_Backend_Configuration, LocalBackend
+from core.default.backend import Local_Backend_Configuration
+from core.utils import paths as paths_util
 
 
-from ..constructs.project import Project_State, check_if_project_exists, project_info
+from cdev.constructs.project import (
+    check_if_project_exists,
+    CDEV_FOLDER,
+    CDEV_PROJECT_FILE,
+)
 
 
 STATE_FOLDER = "state"
 INTERMEDIATE_FOLDER = "intermediate"
 CACHE_FOLDER = "cache"
-CDEV_FOLDER = ".cdev"
-CDEV_PROJECT_FILE = "cdev_project.json"
 CENTRAL_STATE_FILE = "central_state.json"
 SETTINGS_FOLDER_NAME = "settings"
 DEFAULT_ENVIRONMENTS = ["prod", "stage", "dev"]
@@ -37,6 +42,7 @@ AVAILABLE_TEMPLATES = [
     "slack-bot",
     "user-auth",
     "power-tools",
+    "raw",
 ]
 
 
@@ -47,19 +53,18 @@ def create_project_cli(args) -> None:
         args (_type_): cli arguments
     """
     config = args
-    set_global_logger_from_cli(config.loglevel)
 
     create_project(args.name)
 
     if args.template:
         template_name = args.template
-
         if template_name not in AVAILABLE_TEMPLATES:
             print(
                 f"{template_name} is not one of the available templates. {AVAILABLE_TEMPLATES}"
             )
             return
 
+        print("")
         print(f"Loading Template {template_name}")
         _load_template(template_name)
         print(f"Created Project From Template: {template_name}")
@@ -116,9 +121,7 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
         extra_environments=DEFAULT_ENVIRONMENTS,
     )
 
-    base_settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
-
-    backend_directory = os.path.join(base_directory, CDEV_FOLDER, STATE_FOLDER)
+    backend_directory = os.path.join(CDEV_FOLDER, STATE_FOLDER)
     backend_configuration = Local_Backend_Configuration(
         {
             "base_folder": backend_directory,
@@ -126,47 +129,27 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
         }
     )
 
-    new_project_info = project_info(
-        project_name,
-        environments=[],
-        backend_info=backend_configuration,
-        current_environment="",
+    base_settings_folder = SETTINGS_FOLDER_NAME
+
+    new_project_info = local_project_info(
+        project_name=project_name,
+        environment_infos=[],
+        current_environment_name="",
+        default_backend_configuration=backend_configuration,
+        settings_directory=base_settings_folder,
+        initialization_module="src.cdev_project",
     )
 
     project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)
     with open(project_info_location, "w") as fh:
         json.dump(new_project_info.dict(), fh, indent=4)
 
-    new_project = local_project(project_info_location)
-
-    new_project.initialize_project()
-
-    # TODO restructure entire creating process so that this is more explicit
-    base_dir = os.getcwd()
+    new_project = local_project(new_project_info, project_info_location)
 
     for environment in DEFAULT_ENVIRONMENTS:
-
-        environment_settings = {
-            "user_setting_module": [
-                # set the settings modules as python modules
-                os.path.relpath(
-                    os.path.join(base_settings_folder, f"base_settings.py"),
-                    start=base_dir,
-                )[:-3].replace("/", "."),
-                os.path.relpath(
-                    os.path.join(base_settings_folder, f"{environment}_settings.py"),
-                    start=base_dir,
-                )[:-3].replace("/", "."),
-            ],
-            "secret_dir": os.path.relpath(
-                os.path.join(base_settings_folder, f"{environment}_secrets"),
-                start=base_dir,
-            ),
-        }
-
-        new_project.create_environment(environment, environment_settings)
-
-    new_project.set_state(Project_State.UNINITIALIZED)
+        new_project.create_environment(
+            environment, backend_configuration=backend_configuration
+        )
 
     new_project.set_current_environment(DEFAULT_ENVIRONMENTS[-1])
 
@@ -177,15 +160,9 @@ def _default_new_project_input_questions() -> Dict[str, str]:
     Returns:
         Dict[str, str]: Settings completed by the user
     """
-    rv = {}
+    _artifact_bucket = _select_resources_bucket()
 
-    _artifact_bucket = Prompt.ask(
-        prompt="Name of bucket to store artifacts", default=""
-    )
-
-    rv = {"S3_ARTIFACTS_BUCKET": _artifact_bucket}
-
-    return rv
+    return {"S3_ARTIFACTS_BUCKET": _artifact_bucket}
 
 
 def _create_folder_structure(
@@ -208,21 +185,23 @@ def _create_folder_structure(
     settings_folder = os.path.join(base_directory, SETTINGS_FOLDER_NAME)
     base_settings_file = os.path.join(settings_folder, f"base_settings.py")
 
-    _mkdir(cdev_folder)
-    _mkdir(state_folder)
-    _mkdir(intermediate_folder)
-    _mkdir(cache_folder)
-    _mkdir(settings_folder)
+    paths_util.mkdir(cdev_folder)
+    paths_util.mkdir(state_folder)
+    paths_util.mkdir(intermediate_folder)
+    paths_util.mkdir(cache_folder)
+    paths_util.mkdir(settings_folder)
 
     _create_base_settings(base_settings_file, base_settings)
 
     for environment in extra_environments:
-        _touch_file(os.path.join(settings_folder, f"{environment}_settings.py"))
-        _mkdir(os.path.join(settings_folder, f"{environment}_secrets"))
+        paths_util.touch_file(
+            os.path.join(settings_folder, f"{environment}_settings.py")
+        )
+        paths_util.mkdir(os.path.join(settings_folder, f"{environment}_secrets"))
 
 
 def _create_base_settings(
-    file_path: FilePath, base_settings: Dict[str, str] = None
+    file_path: Union[FilePath, str], base_settings: Dict[str, str] = None
 ) -> None:
     """Create the base settings for the project at the provide path. This creates a python module at the provided directory, creates
     a base settings file, and applies any base settings to the generate file.
@@ -232,9 +211,9 @@ def _create_base_settings(
         base_settings (Dict[str, str], optional): Settings for base environment. Defaults to None.
     """
     # The settings are dynamically importable python modules, so the folder needs to be a python module
-    _touch_file(os.path.join(os.path.dirname(file_path), f"__init__.py"))
+    paths_util.touch_file(os.path.join(os.path.dirname(file_path), f"__init__.py"))
 
-    _touch_file(file_path)
+    paths_util.touch_file(file_path)
 
     if base_settings:
         _render_settings_file(file_path, base_settings)
@@ -252,44 +231,113 @@ def _render_settings_file(file_path: FilePath, base_settings: Dict[str, str]) ->
             fh.write(f'{key} = "{value}"')
 
 
-def _touch_file(file_path: FilePath) -> None:
-    """Helper function to touch a file
+def _list_all_available_buckets(s3_client: Any) -> List[str]:
+    """List all S3 buckets using the provided client. Return the list of bucket names. Will throw errors related to Aws that should be handled by the caller.
 
     Args:
-        file_path (FilePath)
+        s3_client (Any): boto3 s3 client
 
-    Raises:
-        Exception: Directory does not exist
+    Returns:
+        List[str]: bucket names
     """
-    if not os.path.isdir(os.path.dirname(file_path)):
-        raise Exception(
-            f"Can not create {file_path} because {os.path.dirname(file_path)} is not a directory."
+    bucket_names = [
+        bucket.get("Name") for bucket in s3_client.list_buckets().get("Buckets")
+    ]
+
+    return list(
+        filter(
+            lambda x: not any(
+                x.startswith(_filter)
+                for _filter in project_initializer_params.BUCKET_FILTERS
+            ),
+            bucket_names,
+        )
+    )
+
+
+def _create_artifact_bucket(s3_client: Any) -> str:
+    """Create an S3 bucket using the provided client. Return the bucket name. Will throw errors related to Aws that should be handled by the caller.
+
+    Args:
+        s3_client (Any): boto3 s3 client
+
+    Returns:
+        str: bucket name
+    """
+    _bucket_random_suffix = uuid.uuid4().hex[
+        : project_initializer_params.GENERATED_BUCKET_SUFFIX_LENGTH
+    ]
+    _bucket_name = (
+        f"{project_initializer_params.GENERATED_BUCKET_BASE}-{_bucket_random_suffix}"
+    )
+
+    s3_client.create_bucket(
+        Bucket=_bucket_name,
+    )
+
+    return _bucket_name
+
+
+def _select_resources_bucket() -> str:
+    """Select a bucket name to be used for storing the artifacts created by Cdev. This function will not surface any errors, but instead, will return an empty string.
+
+    Returns:
+        str: bucket name
+    """
+    print(project_initializer_params.ARTIFACT_BUCKET_INTRO_MESSAGE)
+    _s3_client = boto3.client("s3")
+
+    try:
+        _available_buckets = _list_all_available_buckets(_s3_client)
+    except Exception as e:
+        print(project_initializer_params.LIST_BUCKETS_FAILED)
+        print(e)
+        return ""
+
+    if len(_available_buckets) > project_initializer_params.MAXIMUM_BUCKETS_LISTED:
+        print(project_initializer_params.TOO_MANY_AVAILABLE_BUCKETS_MESSAGE)
+
+        while True:
+            selected_bucket_name = Prompt.ask(
+                prompt=project_initializer_params.NAME_OF_BUCKET_PROMPT
+            )
+
+            if selected_bucket_name not in _available_buckets:
+                print(
+                    project_initializer_params.BUCKET_NOT_AVAILABLE_MESSAGE.format(
+                        bucket_name=selected_bucket_name
+                    )
+                )
+                print(_available_buckets)
+            else:
+                break
+
+    elif len(_available_buckets) == 0:
+        print(project_initializer_params.NO_BUCKET_SELECT_MESSAGE)
+
+        _create_bucket = Confirm.ask(
+            prompt=project_initializer_params.CONFIRM_BUCKET_CREATION
         )
 
-    with open(file_path, "w"):
-        pass
+        if _create_bucket:
+            try:
+                selected_bucket_name = _create_artifact_bucket(_s3_client)
+                print(
+                    project_initializer_params.CREATE_ARTIFACT_BUCKET_SUCCESS.format(
+                        bucket_name=selected_bucket_name
+                    )
+                )
+            except Exception as e:
+                print(project_initializer_params.CREATE_ARTIFACT_BUCKET_FAILED)
+                print(e)
+                selected_bucket_name = ""
 
+        else:
+            print(project_initializer_params.DO_NOT_CREATE_BUCKET_SELECT_MESSAGE)
+            selected_bucket_name = ""
 
-def _mkdir(directory_path: DirectoryPath) -> None:
-    """Create a directory if it does not already exist.
+    else:
+        selection_page = SimpleSelectionListPage(_available_buckets)
+        selected_bucket_name = selection_page.blocking_selection_process()
 
-    Args:
-        directory_path (DirectoryPath)
-    """
-    if not os.path.isdir(directory_path):
-        os.mkdir(directory_path)
-
-
-def load_project(initialize: bool = False) -> None:
-    """Create the global instance of the `Project` object. If provided, also initialize the `Project`.
-
-    Args:
-        initialize (bool, optional): Defaults to False.
-    """
-    base_directory = os.getcwd()
-
-    project_info_location = os.path.join(base_directory, CDEV_FOLDER, CDEV_PROJECT_FILE)
-
-    local_project(project_info_location) if not initialize else local_project(
-        project_info_location
-    ).initialize_project()
+    return selected_bucket_name

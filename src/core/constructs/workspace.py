@@ -2,9 +2,17 @@
 
 
 """
-
+from dataclasses import dataclass, field
 from enum import Enum
 import inspect
+from typing import Callable, List, Dict, Any, Tuple, Optional
+
+from networkx.algorithms.dag import topological_sort
+from networkx.classes.digraph import DiGraph
+from networkx.classes.graph import NodeView
+
+from pydantic import BaseModel
+
 from rich.console import Console
 from rich.progress import (
     Progress,
@@ -13,13 +21,6 @@ from rich.progress import (
     TimeElapsedColumn,
     SpinnerColumn,
 )
-from typing import Callable, List, Dict, Any, Tuple, TypeVar
-
-from networkx.algorithms.dag import topological_sort
-from networkx.classes.digraph import DiGraph
-from networkx.classes.graph import NodeView
-
-from pydantic import BaseModel
 
 from core.constructs.models import frozendict
 from core.constructs.output_manager import OutputManager, OutputTask
@@ -29,13 +30,17 @@ from core.constructs.resource import (
     Resource_Difference,
     Resource_Reference_Difference,
     Resource_Reference_Change_Type,
-    ResourceModel,
+    TaggableResourceModel,
 )
-from core.constructs.backend import Backend
+from core.constructs.backend import (
+    Backend,
+    Backend_Configuration,
+    BackendError,
+    load_backend,
+)
 from core.constructs.mapper import CloudMapper
 from core.constructs.components import (
     Component,
-    Component_Change_Type,
     Component_Difference,
     ComponentModel,
 )
@@ -45,40 +50,80 @@ from core.constructs.cloud_output import (
     evaluate_dynamic_output,
     cloud_output_dynamic_model,
 )
-from core.constructs.settings import Settings_Info, Settings, initialize_settings
+from core.constructs.settings import (
+    Settings_Info,
+    Settings,
+    initialize_settings,
+    SettingsError,
+)
 
 
 from core.utils.command_finder import find_specified_command
 from core.utils import module_loader, topological_helper
 from core.utils.logger import log
+from core.utils.exceptions import cdev_core_error
 
 from core.constructs.types import F
 
 
 _GLOBAL_WORKSPACE: "Workspace" = None
 
+###############################
+##### Exceptions
+###############################
+
+
+@dataclass
+class WorkspaceInitializationError(cdev_core_error):
+    help_message: str = (
+        "   Commands can not be issued until the Workspace error has been resolved."
+    )
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+@dataclass
+class WorkspaceInfoError(cdev_core_error):
+    help_message: str = (
+        "   Commands can not be issued until the Workspace error has been resolved."
+    )
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+###############################
+##### Classes
+###############################
+
 
 class Workspace_Info(BaseModel):
     python_module: str
     python_class: str
     settings_info: Settings_Info
-    config: Dict
+    backend_info: Backend_Configuration
+    resource_state_uuid: str
+    initialization_modules: Optional[List[str]]
+    config: Optional[Dict]
 
     def __init__(
         __pydantic_self__,
         python_module: str,
         python_class: str,
         settings_info: Settings_Info,
-        config: Dict,
+        backend_info: Backend_Configuration,
+        resource_state_uuid: str,
+        initialization_modules: Optional[List[str]] = [],
+        config: Optional[Dict] = {},
     ) -> None:
         """
         Represents the data needed to create a new cdev workspace:
 
-        Parameters:
-            python_module: The name of the python module to load as the workspace
-            python_class: The name of the class in the python module to initialize
-            settings_info: Settings_Info
-            config: configuration option for the workspace
+        Args:
+            python_module (str): The name of the python module to load as the workspace
+            python_class (str): The name of the class in the python module to initialize
+            settings_info (Settings_Info): Information to load settings of the `Workspace`
+            backend_info (Backend_Configuration): Configuration information for the `Backend`
+            resource_state_uuid (str): The `Backend` resource state uuid this `Workspace` will execute against
+            initialization_modules (Optional[List[str]]): List of Python modules to dynamically import to initialize `Workspace`
+            config (Optional[Dict]): configuration option for the workspace
 
         """
 
@@ -87,6 +132,9 @@ class Workspace_Info(BaseModel):
                 "python_module": python_module,
                 "python_class": python_class,
                 "settings_info": settings_info,
+                "backend_info": backend_info,
+                "resource_state_uuid": resource_state_uuid,
+                "initialization_modules": initialization_modules,
                 "config": config,
             }
         )
@@ -100,10 +148,15 @@ class Workspace_State(str, Enum):
     EXECUTING_BACKEND = "EXECUTING_BACKEND"
 
 
+###############################
+##### Api
+###############################
+
+
 def wrap_phase(phases: List[Workspace_State]) -> Callable[[F], F]:
     """
     Annotation that denotes when a function can be executed within the life cycle of a workspace.
-    Throws excpetion if the workspace is not in the correct phase.
+    Throws exception if the workspace is not in the correct phase.
     """
 
     def inner_wrap(func: F) -> F:
@@ -130,10 +183,16 @@ class Workspace:
     the object should remain a read only object to prevent components from changing configuration beyond their scope.
     """
 
-    _settings: Settings
+    _settings: Settings = None
+    _resource_state_uuid: str = None
 
     @classmethod
     def instance(cls) -> "Workspace":
+        """Get the Global instance variable to a given Workspace
+
+        Returns:
+            Workspace
+        """
         if not _GLOBAL_WORKSPACE:
             raise Exception("Currently No Global Workspace")
 
@@ -141,13 +200,20 @@ class Workspace:
 
     @classmethod
     def set_global_instance(cls, workspace: "Workspace") -> None:
+        """Set the Global instance variable to a given Workspace
+
+        Args:
+            caller (Workspace)
+        """
         global _GLOBAL_WORKSPACE
         _GLOBAL_WORKSPACE = workspace
 
     @classmethod
     def remove_global_instance(cls, caller: "Workspace") -> None:
-        """
-        Method to reset the Global Workspace object. This should be the final cleanup step for a Cdev process.
+        """Method to reset the Global Workspace object. This should be the final cleanup step for a Cdev process.
+
+        Args:
+            caller (Workspace)
         """
         global _GLOBAL_WORKSPACE
 
@@ -159,14 +225,77 @@ class Workspace:
 
         _GLOBAL_WORKSPACE = None
 
-    def initialize_workspace(self, workspace_configuration: Workspace_Info) -> None:
-        """
-        Run the configuration needed to initialize a workspace. This should generally only be called by the Core framework itself to ensure that the
+    def initialize_workspace(
+        self,
+        settings_info: Settings_Info,
+        backend_info: Backend_Configuration,
+        resource_state_uuid: str,
+        initialization_modules: Optional[List[str]] = [],
+        configuration: Dict = {},
+    ) -> None:
+        """Run the configuration needed to initialize a workspace. This should generally only be called by the Core framework itself to ensure that the
         life cycle of a workspace is correctly handled.
+
+        Args:
+            settings_info (Settings_Info): Information to load the `Workspace` settings
+            backend_info (Backend_Configuration): information to connect to the `Backend`
+            resource_state_uuid (str): resource state to execute commands over
+            configuration (Dict): additional configuration
         """
-        raise NotImplementedError
+        try:
+            initialized_backend = load_backend(backend_info)
+        except BackendError as e:
+            raise WorkspaceInitializationError(
+                error_message=f"""Error initializing backend for the workspace ->
+                {e.error_message}""",
+                help_message=e.help_message,
+                help_resources=e.help_resources,
+            )
+
+        self.set_backend(initialized_backend)
+
+        top_level_resource_states = initialized_backend.get_top_level_resource_states()
+
+        if resource_state_uuid not in set([x.uuid for x in top_level_resource_states]):
+            raise WorkspaceInitializationError(
+                error_message=f"{resource_state_uuid} not in loaded backend resource states: ({top_level_resource_states})"
+            )
+
+        self.set_resource_state_uuid(resource_state_uuid)
+
+        try:
+            initialized_settings = initialize_settings(settings_info)
+        except SettingsError as e:
+            raise WorkspaceInitializationError(
+                error_message=f"""Error initializing settings for the workspace ->
+                {e.error_message}""",
+                help_message=e.help_message,
+                help_resources=e.help_resources,
+            )
+        except Exception as e:
+            raise WorkspaceInitializationError(
+                error_message=f"Error initializing settings for the workspace -> {e}"
+            )
+
+        self.settings = initialized_settings
+
+        if initialization_modules:
+            for initialize_module in initialization_modules:
+                try:
+                    module_loader.import_module(initialize_module)
+                except module_loader.ImportModuleError as e:
+                    raise WorkspaceInitializationError(
+                        error_message=f"""Error loading '{initialize_module}' to initial the workspace. The following exception occurred:
+                        {e.error_message}
+                        """
+                    )
 
     def destroy_workspace(self) -> None:
+        """Tear down the current Workspace
+
+        Raises:
+            NotImplementedError
+        """
         raise NotImplementedError
 
     ############################
@@ -174,19 +303,24 @@ class Workspace:
     ############################
 
     @property
-    def settings(cls) -> Settings:
-        return Workspace._settings
+    def settings(self) -> Settings:
+        """Get settings object
+
+        Returns:
+            Settings
+        """
+        return self._settings
 
     @settings.setter
-    def settings(cls, value: Settings):
-        Workspace._settings = value
+    def settings(self, value: Settings) -> None:
+        """Set settings object"""
+        self._settings = value
 
     ############################
     ##### Initialized
     ############################
     def get_state(self) -> Workspace_State:
-        """
-        Get the current lifecycle state of the Workspace.
+        """Get the current lifecycle state of the Workspace.
 
         Returns:
             state (Workspace_State)
@@ -194,10 +328,9 @@ class Workspace:
         raise NotImplementedError
 
     def set_state(self, value: Workspace_State) -> None:
-        """
-        Set the current lifecycle state of the Workspace.
+        """Set the current lifecycle state of the Workspace.
 
-        Arguments:
+        Args:
             value (Workspace_State)
         """
         raise NotImplementedError
@@ -206,32 +339,29 @@ class Workspace:
     ##### Mappers
     #################
     def add_mapper(self, mapper: CloudMapper) -> None:
-        """
-        Add a CloudMapper to the project. The order that the Mappers are added to the Workspace defines the precedence give when
+        """Add a CloudMapper to the project. The order that the Mappers are added to the Workspace defines the precedence give when
         determining which CloudMapper to use.
 
         Note that this function should only be called during the `Workspace Initialization` part of the Cdev lifecycle.
 
-        Arguments:
+        Args:
             mapper (CloudMapper): The mapper to add
         """
         raise NotImplementedError
 
     def add_mappers(self, mappers: List[CloudMapper]) -> None:
-        """
-        Add a List of CloudMappers to the project. The order that the Mappers are added to the Workspace defines the precedence
+        """Add a List of CloudMappers to the project. The order that the Mappers are added to the Workspace defines the precedence
         give when determining which CloudMapper to use.
 
         Note that this function should only be called during the `Workspace Initialization` part of the Cdev lifecycle.
 
-        Arguments:
+        Args:
             mappers (List[CloudMapper]): The mapper to add
         """
         raise NotImplementedError
 
     def get_mappers(self) -> List[CloudMapper]:
-        """
-        Return the List of CloudMappers for this Workspace.
+        """Return the List of CloudMappers for this Workspace.
 
         Note that this function should only be called during the `Workspace Initialized` part of the Cdev lifecycle.
 
@@ -241,8 +371,7 @@ class Workspace:
         raise NotImplementedError
 
     def get_mapper_namespace(self) -> Dict[str, CloudMapper]:
-        """
-        Return the Dictionary that maps Resource ID's (ruuid) to the mapper that will be used to deploy the resource into the cloud.
+        """Return the Dictionary that maps Resource ID's (ruuid) to the mapper that will be used to deploy the resource into the cloud.
 
         Note that this function should only be called during the `Workspace Initialized` part of the Cdev lifecycle.
 
@@ -255,27 +384,25 @@ class Workspace:
     ##### Commands
     #################
     def add_command(self, command_location: str) -> None:
-        """
-        Add a Command Location to the Workspace. The order that the Command is added to the Workspace defines the precedence
+        """Add a Command Location to the Workspace. The order that the Command is added to the Workspace defines the precedence
         give when searching for Commands. Command Locations should adhere to the defined form to ensure that they can be
         found within the Workspace.
 
         Note that this function should only be called during the `Workspace Initialization` part of the Cdev lifecycle.
 
-        Arguments:
+        Args:
             command_location (Command): The command location to add
         """
         raise NotImplementedError
 
     def add_commands(self, command_locations: List[str]) -> None:
-        """
-        Add a List of Command Locations to the Workspace. The order that the Commands are added to the Workspace defines the precedence
+        """Add a List of Command Locations to the Workspace. The order that the Commands are added to the Workspace defines the precedence
         give when searching for a Command. Command Locations should adhere to the defined form to ensure that they can be
         found within the Workspace.
 
         Note that this function should only be called during the `Workspace Initialization` part of the Cdev lifecycle.
 
-        Arguments:
+        Args:
             command_locations (Command): The command location to add
         """
         raise NotImplementedError
@@ -308,16 +435,17 @@ class Workspace:
 
         Returns:
             List[Tuple[str, Any]]: The List of outputs with their associated tag
-
         """
+        raise NotImplementedError
+
+    def clear_output(self) -> None:
         raise NotImplementedError
 
     #######################
     ##### Components
     #######################
     def add_component(self, component: Component) -> None:
-        """
-        Add a Component to the Workspace. Components are used to determine the desired state of the Workspace. They should represent
+        """Add a Component to the Workspace. Components are used to determine the desired state of the Workspace. They should represent
         a logical separation for the Resources in a project.
 
         Note that this function should only be called during the `Workspace Initialization` part of the Cdev lifecycle.
@@ -328,20 +456,18 @@ class Workspace:
         raise NotImplementedError
 
     def add_components(self, components: List[Component]) -> None:
-        """
-        Add a List of Components to the Workspace. Components are used to determine the desired state of the Workspace. They
+        """Add a List of Components to the Workspace. Components are used to determine the desired state of the Workspace. They
         should represent a logical separation for the Resources in a project.
 
         Note that this function should only be called during the `Workspace Initialization` part of the Cdev lifecycle.
 
         Arguments:
-            component (Component): Component to add
+            components (Component): Component to add
         """
         raise NotImplementedError
 
     def get_components(self) -> List[Component]:
-        """
-        Return the Components for this Workspace.
+        """Return the Components for this Workspace.
 
         Note that this function should only be called during the `Workspace Initialized` or `Executing Frontend` part of the Cdev lifecycle.
 
@@ -354,8 +480,7 @@ class Workspace:
     ##### Backend
     ################
     def get_backend(self) -> Backend:
-        """
-        Return the Backend that is associated with this Workspace.
+        """Return the Backend that is associated with this Workspace.
 
         Note that this function should only be called during the `Workspace Initialized` part of the Cdev lifecycle.
 
@@ -365,8 +490,7 @@ class Workspace:
         raise NotImplementedError
 
     def set_backend(self, backend: Backend) -> None:
-        """
-        Set the Backend for the Workspace.
+        """Set the Backend for the Workspace.
 
         Note that this function should only be called during the `Workspace Initialization` part of the Cdev lifecycle.
 
@@ -376,22 +500,16 @@ class Workspace:
         raise NotImplementedError
 
     def set_resource_state_uuid(self, resource_state_uuid: str) -> None:
-        """
-        Set the Resource State UUID to denote the Resource State that this Workspace will execute over.
-
+        """Set the Resource State UUID to denote the Resource State that this Workspace will execute over.
         Note that this function should only be called during the `Workspace Initialization` part of the Cdev lifecycle.
-
         Arguments:
             resource_state_uuid (str): Resource State UUID from the Backend
         """
         raise NotImplementedError
 
     def get_resource_state_uuid(self) -> str:
-        """
-        Get the Resource State UUID that this Workspace is executing over.
-
+        """Get the Resource State UUID that this Workspace is executing over.
         Note that this function should only be called during the `Workspace Initialized` part of the Cdev lifecycle.
-
         Returns:
             resource_state_uuid (str): Resource State UUID from the Backend
         """
@@ -399,19 +517,13 @@ class Workspace:
 
     @wrap_phase([Workspace_State.EXECUTING_FRONTEND])
     def generate_current_state(self) -> List[ComponentModel]:
-        """
-        Execute the components of this workspace to generate the current desired state of the resources.
+        """Execute the components of this workspace to generate the current desired state of the resources.
 
         Returns:
             Current State (List[ComponentModel]): The current state generated by the components.
         """
 
-        rv = []
-        components: List[Component] = self.get_components()
-
-        for component in components:
-            rv.append(component.render())
-
+        rv = [component.render() for component in self.get_components()]
         return rv
 
     @wrap_phase([Workspace_State.EXECUTING_FRONTEND])
@@ -420,14 +532,13 @@ class Workspace:
         desired_state: List[ComponentModel],
         previous_state_component_names: List[str],
     ) -> Tuple[
-        Component_Difference,
-        Resource_Difference,
-        Resource_Reference_Difference,
+        List[Component_Difference],
+        List[Resource_Difference],
+        List[Resource_Reference_Difference],
     ]:
-        """
-        Produce the differences between the desired state of the components and the current saved state
+        """Produce the differences between the desired state of the components and the current saved state
 
-        Arguments:
+        Args:
             desired_state (List[ComponentModel]): The current state generated by the components.
             previous_state_component_names (List[str]): The names of the components to diff against.
 
@@ -435,7 +546,6 @@ class Workspace:
             component_differences (List[Component_Difference]): The list of differences at the component level.
             reference_differences (List[Resource_Reference_Difference]): The list of differences for references within components.
             resource_differences (List[Resource_Difference]): The list of the difference for the resources within components.
-
         """
 
         backend = self.get_backend()
@@ -454,11 +564,26 @@ class Workspace:
             List[Resource_Difference],
         ],
     ) -> DiGraph:
+        """Given the sets of differences, sort them into a topological deployment order based on dependencies between resource outputs
+
+        Args:
+            differences (Tuple[ List[Component_Difference], List[Resource_Reference_Difference], List[Resource_Difference], ])
+
+        Returns:
+            DiGraph
+        """
         return topological_helper.generate_sorted_resources(differences)
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
     def deploy_differences(self, differences_dag: DiGraph) -> None:
+        """Given the sets of differences, sort them into a topological deployment order based on dependencies between resource outputs
 
+        Args:
+            differences (Tuple[ List[Component_Difference], List[Resource_Reference_Difference], List[Resource_Difference], ])
+
+        Returns:
+            DiGraph
+        """
         console = Console()
         with Progress(
             SpinnerColumn(),
@@ -502,6 +627,12 @@ class Workspace:
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
     def wrap_output_failed_child(self, tasks: Dict[NodeView, OutputTask]):
+        """Wrapped function that fails any resource that has a failed parent
+
+        Args:
+            tasks (Dict[NodeView, OutputTask])
+        """
+
         def mark_failure_by_parent(change: NodeView) -> None:
             output_task = tasks.get(change)
             output_task.update(
@@ -513,6 +644,12 @@ class Workspace:
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
     def wrap_output_deploy_change(self, tasks: Dict[NodeView, OutputTask]):
+        """Wrapped function callers mapper and updates backend
+
+        Args:
+            tasks (Dict[NodeView, OutputTask])
+        """
+
         def deploy_change(change: NodeView) -> None:
             output_task = tasks.get(change)
             output_task.start_task()
@@ -579,18 +716,23 @@ class Workspace:
                     raise e
 
                 try:
+                    # Deploy the changes to the cloud using the defined mapper for the resource.
                     log.debug("evaluated information %s", _evaluated_change)
                     output_task.update(advance=5, comment="Deploying on Cloud :cloud:")
                     mapper = self.get_mapper_namespace().get(ruuid)
-                    cloud_output = mapper.deploy_resource(
-                        transaction_token,
-                        namespace_token,
-                        _evaluated_change,
-                        previous_output,
-                        output_task,
-                    )
-                    output_task.update(
-                        advance=3, comment="Completing transaction with Backend"
+
+                    # If the resource change type is a renaming of the resource, then it should not call to the mapper
+                    cloud_output = (
+                        mapper.deploy_resource(
+                            transaction_token,
+                            namespace_token,
+                            _evaluated_change,
+                            previous_output,
+                            output_task,
+                        )
+                        if _evaluated_change.action_type
+                        != Resource_Change_Type.UPDATE_NAME
+                        else previous_output
                     )
 
                 except Exception as e:
@@ -613,6 +755,10 @@ class Workspace:
                         cloud_output[
                             "cloud_region"
                         ] = Workspace.instance().settings.AWS_REGION
+
+                    output_task.update(
+                        advance=3, comment="Completing transaction with Backend"
+                    )
 
                     self.get_backend().complete_resource_change(
                         self.get_resource_state_uuid(),
@@ -664,16 +810,16 @@ class Workspace:
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
     def evaluate_and_replace_cloud_output(
-        self, component_name: str, original_resource: ResourceModel
-    ) -> Tuple[ResourceModel, Dict]:
-        """[stuff]
+        self, component_name: str, original_resource: TaggableResourceModel
+    ) -> Tuple[TaggableResourceModel, Optional[Dict]]:
+        """Replace the Cloud Output object in the given resource
 
         Args:
-            component_name (str): [description]
-            original_resource (ResourceModel): [description]
+            component_name (str)
+            original_resource (TaggableResourceModel)
 
         Returns:
-            Tuple[ResourceModel, Dict]: [description]
+            Tuple[TaggableResourceModel, Dict]
         """
         if not original_resource:
             return original_resource, None
@@ -695,16 +841,16 @@ class Workspace:
 
     @wrap_phase([Workspace_State.EXECUTING_BACKEND])
     def evaluate_and_replace_previous_cloud_output(
-        self, component_name: str, previous_resource: ResourceModel
-    ) -> ResourceModel:
-        """[stuff]
+        self, component_name: str, previous_resource: TaggableResourceModel
+    ) -> TaggableResourceModel:
+        """Replace the Cloud Output object in the given resource based on the previous cloud output values
 
         Args:
-            component_name (str): [description]
-            original_resource (ResourceModel): [description]
+            component_name (str)
+            previous_resource (TaggableResourceModel)
 
         Returns:
-            Tuple[ResourceModel, Dict]: [description]
+            Tuple[TaggableResourceModel, Dict]
         """
 
         if not previous_resource:
@@ -733,7 +879,7 @@ class Workspace:
 
                 key = f"{ruuid};{name};{key}"
 
-                if not key in previous_resource_resolved_values:
+                if key not in previous_resource_resolved_values:
                     raise Exception
 
                 return previous_resource_resolved_values.get(key)
@@ -751,6 +897,16 @@ class Workspace:
     def _recursive_replace_output(
         self, resolver: Callable, original: Any, resolved_values: Dict = {}
     ) -> Tuple[Any, Dict]:
+        """Recursively replace any output
+
+        Args:
+            resolver (Callable)
+            original (Any)
+            resolved_values (Dict, optional): Defaults to {}.
+
+        Returns:
+            Tuple[Any, Dict]
+        """
         # This function works over ImmutableModel that were converted using the `.dict` method. Therefore,
         # the collections will be `frozendict` and `frozenset` instead of `dict` and `list`
 
@@ -772,7 +928,7 @@ class Workspace:
                         resolved_values,
                     )
 
-                return (_value, resolved_values)
+                return _value, resolved_values
 
             rv = {}
             for k, v in original.items():
@@ -784,7 +940,7 @@ class Workspace:
 
                 resolved_values.update(tmp_resolved_values)
 
-            return (frozendict(rv), resolved_values)
+            return frozendict(rv), resolved_values
 
         elif isinstance(original, frozenset):
             rv = []
@@ -800,14 +956,13 @@ class Workspace:
         return original, resolved_values
 
     @wrap_phase([Workspace_State.INITIALIZED])
-    def execute_command(self, command: str, args: List) -> None:
-        """
-        Find the desired command based on the search path and execute it with the given arguments.
+    def execute_command(self, command: str, args: List, output: OutputManager) -> None:
+        """Find the desired command based on the search path and execute it with the given arguments.
 
         Args:
-            command (str): The full command to search for. can be '.' seperated to denote search path.
+            command (str): The full command to search for. can be '.' separated to denote search path.
             args (List): The command lines arguments to pass to the command.
-
+            output (OutputManager): Use to print information
         Raises:
             KeyError: Raises an exception.
         """
@@ -819,33 +974,28 @@ class Workspace:
         all_search_locations_list = self.get_commands()
 
         obj, program_name, command_name, is_command = find_specified_command(
-            command_list, all_search_locations_list
+            command_list, all_search_locations_list, output=output
         )
 
         if is_command:
             if not isinstance(obj, BaseCommand):
                 raise Exception
 
-            try:
-                args = [program_name, command_name, *args]
-                obj.run_from_command_line(args)
-            except Exception as e:
-                raise e
+            args = [program_name, command_name, *args]
+            obj.run_from_command_line(args)
 
         else:
             if not isinstance(obj, BaseCommandContainer):
                 raise Exception
 
-            try:
-                obj.display_help_message()
-            except Exception as e:
-                raise e
+            obj.display_help_message()
 
 
 class WorkspaceManager:
-    def create_new_workspace(self, workspace_info: Workspace_Info, *posargs, **kwargs) -> None:
-        """
-        Create a new workspace based on the information provided.
+    def create_new_workspace(
+        self, workspace_info: Workspace_Info, *posargs, **kwargs
+    ) -> None:
+        """Create a new workspace based on the information provided.
 
         Args:
             workspace_info (Workspace_Info): information about the backend configuration
@@ -856,36 +1006,57 @@ class WorkspaceManager:
         raise NotImplementedError
 
     def check_if_workspace_exists(self, *posargs, **kwargs) -> bool:
+        """Check if a workspace exists
+
+        Raises:
+            NotImplementedError
+
+        Returns:
+            bool
+        """
         raise NotImplementedError
 
     def load_workspace_configuration(self, *posargs, **kwargs) -> Workspace_Info:
+        """Load the configuration of the workspace
+
+        Raises:
+            NotImplementedError
+
+        Returns:
+            Workspace_Info
+        """
         raise NotImplementedError
 
     def load_workspace(self, *posargs, **kwargs) -> Workspace:
+        """Load a workspace
+
+        Raises:
+            NotImplementedError
+
+        Returns:
+            Workspace
+        """
         raise NotImplementedError
 
 
-def load_and_initialize_workspace(config: Workspace_Info) -> None:
-    """
-    Load and initialize the workspace from the given configuration
-    """
-    ws = load_workspace(config)
-    ws.set_state(Workspace_State.INITIALIZING)
-    initialize_workspace(ws, config.settings_info, config.config)
-    ws.set_state(Workspace_State.INITIALIZED)
-
-
 def load_workspace(config: Workspace_Info) -> Workspace:
-    """
-    Load and initialize the workspace from the given configuration
+    """Load the workspace from the given configuration
+
+    Args:
+        config (Workspace_Info)
+
+    Raises:
+        Exception
+
+    Returns:
+        Workspace
     """
     try:
         workspace_module = module_loader.import_module(config.python_module)
-    except Exception as e:
-        print("Error loading workspace module")
-        print(f"Error > {e}")
-
-        raise e
+    except Exception:
+        raise WorkspaceInfoError(
+            error_message=f"Could not load {config.python_module} as a python module"
+        )
 
     workspace_class = None
     for item in dir(workspace_module):
@@ -899,27 +1070,40 @@ def load_workspace(config: Workspace_Info) -> Workspace:
             break
 
     if not workspace_class:
-        print(f"Could not find {config.python_class} in {config.python_module}")
-        raise Exception
-
-    try:
-        # initialize the backend obj with the provided configuration values
-        return workspace_class()
-
-    except Exception as e:
-        print(
-            f"Could not load {workspace_class} Class from config {config.config}; {e}"
+        raise WorkspaceInfoError(
+            error_message=f"Could not find {config.python_class} in {config.python_module} to load as workspace"
         )
-        raise e
 
-
-def initialize_workspace(workspace: Workspace, settings: Settings_Info, config: Dict) -> None:
     try:
-        Workspace.settings = initialize_settings(settings)
+        workspace_obj = workspace_class()
 
-        # initialize the backend obj with the provided configuration values
-        workspace.initialize_workspace(config)
+    except Exception:
+        raise WorkspaceInfoError(
+            error_message=f"Could not load type {workspace_class} as workspace"
+        )
 
-    except Exception as e:
-        print(f"Could not initialize {workspace} Class from config {config}; {e}")
-        raise e
+    return workspace_obj
+
+
+def initialize_workspace(workspace: Workspace, workspace_info: Workspace_Info) -> None:
+    """Initialize the given workspace
+
+    Args:
+        workspace (Workspace): _description_
+        workspace_info (Workspace_Info): _description_
+
+    Raises:
+        e: _description_
+    """
+    workspace.set_state(Workspace_State.INITIALIZING)
+
+    # initialize the backend obj with the provided configuration values
+    workspace.initialize_workspace(
+        settings_info=workspace_info.settings_info,
+        backend_info=workspace_info.backend_info,
+        resource_state_uuid=workspace_info.resource_state_uuid,
+        initialization_modules=workspace_info.initialization_modules,
+        configuration=workspace_info.config,
+    )
+
+    workspace.set_state(Workspace_State.INITIALIZED)
