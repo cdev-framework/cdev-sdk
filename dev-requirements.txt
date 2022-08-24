@@ -1,3 +1,5 @@
 pre-commit
 tox
 ./src
+twine
+wheel
