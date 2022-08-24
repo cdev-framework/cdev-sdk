@@ -3,18 +3,22 @@
 
 
 """
-
-from rich.console import Console
-from rich.traceback import Traceback
 from typing import Any, List, Optional, Tuple, Union
 
+from rich.console import Console
+from rich.markup import escape
 from rich.progress import Progress, TaskID
+from rich.pretty import Pretty
+from rich.traceback import Traceback
+from rich.table import Table
+
 
 from core.constructs.components import (
     Component_Change_Type,
     ComponentModel,
     Component_Difference,
 )
+from core.constructs.models import deep_convert_to_mutable
 from core.constructs.resource import (
     Resource_Change_Type,
     Resource_Difference,
@@ -70,6 +74,7 @@ class OutputManager:
             progress (Progress, optional): Defaults to None.
         """
         self._console = console or CdevCoreConsole()
+        self._no_emoji_console = CdevCoreConsole(emoji=False)
         self._progress = progress
 
     def print(self, msg: str) -> None:
@@ -162,6 +167,27 @@ class OutputManager:
             self._print_component_reference_differences(
                 component_diff, reference_differences
             )
+
+    def print_cloud_output(self, outputs: List[Tuple[str, Any]]) -> None:
+
+        self._console.print("")
+        table = Table(title="Generated Cloud Output", show_lines=True)
+
+        table.add_column("Label", justify="right", style="cyan", no_wrap=True)
+        table.add_column("Value", style="yellow")
+
+        for tag, cloud_output in outputs:
+            _converted_obj = deep_convert_to_mutable(cloud_output)
+
+            val = (
+                escape(_converted_obj)
+                if isinstance(_converted_obj, str)
+                else Pretty(_converted_obj)
+            )
+
+            table.add_row(escape(tag), val)
+
+        self._no_emoji_console.print(table)
 
     def create_task(
         self,
