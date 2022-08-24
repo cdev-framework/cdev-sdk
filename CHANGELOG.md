@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 All releases will correspond to releases on [PyPI](https://pypi.org/project/cdev/).
 All release will have a corresponding git tag.
 
-## [Unreleased]
+## [0.0.11]
 ### Added
 - Update the number of buckets in initialization selection tool from 10 to 25
 - Add `__init__.py` file to the twilio quick start project
