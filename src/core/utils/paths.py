@@ -26,6 +26,8 @@ This is a important part to improve the DX of the working with library.
 """
 
 import os
+from typing import Union
+
 from pydantic import DirectoryPath
 from pydantic.types import FilePath
 
@@ -183,7 +185,7 @@ def create_path(startingpath, fullpath) -> DirectoryPath:
     return intermediate_path
 
 
-def touch_file(file_path: FilePath) -> None:
+def touch_file(file_path: Union[FilePath, str]) -> None:
     """Helper function to touch a file
 
     Args:
@@ -201,7 +203,7 @@ def touch_file(file_path: FilePath) -> None:
         pass
 
 
-def mkdir(directory_path: DirectoryPath) -> None:
+def mkdir(directory_path: Union[DirectoryPath, str]) -> None:
     """Create a directory if it does not already exist.
 
     Args:

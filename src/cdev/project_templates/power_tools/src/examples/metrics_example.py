@@ -8,7 +8,7 @@ from src.examples.config import powertool_vars
 metrics = Metrics(namespace="ExampleApplication", service="booking")
 
 
-@simple_function_annotation("metrics_example", environment=powertool_vars)
+@simple_function_annotation("metrics_example", environment=powertool_vars, tags={"environment": "dev", "sample_tag": "metrics"})
 @metrics.log_metrics
 def lambda_handler(evt, ctx):
     metrics.add_metric(name="SuccessfulBooking", unit=MetricUnit.Count, value=123)

@@ -1,37 +1,40 @@
+from cdev.constructs.project import Project
 from core.constructs.workspace import Workspace
 from core.constructs.output_manager import OutputManager
 from core.constructs.workspace_watcher import WorkspaceWatcher
 
 
-def execute_sync(args) -> None:
-    ws = Workspace.instance()
+def execute_sync(
+    disable_prompt: bool,
+    no_default: bool,
+    watch: str,
+    ignore: str,
+    ws: Workspace,
+    output_manager: OutputManager,
+) -> None:
+    core_sync_command(disable_prompt, no_default, watch, ignore, ws, output_manager)
 
-    output_manager = OutputManager()
 
-    core_sync_command(ws, output_manager, args)
-
-
-def core_sync_command(workspace: Workspace, output: OutputManager, cli_args) -> None:
+def core_sync_command(
+    disable_prompt: bool,
+    no_default: bool,
+    watch: str,
+    ignore: str,
+    workspace: Workspace,
+    output_manager: OutputManager,
+) -> None:
     """
-    Attempts to find and run a user defined command
-
-    format:
-    cdev sync <sub_command> <args>
+    watch the filesystem for changes and then run the deploy command
     """
-    ignore_args = cli_args[0].ignore
-    watch_args = cli_args[0].watch
-    no_default_args = cli_args[0].no_default
-    no_prompt_args = cli_args[0].disable_prompt
     try:
         workspace_watcher = WorkspaceWatcher(
             workspace,
-            output,
-            no_prompt=no_prompt_args,
-            no_default=no_default_args,
-            patterns_to_watch=watch_args,
-            patterns_to_ignore=ignore_args,
+            output_manager,
+            no_prompt=disable_prompt,
+            no_default=no_default,
+            patterns_to_watch=watch,
+            patterns_to_ignore=ignore,
         )
         workspace_watcher.watch()
     except Exception as e:
-        output._console.print(e)
         return

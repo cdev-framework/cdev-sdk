@@ -31,7 +31,7 @@ setuptools.setup(
     author="CDEV LLC",
     author_email="daniel@cdevframework.com",
     license="Clear BSD",
-    packages=setuptools.find_packages(),
+    packages=["cdev", "core", "serverless_parser"],
     include_package_data=True,
     install_requires=[
         "aurora_data_api",
@@ -44,6 +44,7 @@ setuptools.setup(
         "rich",
         "sortedcontainers",
         "watchdog",
+        "GitPython",
     ],
     python_requires=">=3.7",
 )

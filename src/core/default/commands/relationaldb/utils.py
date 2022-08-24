@@ -18,34 +18,32 @@ def get_db_info_from_cdev_name(
     Returns:
         Tuple[str,str,str]: cluster_arn, secret_arn, db_name
     """
-    try:
-        ws = Workspace.instance()
 
-        cluster_arn = ws.get_backend().get_cloud_output_value_by_name(
+    ws = Workspace.instance()
+
+    cluster_arn = ws.get_backend().get_cloud_output_value_by_name(
+        ws.get_resource_state_uuid(),
+        component_name,
+        RUUID,
+        cdev_database_name,
+        "cluster_arn",
+    )
+
+    secret_arn = ws.get_backend().get_cloud_output_value_by_name(
+        ws.get_resource_state_uuid(),
+        component_name,
+        RUUID,
+        cdev_database_name,
+        "secret_arn",
+    )
+
+    db_resource_model: simple_relational_db_model = (
+        ws.get_backend().get_resource_by_name(
             ws.get_resource_state_uuid(),
             component_name,
             RUUID,
             cdev_database_name,
-            "cluster_arn",
         )
+    )
 
-        secret_arn = ws.get_backend().get_cloud_output_value_by_name(
-            ws.get_resource_state_uuid(),
-            component_name,
-            RUUID,
-            cdev_database_name,
-            "secret_arn",
-        )
-
-        db_resource_model: simple_relational_db_model = (
-            ws.get_backend().get_resource_by_name(
-                ws.get_resource_state_uuid(),
-                component_name,
-                RUUID,
-                cdev_database_name,
-            )
-        )
-
-        return (cluster_arn, secret_arn, db_resource_model.DatabaseName)
-    except Exception as e:
-        print(e)
+    return (cluster_arn, secret_arn, db_resource_model.DatabaseName)

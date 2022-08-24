@@ -13,7 +13,7 @@ from typing import Dict, List, Tuple
 from core.constructs.cloud_output import cloud_output_dynamic_model
 
 from core.constructs.resource_state import Resource_State
-from core.utils.exceptions import Cdev_Error
+from core.utils.exceptions import cdev_core_error
 from ..constructs.models import frozendict
 
 
@@ -68,12 +68,12 @@ def safe_json_write(obj: Dict, fp: FilePath) -> None:
 
     except Exception as e:
         print(e)
-        raise Cdev_Error(f"Could not write data as a json into tmp file; {obj}", e)
+        raise cdev_core_error(f"Could not write data as a json into tmp file; {obj}", e)
 
     try:
         shutil.copyfile(tmp_fp, fp)
     except Exception as e:
-        raise Cdev_Error(
+        raise cdev_core_error(
             f"Could not copy tmp file into actual location; {tmp_fp} -> {fp}", e
         )
 
@@ -108,7 +108,7 @@ def load_resource_state(fp: FilePath) -> Resource_State:
     """
 
     if not os.path.isfile(fp):
-        raise Cdev_Error(
+        raise cdev_core_error(
             f"Trying to load resource state from {fp} but it does not exist"
         )
 
@@ -117,7 +117,7 @@ def load_resource_state(fp: FilePath) -> Resource_State:
             _mutable_json = json.load(fh)
 
     except Exception as e:
-        raise Cdev_Error(
+        raise cdev_core_error(
             f"Trying to load resource state from {fp} but could not load the file as a json"
         )
 
@@ -142,7 +142,7 @@ def load_resource_state(fp: FilePath) -> Resource_State:
                 )
 
         except Exception as e:
-            raise Cdev_Error(
+            raise cdev_core_error(
                 f"Trying to load resource state from {fp} but could not make dict immutable",
                 e,
             )
@@ -150,7 +150,7 @@ def load_resource_state(fp: FilePath) -> Resource_State:
     try:
         rv = Resource_State(**_mutable_json)
     except Exception as e:
-        raise Cdev_Error(
+        raise cdev_core_error(
             f"Trying to load resource state from {fp} but could not serialized Dict into Resource_State",
             e,
         )

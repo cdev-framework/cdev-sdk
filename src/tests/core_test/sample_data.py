@@ -18,7 +18,6 @@ from core.constructs.resource import (
     ResourceReferenceModel,
 )
 from core.constructs.cloud_output import (
-    Cloud_Output,
     Cloud_Output_Str,
     OutputType,
     cloud_output_model,

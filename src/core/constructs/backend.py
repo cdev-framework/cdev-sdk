@@ -14,16 +14,42 @@ used to load a class that inherits from the base `Backend` class. It also takes 
 passed as configuration into the dynamically loaded class.
 
 """
-import inspect
-from typing import Dict, Tuple, Any, List, Callable, Optional
+from dataclasses import dataclass, field
+from typing import Dict, Tuple, Any, List
 from pydantic import BaseModel
 
-from .components import Component_Difference, ComponentModel
+from core.constructs.components import Component_Difference, ComponentModel
+from core.constructs.resource import (
+    Resource_Reference_Difference,
+    ResourceModel,
+    Resource_Difference,
+)
+from core.constructs.resource_state import Resource_State
 
-from .resource import Resource_Reference_Difference, ResourceModel, Resource_Difference
-from .resource_state import Resource_State
+from core.utils.module_loader import import_class, ImportClassError, ImportModuleError
+from core.utils.exceptions import cdev_core_error
 
-from core.utils.module_loader import import_module
+
+###############################
+##### Exceptions
+###############################
+
+
+@dataclass
+class BackendError(cdev_core_error):
+    help_message: str = ""
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+@dataclass
+class BackendInitializationError(BackendError):
+    help_message: str = ""
+    help_resources: List[str] = field(default_factory=lambda: [])
+
+
+###############################
+##### API
+###############################
 
 
 class Backend_Configuration(BaseModel):
@@ -372,6 +398,30 @@ class Backend:
         """
         raise NotImplementedError
 
+    # Api for getting a set of resources that match the given tag from the backend
+    def get_resources_by_tag(
+            self,
+            resource_state_uuid: str,
+            component_name: str,
+            resource_type: str,
+            resource_tag: str,
+    ) -> List[ResourceModel]:
+        """
+        Get the state of a resource from a component based on the name of the resource
+
+        Args:
+            resource_state_uuid (str): The resource state for this resource.
+            component_name (str): The component this resource is in.
+            resource_type: The RUUID of the resource desired
+            resource_tag: The tag of the resources desired
+
+        Raises:
+            ResourceStateDoesNotExist
+            ComponentDoesNotExist
+            ResourceDoesNotExist
+        """
+        raise NotImplementedError
+
     def get_cloud_output_value_by_name(
         self,
         resource_state_uuid: str,
@@ -465,9 +515,9 @@ class Backend:
         new_components: List[ComponentModel],
         old_components: List[str],
     ) -> Tuple[
-        Component_Difference,
-        Resource_Difference,
-        Resource_Reference_Difference,
+        List[Component_Difference],
+        List[Resource_Difference],
+        List[Resource_Reference_Difference],
     ]:
         """
         Create the set of differences from a proposed set of components to a provided set of current components identified by their name. This allows the flexibility for working on a particular
@@ -491,33 +541,28 @@ def load_backend(config: Backend_Configuration) -> Backend:
         Backend: [description]
     """
     try:
-        backend_module = import_module(config.python_module)
-    except Exception as e:
-        print("Error loading backend module")
-        print(f"Error > {e}")
-
-        raise e
-
-    backend_class: Optional[Callable] = None
-    for item in dir(backend_module):
-        potential_obj = getattr(backend_module, item)
-        if (
-            inspect.isclass(potential_obj)
-            and issubclass(potential_obj, Backend)
-            and item == config.python_class
-        ):
-            backend_class = potential_obj
-            break
-
-    if not backend_class:
-        print(f"Could not find {config.python_class} in {config.python_module}")
-        raise Exception
+        backend_class = import_class(config.python_module, config.python_class)
+    except ImportClassError as e:
+        raise BackendInitializationError(
+            error_message=f"""When loading '{config.python_class}' from '{config.python_module}' as the settings base class the following exception occurred:
+            {e.error_message}
+            """
+        )
+    except ImportModuleError as e:
+        raise BackendInitializationError(
+            error_message=f"""When loading '{config.python_module}' to load the base settings class ('{config.python_class}') the following exception occurred:
+            {e.error_message}
+            """
+        )
 
     try:
         # initialize the backend obj with the provided configuration values
         initialized_obj = backend_class(**config.config)
     except Exception as e:
-        print(f"Could not initialize {backend_class} Class from config {config.config}")
-        raise e
+        raise BackendInitializationError(
+            error_message=f"""When Initializing Backend ('{config.python_module}.{config.python_class}') with Configuration {config.config}, an error occurred:
+            {e}
+            """
+        )
 
     return initialized_obj

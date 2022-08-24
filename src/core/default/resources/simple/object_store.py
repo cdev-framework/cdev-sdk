@@ -3,18 +3,20 @@
 """
 
 from enum import Enum
-from typing import Any, List
+from typing import Any, Dict
 
 from core.constructs.resource import (
     Resource,
-    ResourceModel,
+    TaggableResourceModel,
     update_hash,
     ResourceOutputs,
     PermissionsAvailableMixin,
+    TaggableMixin,
 )
 from core.constructs.cloud_output import Cloud_Output_Str, OutputType
 from core.constructs.types import cdev_str_model
 from core.utils import hasher
+from core.constructs.models import frozendict
 
 from core.default.resources.simple.iam import Permission
 
@@ -131,7 +133,7 @@ class BucketPermissions:
         """Permissions to receive events from the `Bucket`"""
 
 
-class bucket_model(ResourceModel):
+class bucket_model(TaggableResourceModel):
     """Model representing a Bucket"""
 
     pass
@@ -155,17 +157,23 @@ class BucketOutput(ResourceOutputs):
         raise Exception
 
 
-class Bucket(PermissionsAvailableMixin, Resource):
+class Bucket(PermissionsAvailableMixin, TaggableMixin, Resource):
     """A Simple Bucket is a basic object store for applications to build on."""
 
     @update_hash
-    def __init__(self, cdev_name: str, nonce: str = "") -> None:
+    def __init__(
+        self,
+        cdev_name: str,
+        nonce: str = "",
+        tags: Dict[str, str] = None,
+    ) -> None:
         """
         Args:
             cdev_name (str): Name of the resource
             nonce (str): Nonce to make the resource hash unique if there are conflicting resources with same configuration.
+            tags (Dict[str, str]): A set of tags to add to the resource
         """
-        super().__init__(cdev_name, RUUID, nonce)
+        super().__init__(cdev_name, RUUID, nonce, tags=tags)
 
         self.available_permissions: BucketPermissions = BucketPermissions(cdev_name)
         self.output = BucketOutput(cdev_name)
@@ -178,11 +186,17 @@ class Bucket(PermissionsAvailableMixin, Resource):
         return event
 
     def compute_hash(self) -> None:
-        self._hash = hasher.hash_list([self.nonce])
+        self._hash = hasher.hash_list(
+            [
+                self.nonce,
+                self._get_tags_hash(),
+            ]
+        )
 
     def render(self) -> bucket_model:
         return bucket_model(
             ruuid=self.ruuid,
             name=self.name,
             hash=self.hash,
+            tags=frozendict(self.tags)
         )
