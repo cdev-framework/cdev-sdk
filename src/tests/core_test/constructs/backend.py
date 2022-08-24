@@ -389,7 +389,7 @@ def simple_differences(test_backend: Backend):
 
     # TODO do more in depth testing of the actual diffs
     assert 4 == len(resource_diffs)
-    assert 4 == len(component_diffs)
+    assert 5 == len(component_diffs)
     assert 2 == len(reference_diffs)
 
 
