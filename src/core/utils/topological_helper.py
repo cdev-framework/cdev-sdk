@@ -180,9 +180,10 @@ def generate_sorted_resources(
             else:
                 change_dag.add_edge(component_ids.get(component_id), resource)
         else:
-            raise Exception(
-                f"There should always be a change in a component for a resource change {resource}"
-            )
+            pass
+            # raise Exception(
+            #    f"There should always be a change in a component for a resource change {resource}"
+            # )
 
         parent_resources, parent_references = (
             find_parents(resource.new_resource)

@@ -8,7 +8,7 @@ ARTIFACT_BUCKET_INTRO_MESSAGE = """
 You will need to provide an S3 bucket that will be used by Cdev to upload your project artifacts (functions, layers, etc).
 """
 
-MAXIMUM_BUCKETS_LISTED = 10
+MAXIMUM_BUCKETS_LISTED = 25
 
 LIST_BUCKETS_FAILED = """
 Failed to list your accounts S3 Buckets for selection. To use some of the main features of Cdev, you will need to create an S3 Bucket and provide it to Cdev via your `settings/base_settings.py.py` file.

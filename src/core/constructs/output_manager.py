@@ -3,18 +3,22 @@
 
 
 """
-
-from rich.console import Console
-from rich.traceback import Traceback
 from typing import Any, List, Optional, Tuple, Union
 
+from rich.console import Console
+from rich.markup import escape
 from rich.progress import Progress, TaskID
+from rich.pretty import Pretty
+from rich.traceback import Traceback
+from rich.table import Table
+
 
 from core.constructs.components import (
     Component_Change_Type,
     ComponentModel,
     Component_Difference,
 )
+from core.constructs.models import deep_convert_to_mutable
 from core.constructs.resource import (
     Resource_Change_Type,
     Resource_Difference,
@@ -22,6 +26,10 @@ from core.constructs.resource import (
     Resource_Reference_Difference,
 )
 from core.utils.exceptions import cdev_core_error, wrapped_base_exception
+
+
+CLOUD_OUTPUT_LABEL_COLOR = "cyan"
+CLOUD_OUTPUT_VALUE_COLOR = "yellow"
 
 
 class CdevCoreConsole(Console):
@@ -70,6 +78,7 @@ class OutputManager:
             progress (Progress, optional): Defaults to None.
         """
         self._console = console or CdevCoreConsole()
+        self._no_emoji_console = CdevCoreConsole(emoji=False)
         self._progress = progress
 
     def print(self, msg: str) -> None:
@@ -112,8 +121,9 @@ class OutputManager:
         rendered_components.sort(key=lambda x: x.name)
 
         self._console.print(f"Current State:")
+        self._console.print("")
         for component in rendered_components:
-            self._console.print(f"Component: [bold blue]{component.name}[/bold blue]")
+            self._console.print(f"[bold blue]{component.name} (component)[/bold blue]")
             self._print_component_resources(component)
             self._print_component_references(component)
 
@@ -125,12 +135,8 @@ class OutputManager:
         Args:
             old_component_names (List[str])
         """
-
-        self._console.print("Components to diff against:")
-        for component_name in old_component_names:
-            self._console.print(f"    {component_name}")
-
-        self._console.print("")
+        # Current implementation does not need this
+        pass
 
     def print_state_differences(
         self,
@@ -162,6 +168,29 @@ class OutputManager:
             self._print_component_reference_differences(
                 component_diff, reference_differences
             )
+
+    def print_cloud_output(self, outputs: List[Tuple[str, Any]]) -> None:
+
+        self._console.print("")
+        table = Table(title="Generated Cloud Output", show_lines=True)
+
+        table.add_column(
+            "Label", justify="right", style=CLOUD_OUTPUT_LABEL_COLOR, no_wrap=True
+        )
+        table.add_column("Value", style=CLOUD_OUTPUT_VALUE_COLOR)
+
+        for tag, cloud_output in outputs:
+            _converted_obj = deep_convert_to_mutable(cloud_output)
+
+            val = (
+                escape(_converted_obj)
+                if isinstance(_converted_obj, str)
+                else Pretty(_converted_obj)
+            )
+
+            table.add_row(escape(tag), val)
+
+        self._no_emoji_console.print(table)
 
     def create_task(
         self,
@@ -257,12 +286,13 @@ class OutputManager:
             component (ComponentModel)
         """
         if component.resources is None or not any(component.resources):
-            self._console.print(f"        [bold blue] No Resources")
+            self._console.print(f"  [bold blue] No Resources")
             return
 
+        self._console.print("  [bold cyan]Resources:[/bold cyan]")
         for resource in component.resources:
             self._console.print(
-                f"        [bold blue]{resource.name} ({resource.ruuid})[/bold blue]"
+                f"  [yellow]{resource.name} ({resource.ruuid})[/yellow]"
             )
 
     def _print_component_references(self, component: ComponentModel) -> None:
@@ -273,12 +303,13 @@ class OutputManager:
         """
 
         if component.references is None or not any(component.references):
-            self._console.print(f"        [bold blue] No References")
+            self._console.print("")
+            self._console.print(f"  [bold cyan]No References")
             return
 
         for reference in component.references:
             self._console.print(
-                f"        [bold blue]From {reference.component_name} reference {reference.name} ({reference.ruuid})[/bold blue]"
+                f"  [bold cyan]From {reference.component_name} reference {reference.name} ({reference.ruuid})[/bold cyan]"
             )
 
     def _print_component_differences(
