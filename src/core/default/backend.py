@@ -1273,15 +1273,16 @@ def _create_differences(
                     # if there is a resource change that is not an update name raise an exception
                     raise Exception
 
-                resource_diffs.extend(tmp_resource_diff)
+                if tmp_resource_diff:
+                    resource_diffs.extend(tmp_resource_diff)
 
-                component_diffs.append(
-                    Component_Difference(
-                        Component_Change_Type.UPDATE_IDENTITY,
-                        previous_name=previous_component.name,
-                        new_name=component.name,
+                    component_diffs.append(
+                        Component_Difference(
+                            Component_Change_Type.UPDATE_IDENTITY,
+                            previous_name=previous_component.name,
+                            new_name=component.name,
+                        )
                     )
-                )
 
                 # POP the seen previous component as we go so only remaining resources will be deletes
                 previous_components_to_remove.remove(previous_component)
@@ -1325,6 +1326,7 @@ def _create_differences(
                 not component.hash in previous_hash_to_component
                 and component.name in previous_name_to_component
             ):
+                print(previous_hash_to_component)
                 # hash of the component has changed but not the name
                 # This means a resource or reference has updated its identity hash
                 previous_component = previous_name_to_component.get(component.name)
