@@ -28,6 +28,10 @@ from core.constructs.resource import (
 from core.utils.exceptions import cdev_core_error, wrapped_base_exception
 
 
+CLOUD_OUTPUT_LABEL_COLOR = "cyan"
+CLOUD_OUTPUT_VALUE_COLOR = "yellow"
+
+
 class CdevCoreConsole(Console):
     def print_exception(
         self,
@@ -170,8 +174,10 @@ class OutputManager:
         self._console.print("")
         table = Table(title="Generated Cloud Output", show_lines=True)
 
-        table.add_column("Label", justify="right", style="cyan", no_wrap=True)
-        table.add_column("Value", style="yellow")
+        table.add_column(
+            "Label", justify="right", style=CLOUD_OUTPUT_LABEL_COLOR, no_wrap=True
+        )
+        table.add_column("Value", style=CLOUD_OUTPUT_VALUE_COLOR)
 
         for tag, cloud_output in outputs:
             _converted_obj = deep_convert_to_mutable(cloud_output)
