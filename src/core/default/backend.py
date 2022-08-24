@@ -1326,7 +1326,6 @@ def _create_differences(
                 not component.hash in previous_hash_to_component
                 and component.name in previous_name_to_component
             ):
-                print(previous_hash_to_component)
                 # hash of the component has changed but not the name
                 # This means a resource or reference has updated its identity hash
                 previous_component = previous_name_to_component.get(component.name)
