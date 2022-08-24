@@ -1,7 +1,7 @@
 """Utilities for creating a deploying a set of changes
 
 """
-from typing import Optional
+from typing import Any, Optional, List, Tuple
 
 from core.constructs.output_manager import OutputManager
 from core.constructs.workspace import Workspace, Workspace_State
@@ -43,5 +43,6 @@ def execute_deployment(
     workspace.set_state(Workspace_State.EXECUTING_BACKEND)
     workspace.deploy_differences(differences_structured)
 
-    for tag, cloud_output in workspace.render_outputs():
-        print(f"{tag} -> {cloud_output}")
+    workspace_output = workspace.render_outputs()
+
+    output.print_cloud_output(workspace_output)
