@@ -14,6 +14,7 @@ All release will have a corresponding git tag.
 - Update the output of current state output
 
 ### Fixed
+- Fix bug in the backend component diff logic
 
 ## [0.0.9] - 2022-06-20
 ### Added
