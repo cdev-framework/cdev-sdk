@@ -10,6 +10,7 @@ All release will have a corresponding git tag.
 ### Added
 - Update the number of buckets in initialization selection tool from 10 to 25
 - Add `__init__.py` file to the twilio quick start project
+- Update the output of cloud values during the `deploy` command to use a `rich` table
 
 ### Fixed
 
