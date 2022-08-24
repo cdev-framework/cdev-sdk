@@ -1,6 +1,5 @@
 """Command for syncing a set of resources to a static site
 """
-import sys
 from argparse import ArgumentParser
 import boto3
 import os
@@ -9,11 +8,16 @@ import mimetypes
 from pydantic import FilePath
 
 from core.constructs.commands import BaseCommand
-from core.default.resources.simple.static_site import simple_static_site_model
+from core.default.resources.simple.static_site import (
+    simple_static_site_model,
+)
 from core.utils.paths import get_full_path_from_workspace_base
+from core.default.commands import utils as command_utils
 
-from . import utils
 from core.default.commands.static_site.watcher import StaticSiteWatcher
+
+
+RUUID = "cdev::simple::staticsite"
 
 
 class sync_files(BaseCommand):
@@ -64,31 +68,29 @@ class sync_files(BaseCommand):
         if kwargs.get("keep_in_sync"):
             self._watch_filesystem()
         else:
-            self._perform_deployment()
+            self._perform_deployment(kwargs.get("resource_name"))
 
     def _extract_arguments(self, *args, **kwargs) -> None:
         self._resource_name = kwargs["resource_name"]
         self._override_directory = kwargs.get("dir")
         self._clear_bucket_first = kwargs.get("clear")
         self._preserve_html = kwargs.get("preserve_html")
-        self._ignore_files = kwargs.get('ignore')
-        self._watch_files = kwargs.get('watch')
-        self._no_default = kwargs.get('no-default')
-        self._no_prompt = kwargs.get('disable-prompt')
+        self._ignore_files = kwargs.get("ignore")
+        self._watch_files = kwargs.get("watch")
+        self._no_default = kwargs.get("no-default")
+        self._no_prompt = kwargs.get("disable-prompt")
 
-    def _perform_deployment(self) -> None:
+    def _perform_deployment(self, resource_name: str) -> None:
         (
             component_name,
             static_site_name,
-        ) = self.get_component_and_resource_from_qualified_name(
-            self._resource_name
-        )
+        ) = command_utils.get_component_and_resource_from_qualified_name(resource_name)
 
-        resource: simple_static_site_model = utils.get_resource_from_cdev_name(
-            component_name, static_site_name
+        resource: simple_static_site_model = command_utils.get_resource_from_cdev_name(
+            component_name, RUUID, static_site_name
         )
-        cloud_output = utils.get_cloud_output_from_cdev_name(
-            component_name, static_site_name
+        cloud_output = command_utils.get_cloud_output_from_cdev_name(
+            component_name, RUUID, static_site_name
         )
 
         index_document = resource.index_document
@@ -128,7 +130,7 @@ class sync_files(BaseCommand):
 
                 if mimetype is None:
                     mimetype = "text"
-                print(f"{full_path} -> {key_name} ({mimetype})")
+                self.output.print(f"{full_path} -> {key_name} ({mimetype})")
                 bucket.upload_file(
                     full_path, key_name, ExtraArgs={"ContentType": mimetype}
                 )
@@ -140,12 +142,10 @@ class sync_files(BaseCommand):
         (
             component_name,
             static_site_name,
-        ) = self.get_component_and_resource_from_qualified_name(
-            self._resource_name
-        )
+        ) = self.get_component_and_resource_from_qualified_name(self._resource_name)
 
-        resource: simple_static_site_model = utils.get_resource_from_cdev_name(
-            component_name, static_site_name
+        resource: simple_static_site_model = command_utils.get_resource_from_cdev_name(
+            component_name, RUUID, static_site_name
         )
         final_dir = self._get_final_directory(resource)
 
@@ -157,7 +157,7 @@ class sync_files(BaseCommand):
                 no_default=self._no_default,
                 patterns_to_watch=self._watch_files,
                 patterns_to_ignore=self._ignore_files,
-                output=self.stdout,
+                output=self.output,
             )
             static_site_watcher.watch()
         except Exception as e:

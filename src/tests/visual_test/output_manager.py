@@ -15,7 +15,7 @@ from typing import Callable, Dict, List, Tuple
 from core.constructs.output_manager import OutputManager, OutputTask
 
 
-from tests.core.sample_data import (
+from tests.core_test.sample_data import (
     simple_components,
     simple_differences_for_topo_sort,
     simple_change_dag,

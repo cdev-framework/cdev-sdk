@@ -1,12 +1,10 @@
-
 import boto3
 
 from argparse import ArgumentParser
 
-from core.constructs.commands import BaseCommand, OutputWrapper
+from core.constructs.commands import BaseCommand
+from core.default.commands import utils as command_utils
 
-
-from . import utils
 
 RUUID = "cdev::simple::table"
 
@@ -28,10 +26,15 @@ Clear the current data from a given Table. This should only be used on developme
         """
         # https://stackoverflow.com/questions/55169952/delete-all-items-dynamodb-using-python
 
-        component_name, table_resource_name = self.get_component_and_resource_from_qualified_name(kwargs.get("resource_name"))
+        (
+            component_name,
+            table_resource_name,
+        ) = command_utils.get_component_and_resource_from_qualified_name(
+            kwargs.get("resource_name")
+        )
 
-        cloud_output = utils.get_cloud_output_from_cdev_name(
-            component_name, table_resource_name
+        cloud_output = command_utils.get_cloud_output_from_cdev_name(
+            component_name, RUUID, table_resource_name
         )
         table_cloud_name = cloud_output.get("table_name")
 
@@ -55,7 +58,7 @@ Clear the current data from a given Table. This should only be used on developme
                 counter += page["Count"]
                 # Delete items in batches
                 for itemKeys in page["Items"]:
-                    self.stderr.write(f"Removing item {itemKeys}")
+                    self.output.print(f"Removing item {itemKeys}")
                     batch.delete_item(Key=itemKeys)
                 # Fetch the next page
                 if "LastEvaluatedKey" in page:
@@ -67,4 +70,4 @@ Clear the current data from a given Table. This should only be used on developme
                 else:
                     break
 
-        self.stderr.write(f"Deleted {counter}")
+        self.output.print(f"Deleted {counter}")

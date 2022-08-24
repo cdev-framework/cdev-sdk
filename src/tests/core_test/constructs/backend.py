@@ -3,12 +3,11 @@ from core.constructs.resource import (
     Resource_Difference,
     Resource_Reference_Change_Type,
     Resource_Reference_Difference,
-    ResourceModel,
+    TaggableResourceModel,
 )
 from core.constructs.components import (
     Component_Change_Type,
     Component_Difference,
-    ComponentModel,
 )
 import pytest
 from typing import Dict, List, Tuple
@@ -422,7 +421,7 @@ def _check_final_resources_and_output(
     test_backend: Backend,
     resource_state_uuid: str,
     component_name: str,
-    final_state: List[Tuple[ResourceModel, Dict, str]],
+    final_state: List[Tuple[TaggableResourceModel, Dict, str]],
 ):
     # Assert:
     #   All resources names are there

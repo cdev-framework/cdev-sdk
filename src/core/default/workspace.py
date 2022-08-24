@@ -1,11 +1,10 @@
 import json
 import os
 from typing import List, Dict, Optional, Any, Tuple
-from pydantic.main import BaseModel
 
 from pydantic.types import DirectoryPath
 
-from core.constructs.backend import Backend, Backend_Configuration, load_backend
+from core.constructs.backend import Backend, Backend_Configuration
 from core.constructs.mapper import CloudMapper
 from core.constructs.components import Component, ComponentModel
 from core.constructs.workspace import (
@@ -109,9 +108,7 @@ class local_workspace(Workspace):
     @wrap_phase([Workspace_State.EXECUTING_FRONTEND])
     def generate_current_state(self) -> List[ComponentModel]:
         rv = []
-        components: List[Component] = self.get_components()
-
-        for component in components:
+        for component in self.get_components():
             self._current_component = component.name
             rv.append(component.render())
 
@@ -160,13 +157,14 @@ class local_workspace(Workspace):
 
     @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_BACKEND])
     def render_outputs(self) -> List[Tuple[str, Any]]:
-        rv = []
 
         if not self._current_component:
             raise Exception
 
+        rv = []
+        backend = self.get_backend()
         for tag, component, cloud_output in self._OUTPUT:
-            resolved_value = self.get_backend().get_cloud_output_value_by_name(
+            resolved_value = backend.get_cloud_output_value_by_name(
                 self.get_resource_state_uuid(),
                 component,
                 cloud_output.ruuid,
@@ -199,9 +197,11 @@ class local_workspace(Workspace):
 
     @wrap_phase([Workspace_State.INITIALIZING])
     def add_mappers(self, mappers: List[CloudMapper]) -> None:
+
         for mapper in mappers:
             self.add_mapper(mapper)
 
+        #ANIBAL This mapper may not exist here!
         self._MAPPERS.append(mapper)
 
     @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_BACKEND])
@@ -210,9 +210,9 @@ class local_workspace(Workspace):
 
     @wrap_phase([Workspace_State.INITIALIZED, Workspace_State.EXECUTING_BACKEND])
     def get_mapper_namespace(self) -> Dict:
-        rv = {}
         mappers: List[CloudMapper] = self.get_mappers()
 
+        rv = {}
         for mapper in mappers:
             for namespace in mapper.get_namespaces():
                 rv[namespace] = mapper

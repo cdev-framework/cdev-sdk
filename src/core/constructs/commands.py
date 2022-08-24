@@ -11,140 +11,9 @@ that is easily accessible and discoverable from the command line. To see how the
 and execute see our more in depth documentation on the command system at <link>
 
 """
+from argparse import ArgumentParser
 
-import os
-from argparse import ArgumentParser, HelpFormatter
-import sys
-from io import TextIOBase
-from typing import Tuple
-
-from rich.console import Console
-
-
-class CdevCommandError(BaseException):
-    """Base exception Class
-
-    Exception class indicating a problem while executing a management
-    command.
-    If this exception is raised during the execution of a management
-    command, it will be caught and turned into a nicely-printed error
-    message to the appropriate output stream (i.e., stderr); as a
-    result, raising this exception (with a sensible description of the
-    error) is the preferred way to indicate that something has gone
-    wrong in the execution of a command.
-    """
-
-    def __init__(self, *args, returncode=1, **kwargs):
-        self.returncode = returncode
-        super().__init__(*args, **kwargs)
-
-
-class CdevHelpFormatter(HelpFormatter):
-    """
-    This is just a nice feature of the formatter. Thank you Django.
-
-    Customized formatter so that command-specific arguments appear in the
-    --help output before arguments common to all commands.
-    """
-
-    show_last = {
-        "--version",
-        "--verbosity",
-        "--traceback",
-        "--settings",
-        "--pythonpath",
-        "--no-color",
-        "--force-color",
-        "--skip-checks",
-    }
-
-    def _reordered_actions(self, actions):
-        return sorted(
-            actions, key=lambda a: set(a.option_strings) & self.show_last != set()
-        )
-
-    def add_usage(self, usage, actions, *args, **kwargs) -> None:
-        super().add_usage(usage, self._reordered_actions(actions), *args, **kwargs)
-
-    def add_arguments(self, actions) -> None:
-        super().add_arguments(self._reordered_actions(actions))
-
-
-class OutputWrapper(TextIOBase):
-    """
-    Wrapper around stdout/stderr
-    """
-
-    @property
-    def style_func(self):
-        return self._style_func
-
-    @style_func.setter
-    def style_func(self, style_func) -> None:
-        if style_func and self.isatty():
-            self._style_func = style_func
-        else:
-            self._style_func = lambda x: x
-
-    def __init__(self, out, ending="\n") -> None:
-        self._out = out
-        self.style_func = None
-        self.ending = ending
-
-    def __getattr__(self, name):
-        return getattr(self._out, name)
-
-    def flush(self) -> None:
-        if hasattr(self._out, "flush"):
-            self._out.flush()
-
-    def isatty(self) -> bool:
-        return hasattr(self._out, "isatty") and self._out.isatty()
-
-    def write(self, msg="", style_func=None, ending=None) -> None:
-        ending = self.ending if ending is None else ending
-        if ending and not msg.endswith(ending):
-            msg += ending
-        style_func = style_func or self.style_func
-        self._out.write(style_func(msg))
-
-
-class ConsoleOutputWrapper(TextIOBase):
-    """
-    Wrapper around a `rich` console.
-    """
-
-    @property
-    def style_func(self):
-        return self._style_func
-
-    @style_func.setter
-    def style_func(self, style_func) -> None:
-        if style_func and self.isatty():
-            self._style_func = style_func
-        else:
-            self._style_func = lambda x: x
-
-    def __init__(self, console: Console, ending="\n") -> None:
-        self._out = console
-        self.style_func = None
-        self.ending = ending
-
-    def __getattr__(self, name):
-        return getattr(self._out, name)
-
-    def flush(self) -> None:
-        self._out.clear()
-
-    def isatty(self) -> bool:
-        return self._out.is_terminal
-
-    def write(self, msg: str = "", style_func=None, ending=None) -> None:
-        ending = self.ending if ending is None else ending
-        if ending and not msg.endswith(ending):
-            msg += ending
-        style_func = style_func or self.style_func
-        self._out.print(style_func(msg))
+from core.constructs.output_manager import OutputManager
 
 
 class BaseCommand:
@@ -153,32 +22,15 @@ class BaseCommand:
     # Help message for this command
     help = ""
 
-    # If this command requires the project to have been initialized
-    requires_initialized_workspace = True
-
-    # If the command should look to substitute args with cloud output values
-    substitute_from_output = True
-
     def __init__(
         self,
-        stdout: Console = None,
-        stderr: Console = None,
-        no_color=False,
-        force_color=False,
+        output: OutputManager,
     ) -> None:
-        self.stdout = (
-            ConsoleOutputWrapper(stdout) if stdout else OutputWrapper(sys.stdout)
-        )
-        self.stderr = (
-            ConsoleOutputWrapper(stderr) if stderr else OutputWrapper(sys.stderr)
-        )
+        self.output = output
 
     def create_arg_parser(self, prog_name, subcommand, **kwargs) -> ArgumentParser:
         parser = ArgumentParser(
-            prog="%s %s" % (os.path.basename(prog_name), subcommand),
-            description=self.help or None,
-            formatter_class=CdevHelpFormatter,
-            **kwargs
+            prog=f"{prog_name} {subcommand}", description=self.help or None, **kwargs
         )
 
         self.add_arguments(parser)
@@ -207,11 +59,7 @@ class BaseCommand:
         # Move positional args out of options to mimic legacy optparse
         args = cmd_options.pop("args", ())
 
-        try:
-            self.command(*args, **cmd_options)
-        except CdevCommandError as e:
-            self.stderr.write("%s: %s" % (e.__class__.__name__, e))
-            sys.exit(e.returncode)
+        self.command(*args, **cmd_options)
 
     def command(self, *args, **kwargs) -> None:
         """
@@ -221,20 +69,6 @@ class BaseCommand:
         raise NotImplementedError(
             "subclasses of BaseCommand must provide a command() method"
         )
-
-    def get_component_and_resource_from_qualified_name(self,
-                                                       full_name: str,
-                                                       ) -> Tuple[str, str]:
-        if full_name is None:
-            raise Exception("Invalid arguments provided to get resource detail")
-
-        component_and_function = full_name.split(".")
-        if len(component_and_function) != 2:
-            raise Exception(f"Could not get resource detail from {full_name}")
-
-        component_name = full_name.split(".")[0]
-        resource_name = full_name.split(".")[1]
-        return component_name, resource_name
 
 
 class BaseCommandContainer:
@@ -249,19 +83,8 @@ class BaseCommandContainer:
     # Help message for this container
     help = ""
 
-    def __init__(
-        self,
-        stdout: Console = None,
-        stderr: Console = None,
-        no_color=False,
-        force_color=False,
-    ) -> None:
-        self.stdout = (
-            ConsoleOutputWrapper(stdout) if stdout else OutputWrapper(sys.stdout)
-        )
-        self.stderr = (
-            ConsoleOutputWrapper(stderr) if stderr else OutputWrapper(sys.stderr)
-        )
+    def __init__(self, output: OutputManager) -> None:
+        self.output = output
 
     def display_help_message(self) -> None:
-        self.stdout.write(self.help)
+        self.output.print(self.help)
