@@ -1,8 +1,8 @@
-# Generated as part of the User Auth project template
+# Generated as part of the user auth project template
 import json
 
-from cdev.resources.simple.api import Api
-from cdev.resources.simple.xlambda import ServerlessFunction
+from cdev.aws.api import Api
+from cdev.aws.lambda_function import ServerlessFunction
 
 from cdev import Project as cdev_project
 
