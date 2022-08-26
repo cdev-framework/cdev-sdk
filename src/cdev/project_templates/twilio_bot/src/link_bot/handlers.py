@@ -1,7 +1,7 @@
 # Generated as part of Quick Start project template
 from twilio.twiml.messaging_response import MessagingResponse
 
-from cdev.resources.simple.xlambda import ServerlessFunction
+from cdev.aws.lambda_function import ServerlessFunction
 
 from .api import twilio_webhook_route
 
