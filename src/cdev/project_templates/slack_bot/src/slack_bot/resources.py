@@ -5,8 +5,8 @@ import os
 from slack_sdk import signature
 from slack_sdk import WebClient
 
-from cdev.resources.simple.api import Api, route_verb
-from cdev.resources.simple.xlambda import ServerlessFunction
+from cdev.aws.api import Api, route_verb
+from cdev.aws.lambda_function import ServerlessFunction
 
 from cdev import Project as cdev_project
 
