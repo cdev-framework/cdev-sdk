@@ -85,8 +85,6 @@ class simple_static_site_model(TaggableResourceModel):
 
 
 class StaticSite(TaggableMixin, Resource):
-    """A Static Site that can be used to serve static web content."""
-
     @update_hash
     def __init__(
         self,
@@ -100,7 +98,7 @@ class StaticSite(TaggableMixin, Resource):
         nonce: str = "",
         tags: Dict[str, str] = None,
     ) -> None:
-        """Create a static hosted site.
+        """Create a resource to host static files.
 
         Arguments:
             cdev_name (str): [description]
