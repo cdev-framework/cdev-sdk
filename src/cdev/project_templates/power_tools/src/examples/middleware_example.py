@@ -1,7 +1,7 @@
 # Generated as part of Quick Start project template
 from aws_lambda_powertools.middleware_factory import lambda_handler_decorator
 
-from cdev.resources.simple.xlambda import simple_function_annotation
+from cdev.aws.lambda_function import ServerlessFunction
 
 
 @lambda_handler_decorator
@@ -14,7 +14,7 @@ def middleware_before_after(handler, event, context):
     return response
 
 
-@simple_function_annotation("middleware_example")
+@ServerlessFunction("middleware_example")
 @middleware_before_after
 def lambda_handler(event, context):
 

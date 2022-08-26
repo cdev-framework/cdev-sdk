@@ -1,4 +1,4 @@
-from cdev.resources.simple.iam import PermissionArn, Permission
+from cdev.aws.iam import PermissionArn
 
 powertool_vars = {
     "LOG_LEVEL": "INFO",

@@ -1,5 +1,5 @@
 # Generated as part of Resource Test project template
-from cdev.resources.simple.xlambda import simple_function_annotation
+from cdev.resources.simple.xlambda import ServerlessFunction
 from cdev.resources.simple.api import Api
 from cdev.resources.simple.object_store import Bucket
 from cdev.resources.simple.queue import Queue
@@ -37,7 +37,7 @@ good_dinner_conversation_topic = Topic("of_discussion", nonce="1")
 
 
 # Function
-@simple_function_annotation(
+@ServerlessFunction(
     "hello_world_function",
     permissions=[bucket.available_permissions.READ_AND_WRITE_BUCKET],
 )

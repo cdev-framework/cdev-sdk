@@ -2,7 +2,7 @@
 import json
 
 from cdev.resources.simple.api import Api
-from cdev.resources.simple.xlambda import simple_function_annotation
+from cdev.resources.simple.xlambda import ServerlessFunction
 
 from cdev import Project as cdev_project
 
@@ -12,7 +12,7 @@ DemoApi = Api("demoapi")
 demo_route = DemoApi.route("/demo", "GET")
 
 
-@simple_function_annotation("demo_handler", events=[demo_route.event()])
+@ServerlessFunction("demo_handler", events=[demo_route.event()])
 def hello_world(event, context):
     print("Hello from inside your Function!")
 
