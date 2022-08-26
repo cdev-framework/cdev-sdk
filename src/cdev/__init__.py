@@ -18,8 +18,11 @@ __pdoc__ = {}
 __pdoc__[".venv"] = False
 
 
-from . import constructs, resources
-
+from . import constructs
+from core.default.cloudmapper import DefaultMapper
+from core.default.components import Cdev_FileSystem_Component
 
 # Ergonomic mapping so that the global project instance is in a more logical place for end developers.
 Project = constructs.project.Project
+Mapper = DefaultMapper
+Component = Cdev_FileSystem_Component
