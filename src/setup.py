@@ -45,6 +45,7 @@ setuptools.setup(
         "sortedcontainers",
         "watchdog",
         "GitPython",
+        "typing_extensions<4.0.0",
     ],
     python_requires=">=3.7",
 )
