@@ -1,8 +1,11 @@
 from typing import *
+import os
 from rich.prompt import Prompt, Confirm
 from rich import print
 
 from dataclasses import dataclass
+
+from pathlib import Path
 
 
 @dataclass
@@ -49,13 +52,24 @@ def _prompt_use_same_configuration(current_configuration: Dict = {}) -> bool:
 
 
 def _get_current_credentials() -> Optional[Dict]:
-    return None
-    # return {
-    #    'Aws Access Key ID': 'asdas',
-    #    'Aws Secret Access Key': 'asd',
-    #    'Default region name': 'wef',
-    # }
+    _base_dir = Path.home()
+    _credentials_location = ".aws/credentials"
+    _config_location = ".aws/config"
+
+    _full_credential_location = os.path.join(_base_dir, _credentials_location)
+    _full_config_location = os.path.join(_base_dir, _config_location)
+
+    if not (
+        os.path.isfile(_full_credential_location)
+        or os.path.isfile(_full_config_location)
+    ):
+        return None
+
+    return {
+        "Aws Access Key ID": "asdas",
+        "Aws Secret Access Key": "asd",
+        "Default region name": "wef",
+    }
 
 
 data = _prompt_new_cloud_configuration()
-print(data)
