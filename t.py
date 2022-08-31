@@ -2,8 +2,9 @@ from typing import *
 import os
 from rich.prompt import Prompt, Confirm
 from rich import print
+from configparser import ConfigParser
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 from pathlib import Path
 
@@ -41,11 +42,12 @@ def _prompt_credentials() -> Dict[str, str]:
     )
 
 
-def _prompt_use_same_configuration(current_configuration: Dict = {}) -> bool:
-
+def _prompt_use_same_configuration(
+    current_configuration: aws_configuration = {},
+) -> bool:
     print("Your current Aws Credentials are:")
-    for k, v in current_configuration.items():
-        print(f"  {k} -> {v}")
+    for field in fields(current_configuration):
+        print(f"{field.name} -> {getattr(current_configuration, field.name)}")
 
     print("")
     return Confirm.ask("Would you like to continue using the found credentials?")
@@ -59,17 +61,54 @@ def _get_current_credentials() -> Optional[Dict]:
     _full_credential_location = os.path.join(_base_dir, _credentials_location)
     _full_config_location = os.path.join(_base_dir, _config_location)
 
+    _default_name = "default"
+    _access_key_id = "aws_access_key_id"
+    _secret_key_id = "aws_secret_access_key"
+    _region_id = "region"
+
     if not (
         os.path.isfile(_full_credential_location)
-        or os.path.isfile(_full_config_location)
+        and os.path.isfile(_full_config_location)
     ):
         return None
 
-    return {
-        "Aws Access Key ID": "asdas",
-        "Aws Secret Access Key": "asd",
-        "Default region name": "wef",
-    }
+    credentials_config = ConfigParser()
+    credentials_config.read(_full_credential_location)
+
+    if (
+        len(credentials_config.sections()) == 0
+        or not _default_name in credentials_config
+    ):
+        return None
+
+    default_credentials_config = credentials_config[_default_name]
+    if not (
+        _access_key_id in default_credentials_config
+        and _secret_key_id in default_credentials_config
+    ):
+        return None
+
+    config_config = ConfigParser()
+    config_config.read(_full_config_location)
+
+    if len(config_config.sections()) == 0 or not _default_name in credentials_config:
+        return None
+
+    default_config_config = config_config[_default_name]
+
+    if not _region_id in default_config_config:
+        return None
+
+    return aws_configuration(
+        access_key=__star_out(default_credentials_config[_access_key_id]),
+        secret_key=__star_out(default_credentials_config[_secret_key_id]),
+        region_name=default_config_config[_region_id],
+    )
+
+
+def __star_out(s: str, remaining: int = 4, max_char: int = 16) -> str:
+    star_length = min(len(s) - remaining, max_char)
+    return ("*" * star_length) + s[-remaining:]
 
 
 data = _prompt_new_cloud_configuration()
