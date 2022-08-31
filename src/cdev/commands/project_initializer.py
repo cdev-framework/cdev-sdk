@@ -36,7 +36,7 @@ TEMPLATE_LOCATIONS = os.path.join(
 
 AVAILABLE_TEMPLATES = [
     "quick-start",
-    "quick-start-twilio",
+    "twilio-bot",
     "resources-test",
     "packages",
     "slack-bot",

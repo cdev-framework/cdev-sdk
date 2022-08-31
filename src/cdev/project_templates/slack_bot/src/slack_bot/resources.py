@@ -5,8 +5,8 @@ import os
 from slack_sdk import signature
 from slack_sdk import WebClient
 
-from cdev.resources.simple.api import Api, route_verb
-from cdev.resources.simple.xlambda import simple_function_annotation
+from cdev.aws.api import Api, route_verb
+from cdev.aws.lambda_function import ServerlessFunction
 
 from cdev import Project as cdev_project
 
@@ -33,9 +33,7 @@ signature_verifier = signature.SignatureVerifier(
 client = WebClient(token=os.environ.get("SLACK_BOT_OAUTH_TOKEN"))
 
 
-@simple_function_annotation(
-    "webhook", events=[webhook_route.event()], environment=env_vars
-)
+@ServerlessFunction("webhook", events=[webhook_route.event()], environment=env_vars)
 def webhook(event, context):
     # Load the info to validate the request
     body = event.get("body")
