@@ -1,7 +1,7 @@
 import json
 import os
 import shutil
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, Optional
 import uuid
 
 import boto3
@@ -114,6 +114,7 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
     if check_if_project_exists(base_directory):
         raise Exception("Project Already Created")
 
+    cloud_configuration = _prompt_cloud_configuration()
     base_settings_values = _default_new_project_input_questions()
     _create_folder_structure(
         base_directory,
@@ -163,6 +164,26 @@ def _default_new_project_input_questions() -> Dict[str, str]:
     _artifact_bucket = _select_resources_bucket()
 
     return {"S3_ARTIFACTS_BUCKET": _artifact_bucket}
+
+
+def _prompt_cloud_configuration() -> Optional[Dict[str, str]]:
+    if _check_for_credentials():
+        if _prompt_use_same_configuration():
+            return {}
+
+    return _prompt_credentials()
+
+
+def _prompt_credentials() -> Dict[str, str]:
+    pass
+
+
+def _prompt_use_same_configuration() -> bool:
+    return True
+
+
+def _check_for_credentials() -> bool:
+    return False
 
 
 def _create_folder_structure(
