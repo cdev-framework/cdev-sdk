@@ -22,13 +22,20 @@ def _prompt_new_cloud_configuration() -> Optional[Dict[str, str]]:
         if _prompt_use_same_configuration(_current_credentials):
             return None
 
+    if not _prompt_ask_credentials():
+        return None
+
     _credentials_explanation()
     return _prompt_credentials()
 
 
+def _prompt_ask_credentials():
+    return Confirm.ask("Would you like to set your Aws Credentials?")
+
+
 def _credentials_explanation():
-    print(f"Enter your Aws Credentials")
     print("")
+    print("Enter your Aws Credentials")
 
 
 def _prompt_credentials() -> Dict[str, str]:
