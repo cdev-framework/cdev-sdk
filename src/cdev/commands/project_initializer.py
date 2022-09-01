@@ -1,7 +1,7 @@
 import json
 import os
 import shutil
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, Optional
 import uuid
 
 import boto3
@@ -12,6 +12,7 @@ from rich.prompt import Prompt, Confirm
 from cdev.commands import project_initializer_params
 from cdev.default.project import local_project, local_project_info
 from cdev.utils.display_manager import SimpleSelectionListPage
+from cdev.utils.aws_credentials_helper import prompt_write_default_aws_credentials
 
 from core.default.backend import Local_Backend_Configuration
 from core.utils import paths as paths_util
@@ -113,6 +114,8 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
 
     if check_if_project_exists(base_directory):
         raise Exception("Project Already Created")
+
+    prompt_write_default_aws_credentials()
 
     base_settings_values = _default_new_project_input_questions()
     _create_folder_structure(
