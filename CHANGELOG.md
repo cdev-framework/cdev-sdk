@@ -13,6 +13,7 @@ All release will have a corresponding git tag.
 - Update the output of cloud values during the `deploy` command to use a `rich` table
 - Update the output of current state output
 - Add sequence to ask for the users `Aws` credentials when creating a project.
+- Add option to create a bucket even if buckets are available
 
 ### Fixed
 - Fix bug in the backend component diff logic
