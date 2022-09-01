@@ -137,7 +137,14 @@ def __star_out(s: str, remaining: int = 4, max_char: int = 16) -> str:
     return ("*" * star_length) + s[-remaining:]
 
 
-data = _prompt_new_cloud_configuration()
-if data:
-    _write_default_credentials(credentials=data)
-    print("wrote data")
+def prompt_write_default_aws_credentials():
+    data = _prompt_new_cloud_configuration()
+    if data:
+        try:
+            _write_default_credentials(credentials=data)
+        except Exception as e:
+            print(
+                "Error saving your credentials. Use the aws command tool to set your credentials."
+            )
+
+        print("Saved Credentials ✔️")
