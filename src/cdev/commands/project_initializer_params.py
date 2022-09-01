@@ -49,3 +49,5 @@ See below for the exact error:
 DO_NOT_CREATE_BUCKET_SELECT_MESSAGE = """
 No bucket created. To use some of the main features of Cdev, you will need to create an S3 Bucket and provide it to Cdev via your `settings/base_settings.py.py` file.
 """
+
+CREATE_BUCKET_LABEL: str = "**Create a new Bucket**"

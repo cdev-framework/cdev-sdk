@@ -340,7 +340,18 @@ def _select_resources_bucket() -> str:
             selected_bucket_name = ""
 
     else:
-        selection_page = SimpleSelectionListPage(_available_buckets)
+        _final_bucket_list = [
+            project_initializer_params.CREATE_BUCKET_LABEL
+        ] + _available_buckets
+        selection_page = SimpleSelectionListPage(_final_bucket_list)
         selected_bucket_name = selection_page.blocking_selection_process()
+
+        if selected_bucket_name == project_initializer_params.CREATE_BUCKET_LABEL:
+            selected_bucket_name = _create_artifact_bucket(_s3_client)
+            print(
+                project_initializer_params.CREATE_ARTIFACT_BUCKET_SUCCESS.format(
+                    bucket_name=selected_bucket_name
+                )
+            )
 
     return selected_bucket_name
