@@ -12,6 +12,7 @@ All release will have a corresponding git tag.
 - Add `__init__.py` file to the twilio quick start project
 - Update the output of cloud values during the `deploy` command to use a `rich` table
 - Update the output of current state output
+- Add sequence to ask for the users `Aws` credentials when creating a project.
 
 ### Fixed
 - Fix bug in the backend component diff logic
