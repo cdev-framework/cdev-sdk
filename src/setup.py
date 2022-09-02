@@ -23,7 +23,7 @@ def _get_readme_contents() -> str:
 
 setuptools.setup(
     name="cdev",
-    version="0.0.11",
+    version="0.0.12",
     scripts=["./cdev/scripts/cdev", "./core/scripts/cdev_core"],
     description="CLI for cdev sdk",
     long_description=_get_readme_contents(),
@@ -45,6 +45,7 @@ setuptools.setup(
         "sortedcontainers",
         "watchdog",
         "GitPython",
+        "typing_extensions<4.0.0",
     ],
     python_requires=">=3.7",
 )

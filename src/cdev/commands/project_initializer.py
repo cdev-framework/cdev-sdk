@@ -1,7 +1,7 @@
 import json
 import os
 import shutil
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, Optional
 import uuid
 
 import boto3
@@ -12,6 +12,7 @@ from rich.prompt import Prompt, Confirm
 from cdev.commands import project_initializer_params
 from cdev.default.project import local_project, local_project_info
 from cdev.utils.display_manager import SimpleSelectionListPage
+from cdev.utils.aws_credentials_helper import prompt_write_default_aws_credentials
 
 from core.default.backend import Local_Backend_Configuration
 from core.utils import paths as paths_util
@@ -36,7 +37,7 @@ TEMPLATE_LOCATIONS = os.path.join(
 
 AVAILABLE_TEMPLATES = [
     "quick-start",
-    "quick-start-twilio",
+    "twilio-bot",
     "resources-test",
     "packages",
     "slack-bot",
@@ -113,6 +114,8 @@ def create_project(project_name: str, base_directory: DirectoryPath = None) -> N
 
     if check_if_project_exists(base_directory):
         raise Exception("Project Already Created")
+
+    prompt_write_default_aws_credentials()
 
     base_settings_values = _default_new_project_input_questions()
     _create_folder_structure(
@@ -337,7 +340,18 @@ def _select_resources_bucket() -> str:
             selected_bucket_name = ""
 
     else:
-        selection_page = SimpleSelectionListPage(_available_buckets)
+        _final_bucket_list = [
+            project_initializer_params.CREATE_BUCKET_LABEL
+        ] + _available_buckets
+        selection_page = SimpleSelectionListPage(_final_bucket_list)
         selected_bucket_name = selection_page.blocking_selection_process()
+
+        if selected_bucket_name == project_initializer_params.CREATE_BUCKET_LABEL:
+            selected_bucket_name = _create_artifact_bucket(_s3_client)
+            print(
+                project_initializer_params.CREATE_ARTIFACT_BUCKET_SUCCESS.format(
+                    bucket_name=selected_bucket_name
+                )
+            )
 
     return selected_bucket_name

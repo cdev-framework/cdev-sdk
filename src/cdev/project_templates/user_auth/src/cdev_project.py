@@ -1,17 +1,10 @@
-# Generated as part of Quick Start project template
+# Generated as part of the user auth project template
 import os
 
-from cdev.default.cloudmapper import DefaultMapper
-from cdev.default.components import Cdev_FileSystem_Component
+from cdev import Project, Component, Mapper
 
-from cdev import Project as cdev_project
+myProject = Project.instance()
 
-myProject = cdev_project.instance()
+myProject.add_mapper(Mapper())
 
-
-myProject.add_mapper(DefaultMapper())
-
-
-myProject.add_component(
-    Cdev_FileSystem_Component(os.path.join("src", "user_auth"), "user_auth")
-)
+myProject.add_component(Component(os.path.join("src", "user_auth"), "user_auth"))

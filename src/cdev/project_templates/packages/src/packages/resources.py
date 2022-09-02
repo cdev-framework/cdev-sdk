@@ -1,6 +1,6 @@
 # Generated as part of Quick Start project template
 
-from cdev.resources.simple.xlambda import simple_function_annotation
+from cdev.aws.lambda_function import ServerlessFunction
 
 import aurora_data_api
 import pandas
@@ -8,7 +8,7 @@ import pandas
 from .utils import helper_function
 
 
-@simple_function_annotation("hello_world_function")
+@ServerlessFunction("hello_world_function")
 def hello_world(event, context):
     print("Hello from inside your Function!")
     helper_function()
@@ -16,7 +16,7 @@ def hello_world(event, context):
     return {"status_code": 200, "message": "Hello Outside World!"}
 
 
-@simple_function_annotation("hello_world_function2")
+@ServerlessFunction("hello_world_function2")
 def hello_world2(event, context):
     print("Hello from inside your Function!")
     print(aurora_data_api)
@@ -24,7 +24,7 @@ def hello_world2(event, context):
     return {"status_code": 200, "message": "Hello Outside World!"}
 
 
-@simple_function_annotation("hello_world_function3")
+@ServerlessFunction("hello_world_function3")
 def hello_world3(event, context):
     print("Hello from inside your Function!")
     print(aurora_data_api)
@@ -33,7 +33,7 @@ def hello_world3(event, context):
     return {"status_code": 200, "message": "Hello Outside World!"}
 
 
-@simple_function_annotation("hello_world_function4")
+@ServerlessFunction("hello_world_function4")
 def hello_world4(event, context):
 
     return {"status_code": 200, "message": "Hello Outside World!"}
