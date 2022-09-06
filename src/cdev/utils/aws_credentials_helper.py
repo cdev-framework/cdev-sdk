@@ -23,7 +23,7 @@ _config_location = ".aws/config"
 _full_credential_location = os.path.join(_base_dir, _credentials_location)
 _full_config_location = os.path.join(_base_dir, _config_location)
 
-if os.path.isfile(_full_credential_location)=False:
+if os.path.isfile(_full_credential_location)==False:
     os.makedirs(_full_credential_location)
     os.makedirs(_full_config_location)
 
