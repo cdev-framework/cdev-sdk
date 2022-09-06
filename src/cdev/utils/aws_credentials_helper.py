@@ -24,8 +24,8 @@ _full_credential_location = os.path.join(_base_dir, _credentials_location)
 _full_config_location = os.path.join(_base_dir, _config_location)
 
 if os.path.isfile(_full_credential_location)==False:
-    os.mkdir(_full_credential_location)
-    os.mkdir(_full_config_location)
+    os.makedirs(_full_credential_location)
+    os.makedirs(_full_config_location)
 _default_name = "default"
 _access_key_id = "aws_access_key_id"
 _secret_key_id = "aws_secret_access_key"
