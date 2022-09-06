@@ -26,6 +26,7 @@ _full_config_location = os.path.join(_base_dir, _config_location)
 if os.path.isfile(_full_credential_location)==False:
     os.makedirs(_full_credential_location)
     os.makedirs(_full_config_location)
+
 _default_name = "default"
 _access_key_id = "aws_access_key_id"
 _secret_key_id = "aws_secret_access_key"
@@ -118,39 +119,22 @@ def _get_current_credentials() -> Optional[Dict]:
 
 
 def _write_default_credentials(credentials: aws_configuration):
-    if os.path.isfile(_full_credential_location):
-        credentials_config = ConfigParser()
-        credentials_config.read(_full_credential_location)
+    
+    credentials_config = ConfigParser()
+    credentials_config.read(_full_credential_location)
 
-        config_config = ConfigParser()
-        config_config.read(_full_config_location)
+    config_config = ConfigParser()
+    config_config.read(_full_config_location)
 
-        credentials_config[_default_name][_access_key_id] = credentials.access_key
-        credentials_config[_default_name][_secret_key_id] = credentials.secret_key
-        config_config[_default_name][_region_id] = credentials.region_name
+    credentials_config[_default_name][_access_key_id] = credentials.access_key
+    credentials_config[_default_name][_secret_key_id] = credentials.secret_key
+    config_config[_default_name][_region_id] = credentials.region_name
 
-        with open(_full_credential_location, "w") as fh_credentials, open(
-            _full_config_location, "w"
-        ) as fh_config:
-            credentials_config.write(fh_credentials)
-            config_config.write(fh_config)
-    else:
-        os.mkdir(_full_credential_location)
-        credentials_config = ConfigParser()
-        credentials_config.read(_full_credential_location)
-
-        config_config = ConfigParser()
-        config_config.read(_full_config_location)
-
-        credentials_config[_default_name][_access_key_id] = credentials.access_key
-        credentials_config[_default_name][_secret_key_id] = credentials.secret_key
-        config_config[_default_name][_region_id] = credentials.region_name
-
-        with open(_full_credential_location, "w") as fh_credentials, open(
-            _full_config_location, "w"
-        ) as fh_config:
-            credentials_config.write(fh_credentials)
-            config_config.write(fh_config)
+    with open(_full_credential_location, "w") as fh_credentials, open(
+        _full_config_location, "w"
+    ) as fh_config:
+        credentials_config.write(fh_credentials)
+        config_config.write(fh_config)
 
 
 def __star_out(s: str, remaining: int = 4, max_char: int = 16) -> str:
