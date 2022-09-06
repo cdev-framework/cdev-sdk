@@ -28,7 +28,7 @@ if os.path.isdir(_full_credential_location)==False:
         os.makedirs(_full_credential_location)
         os.makedirs(_full_config_location)
         f = open(_full_credential_location, "w")
-        f.write("aws_access_key_id=AKIAIOSFODNN7EXAMPLE aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")
+        f.write("[default] aws_access_key_id=AKIAIOSFODNN7EXAMPLE aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")
         f.close()
         f= open(_full_config_location)
         f.write("[default] region=us-west-2 output=json")
