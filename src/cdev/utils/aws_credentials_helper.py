@@ -24,8 +24,11 @@ _full_credential_location = os.path.join(_base_dir, _credentials_location)
 _full_config_location = os.path.join(_base_dir, _config_location)
 
 if os.path.isfile(_full_credential_location)==False:
-    os.makedirs(_full_credential_location)
-    os.makedirs(_full_config_location)
+    try:
+        os.makedirs(_full_credential_location)
+        os.makedirs(_full_config_location)
+    except Exception as e:
+        print(e)
 
 _default_name = "default"
 _access_key_id = "aws_access_key_id"
