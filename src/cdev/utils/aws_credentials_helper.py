@@ -26,13 +26,13 @@ _full_config_location = os.path.join(_base_dir, _config_location)
 
 if os.path.isfile(_full_credential_location)==False:
     try:
-        aws = os.makedirs(_full_aws_location)
+        os.makedirs(_full_aws_location)
     except:
         pass
     try:
-        with open(os.path.join(aws, "credentials"), 'w') as fp:
+        with open(os.path.join(_full_aws_location, "credentials"), 'w') as fp:
             fp.write("cred")
-        with open(os.path.join(aws, "config"), 'w') as fp:
+        with open(os.path.join(_full_aws_location, "config"), 'w') as fp:
             fp.write("config")
     except Exception as e:
         print(e)
