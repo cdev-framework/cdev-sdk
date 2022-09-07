@@ -25,7 +25,10 @@ _full_credential_location = os.path.join(_base_dir, _credentials_location)
 _full_config_location = os.path.join(_base_dir, _config_location)
 
 if os.path.isfile(_full_credential_location)==False:
-    aws = os.makedirs(_full_aws_location)
+    try:
+        aws = os.makedirs(_full_aws_location)
+    except:
+        pass
     try:
         with open(os.path.join(aws, "credentials"), 'w') as fp:
             fp.write("cred")
