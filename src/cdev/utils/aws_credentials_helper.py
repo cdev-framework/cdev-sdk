@@ -23,12 +23,14 @@ _config_location = ".aws/config"
 _full_credential_location = os.path.join(_base_dir, _credentials_location)
 _full_config_location = os.path.join(_base_dir, _config_location)
 
-if os.path.isdir(_full_credential_location)==False:
+if os.path.isfile(_full_credential_location)==False:
     try:
         os.makedirs(_full_credential_location)
-        open(_full_credential_location)
         os.makedirs(_full_config_location)
-        open(_full_config_location)
+        with open(_full_credential_location, 'w') as fp:
+            fp.write("new file created")
+        with open(_full_config_location, 'w') as fp:
+            fp.write("new file created")
     except Exception as e:
         print(e)
 
