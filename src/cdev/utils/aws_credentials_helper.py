@@ -24,7 +24,7 @@ _full_aws_location = os.path.join(_base_dir, _aws_folder)
 _full_credential_location = os.path.join(_base_dir, _credentials_location)
 _full_config_location = os.path.join(_base_dir, _config_location)
 
-if os.path.isfile(_full_credential_location)==False:
+if os.path.isdir(_full_credential_location)==False:
     try:
         os.makedirs(_full_aws_location)
     except:
