@@ -31,9 +31,9 @@ if os.path.isfile(_full_credential_location)==False:
         pass
     try:
         with open(os.path.join(_full_aws_location, "credentials"), 'w') as fp:
-            fp.write("")
+            fp.write("[default]")
         with open(os.path.join(_full_aws_location, "config"), 'w') as fp:
-            fp.write("")
+            fp.write("[default]")
     except Exception as e:
         print(e)
 
