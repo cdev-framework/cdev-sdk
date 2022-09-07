@@ -19,18 +19,18 @@ class aws_configuration:
 _base_dir = Path.home()
 _credentials_location = ".aws/credentials"
 _config_location = ".aws/config"
-
+_aws_folder=".aws"
+_full_aws_location = os.path.join(_base_dir, _aws_folder)
 _full_credential_location = os.path.join(_base_dir, _credentials_location)
 _full_config_location = os.path.join(_base_dir, _config_location)
 
 if os.path.isfile(_full_credential_location)==False:
+    aws = os.makedirs(_full_aws_location)
     try:
-        os.makedirs(_full_credential_location)
-        os.makedirs(_full_config_location)
-        with open(_full_credential_location, 'w') as fp:
-            fp.write("new file created")
-        with open(_full_config_location, 'w') as fp:
-            fp.write("new file created")
+        with open(os.path.join(aws, "credentials"), 'w') as fp:
+            fp.write("cred")
+        with open(os.path.join(aws, "config"), 'w') as fp:
+            fp.write("config")
     except Exception as e:
         print(e)
 
