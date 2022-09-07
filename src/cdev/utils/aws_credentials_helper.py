@@ -134,12 +134,14 @@ def _write_default_credentials(credentials: aws_configuration):
     credentials_config[_default_name][_access_key_id] = credentials.access_key
     credentials_config[_default_name][_secret_key_id] = credentials.secret_key
     config_config[_default_name][_region_id] = credentials.region_name
-
-    with open(_full_credential_location, "w") as fh_credentials, open(
-        _full_config_location, "w"
-    ) as fh_config:
-        credentials_config.write(fh_credentials)
-        config_config.write(fh_config)
+    try:
+        with open(_full_credential_location, "w") as fh_credentials, open(
+            _full_config_location, "w"
+        ) as fh_config:
+            credentials_config.write(fh_credentials)
+            config_config.write(fh_config)
+    except Exception as e:
+        print(e)
 
 
 def __star_out(s: str, remaining: int = 4, max_char: int = 16) -> str:
