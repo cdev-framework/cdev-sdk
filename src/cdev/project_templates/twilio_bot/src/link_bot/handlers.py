@@ -1,12 +1,12 @@
 # Generated as part of Quick Start project template
 from twilio.twiml.messaging_response import MessagingResponse
 
-from cdev.resources.simple.xlambda import simple_function_annotation
+from cdev.aws.lambda_function import ServerlessFunction
 
 from .api import twilio_webhook_route
 
 
-@simple_function_annotation(
+@ServerlessFunction(
     "twilio_handler", events=[twilio_webhook_route.event("application/xml")]
 )
 def twilio_handler(event, context):

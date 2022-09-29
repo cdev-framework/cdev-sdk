@@ -1,11 +1,11 @@
-# Generated as part of Resource Test project template
-from cdev.resources.simple.xlambda import simple_function_annotation
-from cdev.resources.simple.api import Api
-from cdev.resources.simple.object_store import Bucket
-from cdev.resources.simple.queue import Queue
-from cdev.resources.simple.relational_db import RelationalDB, db_engine
-from cdev.resources.simple.static_site import StaticSite
-from cdev.resources.simple.table import (
+# Generated as part of the resource test project template
+from cdev.aws.lambda_function import ServerlessFunction
+from cdev.aws.api import Api
+from cdev.aws.s3 import Bucket
+from cdev.aws.sqs import Queue
+from cdev.aws.relational_db import RelationalDB, db_engine
+from cdev.aws.frontend import Site
+from cdev.aws.dynamodb import (
     Table,
     AttributeDefinition,
     KeyDefinition,
@@ -35,9 +35,17 @@ dinner_table = Table("dinner", attributes, keys)
 # Topic
 good_dinner_conversation_topic = Topic("of_discussion", nonce="1")
 
+# Serverless Relational DB
+myDB = RelationalDB(
+    cdev_name="demo_db",
+    engine=db_engine.aurora_postgresql,
+    username="username",
+    password="password",
+    database_name="default_table",
+)
 
 # Function
-@simple_function_annotation(
+@ServerlessFunction(
     "hello_world_function",
     permissions=[bucket.available_permissions.READ_AND_WRITE_BUCKET],
 )
