@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 All releases will correspond to releases on [PyPI](https://pypi.org/project/cdev/).
 All release will have a corresponding git tag.
 
+## [0.0.13] - 2022-09-29
+### Fixed
+- Create the aws config files if they do not exist when creating credentials
+
+
 ## [0.0.12] - 2022-09-01
 ### Added
 - Add sequence to ask for the users `Aws` credentials when creating a project.
