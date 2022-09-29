@@ -9,7 +9,7 @@ All release will have a corresponding git tag.
 ## [0.0.13] - 2022-09-29
 ### Fixed
 - Create the aws config files if they do not exist when creating credentials
-
+- Refactor the package names and reflect this on the website
 
 ## [0.0.12] - 2022-09-01
 ### Added
