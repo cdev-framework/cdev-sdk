@@ -23,7 +23,7 @@ def _get_readme_contents() -> str:
 
 setuptools.setup(
     name="cdev",
-    version="0.0.16",
+    version="0.0.17",
     scripts=["./cdev/scripts/cdev", "./core/scripts/cdev_core"],
     description="CLI for cdev sdk",
     long_description=_get_readme_contents(),
@@ -31,7 +31,7 @@ setuptools.setup(
     author="CDEV LLC",
     author_email="daniel@cdevframework.com",
     license="Clear BSD",
-    packages=["cdev", "core", "serverless_parser"],
+    packages=setuptools.find_packages(),
     include_package_data=True,
     install_requires=[
         "aurora_data_api",
