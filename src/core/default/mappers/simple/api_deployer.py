@@ -57,7 +57,6 @@ def _create_simple_api(
     }
 
     output_task.update(advance=1, comment="Creating Api")
-
     try:
         rv = aws_client.run_client_function("apigatewayv2", "create_api", api_args)
     except Exception as e:
@@ -213,7 +212,6 @@ def _update_simple_api(
 
                 if previous_authorizer_id:
                     # remove the previous authorizer, but defer the updating to the new one until after authorizers have finished
-                    print(f"soft update {route}")
                     _update_route(previous_cloud_id, route_cloud_id, route, None)
                     _update_route_info.append((route_cloud_id, route))
 
@@ -240,9 +238,6 @@ def _update_simple_api(
                 _delete_route(previous_cloud_id, previous_route_info.get(route_id))
             except Exception as e:
                 output_task.print_error(e)
-                print(
-                    f"error deleting {previous_cloud_id} -> {previous_route_info.get(route_id)}"
-                )
                 raise e
 
             previous_route_info.pop(route_id)
@@ -405,28 +400,35 @@ def _create_authorizer(api_id: str, authorizer: simple_api.authorizer_model) -> 
     Returns:
         str: Authorizer Id of the created Authorizer
     """
-    args = {
-        "ApiId": api_id,
-        "Name": authorizer.name,
-        "AuthorizerType": "JWT",
-        "IdentitySource": [
-            "$request.header.Authorization",
-        ],
-        "JwtConfiguration": {
-            "Audience": [
-                authorizer.audience,
+    if authorizer.type == simple_api.authorizer_type.IAM:
+        return "IAM"
+
+    elif authorizer.type == simple_api.authorizer_type.JWT:
+        args = {
+            "ApiId": api_id,
+            "Name": authorizer.name,
+            "AuthorizerType": "JWT",
+            "IdentitySource": [
+                "$request.header.Authorization",
             ],
-            "Issuer": authorizer.issuer_url,
-        },
-    }
+            "JwtConfiguration": {
+                "Audience": [
+                    authorizer.audience,
+                ],
+                "Issuer": authorizer.issuer_url,
+            },
+        }
 
-    rv = aws_client.run_client_function("apigatewayv2", "create_authorizer", args)
+        rv = aws_client.run_client_function("apigatewayv2", "create_authorizer", args)
 
-    return rv.get("AuthorizerId")
+        return rv.get("AuthorizerId")
+
+    else:
+        raise Exception(type(authorizer))
 
 
 def _update_authorizer(
-    api_id: str, authorizer_id: str, authorizer: simple_api.authorizer_model
+    api_id: str, authorizer_id: str, authorizer: simple_api.jwt_authorizer_model
 ):
     args = {
         "ApiId": api_id,
@@ -558,11 +560,15 @@ def _create_route(
     }
 
     if authorizer_id:
-        route_args["AuthorizerId"] = authorizer_id
-        route_args["AuthorizationType"] = "JWT"
+        if authorizer_id == "IAM":
+            route_args["AuthorizationType"] = "AWS_IAM"
 
-        if route.additional_scopes:
-            route_args["AuthorizationScopes"] = list(route.additional_scopes)
+        else:
+            route_args["AuthorizationType"] = "JWT"
+            route_args["AuthorizerId"] = authorizer_id
+
+            if route.additional_scopes:
+                route_args["AuthorizationScopes"] = list(route.additional_scopes)
 
     rv = aws_client.run_client_function("apigatewayv2", "create_route", route_args)
     return rv.get("RouteId")
@@ -577,7 +583,6 @@ def _delete_route(api_id: str, route_id: str) -> None:
         api_id (str): Api ID of the api in AWS.
         route_id (lambda_event): Route ID of the route in AWS.
     """
-    print(f">>> {route_id}")
     aws_client.run_client_function(
         "apigatewayv2", "delete_route", {"ApiId": api_id, "RouteId": route_id}
     )
