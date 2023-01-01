@@ -114,8 +114,7 @@ def _update_simple_api(
     mutable_previous_output = dict(previous_output)
     previous_cloud_id = mutable_previous_output.get("cloud_id")
 
-    output_task.print(previous_resource)
-
+    # output_task.print(previous_resource)
     # Change the CORS Settings of the API
     if (
         previous_resource.allow_cors != new_resource.allow_cors
@@ -297,15 +296,18 @@ def _update_simple_api(
             if authorizer.name in updated:
                 continue
 
-            authorizer_id = [
-                id
-                for id, v in previous_authorizers_info.items()
-                if v.get("name") == authorizer.name
-            ][0]
-            output_task.update(
-                advance=1, comment=f"Deleteing Authorizer {authorizer.name}"
-            )
-            _delete_authorizer(previous_output.get("cloud_id"), authorizer_id)
+            if authorizer.type == simple_api.authorizer_type.JWT:
+                authorizer_id = [
+                    id
+                    for id, v in previous_authorizers_info.items()
+                    if v.get("name") == authorizer.name
+                ][0]
+                output_task.update(
+                    advance=1, comment=f"Deleting Authorizer {authorizer.name}"
+                )
+                _delete_authorizer(previous_output.get("cloud_id"), authorizer_id)
+            elif authorizer.type == simple_api.authorizer_type.IAM:
+                authorizer_id = "IAM"
 
             previous_authorizers_info.pop(authorizer_id)
 
@@ -401,7 +403,7 @@ def _create_authorizer(api_id: str, authorizer: simple_api.authorizer_model) -> 
         str: Authorizer Id of the created Authorizer
     """
     if authorizer.type == simple_api.authorizer_type.IAM:
-        return "IAM"
+        return authorizer.name
 
     elif authorizer.type == simple_api.authorizer_type.JWT:
         args = {
@@ -428,20 +430,23 @@ def _create_authorizer(api_id: str, authorizer: simple_api.authorizer_model) -> 
 
 
 def _update_authorizer(
-    api_id: str, authorizer_id: str, authorizer: simple_api.jwt_authorizer_model
+    api_id: str, authorizer_id: str, authorizer: simple_api.authorizer_model
 ):
-    args = {
-        "ApiId": api_id,
-        "AuthorizerId": authorizer_id,
-        "JwtConfiguration": {
-            "Audience": [
-                authorizer.audience,
-            ],
-            "Issuer": authorizer.issuer_url,
-        },
-    }
+    if authorizer.type == simple_api.authorizer_type.IAM:
+        pass
+    elif authorizer.type == simple_api.authorizer_type.JWT:
+        args = {
+            "ApiId": api_id,
+            "AuthorizerId": authorizer_id,
+            "JwtConfiguration": {
+                "Audience": [
+                    authorizer.audience,
+                ],
+                "Issuer": authorizer.issuer_url,
+            },
+        }
 
-    aws_client.run_client_function("apigatewayv2", "update_authorizer", args)
+        aws_client.run_client_function("apigatewayv2", "update_authorizer", args)
 
 
 def _delete_authorizer(api_id: str, authorizer_id: str) -> None:
@@ -598,13 +603,17 @@ def _update_route(
     }
 
     if authorizer_id:
-        route_args["AuthorizerId"] = authorizer_id
-        route_args["AuthorizationType"] = "JWT"
+        if authorizer_id == "IAM":
+            route_args["AuthorizationType"] = "AWS_IAM"
 
-        if route.additional_scopes:
-            route_args["AuthorizationScopes"] = list(route.additional_scopes)
         else:
-            route_args["AuthorizationScopes"] = []
+            route_args["AuthorizerId"] = authorizer_id
+            route_args["AuthorizationType"] = "JWT"
+
+            if route.additional_scopes:
+                route_args["AuthorizationScopes"] = list(route.additional_scopes)
+            else:
+                route_args["AuthorizationScopes"] = []
     else:
         route_args["AuthorizerId"] = ""
         route_args["AuthorizationType"] = "NONE"

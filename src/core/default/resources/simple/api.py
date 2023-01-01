@@ -38,12 +38,12 @@ class authorizer_type(str, Enum):
 
 class authorizer_model(ImmutableModel):
     type: authorizer_type
+    name: str
 
 
 class jwt_authorizer_model(authorizer_model):
     """Model representing JWT authorizer information"""
 
-    name: str
     issuer_url: str
     audience: str
 
@@ -51,11 +51,12 @@ class jwt_authorizer_model(authorizer_model):
 class iam_authorizer_model(authorizer_model):
     """Model representing IAM authorizer information"""
 
-    name: str
+    pass
 
 
 class Authorizer:
-    pass
+    def __init__(self, name: str) -> None:
+        self.name = name
 
 
 class JWTAuthorizer(Authorizer):
@@ -75,7 +76,7 @@ class JWTAuthorizer(Authorizer):
             issuer_url (str): The base domain of the identity provider that issues JSON Web Tokens.
             audience (str): The intended recipients of the JWT. A valid JWT must provide an aud that matches at this value.
         """
-        self.name = name
+        super().__init__(name=name)
         self.issuer_url = issuer_url
         self.audience = audience
 
@@ -92,9 +93,9 @@ class JWTAuthorizer(Authorizer):
 
 
 class IAMAuthorizer(Authorizer):
-    def __init__(self, name: str) -> None:
+    def __init__(self) -> None:
         """IAM authorizer information."""
-        self.name = name
+        super().__init__(name="IAM")
 
     def render(self) -> jwt_authorizer_model:
         return iam_authorizer_model(type=authorizer_type.IAM, name=self.name)
