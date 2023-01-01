@@ -721,9 +721,10 @@ def _get_module_abs_path(module_name: str, base_path: FilePath) -> FilePath:
     elif os.path.isfile(potential_file):
         return potential_file
     else:
-        raise Exception(
-            f"Could not find either {module_name}.py or {module_name} directory in {base_path}"
-        )
+        return base_path
+        # raise Exception(
+        #    f"Could not find either {module_name}.py or {module_name} directory in {base_path}"
+        # )
 
 
 def _get_relative_package_dependencies(fp: Union[FilePath, DirectoryPath]) -> List[str]:

@@ -2,10 +2,20 @@ from time import sleep
 from typing import Callable, List, Optional, Any
 import boto3
 
-AVAILABLE_SERVICES = {"lambda", "s3", "dynamodb", "iam", "apigatewayv2", "sqs", "apigateway"}
+AVAILABLE_SERVICES = {
+    "lambda",
+    "s3",
+    "dynamodb",
+    "iam",
+    "apigatewayv2",
+    "sqs",
+    "apigateway",
+}
 
 
-def _get_boto_client(service_name, credentials=None, profile_name=None) -> boto3.session.Session:
+def _get_boto_client(
+    service_name, credentials=None, profile_name=None
+) -> boto3.session.Session:
 
     # TODO readd this check after development is finished and we have the full list of services
     # if not service_name in AVAILABLE_SERVICES:
@@ -27,6 +37,12 @@ def get_boto_client(service_name) -> boto3.session.Session:
     # TODO: Come back and make this settable from the workspace settings
     # if not cdev_settings.SETTINGS.get("CREDENTIALS"):
     return _get_boto_client(service_name)
+
+
+def get_current_region() -> str:
+    my_session = boto3.session.Session()
+    my_region = my_session.region_name
+    return my_region
 
 
 def monitor_status(
