@@ -128,6 +128,8 @@ class simple_function_configuration_model(ImmutableModel):
     memory_size: int
     timeout: int
     storage: int
+    subnets: frozenset
+    security_groups: frozenset
 
     class Config:
         use_enum_values = True
@@ -146,6 +148,8 @@ class SimpleFunctionConfiguration:
         storage: cdev_int,
         description: cdev_str = "",
         environment_variables: Dict[str, cdev_str] = {},
+        subnets: List[cdev_str] = [],
+        security_groups: List[cdev_str] = [],
     ) -> None:
         """
         Args:
@@ -159,6 +163,8 @@ class SimpleFunctionConfiguration:
         self.storage = storage
         self.description = description
         self.environment_variables = environment_variables
+        self.subnets = subnets
+        self.security_groups = security_groups
 
     def render(self) -> simple_function_configuration_model:
         return simple_function_configuration_model(
@@ -187,6 +193,19 @@ class SimpleFunctionConfiguration:
             )
             if self.environment_variables
             else frozendict({}),
+            subnets=frozenset(
+                [x.render() if isinstance(x, Cloud_Output) else x for x in self.subnets]
+            )
+            if self.subnets
+            else frozenset([]),
+            security_groups=frozenset(
+                [
+                    x.render() if isinstance(x, Cloud_Output) else x
+                    for x in self.security_groups
+                ]
+            )
+            if self.security_groups
+            else frozenset([]),
         )
 
     def hash(self) -> str:
@@ -203,6 +222,8 @@ class SimpleFunctionConfiguration:
                 self.storage,
                 self.description,
                 hasher.hash_list(sorted(env_hashable.items())),
+                hasher.hash_list(self.subnets),
+                hasher.hash_list(self.security_groups),
             ]
         )
 
@@ -349,7 +370,7 @@ class SimpleFunction(PermissionsGrantableMixin, TaggableMixin, Resource):
             x.output.cloud_id.render() if isinstance(x, DependencyLayer) else x.arn
             for x in self.external_dependencies
         ]
-
+        print(self.configuration.render())
         return simple_function_model(
             name=self.name,
             ruuid=self.ruuid,
@@ -380,6 +401,8 @@ def simple_function_annotation(
     storage: int = 512,
     permissions: List[Union[Permission, PermissionArn]] = [],
     override_platform: lambda_python_environment = None,
+    subnets: List[cdev_str] = [],
+    security_groups: List[cdev_str] = [],
     includes: List[str] = [],
     nonce: str = "",
     tags: Dict[str, str] = None,
@@ -405,8 +428,6 @@ def simple_function_annotation(
 
     def create_function(func: Callable) -> SimpleFunction:
 
-        # ANIBAL are these optional???
-        # confirm with Daniel
         handler_name = None
         description = None
         mod_name = None
@@ -426,6 +447,8 @@ def simple_function_annotation(
             storage=storage,
             description=description,
             environment_variables=environment,
+            subnets=subnets,
+            security_groups=security_groups,
         )
         mod = importlib.import_module(mod_name)
 

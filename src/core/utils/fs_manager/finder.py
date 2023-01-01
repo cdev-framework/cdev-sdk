@@ -560,6 +560,8 @@ def _create_new_configuration(
         storage=previous_configuration.storage,
         description=previous_configuration.description,
         environment_variables=previous_configuration.environment_variables,
+        subnets=previous_configuration.subnets,
+        security_groups=previous_configuration.security_groups,
     )
 
 

@@ -141,6 +141,10 @@ def _create_simple_lambda(
         "Layers": list(resource.external_dependencies)
         if resource.external_dependencies
         else [],
+        "VpcConfig": {
+            "SubnetIds": list(resource.configuration.subnets),
+            "SecurityGroupIds": list(resource.configuration.security_groups),
+        },
     }
     log.debug("lambda configuration %s", lambda_function_args)
 
@@ -335,6 +339,10 @@ def __update_configuration_basic(
         updated_configuration["MemorySize"] = new_configuration.memory_size
         updated_configuration["Timeout"] = new_configuration.timeout
         updated_configuration["EphemeralStorage"] = {"Size": new_configuration.storage}
+        updated_configuration["VpcConfig"] = {
+            "SubnetIds": list(new_configuration.subnets),
+            "SecurityGroupIds": list(new_configuration.security_groups),
+        }
 
 
 def __update_configuration_environment_variables(
