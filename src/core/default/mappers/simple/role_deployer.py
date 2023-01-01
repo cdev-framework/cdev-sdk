@@ -41,7 +41,13 @@ def create_role_with_permissions(
         hash="arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
     )
 
+    basic_vpc_permission_arn = permission_arn_model(
+        arn="arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+        hash="arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+    )
+
     permission_info.append(add_policy(role_name, basic_execution_permission_arn))
+    permission_info.append(add_policy(role_name, basic_vpc_permission_arn))
 
     return role_arn, permission_info
 
