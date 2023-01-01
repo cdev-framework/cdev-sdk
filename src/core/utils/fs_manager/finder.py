@@ -278,7 +278,9 @@ def _parse_serverless_functions(
     """
     full_file_path = paths.get_full_path_from_workspace_base(filepath)
     excludes = {"__pycache__"}
-    aws_platform_exclude = {"boto3"}
+    aws_platform_exclude = (
+        set() if Workspace.instance().settings.PACKAGE_AWS_PACKAGES else {"boto3"}
+    )
 
     (
         std_lib,
