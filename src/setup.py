@@ -23,11 +23,7 @@ def _get_readme_contents() -> str:
 
 setuptools.setup(
     name="cdev",
-<<<<<<< HEAD
     version="0.0.19",
-=======
-    version="0.0.18",
->>>>>>> eebc753 (bump version)
     scripts=["./cdev/scripts/cdev", "./core/scripts/cdev_core"],
     description="CLI for cdev sdk",
     long_description=_get_readme_contents(),
