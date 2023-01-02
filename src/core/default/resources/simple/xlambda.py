@@ -128,8 +128,8 @@ class simple_function_configuration_model(ImmutableModel):
     memory_size: int
     timeout: int
     storage: int
-    subnets: frozenset
-    security_groups: frozenset
+    subnets: Optional[frozenset]
+    security_groups: Optional[frozenset]
 
     class Config:
         use_enum_values = True

@@ -260,7 +260,7 @@ def _update_simple_lambda(
         previous_resource,
         new_resource,
     )
-
+    sleep(3)
     did_update_src_code = _update_source_code(
         output_task,
         function_name,
