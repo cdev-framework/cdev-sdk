@@ -198,7 +198,11 @@ def _get_all_module_info(
             tmp_std_lib_mods,
             cache,
         ) = _recursive_find_relative_module_dependencies(
-            relative_module, module_segmenter, module_creator, cache
+            relative_module,
+            module_segmenter,
+            module_creator,
+            cache,
+            Path(relative_module.absolute_fs_position).parent,
         )
 
         # add the newly found relative modules to the set of relative modules
@@ -316,6 +320,7 @@ def _recursive_find_relative_module_dependencies(
     module_segmenter: module_segmenter,
     module_creator: module_info_creator,
     cache: Dict,
+    update_relative_path: Path = None,
 ) -> Tuple[Set[RelativeModuleInfo], Set[str], Set[StdLibModuleInfo], Dict]:
     """For the given RelativeModuleInfo Object, find the information about any modules that it links to.
 
@@ -352,6 +357,9 @@ def _recursive_find_relative_module_dependencies(
         std_dependencies_names,
     ) = module_segmenter(direct_dependencies)
 
+    # Update the module creator to point to the new base directory for relative imports
+    module_creator = partial(module_creator, start_location=update_relative_path)
+
     # Sets we will add to for each type of module
     rv_relative_dependencies: Set[RelativeModuleInfo] = set(
         [module_creator(x) for x in relative_dependencies_names]
@@ -363,18 +371,21 @@ def _recursive_find_relative_module_dependencies(
 
     # For the relative dependencies, Recursively find any other modules needed
     for relative_dependency in relative_dependencies_names:
-        tmp = _recursive_find_relative_module_dependencies(
-            module_creator(relative_dependency),
-            module_segmenter,
-            module_creator,
-            cache_copy,
-        )
+        l, p = _parse_levels(relative_dependency)
+        new_relative_path = move_to(update_relative_path, l, p)
+
         (
             tmp_relative_dependencies,
             tmp_packaged_dependencies,
             tmp_std_dependencies,
             cache_copy,
-        ) = tmp
+        ) = _recursive_find_relative_module_dependencies(
+            module_creator(relative_dependency),
+            module_segmenter,
+            module_creator,
+            cache_copy,
+            new_relative_path,
+        )
 
         rv_relative_dependencies.update(tmp_relative_dependencies)
         rv_packaged_dependencies_names.update(tmp_packaged_dependencies)
@@ -394,8 +405,6 @@ def _recursive_find_relative_module_dependencies(
 
 
 ### Create Module Info Object
-
-
 def _create_relative_module_info(
     module_symbol: str, original_file_location: FilePath
 ) -> RelativeModuleInfo:
@@ -416,7 +425,13 @@ def _create_relative_module_info(
 
     original_path = Path(original_file_location)
     # go up the amount of levels need to get to the top of the search path
-    relative_base_dir = original_path.parents[relative_level - 1]
+    relative_base_dir = (
+        original_path.parents[relative_level - 1]
+        if relative_level > 3
+        else original_path.parent
+        if relative_level == 2
+        else original_path
+    )
 
     # remove leading '.' chars, the remaining portion is the path to search down from the top
     tmp_pkg_path_parts = str(module_symbol).lstrip(".").split(".")
@@ -436,7 +451,9 @@ def _create_relative_module_info(
         fp = tmp_potential_dir
         is_dir = True
     else:
-        raise Exception(f"Bad relative module: {module_symbol}")
+        raise Exception(
+            f"Bad relative module: {module_symbol}; {tmp_potential_dir}; {tmp_potential_file}"
+        )
 
     return RelativeModuleInfo(
         module_name=module_symbol, absolute_fs_position=fp, is_dir=is_dir
@@ -798,3 +815,29 @@ def put_relative_modules_cache(
     new_cache[module.to_key()] = val
 
     return new_cache
+
+
+def _parse_levels(t: str) -> Tuple[int, List[str]]:
+    x = t.split(".")
+
+    if not x[0] == "":
+        return 0, x[:-1]
+
+    x2 = x[1:]
+    cnt = 0
+
+    while x2[0] == "":
+        cnt = cnt + 1
+        x2.pop(0)
+
+    return cnt, x2[:-1]
+
+
+def move_to(start: str, up_levels: int, down_dirs: List[str]) -> str:
+
+    base = Path(start).parents[up_levels - 1] if up_levels > 0 else Path(start)
+
+    for down in down_dirs:
+        base = base / down
+
+    return base

@@ -370,7 +370,6 @@ class SimpleFunction(PermissionsGrantableMixin, TaggableMixin, Resource):
             x.output.cloud_id.render() if isinstance(x, DependencyLayer) else x.arn
             for x in self.external_dependencies
         ]
-        print(self.configuration.render())
         return simple_function_model(
             name=self.name,
             ruuid=self.ruuid,
