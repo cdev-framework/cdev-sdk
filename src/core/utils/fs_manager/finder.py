@@ -6,6 +6,7 @@ from pydantic import DirectoryPath
 from pydantic.types import FilePath
 from sortedcontainers.sortedlist import SortedKeyList
 from functools import partial
+from pathlib import Path
 
 from core.constructs.resource import (
     Resource,
@@ -317,7 +318,7 @@ def _parse_serverless_functions(
 
     mod_creator = partial(
         package_manager.create_all_module_info,
-        start_location=full_file_path,
+        start_location=Path(full_file_path).parent,
         standard_library=std_lib,
         pkg_dependencies_data=pkg_module_dependency_info,
         pkg_locations=modules_name_to_location,
