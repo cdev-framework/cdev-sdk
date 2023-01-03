@@ -97,7 +97,7 @@ def create_all_module_info(
 
 def get_packaged_modules_name_location_tag(
     working_set: WorkingSet,
-) -> Dict[str, Tuple[FilePath, str]]:
+) -> Dict[str, Tuple[FilePath, str, str]]:
     """Generate the file system location information for modules in a working set.
 
     Returns:
@@ -141,7 +141,6 @@ def create_packaged_module_dependencies(ws: WorkingSet) -> Dict[str, Set[str]]:
         Dict[str, List[str]]: <module_name, all modules it depends on>
     """
     pkgs_to_top_mods = _create_pkg_to_top_modules(ws)
-
     return combine_dictionaries(
         [_get_module_dependencies_info(x, pkgs_to_top_mods, ws) for x in ws]
     )
@@ -265,10 +264,16 @@ def _create_module_info(
         return _create_std_library_module_info(module_name)
 
     elif module_name in packaged_module_locations_tags:
-        location, tag = packaged_module_locations_tags.get(module_name)
-        return _create_packaged_module_info(
-            module_name, _get_module_abs_path(module_name, location), tag
+        location, tag, namespace = packaged_module_locations_tags.get(module_name)
+        x = _create_packaged_module_info(
+            module_name,
+            _get_module_abs_path(module_name, location)
+            if not namespace
+            else _get_module_abs_path(namespace, location),
+            tag,
+            namespace,
         )
+        return x
 
     else:
         raise PackagingError(
@@ -461,7 +466,7 @@ def _create_relative_module_info(
 
 
 def _create_packaged_module_info(
-    module_symbol: str, filepath: FilePath, tag: str
+    module_symbol: str, filepath: FilePath, tag: str, namespace: str
 ) -> PackagedModuleInfo:
     """Create a PackagedModuleInfo object
 
@@ -469,6 +474,7 @@ def _create_packaged_module_info(
         module_symbol (str): symbol used to import module
         filepath (FilePath): Filesystem location of the module
         tag (str): tags from the package
+        namespace (str): namespace for the module
 
     Returns:
         PackagedModuleInfo
@@ -480,7 +486,11 @@ def _create_packaged_module_info(
         is_dir = True
 
     return PackagedModuleInfo(
-        module_name=module_symbol, absolute_fs_position=filepath, is_dir=is_dir, tag=tag
+        module_name=module_symbol,
+        absolute_fs_position=filepath,
+        is_dir=is_dir,
+        tag=tag,
+        namespace=namespace,
     )
 
 
@@ -522,7 +532,7 @@ def _create_packages_direct_modules(dependency: Distribution) -> List[str]:
     Returns:
         List[str]: top level modules
     """
-    _, top_level_fp, _, _ = _get_metadata_files_for_package(dependency)
+    _, top_level_fp, _, _, _ = _get_metadata_files_for_package(dependency)
 
     if top_level_fp == None:
         # Problem when Cdev is locally linked... #TODO find more permanent solution
@@ -596,11 +606,11 @@ def _recursive_get_all_dependencies(
 
 def _get_packages_modules_location_tag_info(
     package: Distribution,
-) -> Dict[str, FilePath]:
+) -> Dict[str, Tuple[str, str, str]]:
     """Get all the top level modules available from a given package
 
     Returns:
-        List[Tuple[str, List[str]]]: List of tuples of (name, List[tags])
+        Dict[str, Tuple[str,str, str]]: Dict of module name to  (module_location, tags, namespace)
     """
     # For information on this object check
     # https://setuptools.pypa.io/en/latest/pkg_resources.html#distribution-objects
@@ -610,6 +620,7 @@ def _get_packages_modules_location_tag_info(
         _,
         toplevel_location,
         wheel_location,
+        record_location,
         base_directory_location,
     ) = _get_metadata_files_for_package(package)
 
@@ -619,16 +630,30 @@ def _get_packages_modules_location_tag_info(
 
     tags = "-".join(_get_tags_from_wheel(wheel_location))
 
+    _actual_top_level_modules = _find_module_locations_from_record(record_location)
+
     if not os.path.isfile(toplevel_location):
         # If not top level file is present, then assume the only top level module available is the
-        # project name properly converted
-        return {package.project_name.replace("-", "_"): (base_directory_location, tags)}
+        # project name properly converted or a namespace
+
+        _converted_package_name = package.project_name.replace("-", "_")
+
+        if _converted_package_name in _actual_top_level_modules:
+            return {_converted_package_name: (base_directory_location, tags, None)}
+        else:
+            # This is a namespace package (https://packaging.python.org/en/latest/guides/packaging-namespace-packages/)
+            _namespace = _actual_top_level_modules.pop()
+            return {
+                _converted_package_name: (base_directory_location, tags, _namespace)
+            }
 
     with open(toplevel_location) as fh:
         # read the top_level file for all the modules directly available in this package
         top_level_mod_names = fh.readlines()
 
-    return {x.strip(): (base_directory_location, tags) for x in top_level_mod_names}
+    return {
+        x.strip(): (base_directory_location, tags, None) for x in top_level_mod_names
+    }
 
 
 def _get_metadata_files_for_package(
@@ -640,7 +665,7 @@ def _get_metadata_files_for_package(
         package (Distribution)
 
     Returns:
-        Tuple[str,str,str, FilePath]: Distinfo_folder, TopLevel_fileloc, Wheel_fileloc, base_dir
+        Tuple[str,str,str,str,FilePath]: Distinfo_folder, TopLevel_fileloc, Wheel_fileloc, Record_fileloc base_dir
     """
 
     # find the dist info directory that will contain metadata about the package
@@ -651,15 +676,17 @@ def _get_metadata_files_for_package(
 
     if not os.path.isdir(dist_dir_location):
         # raise Exception(f"No .distinfo found for {package}")
-        return None, None, None, None
+        return None, None, None, None, None
 
     toplevel_file_location = os.path.join(dist_dir_location, "top_level.txt")
     wheel_info = os.path.join(dist_dir_location, "WHEEL")
+    record_info = os.path.join(dist_dir_location, "RECORD")
 
     return (
         dist_dir_location,
         toplevel_file_location,
         wheel_info,
+        record_info,
         package.location if not package.location == "none" else None,
     )
 
@@ -738,10 +765,10 @@ def _get_module_abs_path(module_name: str, base_path: FilePath) -> FilePath:
     elif os.path.isfile(potential_file):
         return potential_file
     else:
-        return base_path
-        # raise Exception(
-        #    f"Could not find either {module_name}.py or {module_name} directory in {base_path}"
-        # )
+        # return base_path
+        raise Exception(
+            f"Could not find either {module_name}.py or {module_name} directory in {base_path}"
+        )
 
 
 def _get_relative_package_dependencies(fp: Union[FilePath, DirectoryPath]) -> List[str]:
@@ -775,6 +802,28 @@ def _get_relative_package_dependencies(fp: Union[FilePath, DirectoryPath]) -> Li
         module_names = cdev_parser.parse_file_for_dependencies(fp)
 
     return list(filter(None, module_names))
+
+
+def _find_module_locations_from_record(record_file_location: str) -> Set[str]:
+    """Given a RECORD file location, create a set of the actual top level module directory names. This is to account for namespaced packages like
+    google (protobuf).
+
+    Args:
+        record_file_location (str): RECORD file location
+
+    Returns:
+        List[str]: top level modules
+    """
+    with open(record_file_location, "r") as fh:
+        lines = fh.readlines()
+
+    _all_starting_paths = set([x.split(",")[0].split("/")[0] for x in lines])
+
+    _all_starting_paths = set(
+        [x[:-3] if x[-3:] == ".py" else x for x in _all_starting_paths]
+    )
+
+    return {x for x in _all_starting_paths if not x.split(".")[-1] == "dist-info"}
 
 
 #######################
