@@ -32,6 +32,7 @@ class StdLibModuleInfo(ModuleInfo):
 
 class PackagedModuleInfo(ModuleInfo):
     tag: str
+    namespace: Optional[str]
 
 
 class RelativeModuleInfo(ModuleInfo):
