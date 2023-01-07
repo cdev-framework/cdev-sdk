@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict
 from uuid import uuid4
 
@@ -16,7 +17,7 @@ def _create_simple_queue(
     output_task: OutputTask,
 ) -> Dict:
 
-    attributes = {}
+    attributes = {"VisibilityTimeout": str(resource.visibility_timeout)}
 
     full_namespace_suffix = hasher.hash_list([namespace_token, str(uuid4())])
 
@@ -28,6 +29,18 @@ def _create_simple_queue(
 
     if resource.is_fifo:
         attributes.update({"FifoQueue": str(resource.is_fifo)})
+
+    if resource.dlq_arn:
+        attributes.update(
+            {
+                "RedrivePolicy": json.dumps(
+                    {
+                        "deadLetterTargetArn": resource.dlq_arn,
+                        "maxReceiveCount": resource.max_receive_count,
+                    }
+                )
+            }
+        )
 
     output_task.update(comment=f"Creating Queue {queue_name}")
 
