@@ -252,7 +252,7 @@ def _update_simple_lambda(
     mutable_previous_output = dict(previous_output)
 
     _update_configuration(output_task, function_name, previous_resource, new_resource)
-
+    sleep(3)
     did_update_permission = _update_permissions(
         output_task,
         mutable_previous_output,

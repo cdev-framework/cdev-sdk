@@ -190,7 +190,13 @@ def _get_all_module_info(
     referenced_pkged_module_names: Set[str] = set(packaged_mod_names)
 
     # Find the relative dependencies in a module
+
     for relative_module in direct_relative_modules:
+
+        l, p = _parse_levels(relative_module.module_name)
+        t = (Path(relative_module.absolute_fs_position).parent,)
+        new_relative_path = move_to(str(t[0]), l, p[:-1])
+
         (
             tmp_relative_module_dependencies,
             tmp_pkged_mod_names,
@@ -201,7 +207,7 @@ def _get_all_module_info(
             module_segmenter,
             module_creator,
             cache,
-            Path(relative_module.absolute_fs_position).parent,
+            new_relative_path,
         )
 
         # add the newly found relative modules to the set of relative modules
@@ -363,6 +369,7 @@ def _recursive_find_relative_module_dependencies(
     ) = module_segmenter(direct_dependencies)
 
     # Update the module creator to point to the new base directory for relative imports
+
     module_creator = partial(module_creator, start_location=update_relative_path)
 
     # Sets we will add to for each type of module
@@ -883,7 +890,6 @@ def _parse_levels(t: str) -> Tuple[int, List[str]]:
 
 
 def move_to(start: str, up_levels: int, down_dirs: List[str]) -> str:
-
     base = Path(start).parents[up_levels - 1] if up_levels > 0 else Path(start)
 
     for down in down_dirs:
