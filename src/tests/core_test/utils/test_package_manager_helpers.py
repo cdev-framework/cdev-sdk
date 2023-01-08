@@ -32,7 +32,7 @@ PICKLED_FILED_BASE = os.path.join(DATA_BASEPATH, "pickled_envs")
 def test_get_all_module_info():
     # Relative info
     base_relative_test_files = os.path.join(DATA_BASEPATH, "get_all_modules")
-    starting_file_location = os.path.join(base_relative_test_files, "src", "handler.py")
+    starting_file_location = os.path.join(base_relative_test_files, "src")
     tmp_fp = os.path.join(base_relative_test_files, "src", "tmp.py")
     start_fp = os.path.join(base_relative_test_files, "src", "start.py")
     utils_fp = os.path.join(base_relative_test_files, "src", "utils")
@@ -43,8 +43,8 @@ def test_get_all_module_info():
     # Packaged Info
     base_pkged_test_files = os.path.join(DATA_BASEPATH, "packaged_module_info")
     packaged_locations = {
-        "pandas": (base_pkged_test_files, "cp37-cp37m-manylinux_2_17_x86_64"),
-        "six": (base_pkged_test_files, "py2-none-any"),
+        "pandas": (base_pkged_test_files, "cp37-cp37m-manylinux_2_17_x86_64", None),
+        "six": (base_pkged_test_files, "py2-none-any", None),
     }
     packaged_module_dependencies = {"pandas": ["six"]}
 
@@ -81,12 +81,14 @@ def test_get_all_module_info():
             absolute_fs_position=os.path.join(base_pkged_test_files, "pandas"),
             is_dir=True,
             tag="cp37-cp37m-manylinux_2_17_x86_64",
+            namespace=None,
         ),
         PackagedModuleInfo(
             module_name="six",
             absolute_fs_position=os.path.join(base_pkged_test_files, "six.py"),
             is_dir=False,
             tag="py2-none-any",
+            namespace=None,
         ),
     ]
 
@@ -103,7 +105,7 @@ def test_get_all_module_info():
 def test_create_module_info():
     # Relative info
     base_relative_test_files = os.path.join(DATA_BASEPATH, "relative_module_info")
-    starting_file_location = os.path.join(base_relative_test_files, "src", "start.py")
+    starting_file_location = os.path.join(base_relative_test_files, "src")
     tmp_fp = os.path.join(base_relative_test_files, "src", "tmp.py")
     utils_fp = os.path.join(base_relative_test_files, "src", "utils")
 
@@ -113,8 +115,8 @@ def test_create_module_info():
     # Packaged Info
     base_pkged_test_files = os.path.join(DATA_BASEPATH, "packaged_module_info")
     packaged_locations = {
-        "pandas": (base_pkged_test_files, "cp37-cp37m-manylinux_2_17_x86_64"),
-        "six": (base_pkged_test_files, "py2-none-any"),
+        "pandas": (base_pkged_test_files, "cp37-cp37m-manylinux_2_17_x86_64", None),
+        "six": (base_pkged_test_files, "py2-none-any", None),
     }
 
     test_data = [
@@ -139,6 +141,7 @@ def test_create_module_info():
                 absolute_fs_position=os.path.join(base_pkged_test_files, "pandas"),
                 is_dir=True,
                 tag="cp37-cp37m-manylinux_2_17_x86_64",
+                namespace=None,
             ),
         ),
         (
@@ -148,6 +151,7 @@ def test_create_module_info():
                 absolute_fs_position=os.path.join(base_pkged_test_files, "six.py"),
                 is_dir=False,
                 tag="py2-none-any",
+                namespace=None,
             ),
         ),
     ]
@@ -175,7 +179,8 @@ def test_segment_module_names():
 
 def test_recursive_find_relative_module_dependencies():
     base_test_files = os.path.join(DATA_BASEPATH, "relative_module_info")
-    starting_file_location = os.path.join(base_test_files, "src", "handler.py")
+    starting_file_location = os.path.join(base_test_files, "src")
+    print(starting_file_location)
 
     start_fp = os.path.join(base_test_files, "src", "start.py")
     tmp_fp = os.path.join(base_test_files, "src", "tmp.py")
@@ -220,7 +225,11 @@ def test_recursive_find_relative_module_dependencies():
     )
 
     rv = package_manager._recursive_find_relative_module_dependencies(
-        data, module_segmenter, module_creator, {}
+        data,
+        module_segmenter,
+        module_creator,
+        {},
+        update_relative_path=starting_file_location,
     )
     assert rv[0] == results[0]
     assert rv[1] == results[1]
@@ -232,7 +241,7 @@ def test_recursive_find_relative_module_dependencies():
 
 def test_create_relative_module_info():
     base_test_files = os.path.join(DATA_BASEPATH, "relative_module_info")
-    starting_file_location = os.path.join(base_test_files, "src", "start.py")
+    starting_file_location = os.path.join(base_test_files, "src")
 
     tmp_fp = os.path.join(base_test_files, "src", "tmp.py")
     utils_fp = os.path.join(base_test_files, "src", "utils")
@@ -283,6 +292,7 @@ def test_create_packaged_module_info():
                 "pandas",
                 os.path.join(base_test_files, "pandas"),
                 "cp37-cp37m-manylinux_2_17_x86_64",
+                None,
             ),
             PackagedModuleInfo(
                 module_name="pandas",
@@ -292,7 +302,7 @@ def test_create_packaged_module_info():
             ),
         ),
         (
-            ("six", os.path.join(base_test_files, "six.py"), "py2-none-any"),
+            ("six", os.path.join(base_test_files, "six.py"), "py2-none-any", None),
             PackagedModuleInfo(
                 module_name="six",
                 absolute_fs_position=os.path.join(base_test_files, "six.py"),
