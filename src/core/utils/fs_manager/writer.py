@@ -216,6 +216,8 @@ def _create_archive(
         file_information (List[Tuple(FilePath, FilePath)]): Original Path to File and Path within Zip archive
         output_fp (FilePath): destination of the archive
     """
+    _added_files = set()
+
     if os.path.isfile(output_fp):
         os.remove(output_fp)
 
@@ -224,7 +226,9 @@ def _create_archive(
 
     with ZipFile(output_fp, "a") as zipfile:
         for original_path, zip_path in file_information:
-            zipfile.write(original_path, zip_path)
+            if original_path not in _added_files:
+                zipfile.write(original_path, zip_path)
+                _added_files.add(original_path)
 
 
 def concatenate(lists: List[List[Any]]) -> List[Any]:
