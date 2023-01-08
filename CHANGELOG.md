@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 All releases will correspond to releases on [PyPI](https://pypi.org/project/cdev/).
 All release will have a corresponding git tag.
 
+## [0.0.20] - 2023-01-08
+### Fixed
+- Bug with parsing nested relative packages
+
+### Added
+- Add vpc parameters to Serverless Function resource
+- Add timeout and dead letter queue parameters to SQS Queue Resource
+- Add parameter for API Gateway to use IAM authentication
+
+
 ## [0.0.13] - 2022-09-29
 ### Fixed
 - Create the aws config files if they do not exist when creating credentials

@@ -31,15 +31,35 @@ RUUID = "cdev::simple::api"
 ########################
 
 
+class authorizer_type(str, Enum):
+    IAM = "IAM"
+    JWT = "JWT"
+
+
 class authorizer_model(ImmutableModel):
+    type: authorizer_type
+    name: str
+
+
+class jwt_authorizer_model(authorizer_model):
     """Model representing JWT authorizer information"""
 
-    name: str
     issuer_url: str
     audience: str
 
 
+class iam_authorizer_model(authorizer_model):
+    """Model representing IAM authorizer information"""
+
+    pass
+
+
 class Authorizer:
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+
+class JWTAuthorizer(Authorizer):
     def __init__(self, name: str, issuer_url: str, audience: str) -> None:
         """JWT authorizer information.
 
@@ -56,12 +76,13 @@ class Authorizer:
             issuer_url (str): The base domain of the identity provider that issues JSON Web Tokens.
             audience (str): The intended recipients of the JWT. A valid JWT must provide an aud that matches at this value.
         """
-        self.name = name
+        super().__init__(name=name)
         self.issuer_url = issuer_url
         self.audience = audience
 
-    def render(self) -> authorizer_model:
-        return authorizer_model(
+    def render(self) -> jwt_authorizer_model:
+        return jwt_authorizer_model(
+            type=authorizer_type.JWT,
             name=self.name,
             issuer_url=self.issuer_url,
             audience=self.audience,
@@ -69,6 +90,18 @@ class Authorizer:
 
     def hash(self) -> str:
         return hasher.hash_list([self.name, self.issuer_url, self.audience])
+
+
+class IAMAuthorizer(Authorizer):
+    def __init__(self) -> None:
+        """IAM authorizer information."""
+        super().__init__(name="IAM")
+
+    def render(self) -> jwt_authorizer_model:
+        return iam_authorizer_model(type=authorizer_type.IAM, name=self.name)
+
+    def hash(self) -> str:
+        return hasher.hash_list([self.name])
 
 
 ########################
@@ -410,5 +443,5 @@ class Api(TaggableMixin, Resource):
             routes=frozenset([x.render() for x in routes]),
             allow_cors=self.allow_cors,
             authorizers=frozenset([x.render() for x in self._authorizers]),
-            tags=frozendict(self.tags)
+            tags=frozendict(self.tags),
         )

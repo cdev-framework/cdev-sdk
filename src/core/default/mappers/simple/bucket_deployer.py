@@ -30,10 +30,17 @@ def _create_simple_bucket(
 
     output_task.update(comment=f"Creating Bucket {cloud_bucket_name}")
 
+    args = {
+        "Bucket": cloud_bucket_name,
+    }
+
+    _current_region = raw_aws_client.get_current_region()
+
+    if not _current_region == "us-east-1":
+        args["CreateBucketConfiguration"] = {"LocationConstraint": _current_region}
+
     # TODO create buckets in different region
-    rv = raw_aws_client.run_client_function(
-        "s3", "create_bucket", {"Bucket": cloud_bucket_name}
-    )
+    rv = raw_aws_client.run_client_function("s3", "create_bucket", args)
 
     output_task.update(comment=f"Created Bucket {cloud_bucket_name}")
 
