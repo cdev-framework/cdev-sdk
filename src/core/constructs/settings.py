@@ -89,6 +89,8 @@ class Settings(BaseSettings):
 
     USE_DOCKER: bool = False
 
+    PACKAGE_AWS_PACKAGES: bool = False
+
     class Config:
         env_prefix = "cdev_"
         validate_assignment = True

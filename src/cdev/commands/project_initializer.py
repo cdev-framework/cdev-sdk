@@ -12,7 +12,7 @@ from rich.prompt import Prompt, Confirm
 from cdev.commands import project_initializer_params
 from cdev.default.project import local_project, local_project_info
 from cdev.utils.display_manager import SimpleSelectionListPage
-from cdev.utils.aws_credentials_helper import prompt_write_default_aws_credentials
+from cdev.utils.credential_helper import prompt_write_default_aws_credentials
 
 from core.default.backend import Local_Backend_Configuration
 from core.utils import paths as paths_util
@@ -23,7 +23,6 @@ from cdev.constructs.project import (
     CDEV_FOLDER,
     CDEV_PROJECT_FILE,
 )
-
 
 STATE_FOLDER = "state"
 INTERMEDIATE_FOLDER = "intermediate"

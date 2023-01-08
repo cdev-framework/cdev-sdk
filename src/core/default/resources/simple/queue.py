@@ -1,7 +1,7 @@
 """Set of constructs for making message queues
 
 """
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from core.constructs.resource import (
     Resource,
@@ -11,8 +11,12 @@ from core.constructs.resource import (
     PermissionsAvailableMixin,
     TaggableMixin,
 )
-from core.constructs.cloud_output import Cloud_Output_Str, OutputType
-from core.constructs.types import cdev_str_model
+from core.constructs.cloud_output import (
+    Cloud_Output_Str,
+    OutputType,
+    Cloud_Output_Dynamic,
+)
+from core.constructs.types import cdev_str_model, cdev_str
 from core.constructs.models import frozendict
 
 from core.default.resources.simple.events import Event, event_model
@@ -160,6 +164,12 @@ class queue_model(TaggableResourceModel):
     is_fifo: bool
     """Should the Queue guarantee ordering of messages"""
 
+    visibility_timeout: int
+
+    dlq_arn: Optional[cdev_str_model]
+
+    max_receive_count: Optional[int]
+
 
 class Queue(PermissionsAvailableMixin, TaggableMixin, Resource):
     """A Message Queue"""
@@ -169,6 +179,9 @@ class Queue(PermissionsAvailableMixin, TaggableMixin, Resource):
         self,
         cdev_name: str,
         is_fifo: bool = False,
+        visibility_timeout: int = 30,
+        dlq_arn: cdev_str = None,
+        max_receive_count: int = None,
         nonce: str = "",
         tags: Dict[str, str] = None,
     ) -> None:
@@ -182,6 +195,9 @@ class Queue(PermissionsAvailableMixin, TaggableMixin, Resource):
         super().__init__(cdev_name, RUUID, nonce, tags=tags)
 
         self.is_fifo = is_fifo
+        self.visibility_timeout = visibility_timeout
+        self.dlq_arn = dlq_arn
+        self.max_receive_count = max_receive_count
         self.output = QueueOutput(cdev_name)
         self._event = None
 
@@ -260,5 +276,10 @@ class Queue(PermissionsAvailableMixin, TaggableMixin, Resource):
             ruuid=self.ruuid,
             hash=self.hash,
             is_fifo=self.is_fifo,
-            tags=frozendict(self.tags)
+            visibility_timeout=self.visibility_timeout,
+            dlq_arn=self.dlq_arn.render()
+            if isinstance(self.dlq_arn, Cloud_Output_Dynamic)
+            else self.dlq_arn,
+            max_receive_count=self.max_receive_count,
+            tags=frozendict(self.tags),
         )
