@@ -91,7 +91,11 @@ def create_all_module_info(
     )
 
     return _get_all_module_info(
-        module_names, pkg_dependencies_data, module_segmenter, module_creator
+        module_names,
+        pkg_dependencies_data,
+        module_segmenter,
+        module_creator,
+        start_location,
     )
 
 
@@ -154,6 +158,7 @@ def _get_all_module_info(
     pkg_module_dep_info: Dict[str, Set[str]],
     module_segmenter: module_segmenter,
     module_creator: module_info_creator,
+    start_location: str,
 ) -> List[Union[RelativeModuleInfo, StdLibModuleInfo, PackagedModuleInfo]]:
     """Given a list of modules, compute all dependent module information using the given helper functions and information.
 
@@ -194,8 +199,8 @@ def _get_all_module_info(
     for relative_module in direct_relative_modules:
 
         l, p = _parse_levels(relative_module.module_name)
-        t = (Path(relative_module.absolute_fs_position).parent,)
-        new_relative_path = move_to(str(t[0]), l, p[:-1])
+        t = Path(start_location)
+        new_relative_path = move_to(str(t), l, p)
 
         (
             tmp_relative_module_dependencies,
@@ -369,7 +374,6 @@ def _recursive_find_relative_module_dependencies(
     ) = module_segmenter(direct_dependencies)
 
     # Update the module creator to point to the new base directory for relative imports
-
     module_creator = partial(module_creator, start_location=update_relative_path)
 
     # Sets we will add to for each type of module
@@ -384,6 +388,7 @@ def _recursive_find_relative_module_dependencies(
     # For the relative dependencies, Recursively find any other modules needed
     for relative_dependency in relative_dependencies_names:
         l, p = _parse_levels(relative_dependency)
+
         new_relative_path = move_to(update_relative_path, l, p)
 
         (
@@ -874,6 +879,7 @@ def put_relative_modules_cache(
 
 
 def _parse_levels(t: str) -> Tuple[int, List[str]]:
+
     x = t.split(".")
 
     if not x[0] == "":
@@ -890,6 +896,7 @@ def _parse_levels(t: str) -> Tuple[int, List[str]]:
 
 
 def move_to(start: str, up_levels: int, down_dirs: List[str]) -> str:
+
     base = Path(start).parents[up_levels - 1] if up_levels > 0 else Path(start)
 
     for down in down_dirs:
