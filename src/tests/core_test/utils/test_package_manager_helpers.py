@@ -97,6 +97,7 @@ def test_get_all_module_info():
         pkg_module_dep_info=packaged_module_dependencies,
         module_segmenter=module_segmenter,
         module_creator=module_creator,
+        start_location=starting_file_location,
     )
 
     assert set(rv) == set(test_rv)
