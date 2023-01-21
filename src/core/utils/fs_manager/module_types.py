@@ -32,6 +32,7 @@ class StdLibModuleInfo(ModuleInfo):
 
 class PackagedModuleInfo(ModuleInfo):
     tag: str
+    record_location: str
     namespace: Optional[str]
 
 
