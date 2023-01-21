@@ -107,67 +107,79 @@ def _make_file_archive_information(
     Returns:
         List[Tuple[FilePath, FilePath]]: Original Path to File and Path within Zip archive
     """
+    base_packages_dir = os.path.split(module.absolute_fs_position)[0]
+    needed_top_artifacts = _get_all_top_directories_from_record(module.record_location)
+    rv = []
 
-    if not (
-        os.path.isfile(module.absolute_fs_position)
-        or os.path.isdir(module.absolute_fs_position)
-    ):
-        raise Exception(f"Provide module {module} is not a directory or file")
+    for top_artifact in needed_top_artifacts:
+        absolute_location = os.path.join(base_packages_dir, top_artifact)
 
-    if os.path.isfile(module.absolute_fs_position):
-        # this is a single python file not a folder (ex: six.py)
-        file_name = os.path.split(module.absolute_fs_position)[1]
-        # since this is a module that is just a single file plop in /python/<filename> and it will be on the pythonpath
-        return [(module.absolute_fs_position, os.path.join("python", file_name))]
+        if os.path.isfile(absolute_location):
+            # this is a single python file not a folder (ex: six.py)
+            # since this is a module that is just a single file plop in /python/<filename> and it will be on the pythonpath
+            rv.append(
+                (module.absolute_fs_position, os.path.join("python", top_artifact))
+            )
 
-    else:
-        pkg_name = os.path.split(module.absolute_fs_position)[1]
-        rv = []
-
-        for dirname, subdirs, files in os.walk(module.absolute_fs_position):
-            if dirname.split("/")[-1] in exclude_subdirectories:
-                continue
-
-            zip_dir_name = os.path.normpath(
-                os.path.join(
-                    "python",
-                    pkg_name,
-                    os.path.relpath(dirname, module.absolute_fs_position),
+        else:
+            rv.extend(
+                _generate_file_archive_file_for_directory(
+                    absolute_location, exclude_subdirectories
                 )
             )
 
-            for filename in files:
-                original_path = os.path.join(dirname, filename)
-                rv.append((original_path, os.path.join(zip_dir_name, filename)))
+    return rv
 
-        pkg_dir = os.path.dirname(module.absolute_fs_position)
-        for obj in os.listdir(pkg_dir):
-            # Search in the general packaging directory for any other directory with the package name
-            # for example look for numpy.lib when including numpy
-            if os.path.join(pkg_dir, obj) == module.absolute_fs_position:
-                continue
 
-            if (
-                os.path.isdir(os.path.join(pkg_dir, obj))
-                and obj.split(".")[0] == pkg_name
-            ):
-                for dirname, subdirs, files in os.walk(os.path.join(pkg_dir, obj)):
-                    if dirname.split("/")[-1] in exclude_subdirectories:
-                        continue
+def _generate_file_archive_file_for_directory(
+    directory: str, exclude_subdirectories: Set[str] = set()
+) -> List[Tuple[str, str]]:
+    """Given a directory that contains a packaged python module, return the list of tuples for all artifacts in that directory.
+    The first element of the tuple should the original path of the artifact and the second element should be the location the
+    file needs to be placed in for the final generated archive.
 
-                    zip_dir_name = os.path.normpath(
-                        os.path.join(
-                            "python",
-                            obj,
-                            os.path.relpath(dirname, os.path.join(pkg_dir, obj)),
-                        )
-                    )
+    Args:
+        directory (str): Directory to generate for
+        exclude_subdirectories (Set[str]): optional parameter if there are sub directories that should be ignore (__pycache__)
 
-                    for filename in files:
-                        original_path = os.path.join(dirname, filename)
-                        rv.append((original_path, os.path.join(zip_dir_name, filename)))
+    Returns:
+        List[Tuple[str,str]]
+    """
+    rv = []
+    top_directory_name = os.path.split(directory)[1]
 
-        return rv
+    for dirname, subdirs, files in os.walk(directory):
+        if dirname.split("/")[-1] in exclude_subdirectories:
+            continue
+
+        zip_dir_name = os.path.normpath(
+            os.path.join(
+                "python",
+                top_directory_name,
+                os.path.relpath(dirname, directory),
+            )
+        )
+
+        for filename in files:
+            original_path = os.path.join(dirname, filename)
+            rv.append((original_path, os.path.join(zip_dir_name, filename)))
+
+    return rv
+
+
+def _get_all_top_directories_from_record(record_location: str) -> Set[str]:
+    """Given the location of a RECORD file, return all the top level directories that are needed.
+
+    Args:
+        record_location (str)
+
+    Returns:
+        Set[str]
+    """
+    with open(record_location, "r") as fh:
+        _all_files = fh.readlines()
+
+    return set([x.split(",")[0].split("/")[0] for x in _all_files])
 
 
 def _create_archive_and_hash(

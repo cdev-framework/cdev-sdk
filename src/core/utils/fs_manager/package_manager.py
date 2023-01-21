@@ -250,7 +250,7 @@ def _create_module_info(
     module_name: str,
     start_location: FilePath,
     standard_library: Set[str],
-    packaged_module_locations_tags: Dict[str, FilePath],
+    packaged_module_locations_tags: Dict[str, Tuple[str, str, str, str]],
 ) -> ModuleInfo:
     """Given a module_name, create a ModuleInfo object based on the current environment expressed by the parameters.
 
@@ -275,16 +275,18 @@ def _create_module_info(
         return _create_std_library_module_info(module_name)
 
     elif module_name in packaged_module_locations_tags:
-        location, tag, namespace = packaged_module_locations_tags.get(module_name)
-        x = _create_packaged_module_info(
+        location, tag, namespace, record_location = packaged_module_locations_tags.get(
+            module_name
+        )
+        return _create_packaged_module_info(
             module_name,
             _get_module_abs_path(module_name, location)
             if not namespace
             else _get_module_abs_path(namespace, location),
             tag,
             namespace,
+            record_location,
         )
-        return x
 
     else:
         raise PackagingError(
@@ -478,7 +480,11 @@ def _create_relative_module_info(
 
 
 def _create_packaged_module_info(
-    module_symbol: str, filepath: FilePath, tag: str, namespace: str
+    module_symbol: str,
+    filepath: FilePath,
+    tag: str,
+    namespace: str,
+    record_location: str,
 ) -> PackagedModuleInfo:
     """Create a PackagedModuleInfo object
 
@@ -503,6 +509,7 @@ def _create_packaged_module_info(
         is_dir=is_dir,
         tag=tag,
         namespace=namespace,
+        record_location=record_location,
     )
 
 
@@ -618,7 +625,7 @@ def _recursive_get_all_dependencies(
 
 def _get_packages_modules_location_tag_info(
     package: Distribution,
-) -> Dict[str, Tuple[str, str, str]]:
+) -> Dict[str, Tuple[str, str, str, str]]:
     """Get all the top level modules available from a given package
 
     Returns:
@@ -656,7 +663,12 @@ def _get_packages_modules_location_tag_info(
             # This is a namespace package (https://packaging.python.org/en/latest/guides/packaging-namespace-packages/)
             _namespace = _actual_top_level_modules.pop()
             return {
-                _converted_package_name: (base_directory_location, tags, _namespace)
+                _converted_package_name: (
+                    base_directory_location,
+                    tags,
+                    _namespace,
+                    record_location,
+                )
             }
 
     with open(toplevel_location) as fh:
@@ -664,7 +676,8 @@ def _get_packages_modules_location_tag_info(
         top_level_mod_names = fh.readlines()
 
     return {
-        x.strip(): (base_directory_location, tags, None) for x in top_level_mod_names
+        x.strip(): (base_directory_location, tags, None, record_location)
+        for x in top_level_mod_names
     }
 
 
