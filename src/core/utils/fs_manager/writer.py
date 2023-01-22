@@ -108,10 +108,15 @@ def _make_file_archive_information(
         List[Tuple[FilePath, FilePath]]: Original Path to File and Path within Zip archive
     """
     base_packages_dir = os.path.split(module.absolute_fs_position)[0]
-    needed_top_artifacts = _get_all_top_directories_from_record(module.record_location)
+    # Sometimes the RECORD file (jmespath) will point to parent directories, but we do not want to allow that
+    needed_top_artifacts = set(
+        filter(
+            lambda x: not x.startswith(".."),
+            _get_all_top_directories_from_record(module.record_location),
+        )
+    )
 
     rv = []
-
     for top_artifact in needed_top_artifacts:
         absolute_location = os.path.join(base_packages_dir, top_artifact)
 
