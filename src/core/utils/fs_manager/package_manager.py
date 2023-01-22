@@ -135,7 +135,9 @@ def get_standard_library_modules(version="3_7") -> Set[str]:
         return set(fh.read().splitlines())
 
 
-def create_packaged_module_dependencies(ws: WorkingSet) -> Dict[str, Set[str]]:
+def create_packaged_module_dependencies(
+    ws: WorkingSet, exclude_dependencies: Set[str] = set()
+) -> Dict[str, Set[str]]:
     """Given a working set, create a dict from all top level modules to their entire list of its dependant modules.
 
     Args:
@@ -145,9 +147,11 @@ def create_packaged_module_dependencies(ws: WorkingSet) -> Dict[str, Set[str]]:
         Dict[str, List[str]]: <module_name, all modules it depends on>
     """
     pkgs_to_top_mods = _create_pkg_to_top_modules(ws)
-    return combine_dictionaries(
+    rv = combine_dictionaries(
         [_get_module_dependencies_info(x, pkgs_to_top_mods, ws) for x in ws]
     )
+
+    return {k: v.difference(exclude_dependencies) for k, v in rv.items()}
 
 
 #########################
@@ -586,10 +590,17 @@ def _get_module_dependencies_info(
 
     keys = pkg_to_top_mods.get(pkg.project_name)
 
+    # A package can have extra dependencies defined, so we start with all the potential dependencies than look to find the ones that are
+    # actually available.
+    _all_required_packages = pkg.requires(extras=pkg.extras)
+    _available_packages = list(
+        filter(lambda x: x, [ws.find(x) for x in _all_required_packages])
+    )
+
     all_dependencies = concatenate_to_set(
         [
-            list(_recursive_get_all_dependencies(ws.find(x), pkg_to_top_mods, ws))
-            for x in pkg.requires()
+            list(_recursive_get_all_dependencies(x, pkg_to_top_mods, ws))
+            for x in _available_packages
         ]
     )
 
@@ -658,7 +669,14 @@ def _get_packages_modules_location_tag_info(
         _converted_package_name = package.project_name.replace("-", "_")
 
         if _converted_package_name in _actual_top_level_modules:
-            return {_converted_package_name: (base_directory_location, tags, None)}
+            return {
+                _converted_package_name: (
+                    base_directory_location,
+                    tags,
+                    None,
+                    record_location,
+                )
+            }
         else:
             # This is a namespace package (https://packaging.python.org/en/latest/guides/packaging-namespace-packages/)
             _namespace = _actual_top_level_modules.pop()

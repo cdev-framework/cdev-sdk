@@ -109,6 +109,7 @@ def _make_file_archive_information(
     """
     base_packages_dir = os.path.split(module.absolute_fs_position)[0]
     needed_top_artifacts = _get_all_top_directories_from_record(module.record_location)
+
     rv = []
 
     for top_artifact in needed_top_artifacts:
@@ -117,9 +118,7 @@ def _make_file_archive_information(
         if os.path.isfile(absolute_location):
             # this is a single python file not a folder (ex: six.py)
             # since this is a module that is just a single file plop in /python/<filename> and it will be on the pythonpath
-            rv.append(
-                (module.absolute_fs_position, os.path.join("python", top_artifact))
-            )
+            rv.append((absolute_location, os.path.join("python", top_artifact)))
 
         else:
             rv.extend(
@@ -147,7 +146,6 @@ def _generate_file_archive_file_for_directory(
     """
     rv = []
     top_directory_name = os.path.split(directory)[1]
-
     for dirname, subdirs, files in os.walk(directory):
         if dirname.split("/")[-1] in exclude_subdirectories:
             continue

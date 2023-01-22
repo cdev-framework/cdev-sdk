@@ -46,6 +46,15 @@ LAMBDA_LAYER_RUUID = "cdev::simple::lambda_layer"
 COMPUTED_ENVIRONMENT_INFORMATION = None
 
 
+AWS_EXCLUDE_PACKAGES = {
+    "boto3",
+    "botocore",
+    "jmespath",
+    "s3transfer",
+    "python-dateutil",
+    "urllib3",
+}
+
 #######################
 ##### Exceptions
 #######################
@@ -280,7 +289,9 @@ def _parse_serverless_functions(
     full_file_path = paths.get_full_path_from_workspace_base(filepath)
     excludes = {"__pycache__"}
     aws_platform_exclude = (
-        set() if Workspace.instance().settings.PACKAGE_AWS_PACKAGES else {"boto3"}
+        set()
+        if Workspace.instance().settings.PACKAGE_AWS_PACKAGES
+        else AWS_EXCLUDE_PACKAGES
     )
 
     (
@@ -465,8 +476,15 @@ def _load_environment_information() -> Tuple[
     modules_name_to_location = package_manager.get_packaged_modules_name_location_tag(
         pkg_resources.working_set
     )
+
+    aws_platform_exclude = (
+        set()
+        if Workspace.instance().settings.PACKAGE_AWS_PACKAGES
+        else AWS_EXCLUDE_PACKAGES
+    )
+
     pkg_module_dependency_info = package_manager.create_packaged_module_dependencies(
-        pkg_resources.working_set
+        pkg_resources.working_set, aws_platform_exclude
     )
 
     COMPUTED_ENVIRONMENT_INFORMATION = (
