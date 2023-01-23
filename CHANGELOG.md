@@ -7,6 +7,11 @@ All releases will correspond to releases on [PyPI](https://pypi.org/project/cdev
 All release will have a corresponding git tag.
 
 
+## [0.0.23] - 2023-01-23
+### Fixed
+- Fix small bug with relative locations in RECORD files
+
+
 ## [0.0.22] - 2023-01-21
 ### Fixed
 - Updated packaged modules to use RECORD file for generating needed files
