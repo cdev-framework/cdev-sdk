@@ -4,37 +4,19 @@ import os
 from pydantic.types import DirectoryPath, FilePath
 import itertools
 from networkx.algorithms.traversal.depth_first_search import dfs_preorder_nodes
+import json
 
 from pkg_resources import Distribution
 import pkg_resources
 
 import networkx as nx
 
+from core.utils.cache import FileLoadableCache
+from core.utils.file_manager import safe_json_write
+
 from .writer import create_archive_and_hash
 
-
-def _get_tags_from_wheel(wheel_info_location: FilePath) -> List[str]:
-    """Get the tags information from a wheels file
-
-    Args:
-        wheel_info_location (FilePath)
-
-    Returns:
-        List[str]: tags
-    """
-    with open(wheel_info_location) as fh:
-        lines = fh.readlines()
-
-        # https://www.python.org/dev/peps/pep-0425/
-        # if it is not pure it should only have one tag
-        # We are going ot check the tags of the package to make sure it is compatible with the target deployment platform
-        tags = (
-            [x.split(":")[1] for x in lines if x.split(":")[0] == "Tag"][0]
-            .strip()
-            .split("-")
-        )
-
-        return tags
+PACKAGED_CACHE_LOCATION = ".cdev/intermediate/cache/packaged_module_artifacts.json"
 
 
 class PackagedDistributionInformation(BaseModel):
@@ -130,15 +112,47 @@ def create_packaged_distribution_information(
     )
 
 
+class PackagedArtifactCache(FileLoadableCache):
+    """Implementation of FileLoadableCache designed to cache the results of the create packaged module archive action"""
+
+    def dump_to_file(self) -> None:
+        safe_json_write(self._cache_data, self.fp)
+
+    def _load_from_file(self, fp: FilePath) -> Dict:
+        if not os.path.isfile(fp):
+            return {}
+
+        try:
+            with open(fp) as fh:
+                raw_cache_data: Dict[str, Tuple[FilePath, str]] = json.load(fh)
+        except Exception as e:
+            # Could not load the file so just return an empty cache
+            return {}
+
+        validated_data = {}
+
+        for key, val in raw_cache_data.items():
+            artifact_fp, _ = val
+
+            if os.path.isfile(artifact_fp):
+                # Only actually load cache values where the artifact is present on the current filesystem
+                validated_data[key] = val
+
+        return validated_data
+
+
 class DistributionEnvironment:
     distributions: PackagedDistributionInformation = []
     _distribution_name_to_dist: Dict[str, PackagedDistributionInformation] = {}
     _all_module_names: Set[str] = set()
     _module_to_dists: Dict[str, Set[PackagedDistributionInformation]] = {}
     _dep_graph: nx.DiGraph = nx.DiGraph()
+    _archive_cache: PackagedArtifactCache = None
 
     @classmethod
-    def create_environment(cls) -> None:
+    def create_environment(
+        cls,
+    ) -> None:
         cls.distributions = list(
             filter(
                 lambda x: x is not None,
@@ -172,6 +186,8 @@ class DistributionEnvironment:
                 cls._dep_graph.add_edge(
                     distribution, cls._distribution_name_to_dist.get(_dependency)
                 )
+
+        cls._archive_cache = PackagedArtifactCache(PACKAGED_CACHE_LOCATION)
 
     @classmethod
     def is_module_in_distribution(cls, module_name: str) -> bool:
@@ -215,6 +231,11 @@ class DistributionEnvironment:
     def create_distribution_artifact(
         cls, distribution: PackagedDistributionInformation, output_directory: str
     ) -> Tuple[str, str]:
+        if cls._archive_cache.in_cache(distribution.project_name + output_directory):
+            return cls._archive_cache.get_from_cache(
+                distribution.project_name + output_directory
+            )
+
         _all_distributions = DistributionEnvironment.get_all_distributions_dependencies(
             distribution
         )
@@ -241,4 +262,33 @@ class DistributionEnvironment:
         )
         archive_hash = create_archive_and_hash(_all_records, archive_fp)
 
+        cls._archive_cache.update_cache(
+            distribution.project_name + output_directory, (archive_fp, archive_hash)
+        )
+        cls._archive_cache.dump_to_file()
+
         return archive_fp, archive_hash
+
+
+def _get_tags_from_wheel(wheel_info_location: FilePath) -> List[str]:
+    """Get the tags information from a wheels file
+
+    Args:
+        wheel_info_location (FilePath)
+
+    Returns:
+        List[str]: tags
+    """
+    with open(wheel_info_location) as fh:
+        lines = fh.readlines()
+
+        # https://www.python.org/dev/peps/pep-0425/
+        # if it is not pure it should only have one tag
+        # We are going ot check the tags of the package to make sure it is compatible with the target deployment platform
+        tags = (
+            [x.split(":")[1] for x in lines if x.split(":")[0] == "Tag"][0]
+            .strip()
+            .split("-")
+        )
+
+        return tags
