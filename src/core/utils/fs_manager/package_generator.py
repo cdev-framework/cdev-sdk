@@ -89,8 +89,7 @@ def create_packaged_distribution_information(
     )
 
     if not os.path.isdir(dist_dir_location):
-        # raise Exception(f"No .distinfo found for {package}")
-        return None
+        raise Exception(f"No .distinfo found for {package} at {dist_dir_location}")
 
     _all_required_packages = package.requires(extras=package.extras)
 
