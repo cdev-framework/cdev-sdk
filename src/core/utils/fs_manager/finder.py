@@ -5,8 +5,6 @@ from dataclasses import dataclass, field
 from pydantic import DirectoryPath
 from pydantic.types import FilePath
 from sortedcontainers.sortedlist import SortedKeyList
-from functools import partial
-from pathlib import Path
 
 from core.constructs.resource import (
     Resource,
@@ -30,14 +28,7 @@ from core.utils.logger import log
 
 from serverless_parser import parser as serverless_parser
 
-import pkg_resources
-
-from core.utils.fs_manager import (
-    package_manager,
-    handler_optimizer,
-    package_optimizer,
-    serverless_function_optimizer,
-)
+from core.utils.fs_manager import handler_optimizer, package_generator, modules_manager
 from core.utils.exceptions import cdev_core_error
 
 
@@ -45,6 +36,15 @@ LAMBDA_LAYER_RUUID = "cdev::simple::lambda_layer"
 
 COMPUTED_ENVIRONMENT_INFORMATION = None
 
+
+AWS_EXCLUDE_DISTRIBUTIONS = {
+    "boto3",
+    "botocore",
+    "jmespath",
+    "s3transfer",
+    "python-dateutil",
+    "urllib3",
+}
 
 #######################
 ##### Exceptions
@@ -97,6 +97,9 @@ def parse_folder(
     Namely, Serverless functions are parsed to optimized the actual deployed artifact using the
     cparser library and then have their dependencies managed also.
     """
+
+    package_generator.DistributionEnvironment.create_environment()
+
     if not os.path.isdir(folder_path):
         raise FileNotFoundError
 
@@ -280,14 +283,10 @@ def _parse_serverless_functions(
     full_file_path = paths.get_full_path_from_workspace_base(filepath)
     excludes = {"__pycache__"}
     aws_platform_exclude = (
-        set() if Workspace.instance().settings.PACKAGE_AWS_PACKAGES else {"boto3"}
+        set()
+        if Workspace.instance().settings.PACKAGE_AWS_PACKAGES
+        else AWS_EXCLUDE_DISTRIBUTIONS
     )
-
-    (
-        std_lib,
-        modules_name_to_location,
-        pkg_module_dependency_info,
-    ) = _load_environment_information()
 
     # Return Values
     rv_functions: List[SimpleFunction] = []
@@ -301,27 +300,11 @@ def _parse_serverless_functions(
 
     paths.create_path_from_workspace(base_archive_path)
 
-    # Caches
-    packaged_module_cache = package_optimizer.load_packaged_artifact_cache(
-        Workspace.instance().settings.CACHE_DIRECTORY
-    )
-    optimal_modules_cache = package_optimizer.load_optimal_modules_cache(
-        Workspace.instance().settings.CACHE_DIRECTORY
-    )
-
     # Get all the info about a set of functions from the original file
     parsed_file_info = serverless_parser.parse_functions_from_file(
         full_file_path,
         include_functions=functions_names_to_parse,
         remove_top_annotation=True,
-    )
-
-    mod_creator = partial(
-        package_manager.create_all_module_info,
-        start_location=Path(full_file_path).parent,
-        standard_library=std_lib,
-        pkg_dependencies_data=pkg_module_dependency_info,
-        pkg_locations=modules_name_to_location,
     )
 
     for parsed_function in parsed_file_info.parsed_functions:
@@ -330,9 +313,22 @@ def _parse_serverless_functions(
 
         flattened_needed_lines = _compress_lines(parsed_function.needed_line_numbers)
 
-        # First handle getting all the module information for this function
-        handler_packager = partial(
-            handler_optimizer.create_optimized_handler_artifact,
+        new_handler = _create_new_handler(full_file_path, parsed_function.name)
+        needed_python_init_files = _create_init_files(full_file_path)
+
+        (
+            relative_dependencies,
+            packaged_dependencies,
+        ) = modules_manager.get_all_dependencies(
+            full_file_path, parsed_function.imported_packages
+        )
+
+        source_artifact_path, source_hash = handler_optimizer.create_handler_artifact(
+            original_file_location=full_file_path,
+            additional_files=[
+                *needed_python_init_files,
+                *relative_dependencies,
+            ],
             base_packaging_path=os.getcwd(),
             intermediate_path=base_archive_path,
             needed_lines=flattened_needed_lines,
@@ -340,43 +336,23 @@ def _parse_serverless_functions(
             excludes=excludes,
         )
 
-        packaged_module_packager = partial(
-            package_optimizer.create_packaged_module_artifacts,
-            pkged_module_dependencies_data=pkg_module_dependency_info,
-            base_output_directory=base_archive_path,
-            platform_filter=aws_platform_exclude,
-            exclude_subdirectories=excludes,
-            packaged_artifact_cache=packaged_module_cache,
-            optimal_module_cache=optimal_modules_cache,
+        optimized_distributions = (
+            package_generator.DistributionEnvironment.get_optimized_distributions(
+                packaged_dependencies
+            )
         )
 
-        new_handler = _create_new_handler(full_file_path, parsed_function.name)
-        needed_python_init_files = _create_init_files(full_file_path)
-
-        try:
-            (
-                source_artifact_path,
-                source_hash,
-                dependencies_info,
-            ) = serverless_function_optimizer.create_optimized_serverless_function_artifacts(
-                original_file_location=full_file_path,
-                imported_modules=parsed_function.imported_packages,
-                module_creator=mod_creator,
-                handler_packager=handler_packager,
-                packaged_module_optimizer=packaged_module_packager,
-                additional_handler_files_directories=needed_python_init_files,
+        if len(optimized_distributions) > 5:
+            raise Exception(
+                "Can not have more than 5 layers on the Aws Lambda Platform."
             )
 
-        except package_manager.PackageManagerError as e:
-            raise DependencyError(
-                error_message=_wrap_dependency_error_message(
-                    filepath=full_file_path,
-                    function_name=parsed_function.name,
-                    original_error_message=e.error_message,
-                ),
-                help_message=e.help_message,
-                help_resources=e.help_resources,
+        archive_information = [
+            package_generator.DistributionEnvironment.create_distribution_artifact(
+                x, base_archive_path, aws_platform_exclude
             )
+            for x in optimized_distributions
+        ]
 
         dependencies_resources = [
             _create_layer(
@@ -384,23 +360,19 @@ def _parse_serverless_functions(
                 paths.get_relative_to_workspace_path(absolute_archive_path),
                 archive_hash,
             )
-            for absolute_archive_path, archive_hash in dependencies_info
+            for absolute_archive_path, archive_hash in archive_information
         ]
 
-        function_resource = _create_new_function_resource(
-            previous_info,
-            paths.get_relative_to_workspace_path(source_artifact_path),
-            source_hash,
-            dependencies_resources,
-            new_handler,
+        rv_functions.append(
+            _create_new_function_resource(
+                previous_info,
+                paths.get_relative_to_workspace_path(source_artifact_path),
+                source_hash,
+                dependencies_resources,
+                new_handler,
+            )
         )
-
-        rv_functions.append(function_resource)
         rv_layers.extend(dependencies_resources)
-
-    # dump cache
-    packaged_module_cache.dump_to_file()
-    optimal_modules_cache.dump_to_file()
 
     return [x.render() for x in rv_functions], [x.render() for x in rv_layers]
 
@@ -446,35 +418,6 @@ def _create_init_files(original_file_location: FilePath) -> List[str]:
         base_path = os.path.join(base_path, path)
 
     return rv
-
-
-def _load_environment_information() -> Tuple[
-    Set[str], Dict[str, Tuple[FilePath, str]], Dict[str, Set[str]]
-]:
-    """Load information about the current packages and std library available in the environment
-
-    Returns:
-        Tuple[Set[str], Dict[str, Tuple[FilePath, str]], Dict[str, Set[str]]]: std_lib, modules_name_to_location, pkg_module_dependency_info
-    """
-    global COMPUTED_ENVIRONMENT_INFORMATION
-
-    if COMPUTED_ENVIRONMENT_INFORMATION:
-        return COMPUTED_ENVIRONMENT_INFORMATION
-
-    std_lib = package_manager.get_standard_library_modules()
-    modules_name_to_location = package_manager.get_packaged_modules_name_location_tag(
-        pkg_resources.working_set
-    )
-    pkg_module_dependency_info = package_manager.create_packaged_module_dependencies(
-        pkg_resources.working_set
-    )
-
-    COMPUTED_ENVIRONMENT_INFORMATION = (
-        std_lib,
-        modules_name_to_location,
-        pkg_module_dependency_info,
-    )
-    return COMPUTED_ENVIRONMENT_INFORMATION
 
 
 def _create_layer_name_from_artifact_path(artifact_path: FilePath) -> str:

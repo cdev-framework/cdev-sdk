@@ -4,13 +4,12 @@ from typing import List, Set, Tuple, Union, Any
 import sys
 from pathlib import Path
 
-from . import writer
-
+from core.utils.fs_manager import writer
 from core.utils.operations import concatenate
 from core.utils.paths import create_path_from_workspace
 
 
-def create_optimized_handler_artifact(
+def create_handler_artifact(
     original_file_location: FilePath,
     additional_files: List[Union[FilePath, DirectoryPath]],
     base_packaging_path: DirectoryPath,
@@ -59,10 +58,8 @@ def create_optimized_handler_artifact(
         ]
     )
 
-    handler_hash = writer.create_handler_archive(
-        handler_final_info,
-        additional_files=additional_files_final_info,
-        output_fp=final_output_fp,
+    handler_hash = writer.create_archive_and_hash(
+        [handler_final_info, *additional_files_final_info], final_output_fp
     )
 
     return final_output_fp, handler_hash

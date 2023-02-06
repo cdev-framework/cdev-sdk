@@ -84,7 +84,9 @@ def hash_file(fp: Union[FilePath, str], bypass_cache: bool = False) -> str:
         return FILE_CACHE.cache.get(fp)
 
     if not os.path.isfile(fp):
-        raise cdev_core_error(f"Could not find file ({fp}) to hash", FileNotFoundError)
+        raise cdev_core_error(
+            f"Could not find file ({fp}) to hash", "UNCAUGHT", FileNotFoundError
+        )
 
     with open(fp, "rb") as fh:
         the_hash = hashlib.md5(fh.read()).hexdigest()
