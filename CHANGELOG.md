@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 All releases will correspond to releases on [PyPI](https://pypi.org/project/cdev/).
 All release will have a corresponding git tag.
 
+## [0.0.24] - 2023-02-06
+### Fixed
+- Reimplemented packaged module discovery and layer creation
+- Update Lambda function to use dependencies as part of the hash
+
+
+## [0.0.23] - 2023-01-23
+### Fixed
+- Fix small bug with relative locations in RECORD files
+
 
 ## [0.0.22] - 2023-01-21
 ### Fixed
@@ -15,6 +25,7 @@ All release will have a corresponding git tag.
 ## [0.0.21] - 2023-01-17
 ### Fixed
 - Bug with parsing relative packages with multiple levels
+
 
 ## [0.0.20] - 2023-01-08
 ### Fixed

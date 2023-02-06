@@ -350,11 +350,16 @@ class SimpleFunction(PermissionsGrantableMixin, TaggableMixin, Resource):
             [x.hash() for x in self._granted_permissions]
         )
 
+        _dependency_hashes = [x.hash for x in self.external_dependencies]
+        _dependency_hashes.sort()
+        dependencies_hash = hasher.hash_list(_dependency_hashes)
+
         self._hash = hasher.hash_list(
             [
                 self.src_code_hash,
                 self._configuration.hash(),
                 hasher.hash_list([x.hash() for x in self.events]),
+                dependencies_hash,
                 permissions_hash,
                 self._nonce,
                 self._platform,
