@@ -93,7 +93,7 @@ For a more in depth information about the capabilities of Cdev, check out our [d
 For guides on how to deploy any of these resources, check out our [documentation](https://cdevframework.io/docs/)
 
 ## Early Alpha Notes
-The project is still in a pre-alpha state, so not all the features of the alpha are implemented. The main branch will be the most stable branch and should not have any breaking changes as work on the alpha continues. Things left to do in alpha:
+The project is still in a alpha state, so not all the features of the alpha are implemented. The main branch will be the most stable branch and should not have any breaking changes as work on the alpha continues. Things left to do in alpha:
 - More unit and integration tests
 - General polish of output
 - General work on documentation
@@ -104,7 +104,7 @@ $ cdev init demo --template resources-test
 ```
 
 ## Post Alpha Road Map and Limitations
-We are currently in the **very very** early stage of creating a comprehensive framework that helps teams throughout the whole cloud development process. As with any tool, it is important to understand what it is capable and **not** capable of doing. Here are a list of outstanding things that we are working (or thinking) on.
+We are currently in the early stage of creating a comprehensive framework that helps teams throughout the whole cloud development process. As with any tool, it is important to understand what it is capable and **not** capable of doing. Here are a list of outstanding things that we are working (or thinking) on.
 
 - Remote Backend
     - The current state of cloud resources are stored in json files. This is extremely limiting as it prevents multiple people from working on the same state at the same time. We are working on creating a DB that can used as a remote backend that will allow teams to collaborate more effectively.
@@ -117,6 +117,3 @@ We are currently in the **very very** early stage of creating a comprehensive fr
 
 - Can I export my project to an industry standard tool like Aws Cloudformation or Terraform?
     - We understand the benefits that come from avoiding lock-in by providing the ability to interpolate with the industry standard tools. We currently provision all resources with our custom [Infrastructure as Code Framework](/src/core) and store the state of the resources in local json files, which makes created projects not compatible with other tools. We felt that with building our own framework, we could explore new optimizations and ideas that could improve the developer experience. With some work, it is possible to make our framework work with and compatible with other Infrastructure as Code Frameworks, and we will be investigating this work as we move forward.
-
-
-If you are interested in any of the challenges that we are working on or have expertise you think is missing in our project, please consider [applying for a job on our team](https://cdevframework.io/docs/).
