@@ -342,9 +342,14 @@ def _parse_serverless_functions(
             )
         )
 
+        if len(optimized_distributions) > 5:
+            raise Exception(
+                "Can not have more than 5 layers on the Aws Lambda Platform."
+            )
+
         archive_information = [
             package_generator.DistributionEnvironment.create_distribution_artifact(
-                x, base_archive_path
+                x, base_archive_path, aws_platform_exclude
             )
             for x in optimized_distributions
         ]

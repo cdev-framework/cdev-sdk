@@ -89,7 +89,8 @@ def create_packaged_distribution_information(
     )
 
     if not os.path.isdir(dist_dir_location):
-        raise Exception(f"No .distinfo found for {package} at {dist_dir_location}")
+        # raise Exception(f"No .distinfo found for {package} at {dist_dir_location}")
+        return None
 
     _all_required_packages = package.requires(extras=package.extras)
 
@@ -228,7 +229,10 @@ class DistributionEnvironment:
 
     @classmethod
     def create_distribution_artifact(
-        cls, distribution: PackagedDistributionInformation, output_directory: str
+        cls,
+        distribution: PackagedDistributionInformation,
+        output_directory: str,
+        exclude_distributions: Set[str] = set(),
     ) -> Tuple[str, str]:
         if cls._archive_cache.in_cache(distribution.project_name + output_directory):
             return cls._archive_cache.get_from_cache(
@@ -239,6 +243,12 @@ class DistributionEnvironment:
             distribution
         )
         _all_distributions.add(distribution)
+        _all_distributions = set(
+            filter(
+                lambda x: x.project_name not in exclude_distributions,
+                _all_distributions,
+            )
+        )
 
         _all_records = list(
             itertools.chain.from_iterable(

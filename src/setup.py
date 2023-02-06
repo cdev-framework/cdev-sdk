@@ -23,7 +23,7 @@ def _get_readme_contents() -> str:
 
 setuptools.setup(
     name="cdev",
-    version="0.0.23",
+    version="0.0.24",
     scripts=["./cdev/scripts/cdev", "./core/scripts/cdev_core"],
     description="CLI for cdev sdk",
     long_description=_get_readme_contents(),
@@ -36,7 +36,6 @@ setuptools.setup(
     install_requires=[
         "aurora_data_api",
         "boto3",
-        "docker",
         "networkx",
         "Parsley",
         "pydantic",
