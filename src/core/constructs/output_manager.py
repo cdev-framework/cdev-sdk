@@ -3,7 +3,9 @@
 
 
 """
+from enum import Enum
 from typing import Any, List, Optional, Tuple, Union
+
 
 from rich.console import Console
 from rich.markup import escape
@@ -24,7 +26,10 @@ from core.constructs.resource import (
     Resource_Difference,
     Resource_Reference_Change_Type,
     Resource_Reference_Difference,
+    ResourceModel,
 )
+from core.constructs.models import frozendict
+from core.constructs.cloud_output import cloud_output_model
 from core.utils.exceptions import cdev_core_error, wrapped_base_exception
 
 
@@ -80,6 +85,10 @@ class OutputManager:
         self._console = console or CdevCoreConsole()
         self._no_emoji_console = CdevCoreConsole(emoji=False)
         self._progress = progress
+        self._detail_plan = False
+
+    def set_detail_plan(self, value: bool) -> None:
+        self._detail_plan = value
 
     def print(self, msg: str) -> None:
         self._console.print(msg)
@@ -365,8 +374,10 @@ class OutputManager:
         for resource_diff in resource_changes:
             if resource_diff.action_type == Resource_Change_Type.CREATE:
                 self._console.print(
-                    f"        [bold green]Create:[/bold green][bold blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
+                    f"        [italic green]Create:[/italic green][italic blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/italic blue]"
                 )
+                if self._detail_plan:
+                    self._print_resource_details(resource_diff)
 
             elif resource_diff.action_type == Resource_Change_Type.DELETE:
                 self._console.print(
@@ -377,11 +388,88 @@ class OutputManager:
                 self._console.print(
                     f"        [bold yellow]Update:[/bold yellow][bold blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
                 )
+                self._print_resource_differences(resource_diff)
 
             elif resource_diff.action_type == Resource_Change_Type.UPDATE_NAME:
                 self._console.print(
                     f"        [bold yellow]Update Name:[/bold yellow][bold blue] from {resource_diff.previous_resource.name} to {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
                 )
+
+    def _print_resource_differences(self, resource_diff: Resource_Difference):
+        self._console.print(resource_diff)
+
+        for property in _get_resource_properties(resource_diff.previous_resource):
+            original_val = getattr(resource_diff.previous_resource, property)
+            new_val = getattr(resource_diff.new_resource, property)
+
+            if not (new_val == original_val):
+                print(f"UPDATED -> {property}")
+                print(new_val)
+                print("-----")
+                print(original_val)
+
+    def _print_resource_details(self, resource_diff: Resource_Difference):
+        _properties = _get_resource_properties(resource_diff.new_resource)
+        _properties.sort()
+        _properties.remove("ruuid")
+        _properties.remove("name")
+
+        for property in _properties:
+            self._console.print(
+                f"            {property}: {self._print_detailed_formatted(getattr(resource_diff.new_resource, property), tabs=6)}"
+            )
+
+    def _print_detailed_formatted(
+        self, datum: Union[str, bool, int, frozenset, frozendict, Enum], tabs: int = 0
+    ):
+        if type(datum) == str or type(datum) == bool or type(datum) == int:
+            return f"[blue]{datum}[/blue]"
+        elif datum == None:
+            return "None"
+        elif isinstance(datum, Enum):
+            return f"[blue]{datum.value}[/blue]"
+        elif type(datum) == frozenset or type(datum) == tuple:
+            if len(datum) == 0:
+                return "[blue][][/blue]"
+
+            vals = (
+                f"\n{tabs*'  '}"
+                + "[\n"
+                + "\n".join(
+                    [
+                        f"{(tabs+1)*'  '}" + self._print_detailed_formatted(x, tabs + 1)
+                        for x in datum
+                    ]
+                )
+                + f"\n{tabs*'  '}"
+                + "]"
+            )
+            return f"""[blue]{vals}[/blue]"""
+        elif type(datum) == frozendict:
+            if len(datum) == 0:
+                return "[blue]{}[/blue]"
+
+            if "id" in set(datum.keys()) and datum.get("id") == "cdev_cloud_output":
+                return "{" + self._fmt_resource_reference(datum) + "}"
+
+            vals = (
+                f"\n{tabs*'  '}"
+                + "{\n"
+                + "\n".join(
+                    [
+                        f"{(tabs+1)*'  '}[dim white]{x}:[/dim white] {self._print_detailed_formatted(datum.get(x), tabs+1)}"
+                        for x in datum.keys()
+                    ]
+                )
+                + f"\n{tabs*'  '}"
+                + "}"
+            )
+            return f"[blue]{vals}[/blue]"
+        else:
+            return self._print_detailed_formatted(frozendict(dict(datum)), tabs)
+
+    def _fmt_resource_reference(self, reference: frozendict) -> str:
+        return f"REFERENCE {reference.get('name')} ({reference.get('ruuid')}) {reference.get('key')}"
 
     def _print_component_reference_differences(
         self,
@@ -410,6 +498,12 @@ class OutputManager:
                 self._console.print(
                     f"        [bold red]Delete reference:[/bold red][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]"
                 )
+
+
+def _get_resource_properties(resource: ResourceModel) -> List[str]:
+    resource_unique_properties = list(set(dir(resource)).difference(dir(ResourceModel)))
+
+    return resource_unique_properties
 
 
 class OutputTask:

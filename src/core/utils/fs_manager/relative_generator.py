@@ -8,7 +8,7 @@ from serverless_parser import parser as cdev_parser
 from .utils import module_segmenter
 
 
-@lru_cache
+@lru_cache()
 def get_all_relative_module_dependencies(
     module_path: FilePath,
 ) -> Tuple[List[str], List[str], List[str]]:
@@ -124,7 +124,7 @@ def _count_relative_level(module_symbol: str) -> int:
     return levels
 
 
-@lru_cache
+@lru_cache()
 def _get_relative_module_dependencies(
     module_path: Path,
 ) -> Tuple[List[str], List[str], List[str]]:

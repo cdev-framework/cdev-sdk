@@ -5,6 +5,8 @@ from core.constructs.output_manager import OutputManager
 
 
 def plan_command_cli(project: Project, output_manager: OutputManager, **kwargs) -> None:
+    output_manager.set_detail_plan(kwargs.get("detail", False))
+
     plan_command(project, output_manager)
 
 
