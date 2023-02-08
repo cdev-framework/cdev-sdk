@@ -275,6 +275,11 @@ CDEV_COMMANDS = [
                 "action": "store_true",
                 "help": "by default we ask for confirmation before deploying the resources. Turn this on and perform deployments w/o requiring confirmation",
             },
+            {
+                "dest": "--detail",
+                "action": "store_true",
+                "help": "Produce details of the changes",
+            },
         ],
     },
     {
