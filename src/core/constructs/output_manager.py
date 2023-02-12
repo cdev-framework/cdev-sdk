@@ -437,7 +437,7 @@ class OutputManager:
 
         for property in _properties:
             self._console.print(
-                f"            {property}: {_create_detailed_formatted(getattr(resource_diff.new_resource, property), tabs=6, new_line=True)}"
+                f"            {property}: {_create_detailed_formatted(getattr(resource_diff.new_resource, property), tabs=6, isListItem=False)}"
             )
 
     def _print_component_reference_differences(
