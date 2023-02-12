@@ -1,6 +1,6 @@
 # Cdev - Serverless Development Framework
 
-Cdev provides a development environment and framework that allows python developers to easily create and deploy Serverless Applications on Amazon Web Services. By providing features like automated dependency management, isolated deployment environments, and function artifact optimizations, Cdev allows developers to focus on the development of their project; then deploy an optimized version of their project onto Aws with a single command.
+Cdev provides a development environment and framework that allows python developers to easily create and deploy Serverless Applications on Amazon Web Services. By providing features like automated dependency management, isolated deployment environments, and function artifact optimizations, Cdev allows developers to focus on the development of their project then deploy an optimized version of their project onto Aws with a single command.
 
 [![](https://cdevframework.io/images/github_banner.png)](https://cdevframework.io)
 
@@ -12,7 +12,7 @@ Cdev provides a development environment and framework that allows python develop
 - [An Aws account and credentials](https://aws.amazon.com/)
     - Should have the `aws cli` and then run `aws configure` to set your credentials.
 - Requires Python>=3.6 and pip
-- **Highly** encourage using a python virtual environment
+- it is **Highly** encourage to use a python virtual environment
 
 Starting from an empty directory. Set up your python virtual environment and install the Cdev cli.
 ```
@@ -21,6 +21,8 @@ $ python -m venv .venv
 $ . ./.venv/bin/activate
 
 $ pip install cdev
+
+$ cdev
 ```
 
 ### Create a new project
@@ -28,20 +30,16 @@ $ pip install cdev
 **When creating a new project, you will be prompted about your Aws credentials and to link to a `S3 Bucket` for your deployment artifacts to be stored in.**
 
 ```
-$ cdev
-
 $ cdev init demo-project --template quick-start
 **S3 Bucket Selection Wizard**
 ```
 
 ### View the resources that will be deployed
-
 ```
 $ cdev plan
 ```
 
 ### Deploy the resources
-
 ```
 $ cdev deploy
 ```
@@ -82,7 +80,7 @@ For a more in depth information and examples about the capabilities of Cdev, che
 ## Features
 - [Serverless Function Parsing](https://cdevframework.io/docs/firstprinciples/serverless_optimizations/#serverless-function-parsing)
 - [Automated and Optimized Dependency Management](https://cdevframework.io/docs/firstprinciples/serverless_optimizations/#automated-dependency-management)
-- [Light weight isolated environments](https://cdevframework.io/docs/firstprinciples/project_management/#environments)
+- [Light-weight isolated environments](https://cdevframework.io/docs/firstprinciples/project_management/#environments)
 
 
 ## Supported Resources
@@ -100,11 +98,11 @@ For guides on how to deploy any of these resources, check out our [documentation
 ## Alpha Notes and Limitations
 The project is still in an `alpha` state, so there are still rough edges and limitations. The following are the current high level limitations of the framework.
 
-- Failed Deployments
+- Recovery from Failed Deployments
     - Certain resources require multiple API calls to generate the proper configurations in the Cloud, and if one of the API calls fails, it can cause the Cloud resource to be in a state that needs to be manually updated before continuing the deployment.
 
 - Parallel Deployments
-    - Non-dependant resources can deployed in parallel to reduce the total deployment time when there are many changes in a single deployment.
+    - Non-dependant resources can be deployed in parallel to reduce the total deployment time when there are many changes in a single deployment.
 
 - Remote Backend
     - The current state of cloud resources are stored in json files. This is extremely limiting as it prevents multiple people from working on the same state at the same time.
