@@ -3,7 +3,9 @@
 
 
 """
+from enum import Enum
 from typing import Any, List, Optional, Tuple, Union
+
 
 from rich.console import Console
 from rich.markup import escape
@@ -24,12 +26,20 @@ from core.constructs.resource import (
     Resource_Difference,
     Resource_Reference_Change_Type,
     Resource_Reference_Difference,
+    ResourceModel,
 )
+from core.constructs.models import frozendict
+from core.constructs.cloud_output import cloud_output_model
+from core.constructs.models import ImmutableModel
 from core.utils.exceptions import cdev_core_error, wrapped_base_exception
 
 
 CLOUD_OUTPUT_LABEL_COLOR = "cyan"
 CLOUD_OUTPUT_VALUE_COLOR = "yellow"
+
+printable_type = Union[str, bool, int, frozenset, frozendict, Enum]
+NEW_LINE = "\n"
+TAB = "  "
 
 
 class CdevCoreConsole(Console):
@@ -80,12 +90,15 @@ class OutputManager:
         self._console = console or CdevCoreConsole()
         self._no_emoji_console = CdevCoreConsole(emoji=False)
         self._progress = progress
+        self._detail_plan = False
+
+    def set_detail_plan(self, value: bool) -> None:
+        self._detail_plan = value
 
     def print(self, msg: str) -> None:
         self._console.print(msg)
 
     def print_exception(self, exception: cdev_core_error):
-        # self._console.print("TRACEBACK")
         if isinstance(exception, wrapped_base_exception):
             self._console.print_exception(exception=exception.original_exception)
         else:
@@ -365,23 +378,67 @@ class OutputManager:
         for resource_diff in resource_changes:
             if resource_diff.action_type == Resource_Change_Type.CREATE:
                 self._console.print(
-                    f"        [bold green]Create:[/bold green][bold blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
+                    f"        [italic green]Create:[/italic green][italic blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/italic blue]"
                 )
+                if self._detail_plan:
+                    self._print_resource_details(resource_diff)
 
             elif resource_diff.action_type == Resource_Change_Type.DELETE:
                 self._console.print(
-                    f"        [bold red]Delete:[/bold red][bold blue] {resource_diff.previous_resource.name} ({resource_diff.previous_resource.ruuid})[/bold blue]"
+                    f"        [italic red]Delete:[/italic red][bold blue] {resource_diff.previous_resource.name} ({resource_diff.previous_resource.ruuid})[/bold blue]"
                 )
 
             elif resource_diff.action_type == Resource_Change_Type.UPDATE_IDENTITY:
                 self._console.print(
-                    f"        [bold yellow]Update:[/bold yellow][bold blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
+                    f"        [italic yellow]Update:[/italic yellow][bold blue] {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
                 )
+                if self._detail_plan:
+                    self._print_resource_differences(resource_diff)
 
             elif resource_diff.action_type == Resource_Change_Type.UPDATE_NAME:
                 self._console.print(
-                    f"        [bold yellow]Update Name:[/bold yellow][bold blue] from {resource_diff.previous_resource.name} to {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
+                    f"        [italic yellow]Update Name:[/italic yellow][bold blue] from {resource_diff.previous_resource.name} to {resource_diff.new_resource.name} ({resource_diff.new_resource.ruuid})[/bold blue]"
                 )
+
+    def _print_resource_differences(self, resource_diff: Resource_Difference):
+        for property in _get_resource_properties(resource_diff.previous_resource):
+            original_val = getattr(resource_diff.previous_resource, property)
+            new_val = getattr(resource_diff.new_resource, property)
+
+            if not _compare_values(new_val, original_val) and property != "hash":
+                self._console.print(
+                    f"            {property}: {self._print_difference_formatted(new_val, original_val, tabs=7)}"
+                )
+
+    def _print_difference_formatted(
+        self, new_value: printable_type, old_value: printable_type, tabs: int = 0
+    ) -> str:
+        _type = type(new_value)
+
+        if _type == str or _type == bool or _type == int:
+            return f"[dim]{old_value}[/dim] -> [blue]{new_value}[/blue]"
+        elif isinstance(new_value, Enum):
+            return f"{old_value} -> {new_value}"
+        else:
+            return (
+                "\n"
+                + f"{tabs*TAB}[dim]---PREVIOUS---[/dim]"
+                + _create_detailed_formatted(old_value, tabs=tabs)
+                + "\n"
+                + f"{tabs*TAB}[dim]---NEW---[/dim]"
+                + _create_detailed_formatted(new_value, tabs=tabs)
+            )
+
+    def _print_resource_details(self, resource_diff: Resource_Difference):
+        _properties = _get_resource_properties(resource_diff.new_resource)
+        _properties.sort()
+        _properties.remove("ruuid")
+        _properties.remove("name")
+
+        for property in _properties:
+            self._console.print(
+                f"            {property}: {_create_detailed_formatted(getattr(resource_diff.new_resource, property), tabs=6, isListItem=False)}"
+            )
 
     def _print_component_reference_differences(
         self,
@@ -410,6 +467,12 @@ class OutputManager:
                 self._console.print(
                     f"        [bold red]Delete reference:[/bold red][bold blue] {reference_diff.resource_reference.name} ({reference_diff.resource_reference.ruuid}) from {reference_diff.originating_component_name}[/bold blue]"
                 )
+
+
+def _get_resource_properties(resource: ResourceModel) -> List[str]:
+    resource_unique_properties = list(set(dir(resource)).difference(dir(ResourceModel)))
+
+    return resource_unique_properties
 
 
 class OutputTask:
@@ -477,3 +540,91 @@ class OutputTask:
     def start_task(self) -> None:
         """Start the given task progress bar"""
         self._output_manager._progress.start_task(self._task_id)
+
+
+def _create_detailed_formatted(
+    datum: printable_type, tabs: int = 0, isListItem: bool = False
+) -> str:
+    if type(datum) == str or type(datum) == bool or type(datum) == int:
+        return f"{tabs*TAB if isListItem else ''}[blue]{datum}[/blue]"
+    elif datum == None:
+        return f"{tabs*TAB if isListItem else ''}None"
+    elif isinstance(datum, Enum):
+        return f"{tabs*TAB if isListItem else ''}[blue]{datum.value}[/blue]"
+    elif type(datum) == frozenset or type(datum) == tuple:
+        if len(datum) == 0:
+            return f"{NEW_LINE}{tabs*TAB}[blue][][/blue]"
+
+        vals = (
+            f"{NEW_LINE}{tabs*TAB}"
+            + "[\n"
+            + "\n".join(
+                [
+                    _create_detailed_formatted(x, tabs + 1, isListItem=True)
+                    for x in datum
+                ]
+            )
+            + f"\n"
+            + f"{tabs*TAB}"
+            + "]"
+        )
+        return f"""[blue]{vals}[/blue]"""
+    elif type(datum) == frozendict:
+        if len(datum) == 0:
+            return "[blue]{}[/blue]"
+
+        if "id" in set(datum.keys()) and datum.get("id") == "cdev_cloud_output":
+            return (
+                f"{tabs*TAB if isListItem else ''}"
+                + "{"
+                + _fmt_resource_reference(datum)
+                + "}"
+            )
+
+        vals = (
+            f"{NEW_LINE if not isListItem else ''}"
+            + f"{tabs*TAB}"
+            + "{\n"
+            + "\n".join(
+                [
+                    f"{(tabs+1)*TAB}[dim white]{x}:[/dim white] {_create_detailed_formatted(datum.get(x), tabs+1)}"
+                    for x in datum.keys()
+                ]
+            )
+            + f"\n"
+            + f"{tabs*TAB}"
+            + "}"
+        )
+        return f"[blue]{vals}[/blue]"
+    else:
+        return _create_detailed_formatted(
+            frozendict(dict(datum)), tabs, isListItem=isListItem
+        )
+
+
+def _fmt_resource_reference(reference: frozendict) -> str:
+    return f"REFERENCE {reference.get('name')} ({reference.get('ruuid')}) {reference.get('key')}"
+
+
+def _compare_values(new_value, old_value) -> bool:
+    return _recursive_deep_convert(new_value) == _recursive_deep_convert(old_value)
+
+
+def _recursive_deep_convert(obj):
+
+    if isinstance(obj, ImmutableModel):
+        return frozendict(
+            {k: _recursive_deep_convert(v) for k, v in obj.dict().items()}
+        )
+
+    elif isinstance(obj, frozenset) or isinstance(obj, list) or isinstance(obj, tuple):
+        return frozenset(_recursive_deep_convert(x) for x in obj)
+
+    elif isinstance(obj, frozendict) or isinstance(obj, dict):
+        return frozendict({k: _recursive_deep_convert(v) for k, v in obj.items()})
+
+    elif isinstance(obj, Enum):
+        return obj.value
+
+    else:
+        return obj
