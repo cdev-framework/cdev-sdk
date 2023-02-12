@@ -1,6 +1,6 @@
 # Cdev - Serverless Development Framework
 
-Cdev provides a development environment and framework that allows python developers to take advantage of the benefits of Serverless Development. By providing automated dependency management, isolated deployment environments, and function artifact optimizations, Cdev allows developers to focus on the development of their project; then deploy an optimized version of their project onto Aws with a single command.
+Cdev provides a development environment and framework that allows python developers to easily create and deploy Serverless Applications on Amazon Web Services. By providing features like automated dependency management, isolated deployment environments, and function artifact optimizations, Cdev allows developers to focus on the development of their project; then deploy an optimized version of their project onto Aws with a single command.
 
 [![](https://cdevframework.io/images/github_banner.png)](https://cdevframework.io)
 
@@ -23,7 +23,7 @@ $ . ./.venv/bin/activate
 $ pip install cdev
 ```
 
-Create a new project, see the resources in the created project, and create the project.
+### Create a new project, see the resources that will be deployed, and create the project.
 
 **When creating a new project, you will be prompted to link to a `S3 Bucket` for your deployment artifacts to be stored in.**
 
