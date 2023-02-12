@@ -25,7 +25,7 @@ $ pip install cdev
 
 ### Create a new project
 
-**When creating a new project, you will be prompted to link to a `S3 Bucket` for your deployment artifacts to be stored in.**
+**When creating a new project, you will be prompted about your Aws credentials and to link to a `S3 Bucket` for your deployment artifacts to be stored in.**
 
 ```
 $ cdev
