@@ -23,7 +23,7 @@ $ . ./.venv/bin/activate
 $ pip install cdev
 ```
 
-### Create a new project, see the resources that will be deployed, and create the project.
+### Create a new project
 
 **When creating a new project, you will be prompted to link to a `S3 Bucket` for your deployment artifacts to be stored in.**
 
@@ -32,22 +32,32 @@ $ cdev
 
 $ cdev init demo-project --template quick-start
 **S3 Bucket Selection Wizard**
+```
 
+### View the resources that will be deployed
+
+```
 $ cdev plan
+```
 
+### Deploy the resources
+
+```
 $ cdev deploy
 ```
 
-Invoke the deployed function directly from the cli
+### Invoke the deployed function directly from the cli
 ```
 $ cdev run function.execute hello_world_comp.hello_world_function
 ```
 
+### View the logs of the function
 You might have to wait a sec for the logs to process in the cloud
 ```
 $ cdev run function.logs hello_world_comp.hello_world_function
 ```
 
+### Invoke the function from the deployed HTTP endpoint
 Invoke the deployed function via the created HTTP Api
 ```
 $ cdev output hello_world_comp.api.demoapi.endpoint
@@ -60,12 +70,13 @@ $ curl <url>/hello_world
 
 You can also visit `<url>/hello_world` in your favorite web browser!
 
-Delete the Resources in the Environment
+
+### Delete the Resources in the Environment
 ```
 $ cdev destroy
 ```
 
-For a more in depth information about the capabilities of Cdev, check out our [documentation](https://cdevframework.io/docs/).
+For a more in depth information and examples about the capabilities of Cdev, check out our [documentation](https://cdevframework.io/docs/).
 
 
 ## Features
