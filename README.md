@@ -25,9 +25,7 @@ $ cdev
 ```
 
 ### Create a new project
-
 When creating a new project, you will be prompted about your Aws credentials and to link to a `S3 Bucket` for your deployment artifacts to be stored in.
-
 ```
 $ cdev init demo-project --template quick-start
 **Aws Credentials and S3 Bucket Selection Wizard**
@@ -49,7 +47,7 @@ $ cdev run function.execute hello_world_comp.hello_world_function
 ```
 
 ### View the logs of the function
-You might have to wait a sec for the logs to process in the cloud
+You might have to wait a few seconds for the logs to process in the cloud
 ```
 $ cdev run function.logs hello_world_comp.hello_world_function
 ```
@@ -83,14 +81,14 @@ For a more in depth information and examples about the capabilities of Cdev, che
 
 
 ## Supported Resources
-- Serverless Functions
-- HTTP Endpoints
-- S3 Buckets
+- Serverless Function
+- HTTP Endpoint
+- S3 Bucket
 - Dynamodb
 - Aurora DB (Mysql and Postgres)
 - Sqs
 - Sns
-- Static Site Hosting (Aws Cloudfront)
+- Hosted Static Website (Aws Cloudfront)
 
 For guides on how to deploy any of these resources, check out our [documentation](https://cdevframework.io/docs/resources)
 
