@@ -10,9 +10,8 @@ Cdev provides a development environment and framework that allows python develop
 
 ## Getting Started
 - [An Aws account and credentials](https://aws.amazon.com/)
-    - Should have the `aws cli` and then run `aws configure` to set your credentials.
-- Requires Python>=3.6 and pip
-- it is **Highly** encourage to use a python virtual environment
+- [Requires Python>=3.6 and pip](https://cdevframework.io/docs/gettingstarted/python/)
+- it is **highly** encourage to use a python virtual environment
 
 Starting from an empty directory. Set up your python virtual environment and install the Cdev cli.
 ```
