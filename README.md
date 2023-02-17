@@ -92,6 +92,7 @@ For a more in depth information and examples about the capabilities of Cdev, che
 
 For guides on how to deploy any of these resources, check out our [documentation](https://cdevframework.io/docs/resources)
 
+
 ## Alpha Notes and Limitations
 The project is still in an `alpha` state, so there are still rough edges and limitations. The following are the current high level limitations of the framework.
 
@@ -100,7 +101,7 @@ The project is still in an `alpha` state, so there are still rough edges and lim
 
 - Parallel Deployments
     - Non-dependant resources can be deployed in parallel to reduce the total deployment time when there are many changes in a single deployment.
-
+    
 - Remote Backend
     - The current state of cloud resources are stored in json files. This is extremely limiting as it prevents multiple people from working on the same state at the same time.
 
@@ -111,3 +112,4 @@ The project is still in an `alpha` state, so there are still rough edges and lim
     - Improvements in unit test coverage, logging, and error handling/messaging.
 
 All of the current limitations can be navigated to use Cdev effectively for projects and solutions are being worked on to over come the documented limitations. Any issues that arise while using Cdev can be raised to daniel@cdevframework.com and will be addressed.
+
