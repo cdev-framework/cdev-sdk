@@ -257,6 +257,13 @@ CDEV_COMMANDS = [
         "name": "plan",
         "help": "See the differences that have been made since the last deployment",
         "default": wrap_load_and_initialize_project(plan.plan_command_cli),
+        "args": [
+            {
+                "dest": "--detail",
+                "action": "store_true",
+                "help": "Produce details of the changes",
+            }
+        ],
     },
     {
         "name": "deploy",
@@ -267,6 +274,11 @@ CDEV_COMMANDS = [
                 "dest": "--disable-prompt",
                 "action": "store_true",
                 "help": "by default we ask for confirmation before deploying the resources. Turn this on and perform deployments w/o requiring confirmation",
+            },
+            {
+                "dest": "--detail",
+                "action": "store_true",
+                "help": "Produce details of the changes",
             },
         ],
     },
