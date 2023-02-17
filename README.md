@@ -1,65 +1,58 @@
 # Cdev - Serverless Development Framework
 
-The Cdev framework is designed to create a development environment that allows teams to harness the benefits of Serverless development by providing high level constructs and processes to reduce the friction of transitioning to Serverless development. By being built on a custom Infrastructure as Code framework, Cdev provides unique optimizations and flexibility that allows projects to start fast and scale naturally.
+Cdev provides a development environment and framework that allows python developers to easily create and deploy Serverless Applications on Amazon Web Services. By providing features like automated dependency management, isolated deployment environments, and function artifact optimizations, Cdev allows developers to focus on the development of their project then deploy an optimized version of their project onto Aws with a single command.
 
 [![](https://cdevframework.io/images/github_banner.png)](https://cdevframework.io)
 
 
-[Website](https://cdevframework.io/) • [Docs](https://cdevframework.io/docs/) • [Slack](https://slack.com/)
+[Website](https://cdevframework.io/) • [Docs](https://cdevframework.io/docs/)
 
-
-## Features
-- [Serverless Function Parsing](https://cdevframework.io/docs/)
-- [Optimized Dependency Management](https://cdevframework.io/docs/)
-- [Custom Infrastructure as Code Framework](/src/core)
-- [Designed to feel as close as possible to writing regular Python](https://cdevframework.io/docs/)
-- [Extensible Plugin and Custom Functionality Capabilities](https://cdevframework.io/docs/)
 
 ## Getting Started
 - [An Aws account and credentials](https://aws.amazon.com/)
-    - Should have the `aws cli` and then run `aws configure` to set your credenentials.
-- Requires Python>=3.6 and pip
-- **Highly** encourage using a python virtual environment
+- [Requires Python>=3.6 and pip](https://cdevframework.io/docs/gettingstarted/python/)
+- it is **highly** encourage to use a python virtual environment
 
 Starting from an empty directory. Set up your python virtual environment and install the Cdev cli.
 ```
-$ python -m virtualenv .venv
+$ python -m venv .venv
 
 $ . ./.venv/bin/activate
 
 $ pip install cdev
-```
 
-Create a new project, see the resources in the created project, and create the project.
-
-**When creating a new project, you will be prompted to link to a `S3 Bucket` for your deployment artifacts.**
-
-**You will need to provide a `S3 Bucket` in your Aws Account. If you do not already have one, you can create a bucket with the following command. This bucket can be used for managing the deployment artifacts for multiple projects.**
-```bash
-aws s3 mb s3://<bucket-name>
-```
-
-```
 $ cdev
+```
 
+### Create a new project
+When creating a new project, you will be prompted about your Aws credentials and to link to a `S3 Bucket` for your deployment artifacts to be stored in.
+```
 $ cdev init demo-project --template quick-start
-Name of bucket to store artifacts (): <bucket-name>
+**Aws Credentials and S3 Bucket Selection Wizard**
+```
 
+### View the resources that will be deployed
+```
 $ cdev plan
+```
 
+### Deploy the resources
+```
 $ cdev deploy
 ```
 
-Invoke the deployed function directly from the cli
+### Invoke the deployed function directly from the cli
 ```
 $ cdev run function.execute hello_world_comp.hello_world_function
 ```
 
-You might have to wait a sec for the logs to process in the cloud
+### View the logs of the function
+You might have to wait a few seconds for the logs to process in the cloud
 ```
 $ cdev run function.logs hello_world_comp.hello_world_function
 ```
 
+### Invoke the function from the deployed HTTP endpoint
 Invoke the deployed function via the created HTTP Api
 ```
 $ cdev output hello_world_comp.api.demoapi.endpoint
@@ -72,51 +65,49 @@ $ curl <url>/hello_world
 
 You can also visit `<url>/hello_world` in your favorite web browser!
 
-Delete the Resources in the Environment
+
+### Delete the Resources in the Environment
 ```
 $ cdev destroy
 ```
 
-For a more in depth information about the capabilities of Cdev, check out our [documentation](https://staging.cdevframework.io/docs/).
+For a more in depth information and examples about the capabilities of Cdev, check out our [documentation](https://cdevframework.io/docs/).
+
+
+## Features
+- [Serverless Function Parsing](https://cdevframework.io/docs/firstprinciples/serverless_optimizations/#serverless-function-parsing)
+- [Automated and Optimized Dependency Management](https://cdevframework.io/docs/firstprinciples/serverless_optimizations/#automated-dependency-management)
+- [Light-weight isolated environments](https://cdevframework.io/docs/firstprinciples/project_management/#environments)
 
 
 ## Supported Resources
-- Serverless Functions
-- HTTP Endpoints
-- S3 Buckets
+- Serverless Function
+- HTTP Endpoint
+- S3 Bucket
 - Dynamodb
 - Aurora DB (Mysql and Postgres)
 - Sqs
 - Sns
-- Static Site Hosting
+- Hosted Static Website (Aws Cloudfront)
 
-For guides on how to deploy any of these resources, check out our [documentation](https://cdevframework.io/docs/)
+For guides on how to deploy any of these resources, check out our [documentation](https://cdevframework.io/docs/resources)
 
-## Early Alpha Notes
-The project is still in a pre-alpha state, so not all the features of the alpha are implemented. The main branch will be the most stable branch and should not have any breaking changes as work on the alpha continues. Things left to do in alpha:
-- More unit and integration tests
-- General polish of output
-- General work on documentation
+## Alpha Notes and Limitations
+The project is still in an `alpha` state, so there are still rough edges and limitations. The following are the current high level limitations of the framework.
 
-For testing parts of the early alpha, it helps to start from the `resources-test` project template as that will have a bunch of preconfigured resources.
-```
-$ cdev init demo --template resources-test
-```
+- Recovery from Failed Deployments
+    - Certain resources require multiple API calls to generate the proper configurations in the Cloud, and if one of the API calls fails, it can cause the Cloud resource to be in a state that needs to be manually updated before continuing the deployment.
 
-## Post Alpha Road Map and Limitations
-We are currently in the **very very** early stage of creating a comprehensive framework that helps teams throughout the whole cloud development process. As with any tool, it is important to understand what it is capable and **not** capable of doing. Here are a list of outstanding things that we are working (or thinking) on.
+- Parallel Deployments
+    - Non-dependant resources can be deployed in parallel to reduce the total deployment time when there are many changes in a single deployment.
 
 - Remote Backend
-    - The current state of cloud resources are stored in json files. This is extremely limiting as it prevents multiple people from working on the same state at the same time. We are working on creating a DB that can used as a remote backend that will allow teams to collaborate more effectively.
+    - The current state of cloud resources are stored in json files. This is extremely limiting as it prevents multiple people from working on the same state at the same time.
 
 - Limited Resources and Options on Resources
-    - We are starting by focusing on a set of resource that we feel provide value while not being too complex. We have plans to add more resource and customization as time goes on. [Our custom Infrastructure as Code framework](/src/core) provides the flexibility to deploy any resource on any cloud, but we have to put in work to generate the configurations to talk to different clouds. In the future, we hope to support a large number of Aws and non Aws resources through standardized cloud API's like the [Aws Cloud Control API](https://aws.amazon.com/cloudcontrolapi/).
+    - We are starting by focusing on a set of resource that we feel provide value while not being too complex. We have plans to add more resource and customization as time goes on.
 
-- The Framework is Python Only
-    - We started out with building the sdk in python first because that is the language we know best. We want the sdk to feel natural in whatever language is being used, which will require adding expertise to our team from other ecosystems. The underlying primitives that make up the framework are language agnostic, so we hope to one day support a wide range of languages.
+- Codebase improvements
+    - Improvements in unit test coverage, logging, and error handling/messaging.
 
-- Can I export my project to an industry standard tool like Aws Cloudformation or Terraform?
-    - We understand the benefits that come from avoiding lock-in by providing the ability to interpolate with the industry standard tools. We currently provision all resources with our custom [Infrastructure as Code Framework](/src/core) and store the state of the resources in local json files, which makes created projects not compatible with other tools. We felt that with building our own framework, we could explore new optimizations and ideas that could improve the developer experience. With some work, it is possible to make our framework work with and compatible with other Infrastructure as Code Frameworks, and we will be investigating this work as we move forward.
-
-
-If you are interested in any of the challenges that we are working on or have expertise you think is missing in our project, please consider [applying for a job on our team](https://cdevframework.io/docs/).
+All of the current limitations can be navigated to use Cdev effectively for projects and solutions are being worked on to over come the documented limitations. Any issues that arise while using Cdev can be raised to daniel@cdevframework.com and will be addressed.
