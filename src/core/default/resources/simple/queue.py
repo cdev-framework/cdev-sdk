@@ -154,6 +154,17 @@ class QueueOutput(ResourceOutputs):
     def queue_name(self, value: Any):
         raise Exception
 
+    @property
+    def queue_url(self) -> Cloud_Output_Str:
+        """The url of the generated queue"""
+        return Cloud_Output_Str(
+            name=self._name, ruuid=RUUID, key="queue_url", type=self.OUTPUT_TYPE
+        )
+
+    @queue_name.setter
+    def queue_url(self, value: Any):
+        raise Exception
+
 
 ######################
 ##### Queue
