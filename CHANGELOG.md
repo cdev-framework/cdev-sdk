@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 All releases will correspond to releases on [PyPI](https://pypi.org/project/cdev/).
 All release will have a corresponding git tag.
 
+
+## [0.0.25]
+### Added
+- Detailed view of the changes that will be deployed via the `--detail` flag
+- Add `url` as an output value for Sqs Queues
+
+
 ## [0.0.24] - 2023-02-06
 ### Fixed
 - Reimplemented packaged module discovery and layer creation
