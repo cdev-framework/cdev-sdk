@@ -987,6 +987,44 @@ class LocalBackend(Backend):
 
         return component
 
+    def remove_resource(
+        self,
+        resource_state_uuid: str,
+        component_name: str,
+        resource_type: str,
+        resource_name: str,
+    ):
+        resource_state = self.get_resource_state(resource_state_uuid)
+        resource_state_file_location = self._get_resource_state_file_location(
+            resource_state_uuid
+        )
+
+        component = self.get_component(resource_state_uuid, component_name)
+        previous_resource = self.get_resource_by_name(
+            resource_state_uuid=resource_state_uuid,
+            component_name=component_name,
+            resource_type=resource_type,
+            resource_name=resource_name,
+        )
+
+        new_component = self._update_component(
+            component,
+            Resource_Difference(
+                action_type=Resource_Change_Type.DELETE,
+                component_name=component_name,
+                previous_resource=previous_resource,
+                new_resource=ResourceModel(name="", ruuid="", hash=""),
+            ),
+            {},
+            {},
+        )
+
+        resource_state.components = [
+            x for x in resource_state.components if x.name != component.name
+        ] + [new_component]
+
+        self._write_resource_state_file(resource_state, resource_state_file_location)
+
     def _get_cloud_output_id(self, resource: ResourceModel) -> str:
         """Uniform way of generating cloud mapping id's
 

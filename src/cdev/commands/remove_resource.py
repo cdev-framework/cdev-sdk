@@ -22,7 +22,5 @@ def remove_resource_command(
     project: Project,
     output_manager: OutputManager,
 ) -> None:
-    print(project)
     ws = project.get_current_environment().get_workspace()
-    print(cloud_output_id, force)
     remove_resource_command_core(ws, output_manager, cloud_output_id, force)

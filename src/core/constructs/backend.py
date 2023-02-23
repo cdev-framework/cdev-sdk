@@ -400,11 +400,11 @@ class Backend:
 
     # Api for getting a set of resources that match the given tag from the backend
     def get_resources_by_tag(
-            self,
-            resource_state_uuid: str,
-            component_name: str,
-            resource_type: str,
-            resource_tag: str,
+        self,
+        resource_state_uuid: str,
+        component_name: str,
+        resource_type: str,
+        resource_tag: str,
     ) -> List[ResourceModel]:
         """
         Get the state of a resource from a component based on the name of the resource
@@ -522,6 +522,23 @@ class Backend:
         """
         Create the set of differences from a proposed set of components to a provided set of current components identified by their name. This allows the flexibility for working on a particular
         set of components within a resource state.
+        """
+        raise NotImplementedError
+
+    def remove_resource(
+        self,
+        resource_state_uuid: str,
+        component_name: str,
+        resource_type: str,
+        resource_name: str,
+    ):
+        """Remove the resource from the backend.
+
+        Args:
+            resource_state_uuid (str): _description_
+            component_name (str): _description_
+            resource_type (str): _description_
+            resource_name (str): _description_
         """
         raise NotImplementedError
 
