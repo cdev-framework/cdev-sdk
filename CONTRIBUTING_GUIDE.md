@@ -37,4 +37,4 @@ You should update the `CHANGELOG.md` file to reflect any changes you made in the
 
 
 ### Pushing up work
-Once your work is completed, you can open a pull request against `main`. It will then be reviewed and when ready merged back into `main`.
+Once your work is completed, you can open a pull request against `dev`. It will then be reviewed and when ready merged back into `dev`.
