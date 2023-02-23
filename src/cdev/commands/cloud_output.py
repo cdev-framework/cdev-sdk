@@ -6,7 +6,7 @@ from core.constructs.output_manager import OutputManager
 
 def cloud_output_command_cli(
     cloud_output_id: str,
-    value: str,
+    value: bool,
     project: Project,
     output_manager: OutputManager,
     **kwargs

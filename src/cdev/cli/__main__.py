@@ -20,6 +20,7 @@ from ..commands import (
     run,
     sync,
     git_safe,
+    remove_resource,
 )
 
 from cdev.constructs.project import CDEV_PROJECT_FILE, CDEV_FOLDER, Project
@@ -302,6 +303,25 @@ CDEV_COMMANDS = [
             {
                 "dest": "--value",
                 "help": "display only the value. Helpful for exporting values.",
+                "action": "store_true",
+            },
+        ],
+    },
+    {
+        "name": "remove-resource",
+        "help": "Remove a resource from the stored backend. This will untrack the resources.",
+        "default": wrap_load_and_initialize_project(
+            remove_resource.remove_resource_command_cli
+        ),
+        "args": [
+            {
+                "dest": "cloud_output_id",
+                "type": str,
+                "help": "Id of the cloud resource to remove. ex: <component>.<ruuid>.<cdev_name>",
+            },
+            {
+                "dest": "--force",
+                "help": "Bypass the confirmation prompt.",
                 "action": "store_true",
             },
         ],
