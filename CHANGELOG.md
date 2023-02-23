@@ -7,6 +7,11 @@ All releases will correspond to releases on [PyPI](https://pypi.org/project/cdev
 All release will have a corresponding git tag.
 
 
+## [0.0.26]
+### Added
+- Added the `remove-resource` command to help when the backend gets in an inconsistent state
+
+
 ## [0.0.25]
 ### Added
 - Detailed view of the changes that will be deployed via the `--detail` flag
