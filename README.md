@@ -11,7 +11,7 @@ Cdev provides a development environment and framework that allows python develop
 ## Getting Started
 - [An Aws account and credentials](https://aws.amazon.com/)
 - [Requires Python>=3.6 and pip](https://cdevframework.io/docs/gettingstarted/python/)
-- it is **highly** encourage to use a python virtual environment
+- it is **highly** encouraged to use a python virtual environment
 
 Starting from an empty directory. Set up your python virtual environment and install the Cdev cli.
 ```
