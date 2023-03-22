@@ -154,6 +154,21 @@ class local_project(Project):
         if environment_name not in self.get_all_environment_names():
             raise EnvironmentDoesNotExist
 
+        delete_environment_info: environment_info = [
+            x
+            for x in self._project_info.environment_infos
+            if x.name == environment_name
+        ][0]
+
+        try:
+            load_backend(
+                self._create_default_backend_configuration()
+            ).delete_resource_state(
+                delete_environment_info.workspace_info.resource_state_uuid
+            )
+        except Exception as e:
+            raise BackendError
+
         self._project_info.environment_infos = [
             x
             for x in self._project_info.environment_infos
