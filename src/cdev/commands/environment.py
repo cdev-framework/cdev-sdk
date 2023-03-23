@@ -27,6 +27,8 @@ def environment_cli(
         set_current_environment(project, parsed_args.get("env"), output_manager)
     elif command == "create":
         create_environment(project, parsed_args.get("env"), output_manager)
+    elif command == "delete":
+        delete_environment(project, parsed_args.get("env"), output_manager)
     elif command == "settings_information":
         settings_information(
             project,
@@ -85,6 +87,25 @@ def create_environment(
     project.create_environment(new_environment_name)
 
     output._console.print(f"Created Environment -> {new_environment_name}")
+
+
+def delete_environment(
+    project: Project, environment_name: str, output: OutputManager
+) -> None:
+
+    did_confirm = output._console.input(
+        f"This operation will permanently remove all information about the environment. Are you sure you want to delete the environment: {environment_name} \[y/n]?: "
+    )
+
+    if not did_confirm:
+        return
+
+    project.destroy_environment(environment_name)
+    output.print(f"DELETED ENVIRONMENT -> {environment_name}")
+
+    if project.get_current_environment_name() == environment_name:
+        project.set_current_environment("dev")
+        output.print("SWITCHED ENVIRONMENT TO -> dev")
 
 
 def settings_information(

@@ -232,6 +232,17 @@ CDEV_COMMANDS = [
                 ],
             },
             {
+                "command": "delete",
+                "help": "Delete new environment",
+                "args": [
+                    {
+                        "dest": "env",
+                        "type": str,
+                        "help": "name of environment you want to delete",
+                    }
+                ],
+            },
+            {
                 "command": "settings_information",
                 "help": "Get or Set information about the settings of an environment",
                 "args": [
