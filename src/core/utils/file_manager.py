@@ -63,6 +63,9 @@ def safe_json_write(obj: Dict, fp: FilePath) -> None:
         os.remove(tmp_fp)
 
     try:
+        if not os.path.isdir(os.path.dirname(tmp_fp)):
+            os.mkdir(os.path.dirname(tmp_fp))
+
         with open(tmp_fp, "w") as fh:
             json.dump(obj, fh, indent=4, cls=CustomEncoder)
 
