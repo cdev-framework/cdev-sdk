@@ -48,7 +48,7 @@ class DataStreamPermissions:
 
         self.WRITE_STREAM = Permission(
             actions=[
-                "sqs:PutRecord*",
+                "kinesis:PutRecord*",
             ],
             cloud_id=Cloud_Output_Str(
                 resource_name, RUUID, "cloud_id", OutputType.RESOURCE
@@ -63,7 +63,7 @@ class DataStreamPermissions:
                 "kinesis:List*",
                 "kinesis:Describe*",
                 "kinesis:SubscribeToShard",
-                "sqs:PutRecord*",
+                "kinesis:PutRecord*",
             ],
             cloud_id=Cloud_Output_Str(
                 resource_name, RUUID, "cloud_id", OutputType.RESOURCE
