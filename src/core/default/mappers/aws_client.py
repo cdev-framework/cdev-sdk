@@ -10,6 +10,7 @@ AVAILABLE_SERVICES = {
     "apigatewayv2",
     "sqs",
     "apigateway",
+    "kinesis",
 }
 
 
