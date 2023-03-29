@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 All releases will correspond to releases on [PyPI](https://pypi.org/project/cdev/).
 All release will have a corresponding git tag.
 
+## [0.0.30] - 2023-03-29
+
+### Fixed
+
+- Fixed error with Kinesis Data Stream permissions
+
 ## [0.0.29] - 2023-03-29
 
 ### Added
