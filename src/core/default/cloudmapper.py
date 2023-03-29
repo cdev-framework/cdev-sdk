@@ -14,6 +14,7 @@ from .mappers.simple import (
     relational_db_deployer,
     static_site_deployer,
     topic_deployer,
+    kinesis_deployer,
 )
 
 
@@ -32,6 +33,7 @@ class DefaultMapper(CloudMapper):
             "cdev::simple::relationaldb",
             "cdev::simple::staticsite",
             "cdev::simple::topic",
+            "cdev::simple::data-stream",
         ]
 
     def deploy_resource(
@@ -73,4 +75,5 @@ RESOURCE_TO_HANDLER_FUNCTION = {
     "cdev::simple::relationaldb": relational_db_deployer.handle_simple_relational_db_deployment,
     "cdev::simple::staticsite": static_site_deployer.handle_simple_static_site_deployment,
     "cdev::simple::topic": topic_deployer.handle_simple_topic_deployment,
+    "cdev::simple::data-stream": kinesis_deployer.handle_simple_data_stream_deployment,
 }
