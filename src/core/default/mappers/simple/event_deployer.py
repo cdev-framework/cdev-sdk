@@ -8,6 +8,7 @@ from core.default.resources.simple import object_store as simple_bucket
 from core.default.resources.simple import table as simple_table
 from core.default.resources.simple import queue as simple_queue
 from core.default.resources.simple import topic as simple_topic
+from core.default.resources.simple import kinesis
 
 from .. import aws_client
 
@@ -307,6 +308,55 @@ def _handle_deleting_queue_event(event: dict, function_cloud_id: str) -> None:
 
 
 ##############################################
+##### DATA STREAM EVENT TRIGGER
+##############################################
+
+
+def _handle_adding_data_stream_event(
+    event: kinesis.consumer_event_model, cloud_function_id
+) -> Dict:
+
+    parameters = {
+        "EventSourceArn": event.data_stream_arn,
+        "FunctionName": cloud_function_id,
+        "Enabled": True,
+        "BatchSize": event.batch_size,
+        "MaximumBatchingWindowInSeconds": event.batch_window,
+        "ParallelizationFactor": event.concurrent_batches_per_shard,
+        "StartingPosition": event.starting_position,
+        "MaximumRetryAttempts": event.retry_attempts,
+        "MaximumRecordAgeInSeconds": event.maximum_record_age,
+        "BisectBatchOnFunctionError": event.split_batch_on_error,
+    }
+
+    if event.failure_destination:
+        parameters.update(
+            {
+                "DestinationConfig": {
+                    "OnFailure": {"Destination": event.failure_destination}
+                }
+            }
+        )
+
+    if event.batch_failure:
+        parameters.update({"FunctionResponseTypes": ["ReportBatchItemFailures"]})
+
+    rv = aws_client.run_client_function(
+        "lambda", "create_event_source_mapping", parameters
+    )
+
+    return {"consumer_id": rv.get("UUID")}
+
+
+def _handle_deleting_data_stream_event(event: dict, function_cloud_id: str) -> None:
+    consumer_event_id = event.get("consumer_id")
+
+    aws_client.run_client_function(
+        "lambda", "delete_event_source_mapping", {"UUID": consumer_event_id}
+    )
+
+
+##############################################
 ##### TOPIC EVENT TRIGGER
 ##############################################
 
@@ -373,6 +423,10 @@ EVENT_TO_HANDLERS = {
         simple_topic.RUUID: {
             "CREATE": _handle_adding_topic_subscription,
             "REMOVE": _handle_deleting_topic_subscription,
+        },
+        kinesis.RUUID: {
+            "CREATE": _handle_adding_data_stream_event,
+            "REMOVE": _handle_deleting_data_stream_event,
         },
     },
 }
