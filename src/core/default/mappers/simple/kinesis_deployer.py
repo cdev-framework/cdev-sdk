@@ -82,12 +82,12 @@ def _update_simple_queue(
 def _remove_simple_data_stream(
     transaction_token: str, previous_output: Dict, output_task: OutputTask
 ) -> None:
-    stream_arn = previous_output.get("arn")
+    stream_name = previous_output.get("data_stream_name")
 
     output_task.update(comment="Deleting Stream")
 
     aws_client.run_client_function(
-        "kinesis", "delete_stream", {"StreamARN": stream_arn}
+        "kinesis", "delete_stream", {"StreamName": stream_name}
     )
 
 
